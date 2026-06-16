@@ -9,6 +9,8 @@
     <File Path="README.md" />
   </Folder>
   <Folder Name="/Libraries/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
     <Project Path="src/libs/Lama.Contracts/Lama.Contracts.csproj" />
     <Project Path="src/libs/Lama.Core/Lama.Core.csproj" />
     <Project Path="src/libs/Lama.Domain/Lama.Domain.csproj" />
