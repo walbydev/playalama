@@ -1,0 +1,11 @@
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/bin/Debug/net10.0/Lama.Contracts.deps.json
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/bin/Debug/net10.0/Lama.Contracts.dll
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/bin/Debug/net10.0/Lama.Contracts.pdb
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/obj/Debug/net10.0/Lama.Contracts.GeneratedMSBuildEditorConfig.editorconfig
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/obj/Debug/net10.0/Lama.Contracts.AssemblyInfoInputs.cache
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/obj/Debug/net10.0/Lama.Contracts.AssemblyInfo.cs
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/obj/Debug/net10.0/Lama.Contracts.csproj.CoreCompileInputs.cache
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/obj/Debug/net10.0/Lama.Contracts.dll
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/obj/Debug/net10.0/refint/Lama.Contracts.dll
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/obj/Debug/net10.0/Lama.Contracts.pdb
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Contracts/obj/Debug/net10.0/ref/Lama.Contracts.dll

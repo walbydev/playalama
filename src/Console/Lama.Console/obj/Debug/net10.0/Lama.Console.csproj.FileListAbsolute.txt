@@ -1,0 +1,14 @@
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/bin/Debug/net10.0/Lama.Console
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/bin/Debug/net10.0/Lama.Console.deps.json
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/bin/Debug/net10.0/Lama.Console.runtimeconfig.json
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/bin/Debug/net10.0/Lama.Console.dll
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/bin/Debug/net10.0/Lama.Console.pdb
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/obj/Debug/net10.0/Lama.Console.GeneratedMSBuildEditorConfig.editorconfig
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/obj/Debug/net10.0/Lama.Console.AssemblyInfoInputs.cache
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/obj/Debug/net10.0/Lama.Console.AssemblyInfo.cs
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/obj/Debug/net10.0/Lama.Console.csproj.CoreCompileInputs.cache
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/obj/Debug/net10.0/Lama.Console.dll
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/obj/Debug/net10.0/refint/Lama.Console.dll
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/obj/Debug/net10.0/Lama.Console.pdb
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/obj/Debug/net10.0/Lama.Console.genruntimeconfig.cache
+/home/philippe/RiderProjects/Games/Lama/src/Console/Lama.Console/obj/Debug/net10.0/ref/Lama.Console.dll
