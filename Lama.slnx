@@ -10,6 +10,9 @@
   </Folder>
   <Folder Name="/Libraries/">
     <Project Path="src/libs/Lama.Contracts/Lama.Contracts.csproj" />
+    <Project Path="src/libs/Lama.Core/Lama.Core.csproj" />
+    <Project Path="src/libs/Lama.Domain/Lama.Domain.csproj" />
+    <Project Path="src/libs/Lama.Infrastructure/Lama.Infrastructure.csproj" />
     <Project Path="src/libs/Lama.Languages.fr/Lama.Languages.fr.csproj" />
   </Folder>
   <Folder Name="/Tests/">
