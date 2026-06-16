@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Lama.Languages.fr")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6bdf97da79e4b9ec79a447c8dbfeadf16d1e6fb3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c6f9dae7cc7aedd97de04a32bcb1418238881632")]
 [assembly: System.Reflection.AssemblyProductAttribute("Lama.Languages.fr")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Lama.Languages.fr")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

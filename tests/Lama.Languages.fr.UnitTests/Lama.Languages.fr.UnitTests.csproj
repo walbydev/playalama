@@ -18,4 +18,8 @@
         <Using Include="Xunit"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Shared\Lama.Languages.fr\Lama.Languages.fr.csproj" />
+    </ItemGroup>
+
 </Project>
