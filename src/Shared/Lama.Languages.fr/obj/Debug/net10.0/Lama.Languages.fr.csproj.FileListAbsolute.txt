@@ -1,0 +1,15 @@
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/bin/Debug/net10.0/Lama.Languages.fr.deps.json
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/bin/Debug/net10.0/Lama.Languages.fr.dll
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/bin/Debug/net10.0/Lama.Languages.fr.pdb
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/bin/Debug/net10.0/Lama.Contracts.dll
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/bin/Debug/net10.0/Lama.Contracts.pdb
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/obj/Debug/net10.0/Lama.Languages.fr.csproj.AssemblyReference.cache
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/obj/Debug/net10.0/Lama.Languages.fr.GeneratedMSBuildEditorConfig.editorconfig
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/obj/Debug/net10.0/Lama.Languages.fr.AssemblyInfoInputs.cache
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/obj/Debug/net10.0/Lama.Languages.fr.AssemblyInfo.cs
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/obj/Debug/net10.0/Lama.Languages.fr.csproj.CoreCompileInputs.cache
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/obj/Debug/net10.0/Lama.Lan.6AF90AB6.Up2Date
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/obj/Debug/net10.0/Lama.Languages.fr.dll
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/obj/Debug/net10.0/refint/Lama.Languages.fr.dll
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/obj/Debug/net10.0/Lama.Languages.fr.pdb
+/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/obj/Debug/net10.0/ref/Lama.Languages.fr.dll

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Lama.Console")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6bdf97da79e4b9ec79a447c8dbfeadf16d1e6fb3")]
 [assembly: System.Reflection.AssemblyProductAttribute("Lama.Console")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Lama.Console")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -2,11 +2,16 @@
   <Folder Name="/Apps/">
     <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
   </Folder>
-  <Folder Name="/docs/" />
+  <Folder Name="/docs/">
+    <File Path="docs\tools.md" />
+    <File Path="README.md" />
+  </Folder>
   <Folder Name="/Libraries/">
     <Project Path="src/Shared/Lama.Contracts/Lama.Contracts.csproj" />
+    <Project Path="src/Shared/Lama.Languages.fr/Lama.Languages.fr.csproj" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />
+    <Project Path="tests/Lama.Languages.fr.UnitTests/Lama.Languages.fr.UnitTests.csproj" />
   </Folder>
 </Solution>
