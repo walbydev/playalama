@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Lama.Contracts")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c6f9dae7cc7aedd97de04a32bcb1418238881632")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+64b49239fc66295c775b860b9ae247e82f74009b")]
 [assembly: System.Reflection.AssemblyProductAttribute("Lama.Contracts")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Lama.Contracts")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
