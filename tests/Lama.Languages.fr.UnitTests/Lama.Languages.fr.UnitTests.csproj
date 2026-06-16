@@ -19,6 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\src\libs\Lama.Languages.fr\Lama.Languages.fr.csproj" />
         <ProjectReference Include="..\..\src\Shared\Lama.Languages.fr\Lama.Languages.fr.csproj" />
     </ItemGroup>
 

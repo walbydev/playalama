@@ -977,6 +977,9 @@
           "projectReferences": {
             "/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/Lama.Languages.fr.csproj": {
               "projectPath": "/home/philippe/RiderProjects/Games/Lama/src/Shared/Lama.Languages.fr/Lama.Languages.fr.csproj"
+            },
+            "/home/philippe/RiderProjects/Games/Lama/src/libs/Lama.Languages.fr/Lama.Languages.fr.csproj": {
+              "projectPath": "/home/philippe/RiderProjects/Games/Lama/src/libs/Lama.Languages.fr/Lama.Languages.fr.csproj"
             }
           }
         }
