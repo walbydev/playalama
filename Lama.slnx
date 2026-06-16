@@ -1,5 +1,12 @@
 <Solution>
-  <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
-  <Project Path="src/Shared/Lama.Contracts/Lama.Contracts.csproj" />
-  <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />
+  <Folder Name="/Apps/">
+    <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
+  </Folder>
+  <Folder Name="/docs/" />
+  <Folder Name="/Libraries/">
+    <Project Path="src/Shared/Lama.Contracts/Lama.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />
+  </Folder>
 </Solution>
