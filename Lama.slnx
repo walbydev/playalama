@@ -21,6 +21,7 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />
+    <Project Path="tests/Lama.Domain.UnitTests/Lama.Domain.UnitTests.csproj" />
     <Project Path="tests/Lama.Infrastructure.UnitTests/Lama.Infrastructure.UnitTests.csproj" />
     <Project Path="tests/Lama.Languages.fr.UnitTests/Lama.Languages.fr.UnitTests.csproj" />
   </Folder>
