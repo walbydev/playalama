@@ -130,12 +130,14 @@ public sealed class GameEngine : IGameEngine
         EnsureNotGameOver();
 
         // 1. Vérifier que les lettres sont dans le rack du joueur courant
-        EnsureLettersInRack(letters);
+        var wildcardPositions = ConsumeLettersFromRack(letters);
 
         // 2. Valider le coup
-        var (isValid, errorMessage, score) = ValidateMove(letters);
-        if (!isValid)
-            throw new GameException(errorMessage);
+        var result = _moveValidator.Validate(letters, _board!, _isFirstMove);
+        if (!result.IsValid)
+            throw new GameException(result.ErrorMessage ?? "Coup invalide.");
+
+        var score = _scoreCalculator.Calculate(letters, _board!, wildcardPositions);
 
         // 2b. Mémoriser l'état précédent pour permettre un challenge
         _lastMoveSnapshot = CaptureSnapshot();
@@ -143,7 +145,7 @@ public sealed class GameEngine : IGameEngine
         // 3. Appliquer le coup sur le plateau
         var newGrid = (Tile?[,])_board!.Grid.Clone();
         foreach (var (pos, letter) in letters)
-            newGrid[pos.Row, pos.Column] = new Tile(letter);
+            newGrid[pos.Row, pos.Column] = new Tile(letter, wildcardPositions.Contains(pos));
         _board = new BoardState(newGrid);
 
         // 4. Mettre à jour le score du joueur courant
@@ -155,8 +157,6 @@ public sealed class GameEngine : IGameEngine
         // 5. Retirer les lettres jouées du rack et recompléter depuis le sac
         var player  = _players[_currentPlayerIndex];
         var newRack = new List<char>(player.Rack);
-        foreach (var letter in letters.Values)
-            newRack.Remove(letter);
 
         var refill = _bag!.Draw(letters.Count);
         newRack.AddRange(refill);
@@ -353,6 +353,18 @@ public sealed class GameEngine : IGameEngine
     }
 
     /// <summary>
+    /// Restaure le plateau depuis les tuiles persistées en conservant l'information joker.
+    /// </summary>
+    internal void RestoreBoardTiles(IEnumerable<PersistedTile> tiles)
+    {
+        EnsureInitialized();
+        var newGrid = new Tile?[15, 15];
+        foreach (var tile in tiles)
+            newGrid[tile.Row, tile.Col] = new Tile(tile.Letter, tile.IsWildcard);
+        _board = new BoardState(newGrid);
+    }
+
+    /// <summary>
     /// Restaure l'historique et le dernier snapshot contestable.
     /// </summary>
     internal void RestoreHistory(List<GameMove> history, GameStateSnapshot? lastMoveSnapshot)
@@ -448,15 +460,30 @@ public sealed class GameEngine : IGameEngine
             throw new GameException("La partie est terminée.");
     }
 
-    private void EnsureLettersInRack(Dictionary<Position, char> letters)
+    private HashSet<Position> ConsumeLettersFromRack(Dictionary<Position, char> letters)
     {
         var rack = new List<char>(_players![_currentPlayerIndex].Rack);
-        foreach (var letter in letters.Values)
+        var wildcardPositions = new HashSet<Position>();
+
+        foreach (var (pos, letter) in letters)
         {
-            if (!rack.Remove(letter))
-                throw new GameException(
-                    $"La lettre '{letter}' n'est pas dans le rack du joueur courant.");
+            var normalized = char.ToUpperInvariant(letter);
+
+            if (rack.Remove(normalized))
+                continue;
+
+            if (rack.Remove('*'))
+            {
+                wildcardPositions.Add(pos);
+                continue;
+            }
+
+            throw new GameException(
+                $"La lettre '{normalized}' n'est pas dans le rack du joueur courant.");
         }
+
+        _players[_currentPlayerIndex] = _players[_currentPlayerIndex] with { Rack = rack };
+        return wildcardPositions;
     }
 
     private void AdvancePlayer()

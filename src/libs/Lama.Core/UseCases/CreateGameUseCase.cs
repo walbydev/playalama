@@ -110,6 +110,17 @@ public sealed class CreateGameUseCase
     }
 
     /// <summary>
+    /// Vide le cache mémoire des parties actives.
+    /// Les données persistées restent intactes et pourront être rechargées.
+    /// </summary>
+    public int ResetInMemorySessions()
+    {
+        var count = _sessions.Count;
+        _sessions.Clear();
+        return count;
+    }
+
+    /// <summary>
     /// Retourne la session complète associée à un GameId.
     /// Reconstruit depuis le repository si absente du cache.
     /// </summary>
@@ -202,14 +213,7 @@ public sealed class CreateGameUseCase
     {
         if (persisted.Board.Count == 0) return;
 
-        var letters = persisted.Board.ToDictionary(
-            t => new Position(t.Row, t.Col),
-            t => t.Letter);
-
-        // On joue toutes les tuiles du plateau comme un seul grand coup
-        // (le moteur revalidera mais c'est acceptable pour la restauration)
-        if (letters.Count > 0)
-            engine.RestoreBoard(letters);
+        engine.RestoreBoardTiles(persisted.Board);
     }
 
     /// <summary>Construit un <see cref="PersistedGame"/> depuis l'état courant.</summary>

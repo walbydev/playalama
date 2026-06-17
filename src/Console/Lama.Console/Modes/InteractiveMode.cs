@@ -1,4 +1,5 @@
 using Lama.Console.Services;
+using Lama.Contracts;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
 
@@ -12,15 +13,20 @@ namespace Lama.Console.Modes;
 public sealed class InteractiveMode : IConsoleMode
 {
     private readonly ICommandDispatcher _dispatcher;
+    private readonly ISessionService _sessionService;
     private readonly ILogger<InteractiveMode> _logger;
 
     /// <summary>
     /// Initialise le mode interactif.
     /// </summary>
-    public InteractiveMode(ICommandDispatcher dispatcher, ILogger<InteractiveMode> logger)
+    public InteractiveMode(
+        ICommandDispatcher dispatcher,
+        ISessionService sessionService,
+        ILogger<InteractiveMode> logger)
     {
-        _dispatcher = dispatcher;
-        _logger = logger;
+        _dispatcher     = dispatcher;
+        _sessionService = sessionService;
+        _logger         = logger;
     }
 
     /// <inheritdoc />
@@ -66,31 +72,93 @@ public sealed class InteractiveMode : IConsoleMode
         return ExitCodes.Success;
     }
 
-    // TODO: implémenter quand Lama.Core (cas d'usage) sera disponible
-    private Task<int> HandleNewGame(CancellationToken cancellationToken)
+    private async Task<int> HandleNewGame(CancellationToken cancellationToken)
     {
-        AnsiConsole.MarkupLine("[yellow]Fonctionnalité à venir (Lama.Core non implémenté).[/]");
-        return Task.FromResult(ExitCodes.Success);
+        var defaultName = _sessionService.LoadSession()?.PlayerName ?? "Hôte";
+        var hostName = AnsiConsole.Prompt(
+            new TextPrompt<string>("[green]Nom de l'hôte :[/]")
+                .DefaultValue(defaultName)
+                .Validate(name => !string.IsNullOrWhiteSpace(name)
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error("Le nom ne peut pas être vide.")));
+
+        var level = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[green]Niveau de partie[/]")
+                .AddChoices("casual", "standard", "competitive", "tournament"));
+
+        var context = new CommandContext
+        {
+            Group = "game",
+            Action = "create",
+            CommandId = "game.create",
+            Arguments = [hostName],
+            Options = new Dictionary<string, string?> { ["level"] = level }
+        };
+
+        return await _dispatcher.DispatchAsync(context, cancellationToken);
     }
 
-    // TODO: implémenter quand Lama.Core (cas d'usage) sera disponible
-    private Task<int> HandleJoinGame(CancellationToken cancellationToken)
+    private async Task<int> HandleJoinGame(CancellationToken cancellationToken)
     {
-        AnsiConsole.MarkupLine("[yellow]Fonctionnalité à venir (Lama.Core non implémenté).[/]");
-        return Task.FromResult(ExitCodes.Success);
+        var defaultName = _sessionService.LoadSession()?.PlayerName ?? "Joueur";
+        var playerName = AnsiConsole.Prompt(
+            new TextPrompt<string>("[green]Nom du joueur :[/]")
+                .DefaultValue(defaultName)
+                .Validate(name => !string.IsNullOrWhiteSpace(name)
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error("Le nom ne peut pas être vide.")));
+
+        var context = new CommandContext
+        {
+            Group = "game",
+            Action = "join",
+            CommandId = "game.join",
+            Arguments = [playerName]
+        };
+
+        return await _dispatcher.DispatchAsync(context, cancellationToken);
     }
 
-    // TODO: implémenter quand Lama.Infrastructure (persistance) sera disponible
-    private Task<int> HandleLoadGame(CancellationToken cancellationToken)
+    private async Task<int> HandleLoadGame(CancellationToken cancellationToken)
     {
-        AnsiConsole.MarkupLine("[yellow]Fonctionnalité à venir (Lama.Infrastructure non implémenté).[/]");
-        return Task.FromResult(ExitCodes.Success);
+        var gameId = AnsiConsole.Prompt(
+            new TextPrompt<string>("[green]ID de partie à afficher :[/]")
+                .Validate(id => !string.IsNullOrWhiteSpace(id)
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error("L'ID ne peut pas être vide.")));
+
+        var context = new CommandContext
+        {
+            Group = "game",
+            Action = "show",
+            CommandId = "game.show",
+            Options = new Dictionary<string, string?>
+            {
+                ["game-id"] = gameId,
+                ["output"] = "text"
+            }
+        };
+
+        return await _dispatcher.DispatchAsync(context, cancellationToken);
     }
 
-    // TODO: implémenter (thème, langue, etc.)
     private Task<int> HandleOptions(CancellationToken cancellationToken)
     {
-        AnsiConsole.MarkupLine("[yellow]Options à venir.[/]");
+        var session = _sessionService.LoadSession();
+        AnsiConsole.MarkupLine("[green]Session locale[/]");
+        AnsiConsole.MarkupLine($"- Fichier : [grey]{_sessionService.SessionFilePath}[/]");
+        if (session is null)
+        {
+            AnsiConsole.MarkupLine("- Etat    : [yellow]aucune session active[/]");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"- Joueur  : [white]{session.PlayerName ?? "(aucun)"}[/]");
+            AnsiConsole.MarkupLine($"- Role    : [white]{session.Role}[/]");
+            AnsiConsole.MarkupLine($"- Partie  : [white]{session.GameId ?? "(aucune)"}[/]");
+            AnsiConsole.MarkupLine($"- MAJ     : [grey]{session.UpdatedAt:O}[/]");
+        }
         return Task.FromResult(ExitCodes.Success);
     }
 }

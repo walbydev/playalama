@@ -46,8 +46,12 @@ public sealed class MoveValidator
             return MoveValidationResult.Invalid("Un coup doit contenir au moins une lettre.");
 
         // 2. Aucune case ne doit déjà être occupée
-        foreach (var pos in placements.Keys)
+        foreach (var (pos, letter) in placements)
         {
+            if (!IsAllowedLetter(letter))
+                return MoveValidationResult.Invalid(
+                    $"Lettre invalide '{letter}'. Utilisez A-Z ou '*' pour un joker.");
+
             if (board.Grid[pos.Row, pos.Column] is not null)
                 return MoveValidationResult.Invalid(
                     $"La case ({pos.Row},{pos.Column}) est déjà occupée.");
@@ -194,5 +198,11 @@ public sealed class MoveValidator
 
             return end - start + 1;
         }
+    }
+
+    private static bool IsAllowedLetter(char letter)
+    {
+        var upper = char.ToUpperInvariant(letter);
+        return (upper >= 'A' && upper <= 'Z') || upper == '*';
     }
 }

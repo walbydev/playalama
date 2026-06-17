@@ -401,3 +401,64 @@ Journal unique de progression du projet LAMA.
 - `docs/AGENTS.md` (synchronise)
 - `docs/defines-CLI.md` (synchronise)
 - `tests/Lama.Console.UnitTests/` (504 tests passants)
+
+## [2026-06-18 09:40:00 UTC] - E2E CLI reels + stubs leves + jokers renforces + interactif branche
+
+### Contexte
+- Les priorites listees etaient: tests E2E en processus reel, suppression des stubs restants, renforcement jokers cote Domain, et connexion du shell interactif aux cas d'usage reels.
+
+### Fait
+- **Tests E2E CLI reels**:
+  - Ajout de scripts Bash de parcours complet:
+    - `tools/scripts/e2e-cli-smoke.sh` (create -> join -> pass -> show -> end)
+    - `tools/scripts/e2e-system-and-stubs.sh` (system.status/restart + player/tournament.create)
+  - Ajout de tests E2E via processus `dotnet run` dans:
+    - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
+
+- **Stubs commandes implementees**:
+  - `player.create` cree desormais un profil local persiste en session.
+  - `tournament.create` cree une partie de niveau `Tournament` et initialise la session hote.
+  - `system.status` retourne un diagnostic systeme (text/json/csv).
+  - `system.restart` effectue un redemarrage logique (purge cache memoire + restauration de la partie active).
+
+- **Jokers renforces (Domain/Core)**:
+  - `GameEngine` consomme maintenant `*` du rack comme joker quand la lettre demandee manque.
+  - Les tuiles posees via joker sont marquees `IsWildcard=true` sur le plateau.
+  - Le score tient compte des jokers a 0 point meme quand ils representent une lettre.
+  - La restauration depuis persistance conserve desormais l'etat `IsWildcard` des tuiles.
+  - Validation de coup durcie: rejet des caracteres non alphabetiques (hors `*`).
+
+- **Mode interactif**:
+  - `InteractiveMode` branche maintenant les menus sur des commandes reelles:
+    - Nouvelle partie -> `game.create`
+    - Rejoindre -> `game.join`
+    - Charger -> `game.show --game-id`
+  - La section Options affiche l'etat de session locale en direct.
+
+### En cours / A faire
+- Definir un vrai modele metier de tournoi (aujourd'hui: `tournament.create` s'appuie sur une partie `GameLevel.Tournament`).
+- Ajouter un support explicite de notation joker cote CLI (`play.move`) pour choisir visuellement les lettres jokers si necessaire.
+- Etendre le mode interactif avec un vrai cycle de jeu (plateau, rack, coup, pass, swap) dans une boucle unique.
+
+### Risques / Ecarts
+- `system.restart` est un redemarrage logique in-process (pas un restart d'un daemon externe).
+- Les E2E via `dotnet run` sont plus lents que des tests executes sur binaire precompile.
+
+### Prochaines etapes
+1. Faire evoluer `tournament.create` vers une entite tournoi persistante dediee.
+2. Ajouter une commande interactive de tour (`play.move/pass/swap`) dans `InteractiveMode`.
+3. Ajouter des E2E JSON/CSV supplementaires pour `show.*` et `game.*`.
+
+### References
+- `tools/scripts/e2e-cli-smoke.sh`
+- `tools/scripts/e2e-system-and-stubs.sh`
+- `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
+- `src/Console/Lama.Console/Commands/Player/PlayerCreateCommand.cs`
+- `src/Console/Lama.Console/Commands/Tournament/TournamentCreateCommand.cs`
+- `src/Console/Lama.Console/Commands/System/SystemStatusCommand.cs`
+- `src/Console/Lama.Console/Commands/System/SystemRestartCommand.cs`
+- `src/Console/Lama.Console/Modes/InteractiveMode.cs`
+- `src/libs/Lama.Domain/Engine/GameEngine.cs`
+- `src/libs/Lama.Domain/Validation/MoveValidator.cs`
+- `src/libs/Lama.Domain/Scoring/ScoreCalculator.cs`
+

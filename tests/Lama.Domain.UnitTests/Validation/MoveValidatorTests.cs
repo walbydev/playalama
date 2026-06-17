@@ -318,6 +318,21 @@ public class MoveValidatorTests
             because: "un coup vide est toujours invalide");
     }
 
+    [Fact]
+    public void Move_WithInvalidCharacter_IsInvalid()
+    {
+        var move = new Dictionary<Position, char>
+        {
+            [new Position(7, 7)] = '1',
+            [new Position(7, 8)] = 'A'
+        };
+
+        var result = _sut.Validate(move, EmptyBoard(), isFirstMove: true);
+
+        result.IsValid.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("Lettre invalide");
+    }
+
     #endregion
 
     #region Résultat de validation

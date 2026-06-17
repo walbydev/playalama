@@ -1,7 +1,10 @@
 using System.Text.Json;
 using Lama.Console.Commands.Game;
 using Lama.Console.Commands.Play;
+using Lama.Console.Commands.Player;
 using Lama.Console.Commands.Show;
+using Lama.Console.Commands.System;
+using Lama.Console.Commands.Tournament;
 using Lama.Console.Services;
 using Lama.Contracts;
 using Lama.Core.Models;
@@ -49,6 +52,10 @@ public sealed class GameAndPlayCommandTests : IDisposable
     private readonly GameEndCommand _gameEndCommand;
     private readonly PlayPassCommand _playPassCommand;
     private readonly PlaySwapCommand _playSwapCommand;
+    private readonly PlayerCreateCommand _playerCreateCommand;
+    private readonly TournamentCreateCommand _tournamentCreateCommand;
+    private readonly SystemStatusCommand _systemStatusCommand;
+    private readonly SystemRestartCommand _systemRestartCommand;
 
     public GameAndPlayCommandTests()
     {
@@ -73,6 +80,11 @@ public sealed class GameAndPlayCommandTests : IDisposable
         _gameEndCommand = new GameEndCommand(endGameUseCase, _sessionService, NullLogger<GameEndCommand>.Instance);
         _playPassCommand = new PlayPassCommand(passTurnUseCase, NullLogger<PlayPassCommand>.Instance);
         _playSwapCommand = new PlaySwapCommand(swapLettersUseCase, _sessionService, NullLogger<PlaySwapCommand>.Instance);
+        _playerCreateCommand = new PlayerCreateCommand(_sessionService, NullLogger<PlayerCreateCommand>.Instance);
+        _tournamentCreateCommand = new TournamentCreateCommand(_createGameUseCase, _sessionService, NullLogger<TournamentCreateCommand>.Instance);
+        var accountService = new Lama.Infrastructure.Auth.AccountService(NullLogger<Lama.Infrastructure.Auth.AccountService>.Instance);
+        _systemStatusCommand = new SystemStatusCommand(accountService, _sessionService, _gameRepository, NullLogger<SystemStatusCommand>.Instance);
+        _systemRestartCommand = new SystemRestartCommand(_createGameUseCase, _sessionService, _gameRepository, NullLogger<SystemRestartCommand>.Instance);
     }
 
     public void Dispose()
@@ -617,6 +629,98 @@ public sealed class GameAndPlayCommandTests : IDisposable
             stdout.Should().Contain("Historique des coups");
             stdout.Should().Contain("Alice");
         }
+    }
+
+    [Fact]
+    public async Task PlayerCreateCommand_CreatesOfflineProfileSession()
+    {
+        var context = new CommandContext
+        {
+            Group = "player",
+            Action = "create",
+            Arguments = ["Carla"]
+        };
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => _playerCreateCommand.ExecuteAsync(context));
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("Profil joueur créé");
+
+        var session = _sessionService.LoadSession();
+        session.Should().NotBeNull();
+        session!.PlayerName.Should().Be("Carla");
+        session.Role.Should().Be(Role.Player);
+        session.GameId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TournamentCreateCommand_CreatesTournamentLevelGame()
+    {
+        var context = new CommandContext
+        {
+            Group = "tournament",
+            Action = "create",
+            Arguments = ["OpenLama"],
+            PlayerName = "Alice"
+        };
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => _tournamentCreateCommand.ExecuteAsync(context));
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("Tournoi créé");
+
+        var session = _sessionService.LoadSession();
+        session.Should().NotBeNull();
+        session!.GameLevel.Should().Be(GameLevel.Tournament);
+        session.GameId.Should().NotBeNullOrWhiteSpace();
+        _gameRepository.Exists(session.GameId!).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("text")]
+    [InlineData("json")]
+    [InlineData("csv")]
+    public async Task SystemStatusCommand_ReturnsRequestedFormat(string format)
+    {
+        var context = new CommandContext
+        {
+            Group = "system",
+            Action = "status",
+            Options = new Dictionary<string, string?> { ["output"] = format }
+        };
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => _systemStatusCommand.ExecuteAsync(context));
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().NotBeNullOrWhiteSpace();
+
+        if (format == "json")
+            stdout.Should().Contain("isInitialized");
+    }
+
+    [Fact]
+    public async Task SystemRestartCommand_ClearsRuntimeCache_AndKeepsPersistedGame()
+    {
+        var created = await _createGameUseCase.ExecuteAsync(new CreateGameRequest("Alice"));
+        SaveHostSession(created.GameId, created.HostPlayerId, "Alice");
+
+        _createGameUseCase.GetEngine(created.GameId).Should().NotBeNull();
+
+        var context = new CommandContext
+        {
+            Group = "system",
+            Action = "restart"
+        };
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => _systemRestartCommand.ExecuteAsync(context));
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("Redémarrage logique terminé");
+        _gameRepository.Exists(created.GameId).Should().BeTrue();
     }
 
     private async Task<(string GameId, string HostPlayerId, string BobPlayerId)> CreateTwoPlayerGameAsync()

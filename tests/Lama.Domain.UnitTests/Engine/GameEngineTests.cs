@@ -349,6 +349,27 @@ public class GameEngineTests
     }
 
     [Fact]
+    public void PlayMove_UsesWildcardFromRack_WhenLetterMissing()
+    {
+        var engine = CreateEngine();
+        engine.InitializeGame(["Alice", "Bob"]);
+
+        // Pas de 'L' en rack, mais un joker '*'.
+        ForceRack(engine, 0, ['*', 'A', 'M', 'I', 'S', 'T', 'O']);
+
+        var state = engine.PlayMove(new Dictionary<Position, char>
+        {
+            [new Position(7, 7)] = 'L',
+            [new Position(7, 8)] = 'A'
+        });
+
+        state.Board.Grid[7, 7]!.Letter.Should().Be('L');
+        state.Board.Grid[7, 7]!.IsWildcard.Should().BeTrue();
+        state.Players[0].Score.Should().Be(2,
+            because: "L joué via joker vaut 0, A vaut 1, mot doublé en H8 => 2 points");
+    }
+
+    [Fact]
     public void PlayMove_IncrementsTurnNumber_AfterFullRound()
     {
         var engine = CreateEngine();

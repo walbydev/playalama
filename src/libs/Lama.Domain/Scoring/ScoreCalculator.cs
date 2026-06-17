@@ -37,6 +37,16 @@ public sealed class ScoreCalculator
     /// <param name="board">L'état du plateau AVANT ce coup.</param>
     /// <returns>Le score total du coup, incluant le bonus Scrabble si applicable.</returns>
     public int Calculate(IReadOnlyDictionary<Position, char> placements, BoardState board)
+        => Calculate(placements, board, wildcardPositions: null);
+
+    /// <summary>
+    /// Calcule le score total en tenant compte des lettres issues de jokers.
+    /// Les positions marquées joker valent toujours 0 point.
+    /// </summary>
+    public int Calculate(
+        IReadOnlyDictionary<Position, char> placements,
+        BoardState board,
+        ISet<Position>? wildcardPositions)
     {
         if (placements.Count == 0) return 0;
 
@@ -45,7 +55,8 @@ public sealed class ScoreCalculator
 
         foreach (var (pos, letter) in placements)
         {
-            var letterValue = GetLetterValue(letter);
+            var isWildcard = wildcardPositions?.Contains(pos) == true;
+            var letterValue = isWildcard ? 0 : GetLetterValue(letter);
             var bonus       = BonusMap.GetBonus(pos);
 
             // Le bonus s'applique seulement si la case était libre avant ce coup

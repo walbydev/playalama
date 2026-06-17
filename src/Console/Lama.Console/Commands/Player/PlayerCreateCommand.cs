@@ -1,4 +1,5 @@
 using Lama.Console.Services;
+using Lama.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Lama.Console.Commands.Player;
@@ -8,20 +9,21 @@ namespace Lama.Console.Commands.Player;
 /// Arguments : nom du joueur (positionnel, requis).
 /// Accessible aux joueurs et aux admins.
 /// </summary>
-/// <remarks>
-/// TODO: dépend de Lama.Core (cas d'usage CreatePlayer) — non encore implémenté.
-/// </remarks>
 public sealed class PlayerCreateCommand : ICommand
 {
     /// <inheritdoc />
     public string CommandId => "player.create";
 
+    private readonly ISessionService _sessionService;
     private readonly ILogger<PlayerCreateCommand> _logger;
 
     /// <summary>Initialise la commande.</summary>
-    public PlayerCreateCommand(ILogger<PlayerCreateCommand> logger)
+    public PlayerCreateCommand(
+        ISessionService sessionService,
+        ILogger<PlayerCreateCommand> logger)
     {
-        _logger = logger;
+        _sessionService = sessionService;
+        _logger         = logger;
     }
 
     /// <inheritdoc />
@@ -34,10 +36,33 @@ public sealed class PlayerCreateCommand : ICommand
             return Task.FromResult(ExitCodes.InvalidArgument);
         }
 
-        // TODO: appeler le cas d'usage CreatePlayer de Lama.Core
-        _logger.LogWarning("{CommandId} : non implémenté (Lama.Core absent)", CommandId);
-        global::System.Console.Error.WriteLine(
-            $"[player create] Non implémenté — Lama.Core absent. (nom : {playerName})");
-        return Task.FromResult(ExitCodes.GeneralError);
+        var current = _sessionService.LoadSession();
+        if (current?.GameId is not null)
+        {
+            global::System.Console.Error.WriteLine(
+                "[player create] Impossible de changer de profil pendant une partie active.");
+            return Task.FromResult(ExitCodes.InvalidArgument);
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var createdAt = current?.CreatedAt ?? now;
+        var newSession = new SessionContext(
+            GameId:         null,
+            PlayerId:       Guid.NewGuid().ToString("N"),
+            PlayerName:     playerName.Trim(),
+            Role:           Role.Player,
+            GameLevel:      null,
+            AuthToken:      current?.AuthToken,
+            TokenExpiresAt: current?.TokenExpiresAt,
+            CreatedAt:      createdAt,
+            UpdatedAt:      now);
+
+        _sessionService.SaveSession(newSession);
+
+        _logger.LogInformation("Profil joueur créé : {PlayerName}", newSession.PlayerName);
+        global::System.Console.WriteLine($"✓ Profil joueur créé : {newSession.PlayerName}");
+        global::System.Console.WriteLine($"  PlayerId  : {newSession.PlayerId}");
+        global::System.Console.WriteLine($"  Session   : {_sessionService.SessionFilePath}");
+        return Task.FromResult(ExitCodes.Success);
     }
 }
