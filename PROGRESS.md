@@ -170,3 +170,52 @@ Journal unique de progression du projet LAMA.
 - `docs/console-interface-architecture.md`
 - `docs/defines-CLI.md`
 
+## [2026-06-17 21:04:35 UTC] - Parser CLI et ACL alignes + documentation harmonisee
+
+### Contexte
+- Un ecart etait identifie entre la conception CLI attendue et le comportement reel du parser.
+- `login/logout` et `system.account.*` existaient cote commandes, mais n'etaient pas atteignables auparavant.
+
+### Fait
+- Parser etendu (`CommandContextParser`) pour supporter:
+  - `lama login`
+  - `lama logout`
+  - `lama system account <create|list|revoke>`
+- `CommandContext` supporte maintenant un `CommandId` explicite (fallback conserve sur `groupe.action`).
+- `CommandDispatcher` affiche les erreurs sur `CommandId` reel.
+- ACL ajustee pour commandes publiques auth (`login`, `logout`).
+- Tests Console alignes et stabilises:
+  - `Lama.Console.UnitTests` vert (149/149)
+- Documentation mise a jour:
+  - `docs/AGENTS.md`
+  - `docs/defines-CLI.md`
+
+### En cours
+- Commandes stubs toujours presentes:
+  - `game.list`, `game.show`, `game.pause`, `game.save`
+  - `play.swap`, `play.challenge`, `play.check`
+  - `show.history`
+  - `player.create`, `tournament.create`
+  - `system.status`, `system.restart`
+
+### A faire
+- Finaliser `play.swap` metier de bout en bout (au lieu du comportement transitoire).
+- Introduire un historique de coups dans le coeur pour debloquer `show.history`/`challenge`.
+- Ajouter des tests E2E CLI sur parcours complet.
+
+### Risques / Ecarts
+- Les docs sont maintenant alignes sur le code, mais la couverture fonctionnelle reste partielle (plusieurs commandes stubs).
+- Le mode interactif est encore principalement un shell de navigation.
+
+### Prochaines etapes
+1. Implementer `game.list` et `game.show` sur repository JSON.
+2. Finaliser `swap` cote `Domain/Core` puis brancher `PlaySwapCommand`.
+3. Definir un premier flux jouable complet en mode interactif textuel.
+
+### References
+- `src/Console/Lama.Console/Services/CommandContextParser.cs`
+- `src/Console/Lama.Console/Services/CommandContext.cs`
+- `src/Console/Lama.Console/Services/AccessControlService.cs`
+- `tests/Lama.Console.UnitTests/AccessControlServiceTests.cs`
+- `docs/AGENTS.md`
+- `docs/defines-CLI.md`

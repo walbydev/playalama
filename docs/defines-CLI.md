@@ -12,10 +12,12 @@ Source de verite:
 
 ## 1) Format CLI actuellement supporte
 
-Le parser supporte le format:
+Le parser supporte trois formes:
 
 ```text
 lama <groupe> <action> [arguments...] [options]
+lama <action> [arguments...] [options]               # login/logout
+lama system account <action> [arguments...] [options]
 ```
 
 Cas particuliers:
@@ -103,29 +105,22 @@ Ces options sont parsees dans `CommandContext` (pas toujours exploitees par tout
 | Commande | Etat | Notes |
 |---|---|---|
 | `lama system setup` | ✅ | initialisation SuperAdmin |
+| `lama system account create <username>` | ✅ | cree un compte Admin |
+| `lama system account list` | ✅ | liste les comptes |
+| `lama system account revoke <username>` | ✅ | revoque un compte Admin |
 | `lama system status` | 🟡 | stub |
 | `lama system restart` | 🟡 | stub |
 
----
+### 3.8 `auth` (mono-niveau)
 
-## 4) Commandes enregistrees mais non atteignables (limite parser)
-
-Le parser construit uniquement `groupe.action`.
-Ces `CommandId` existent dans le code, mais ne peuvent pas etre adresses avec le format actuel:
-
-- `login`
-- `logout`
-- `system.account.create`
-- `system.account.list`
-- `system.account.revoke`
-
-Impact pratique:
-- `lama login` et `lama logout` ne passent pas le parser (moins de 2 arguments).
-- `lama system account create` produit `CommandId = system.account`, pas `system.account.create`.
+| Commande | Etat | Notes |
+|---|---|---|
+| `lama login [--username <nom>]` | ✅ | authentification admin/superadmin |
+| `lama logout` | ✅ | suppression token session |
 
 ---
 
-## 5) Exemples validables sur l'etat actuel
+## 4) Exemples validables sur l'etat actuel
 
 ```bash
 # Aide / version
@@ -135,6 +130,15 @@ lama --version
 # Mode interactif
 lama
 lama interactive
+
+# Auth
+lama login --username superadmin
+lama logout
+
+# Administration comptes
+lama system account create admin2
+lama system account list
+lama system account revoke admin2
 
 # Partie (commande par commande)
 lama game create
@@ -153,7 +157,7 @@ lama dict anagram NOISETTE --min-length 4
 
 ---
 
-## 6) Codes de retour (actuels)
+## 5) Codes de retour (actuels)
 
 Definis dans `src/Console/Lama.Console/Services/ExitCodes.cs`:
 
@@ -171,22 +175,21 @@ Definis dans `src/Console/Lama.Console/Services/ExitCodes.cs`:
 
 ---
 
-## 7) Notes sur permissions
+## 6) Notes sur permissions
 
 Le controle d'acces est applique par `AccessControlMiddleware` avant execution de la commande.
 Cas notables:
 - `Admin` ne peut pas jouer (`play.*`, `show.rack`).
 - `Spectator` est en lecture seule.
 - Les aides (`dict.check/search/anagram`, `play.check`, `show.hints`, etc.) sont limitees selon `GameLevel`.
+- `game.create`, `game.join`, `game.list`, `login`, `logout`, `system.setup` sont traites comme commandes publiques ACL.
 
 ---
 
-## 8) Ecart avec l'ancienne spec
+## 7) Ecart avec l'ancienne spec
 
 L'ancienne version de ce document listait un perimetre CLI beaucoup plus large
 (`system.logs`, `player.stats`, `game.resume`, `game.load`, `config.*`, etc.).
 Ces commandes ne sont **pas** implementees dans le code actuel.
 
 Ce fichier est volontairement limite au comportement observe dans la base de code.
-
-

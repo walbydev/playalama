@@ -88,14 +88,16 @@ Refus d'accès: exit code `11`.
 - `Host`: joue + droits de gestion de sa partie.
 - `Player`: joue sans droits admin.
 - `Spectator`: lecture seule.
-- `system.setup`, `game.create`, `game.join`, `game.list` sont traites comme commandes publiques cote ACL.
+- Commandes publiques ACL: `system.setup`, `game.create`, `game.join`, `game.list`, `login`, `logout`.
 
 ---
 
 ## Commandes CLI — etat reel de l'implementation
 
-Le parser CLI actuel est a 2 niveaux:
-`lama <groupe> <action> [arguments...] [options]`
+Le parser supporte:
+- format standard: `lama <groupe> <action> [arguments...] [options]`
+- commandes mono-niveau: `lama login`, `lama logout`
+- commandes tri-niveaux: `lama system account <create|list|revoke>`
 
 ### Commandes implementees et executables
 
@@ -111,28 +113,26 @@ Le parser CLI actuel est a 2 niveaux:
 - `dict.search`
 - `dict.anagram`
 - `system.setup`
-- `system.status` (stub retourne non implemente)
-- `system.restart` (stub retourne non implemente)
-- `player.create` (stub retourne non implemente)
-- `tournament.create` (stub retourne non implemente)
-- `game.list` (stub retourne non implemente)
-- `game.show` (stub retourne non implemente)
-- `game.pause` (stub retourne non implemente)
-- `game.save` (stub retourne non implemente)
-- `play.swap` (stub cote commande; use case existant mais incomplet)
-- `play.challenge` (stub retourne non implemente)
-- `play.check` (stub retourne non implemente)
-- `show.history` (stub retourne non implemente)
-
-### Commandes enregistrees mais non atteignables via le parser actuel
-
-Le parser ne construit que `groupe.action`, donc ces `CommandId` ne matchent pas:
-
 - `login`
 - `logout`
 - `system.account.create`
 - `system.account.list`
 - `system.account.revoke`
+
+### Commandes presentes mais encore stubs
+
+- `system.status`
+- `system.restart`
+- `player.create`
+- `tournament.create`
+- `game.list`
+- `game.show`
+- `game.pause`
+- `game.save`
+- `play.swap` (stub cote commande; use case existant mais incomplet)
+- `play.challenge`
+- `play.check`
+- `show.history`
 
 ---
 
@@ -141,7 +141,7 @@ Le parser ne construit que `groupe.action`, donc ces `CommandId` ne matchent pas
 | Composant | Etat |
 |---|---|
 | `Lama.Contracts` | ✅ Matures |
-| `Lama.Domain` | ✅ Implante (plus un stub) |
+| `Lama.Domain` | ✅ Implante |
 | `Lama.Core` | ✅ Implante (avec limites sur swap/challenge/historique) |
 | `Lama.Infrastructure` | ✅ Implante (JSON/session/auth/accounts) |
 | `Lama.Languages.fr` | ✅ Implante |
@@ -167,10 +167,13 @@ Le parser ne construit que `groupe.action`, donc ces `CommandId` ne matchent pas
 - `tests/Lama.Languages.fr.UnitTests`:
   - `FrenchLanguageProvider`
 
+### Etat actuel des tests console
+
+- `Lama.Console.UnitTests`: ✅ vert (149/149)
+
 ### A renforcer
 
 - Tests E2E CLI (parcours complet create -> join -> move -> show -> end)
-- Tests de non-regression sur parsing multi-niveaux (system.account.*, login/logout)
 - Tests des sorties `--output json` pour les commandes affichees
 
 ---
@@ -178,9 +181,9 @@ Le parser ne construit que `groupe.action`, donc ces `CommandId` ne matchent pas
 ## Ecarts connus a traiter
 
 1. Incoherence doc/code historique: plusieurs docs decrivent encore Domain/Core/Infra comme stubs.
-2. Incoherence parser/commandes sur `login`, `logout`, `system.account.*`.
-3. `SwapLettersUseCase` encore transitoire (passe le tour sans vrai echange metier complet).
-4. Historique des coups absent du coeur, bloque `show.history` et scenarios challenge.
+2. `SwapLettersUseCase` encore transitoire (passe le tour sans vrai echange metier complet).
+3. Historique des coups absent du coeur, bloque `show.history` et scenarios challenge.
+4. Mode interactif textuel encore largement placeholder.
 
 ---
 
@@ -190,7 +193,7 @@ Le parser ne construit que `groupe.action`, donc ces `CommandId` ne matchent pas
 - `ImplicitUsings` actif.
 - Commentaires XML sur API publiques.
 - Erreurs sur `stderr`, sortie exploitable sur `stdout`.
-- Identifiants commandes en minuscule, format `groupe.action`.
+- Identifiants commandes en minuscule, format `groupe.action` ou explicites (`login`, `system.account.*`).
 
 ---
 

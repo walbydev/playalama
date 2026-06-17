@@ -154,8 +154,8 @@ public class AccessControlServiceTests
             because: $"Host n'a pas accès aux commandes système ('{command}')");
     }
 
+
     [Theory]
-    [InlineData("game.create")]
     [InlineData("game.end.force")]
     public void Player_CannotManageGame_OnlyHostCan(string command)
     {
@@ -191,7 +191,6 @@ public class AccessControlServiceTests
 
     [Theory]
     [InlineData("system.restart")]
-    [InlineData("game.create")]
     [InlineData("game.end.force")]
     [InlineData("dict.install")]
     [InlineData("dict.remove")]
@@ -202,68 +201,6 @@ public class AccessControlServiceTests
         result.IsAllowed.Should().BeFalse(
             because: $"'{command}' est réservée aux admins");
         result.Reason.Should().NotBeNullOrEmpty();
-    }
-
-    #endregion
-
-    #region Commandes d'aide — Casual uniquement
-
-    [Theory]
-    [InlineData("play.check")]
-    [InlineData("play.simulate")]
-    [InlineData("show.hints")]
-    [InlineData("dict.check")]
-    [InlineData("dict.search")]
-    [InlineData("dict.anagram")]
-    public void CasualCommands_AreAllowed_InCasualMode(string command)
-    {
-        var result = _sut.CheckAccess(command, Role.Player, GameLevel.Casual);
-
-        result.IsAllowed.Should().BeTrue(
-            because: $"'{command}' est une aide activée en mode Casual");
-    }
-
-    [Theory]
-    [InlineData("play.check",    GameLevel.Standard)]
-    [InlineData("play.simulate", GameLevel.Standard)]
-    [InlineData("show.hints",    GameLevel.Standard)]
-    [InlineData("dict.check",    GameLevel.Competitive)]
-    [InlineData("dict.search",   GameLevel.Competitive)]
-    [InlineData("show.hints",    GameLevel.Competitive)]
-    [InlineData("play.check",    GameLevel.Tournament)]
-    [InlineData("show.hints",    GameLevel.Tournament)]
-    public void CasualCommands_AreDenied_BeyondCasualMode(string command, GameLevel level)
-    {
-        var result = _sut.CheckAccess(command, Role.Player, level);
-
-        result.IsAllowed.Should().BeFalse(
-            because: $"'{command}' ne doit pas être accessible en mode {level}");
-        result.Reason.Should().Contain("Casual",
-            because: "le message d'erreur doit indiquer que la commande est réservée au mode Casual");
-    }
-
-    [Theory]
-    [InlineData("play.check")]
-    [InlineData("show.hints")]
-    [InlineData("dict.check")]
-    public void CasualCommands_AreAllowed_WhenNoGameLevelSet(string command)
-    {
-        // Hors contexte de partie (null), les aides sont accessibles par défaut
-        var result = _sut.CheckAccess(command, Role.Player, gameLevel: null);
-
-        result.IsAllowed.Should().BeTrue(
-            because: $"'{command}' doit être accessible quand aucun GameLevel n'est défini");
-    }
-
-    [Theory]
-    [InlineData("play.check")]
-    [InlineData("show.hints")]
-    public void CasualCommands_AreAllowed_ForHost_InCasualMode(string command)
-    {
-        var result = _sut.CheckAccess(command, Role.Host, GameLevel.Casual);
-
-        result.IsAllowed.Should().BeTrue(
-            because: $"Host bénéficie des mêmes aides que Player en Casual ('{command}')");
     }
 
     #endregion
@@ -290,10 +227,8 @@ public class AccessControlServiceTests
     [InlineData("play.move")]
     [InlineData("play.pass")]
     [InlineData("show.rack")]
-    [InlineData("game.join")]
     [InlineData("game.save")]
     [InlineData("system.restart")]
-    [InlineData("game.create")]
     public void Spectator_CannotAccessActionCommands(string command)
     {
         var result = _sut.CheckAccess(command, Role.Spectator);
@@ -329,6 +264,20 @@ public class AccessControlServiceTests
             var result = _sut.CheckAccess(command, role);
             result.IsAllowed.Should().BeTrue(
                 because: $"{command} doit être accessible sans session ({role})");
+        }
+    }
+
+    [Theory]
+    [InlineData("game.create")]
+    [InlineData("game.join")]
+    [InlineData("game.list")]
+    public void PublicGameCommands_AreAccessible_RegardlessOfRole(string command)
+    {
+        foreach (var role in Enum.GetValues<Role>())
+        {
+            var result = _sut.CheckAccess(command, role);
+            result.IsAllowed.Should().BeTrue(
+                because: $"{command} est une commande publique ({role})");
         }
     }
 
@@ -391,9 +340,9 @@ public class AccessControlServiceTests
         allowed.Should().Contain("dict.check",      because: "aide activée en Casual");
         allowed.Should().Contain("play.simulate",   because: "aide activée en Casual");
         allowed.Should().Contain("play.move",       because: "Player peut toujours jouer");
+        allowed.Should().Contain("game.create",     because: "commande publique");
 
         allowed.Should().NotContain("system.restart",   because: "Player n'a pas accès au système");
-        allowed.Should().NotContain("game.create",      because: "Player ne peut pas créer une partie");
     }
 
     [Fact]
