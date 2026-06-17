@@ -715,8 +715,9 @@ namespace Lama.Languages.fr.UnitTests
         public void MultipleProviderInstances_LoadDataIndependently()
         {
             // Arrange
-            var tmp1 = CreateTempBasePath("MOT1\nMOT2", "{ \"scores\": { \"A\": 1, \"B\": 3 } }");
-            var tmp2 = CreateTempBasePath("MOT3\nMOT4", "{ \"scores\": { \"A\": 2, \"B\": 4 } }");
+            // MOT1/MOT2/MOT3/MOT4 étaient invalides (chiffres filtrés par ^[A-Z]+$)
+            var tmp1 = CreateTempBasePath("ALPHA\nBETA",   "{ \"scores\": { \"A\": 1, \"B\": 3 } }");
+            var tmp2 = CreateTempBasePath("GAMMA\nDELTA",  "{ \"scores\": { \"A\": 2, \"B\": 4 } }");
 
             try
             {
@@ -730,10 +731,12 @@ namespace Lama.Languages.fr.UnitTests
                 var scores1 = provider1.GetLetterScores();
                 var scores2 = provider2.GetLetterScores();
 
-                Assert.Contains("MOT1", dict1);
-                Assert.DoesNotContain("MOT3", dict1);
-                Assert.Contains("MOT3", dict2);
-                Assert.DoesNotContain("MOT1", dict2);
+                Assert.Contains("ALPHA",        dict1);
+                Assert.Contains("BETA",         dict1);
+                Assert.DoesNotContain("GAMMA",  dict1);
+                Assert.Contains("GAMMA",        dict2);
+                Assert.Contains("DELTA",        dict2);
+                Assert.DoesNotContain("ALPHA",  dict2);
 
                 Assert.Equal(1, scores1['A']);
                 Assert.Equal(2, scores2['A']);
