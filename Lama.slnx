@@ -3,6 +3,7 @@
     <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
   </Folder>
   <Folder Name="/docs/">
+    <File Path="docs\AGENTS.md" />
     <File Path="docs\CLI-instructions.md" />
     <File Path="docs\defines-CLI.md" />
     <File Path="docs\tools.md" />
