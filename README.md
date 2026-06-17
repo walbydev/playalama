@@ -1,7 +1,18 @@
 # LAMA
 
-LAMA est un jeu de mots en ligne de commande inspiré du Scrabble, développé en C# 10 / .NET 10.
+LAMA est un jeu de mots inspiré du Scrabble, développé en C# / .NET 10.
 Les joueurs posent des mots sur un plateau en grille, accumulent des points selon la valeur des lettres et les cases bonus, et s'affrontent jusqu'à épuisement du sac de lettres.
+
+Le jeu est d'abord disponible en console, avec deux modes d'utilisation :
+
+- un mode **commande par commande**, adapté aux actions ponctuelles, aux scripts et aux tests ;
+- un mode **interactif textuel**, jouable directement dans un terminal avec menus, prompts et affichage enrichi.
+
+### Interfaces supportées
+
+L'application console prend en charge deux modes :
+
+À terme, le cœur du jeu pourra être réutilisé par d'autres interfaces, notamment une WebApp ou une interface graphique.
 
 ---
 
@@ -25,41 +36,67 @@ Les joueurs posent des mots sur un plateau en grille, accumulent des points selo
 
 | Action | Commande |
 |--------|----------|
-| Poser un mot sur le plateau | `lama play <case> <mot> <direction>` |
+| Poser un mot sur le plateau | `lama play move <case> <mot> <direction>` |
 | Passer son tour | `lama play pass` |
 | Échanger des lettres contre le sac | `lama play swap <lettres>` |
 | Contester le dernier mot joué | `lama play challenge` |
 
 ### Placement d'un mot
 
-- Le **premier mot** doit passer par la case de départ (défaut : centre `H8`)
-- Direction : `H` (horizontal) ou `V` (vertical)
-- Chaque mot posé doit être raccordé aux lettres déjà présentes (sauf le premier)
-- Tous les mots formés (principal et croisements) doivent être dans le dictionnaire
+- Le **premier mot** doit passer par la case de départ, par défaut le centre `H8`
+- Direction : `H` pour horizontal ou `V` pour vertical
+- Chaque mot posé doit être raccordé aux lettres déjà présentes, sauf le premier
+- Tous les mots formés, principal et croisements, doivent être dans le dictionnaire
 - Longueur minimale : **2 lettres** par défaut
 
 ### Fin de partie
 
 La partie se termine quand :
-- Le sac est vide **et** un joueur épuise son rack
-- Le nombre maximum de tours est atteint (`--max-turns`)
-- Le score maximum est atteint (`--max-turns`)
-- Un joueur met fin manuellement à la partie (`lama game end`)
+
+- le sac est vide **et** un joueur épuise son rack ;
+- le nombre maximum de tours est atteint, via `--max-turns` ;
+- le score maximum est atteint ;
+- un joueur met fin manuellement à la partie avec `lama game end`.
 
 ---
 
 ## Architecture
 
-Le projet suit une architecture **Clean Architecture / Ports & Adapters** :
+Le projet suit une architecture inspirée de la **Clean Architecture / Ports & Adapters**.
 
-```
-Lama.Contracts       — Interfaces et entités du domaine (Position, Tile, Move, GameState…)
-Lama.Domain          — Logique de jeu (implémentation de IGameEngine)
-Lama.Core            — Couche application / cas d'usage
-Lama.Infrastructure  — Adaptateurs (persistance, I/O, réseau)
-Lama.Languages.fr    — Dictionnaire et valeurs de lettres en français
-Lama.Console         — Interface CLI (Spectre.Console + Generic Host)
-```
+Le principe central est que la logique du jeu ne dépend d'aucune interface utilisateur.
+La console actuelle, le futur mode interactif textuel et une éventuelle future WebApp doivent tous appeler les mêmes services applicatifs.
+
+### Interfaces supportées
+
+L'application console prend en charge deux modes :
+
+text Lama.Console ├── Mode commande par commande │ ├── lama game create │ ├── lama play move H8 LAMA H │ └── lama show board │ └── Mode interactif textuel ├── menus ├── prompts ├── boucle de jeu └── rendu textuel du plateau, du rack et des scores
+
+Le point d'entrée `Program.cs` ne contient pas la logique du jeu.
+Il configure l'application, enregistre les services, puis délègue l'exécution au mode approprié.
+
+text Program.cs -> ApplicationModeResolver -> CommandLineMode -> InteractiveMode
+
+### Décision sur le parsing des commandes
+
+Le projet ne s'appuie pas sur le paquet `CommandLine` comme dépendance structurante.
+
+Le parsing reste volontairement simple dans le mode commande par commande :
+
+text lama game create lama game join lama play move lama show board
+
+Cette décision permet de :
+
+- garder une architecture simple ;
+- éviter de coupler le jeu à une librairie de parsing CLI ;
+- faciliter le mode interactif textuel ;
+- préparer une future interface graphique ou WebApp ;
+- maintenir la logique métier en dehors du projet console.
+
+Si un besoin fort apparaît plus tard pour une CLI avancée, scriptable et très typée, un parser pourra être ajouté uniquement dans `Lama.Console`, sans impacter `Core`, `Domain` ou `Contracts`.
+
+Voir aussi : [`docs/console-interface-architecture.md`](docs/console-interface-architecture.md).
 
 ---
 
@@ -67,7 +104,7 @@ Lama.Console         — Interface CLI (Spectre.Console + Generic Host)
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - Fichiers de langue dans `assets/languages/fr/assets/` :
-  - `dictionary.txt` — un mot par ligne (généré avec `aspell`, voir `docs/tools.md`)
+  - `dictionary.txt` — un mot par ligne
   - `scores.json` — valeurs des lettres au format `{ "scores": { "A": 1, "Z": 10, ... } }`
 
 ---
@@ -76,83 +113,97 @@ Lama.Console         — Interface CLI (Spectre.Console + Generic Host)
 
 ### Construire le projet
 
-```bash
-dotnet build
-```
+bash dotnet build
 
-### Lancer les tests
+### Lancer le mode interactif textuel
 
-```bash
-dotnet test
-```
+Le mode interactif est l'expérience principale pour jouer dans un terminal.
 
-### Démarrer une partie
+bash lama
 
-```bash
+ou explicitement :
+
+bash lama interactive
+
+Alias prévus :
+bash lama shell lama ui
+
+Dans ce mode, le joueur est guidé par des menus textuels, des prompts et des écrans de jeu.
+
+Exemples d'actions proposées :
+
+- créer une partie ;
+- rejoindre une partie ;
+- afficher le plateau ;
+- afficher son rack ;
+- jouer un mot ;
+- passer son tour ;
+- échanger des lettres ;
+- sauvegarder ;
+- quitter.
+
+### Utiliser le mode commande par commande
+
+Le mode commande par commande permet d'exécuter une action unique puis de terminer le processus.
+
+bash lama game create lama game join lama show board lama play move H8 MAISON H lama play pass lama play swap AEI lama game save lama game end
+
+
+Ce mode est adapté :
+
+- aux usages rapides ;
+- aux scripts ;
+- aux tests end-to-end ;
+- aux automatisations ;
+- aux commandes de diagnostic.
+
+### Démarrer une partie en mode commande
+
+bash
 # Partie classique à 2 joueurs
-lama game create > game_id.txt
-lama game join philippe < game_id.txt
-lama game join sophie < game_id.txt
+lama game create lama game join philippe lama game join sophie
+# Partie avec options
+lama game create --size 19 --players 3 --time-limit 90
 
-# Plateau 19×19, 3 joueurs, timer 90 secondes
-lama game create --size 19 --players 3 --time-limit 90 > game_id.txt
-```
+### Jouer en mode commande
 
-### Jouer
-
-```bash
+bash
 # Poser un mot en H8 horizontalement
-lama play H8 MAISON H
-
-# Poser un mot avec un joker (position 3 = lettre I)
-lama play H8 MAISON H --joker 3=I
-
+lama play move H8 MAISON H
+# Poser un mot avec un joker
+lama play move H8 MAISON H --joker 3=I
 # Simuler un coup sans le jouer
-lama play A1 ZEN H --dry-run
-
+lama play move A1 ZEN H --dry-run
 # Passer son tour
 lama play pass
-
 # Échanger des lettres
-lama play swap AEI
-lama play swap --all
-```
+lama play swap AEI lama play swap --all
 
 ### Affichage
 
-```bash
+bash
 # Plateau avec mise en évidence du dernier coup
 lama show board --last-move
-
 # Rack avec valeurs de lettres
 lama show rack --with-values
-
 # Scores
 lama show scores
-
 # Historique des 5 derniers coups
 lama show history --last 5
-```
 
 ### Dictionnaire
 
-```bash
+bash
 # Vérifier un mot
 lama dict check QUARTZ
-
 # Rechercher par motif
 lama dict search "?OISETTE" --lang fr
-
 # Trouver des anagrammes
 lama dict anagram NOISETTE --min-length 4
-```
 
 ### Fin de partie
 
-```bash
-lama game end < game_id.txt --with-scores
-lama game end < game_id.txt --with-scores --export resultat.json
-```
+bash lama game end --with-scores lama game end --with-scores --export resultat.json
 
 ---
 
@@ -197,3 +248,5 @@ Liste complète dans [`docs/defines-CLI.md`](docs/defines-CLI.md).
 | `de` | Allemand | Prévu |
 | `es` | Espagnol | Prévu |
 | `it` | Italien | Prévu |
+
+

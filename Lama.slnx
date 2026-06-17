@@ -5,6 +5,7 @@
   <Folder Name="/docs/">
     <File Path="docs\AGENTS.md" />
     <File Path="docs\CLI-instructions.md" />
+    <File Path="docs\console-interface-architecture.md" />
     <File Path="docs\defines-CLI.md" />
     <File Path="docs\tools.md" />
     <File Path="README.md" />
