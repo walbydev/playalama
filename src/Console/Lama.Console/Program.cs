@@ -8,6 +8,8 @@ using Lama.Console.Commands.Tournament;
 using Lama.Console.Modes;
 using Lama.Console.Services;
 using Lama.Contracts;
+using Lama.Infrastructure.Auth;
+using Lama.Infrastructure.Session;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -16,19 +18,21 @@ using Serilog.Events;
 using SystemCmds = Lama.Console.Commands.System;
 
 // ─── Configuration de Serilog ───────────────────────────────────────────────
-// Serilog est configuré avant le host pour capturer les erreurs de démarrage.
-// Les logs sont écrits sur stderr (ne pas polluer stdout qui est réservé à
-// la sortie formatée --output json/csv).
+// Configuré avant le host pour capturer les erreurs de démarrage.
+// Tous les logs vont sur stderr — stdout est réservé à la sortie formatée
+// (--output json/csv) pour permettre les pipes et la redirection.
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft",         LogEventLevel.Warning)
     .MinimumLevel.Override("Microsoft.Hosting", LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .WriteTo.Console(
         standardErrorFromLevel: LogEventLevel.Verbose,
         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
     .WriteTo.File(
-        path: "logs/lama-.log",
+        path: Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "lama", "logs", "lama-.log"),
         rollingInterval: RollingInterval.Day,
         outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
         retainedFileCountLimit: 7)
@@ -42,30 +46,34 @@ try
         .UseSerilog()
         .ConfigureServices((_, services) =>
         {
+            // ─── Infrastructure ──────────────────────────────────────────────
+            // Tous les chemins sont résolus cross-platform.
+            // LAMA_SESSION_DIR surcharge le répertoire (tests, CI).
+            services.AddSingleton<ISessionService,  SessionService>();
+            services.AddSingleton<IAccountService,  AccountService>();
+            services.AddSingleton<IAuthService,     AuthService>();
+
             // ─── Services Contracts ──────────────────────────────────────────
             services.AddSingleton<IAccessControlService, AccessControlService>();
 
             // ─── Providers de langue ─────────────────────────────────────────
-            // TODO: enregistrer IGameLanguageProvider selon la langue sélectionnée
-            //       quand Lama.Languages.en et autres seront disponibles.
-            //       Pour l'instant, seul le français est implémenté.
+            // TODO: ajouter la référence Lama.Languages.fr dans le .csproj et
+            //       décommenter quand disponible.
             // services.AddSingleton<IGameLanguageProvider, FrenchLanguageProvider>();
-            // NOTE: FrenchLanguageProvider est dans Lama.Languages.fr qui n'est pas encore
-            //       référencé par Lama.Console. Ajouter la référence de projet quand nécessaire.
 
             // ─── Moteur de jeu ───────────────────────────────────────────────
-            // TODO: enregistrer IGameEngine quand Lama.Domain sera implémenté
+            // TODO: décommenter quand Lama.Domain sera implémenté.
             // services.AddSingleton<IGameEngine, GameEngine>();
 
             // ─── Middlewares ─────────────────────────────────────────────────
             services.AddSingleton<AccessControlMiddleware>();
-            // TODO: enregistrer quand implémentés :
+            // TODO: décommenter quand implémentés :
             // services.AddSingleton<AccessibilityMiddleware>();
             // services.AddSingleton<ErrorHandlingMiddleware>();
             // services.AddSingleton<LoggingMiddleware>();
 
             // ─── Services console ────────────────────────────────────────────
-            services.AddSingleton<ICommandDispatcher, CommandDispatcher>();
+            services.AddSingleton<ICommandDispatcher,       CommandDispatcher>();
             services.AddSingleton<IApplicationModeResolver, ApplicationModeResolver>();
 
             // ─── Modes d'exécution ───────────────────────────────────────────
@@ -74,8 +82,14 @@ try
                     args,
                     provider.GetRequiredService<ICommandDispatcher>(),
                     provider.GetRequiredService<AccessControlMiddleware>(),
+                    provider.GetRequiredService<ISessionService>(),
                     provider.GetRequiredService<ILogger<CommandLineMode>>()));
             services.AddTransient<InteractiveMode>();
+
+            // ─── Commandes — Authentification ────────────────────────────────
+            // login et logout n'ont pas de groupe CLI — commandId direct
+            services.AddSingleton<ICommand, SystemCmds.SystemLoginCommand>();
+            services.AddSingleton<ICommand, SystemCmds.SystemLogoutCommand>();
 
             // ─── Commandes — Game ────────────────────────────────────────────
             services.AddSingleton<GameCommand>();
@@ -103,9 +117,9 @@ try
             services.AddSingleton<ICommand, ShowHistoryCommand>();
 
             // ─── Commandes — Dict ────────────────────────────────────────────
-            // NOTE: DictCheckCommand, DictSearchCommand et DictAnagramCommand dépendent de
-            //       IGameLanguageProvider. Décommenter quand la référence à Lama.Languages.fr
-            //       sera ajoutée au projet et IGameLanguageProvider enregistré ci-dessus.
+            // NOTE: DictCheckCommand, DictSearchCommand, DictAnagramCommand
+            //       dépendent de IGameLanguageProvider.
+            //       Décommenter quand Lama.Languages.fr sera référencé.
             services.AddSingleton<DictCommand>();
             // services.AddSingleton<ICommand, DictCheckCommand>();
             // services.AddSingleton<ICommand, DictSearchCommand>();
@@ -123,9 +137,13 @@ try
             services.AddSingleton<SystemCmds.SystemCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemStatusCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemRestartCommand>();
+            services.AddSingleton<ICommand, SystemCmds.SystemSetupCommand>();
+            services.AddSingleton<ICommand, SystemCmds.SystemAccountCreateCommand>();
+            services.AddSingleton<ICommand, SystemCmds.SystemAccountListCommand>();
+            services.AddSingleton<ICommand, SystemCmds.SystemAccountRevokeCommand>();
 
             // ─── Renderers (stubs) ───────────────────────────────────────────
-            // TODO: enregistrer quand les renderers seront implémentés :
+            // TODO: décommenter quand implémentés :
             // services.AddSingleton<Rendering.BoardRenderer>();
             // services.AddSingleton<Rendering.RackRenderer>();
             // services.AddSingleton<Rendering.ScoreRenderer>();
@@ -135,10 +153,11 @@ try
 
     // ─── Résolution du mode et exécution ────────────────────────────────────
     var resolver = host.Services.GetRequiredService<IApplicationModeResolver>();
-    var mode = resolver.Resolve(args);
+    var mode     = resolver.Resolve(args);
 
     Log.Debug("Mode résolu : {ModeType}", mode.GetType().Name);
 
+    // Gestion propre de Ctrl+C / SIGTERM
     using var cts = new CancellationTokenSource();
     global::System.Console.CancelKeyPress += (_, e) =>
     {

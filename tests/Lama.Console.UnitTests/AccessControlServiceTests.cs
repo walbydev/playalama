@@ -23,21 +23,38 @@ public class AccessControlServiceTests
     [InlineData("dict.install")]
     [InlineData("show.hints")]
     [InlineData("play.simulate")]
-    [InlineData("play.move")]
     [InlineData("show.board")]
-    public void Admin_CanAccessAllCommands(string command)
+    public void Admin_CanAccessAdminAndReadCommands(string command)
     {
         var result = _sut.CheckAccess(command, Role.Admin);
 
         Assert.True(result.IsAllowed);
     }
 
+    /// <summary>
+    /// Admin ne peut pas jouer — protection anti-triche.
+    /// Les commandes de jeu (play.*, show.rack) sont réservées aux Host et Player.
+    /// </summary>
+    [Theory]
+    [InlineData("play.move")]
+    [InlineData("play.pass")]
+    [InlineData("play.swap")]
+    [InlineData("play.challenge")]
+    [InlineData("show.rack")]
+    public void Admin_CannotPlayCommands(string command)
+    {
+        var result = _sut.CheckAccess(command, Role.Admin);
+
+        Assert.False(result.IsAllowed);
+        Assert.NotNull(result.Reason);
+    }
+
     [Theory]
     [InlineData("system.restart", GameLevel.Competitive)]
-    [InlineData("game.create", GameLevel.Tournament)]
-    [InlineData("show.hints", GameLevel.Standard)]
-    [InlineData("dict.check", GameLevel.Competitive)]
-    public void Admin_CanAccessAllCommands_RegardlessOfGameLevel(string command, GameLevel level)
+    [InlineData("game.create",    GameLevel.Tournament)]
+    [InlineData("show.hints",     GameLevel.Standard)]
+    [InlineData("dict.check",     GameLevel.Competitive)]
+    public void Admin_CanAccessManagementCommands_RegardlessOfGameLevel(string command, GameLevel level)
     {
         var result = _sut.CheckAccess(command, Role.Admin, level);
 
@@ -184,14 +201,35 @@ public class AccessControlServiceTests
     // -------------------------------------------------------------------------
 
     [Fact]
-    public void GetAllowedCommands_Admin_ContainsAllCommandSets()
+    public void GetAllowedCommands_Admin_ContainsSystemAndManagementCommands()
     {
         var allowed = _sut.GetAllowedCommands(Role.Admin);
 
+        // Admin peut accéder aux commandes système et de gestion
         Assert.Contains("system.restart", allowed);
         Assert.Contains("show.hints", allowed);
-        Assert.Contains("play.move", allowed);
         Assert.Contains("game.list", allowed);
+        Assert.Contains("game.create", allowed);
+        // Admin ne peut PAS jouer (anti-triche)
+        Assert.DoesNotContain("play.move", allowed);
+        Assert.DoesNotContain("play.pass", allowed);
+        Assert.DoesNotContain("show.rack", allowed);
+    }
+
+    [Fact]
+    public void GetAllowedCommands_Host_ContainsPlayAndManagementCommands()
+    {
+        var allowed = _sut.GetAllowedCommands(Role.Host, GameLevel.Standard);
+
+        // Host peut jouer
+        Assert.Contains("play.move", allowed);
+        Assert.Contains("play.pass", allowed);
+        Assert.Contains("show.rack", allowed);
+        // Host peut gérer sa partie
+        Assert.Contains("game.end.force", allowed);
+        Assert.Contains("game.create", allowed);
+        // Host ne peut pas accéder au système
+        Assert.DoesNotContain("system.restart", allowed);
     }
 
     [Fact]

@@ -6,6 +6,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\libs\Lama.Contracts\Lama.Contracts.csproj" />
+        <ProjectReference Include="..\..\libs\Lama.Infrastructure\Lama.Infrastructure.csproj" />
     </ItemGroup>
 
     <ItemGroup>
