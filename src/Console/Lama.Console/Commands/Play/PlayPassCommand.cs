@@ -1,34 +1,56 @@
 using Lama.Console.Services;
+using Lama.Contracts;
+using Lama.Core.Models;
+using Lama.Core.UseCases;
 using Microsoft.Extensions.Logging;
 
 namespace Lama.Console.Commands.Play;
 
 /// <summary>
 /// Commande <c>lama play pass</c> — passe le tour du joueur courant.
-/// Accessible aux joueurs et aux admins.
 /// </summary>
-/// <remarks>
-/// TODO: dépend de Lama.Core (IGameEngine.PassTurn) — non encore implémenté.
-/// </remarks>
 public sealed class PlayPassCommand : ICommand
 {
     /// <inheritdoc />
     public string CommandId => "play.pass";
 
+    private readonly PassTurnUseCase _passTurnUseCase;
     private readonly ILogger<PlayPassCommand> _logger;
 
     /// <summary>Initialise la commande.</summary>
-    public PlayPassCommand(ILogger<PlayPassCommand> logger)
+    public PlayPassCommand(PassTurnUseCase passTurnUseCase, ILogger<PlayPassCommand> logger)
     {
-        _logger = logger;
+        _passTurnUseCase = passTurnUseCase;
+        _logger          = logger;
     }
 
     /// <inheritdoc />
-    public Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken = default)
+    public async Task<int> ExecuteAsync(CommandContext context,
+        CancellationToken cancellationToken = default)
     {
-        // TODO: appeler IGameEngine.PassTurn() via Lama.Core
-        _logger.LogWarning("{CommandId} : non implémenté (Lama.Core absent)", CommandId);
-        global::System.Console.Error.WriteLine("[play pass] Non implémenté — Lama.Core absent.");
-        return Task.FromResult(ExitCodes.GeneralError);
+        if (!context.HasActiveSession || context.GameId is null || context.PlayerId is null)
+        {
+            global::System.Console.Error.WriteLine(
+                "[play pass] Aucune session active. Créez/rejoignez une partie d'abord.");
+            return ExitCodes.GameNotFound;
+        }
+
+        try
+        {
+            var newState = await _passTurnUseCase.ExecuteAsync(
+                new PassTurnRequest(context.GameId, context.PlayerId));
+
+            global::System.Console.WriteLine(
+                $"✓ Tour passé. C'est maintenant au tour de : " +
+                $"{newState.Players[newState.CurrentPlayerIndex].Name}");
+
+            _logger.LogInformation("{Player} a passé son tour", context.PlayerName);
+            return ExitCodes.Success;
+        }
+        catch (GameException ex)
+        {
+            global::System.Console.Error.WriteLine($"[play pass] Erreur : {ex.Message}");
+            return ExitCodes.GeneralError;
+        }
     }
 }

@@ -8,8 +8,11 @@ using Lama.Console.Commands.Tournament;
 using Lama.Console.Modes;
 using Lama.Console.Services;
 using Lama.Contracts;
+using Lama.Core.UseCases;
 using Lama.Infrastructure.Auth;
+using Lama.Infrastructure.Persistence;
 using Lama.Infrastructure.Session;
+using Lama.Languages.fr;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,9 +21,6 @@ using Serilog.Events;
 using SystemCmds = Lama.Console.Commands.System;
 
 // ─── Configuration de Serilog ───────────────────────────────────────────────
-// Configuré avant le host pour capturer les erreurs de démarrage.
-// Tous les logs vont sur stderr — stdout est réservé à la sortie formatée
-// (--output json/csv) pour permettre les pipes et la redirection.
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft",         LogEventLevel.Warning)
@@ -47,30 +47,55 @@ try
         .ConfigureServices((_, services) =>
         {
             // ─── Infrastructure ──────────────────────────────────────────────
-            // Tous les chemins sont résolus cross-platform.
-            // LAMA_SESSION_DIR surcharge le répertoire (tests, CI).
             services.AddSingleton<ISessionService,  SessionService>();
             services.AddSingleton<IAccountService,  AccountService>();
             services.AddSingleton<IAuthService,     AuthService>();
+            services.AddSingleton<IGameRepository,  JsonGameRepository>();
 
             // ─── Services Contracts ──────────────────────────────────────────
             services.AddSingleton<IAccessControlService, AccessControlService>();
 
             // ─── Providers de langue ─────────────────────────────────────────
-            // TODO: ajouter la référence Lama.Languages.fr dans le .csproj et
-            //       décommenter quand disponible.
-            // services.AddSingleton<IGameLanguageProvider, FrenchLanguageProvider>();
+            // FrenchLanguageProvider — maintenant disponible via Lama.Languages.fr
+            services.AddSingleton<IGameLanguageProvider>(provider =>
+            {
+                var basePath = Path.Combine(AppContext.BaseDirectory,
+                    "assets", "languages", "fr");
+                return new FrenchLanguageProvider(basePath);
+            });
 
-            // ─── Moteur de jeu ───────────────────────────────────────────────
-            // TODO: décommenter quand Lama.Domain sera implémenté.
-            // services.AddSingleton<IGameEngine, GameEngine>();
+            // ─── Use Cases Lama.Core ─────────────────────────────────────────
+            // Distribution officielle du Scrabble français (102 tuiles dont 2 jokers)
+            // TODO: déplacer dans IGameLanguageProvider.GetTileDistribution() ultérieurement
+            IReadOnlyDictionary<char, int> frDistribution = new Dictionary<char, int>
+            {
+                ['A'] = 9,  ['B'] = 2,  ['C'] = 2,  ['D'] = 3,  ['E'] = 15,
+                ['F'] = 2,  ['G'] = 2,  ['H'] = 2,  ['I'] = 8,  ['J'] = 1,
+                ['K'] = 1,  ['L'] = 5,  ['M'] = 3,  ['N'] = 6,  ['O'] = 6,
+                ['P'] = 2,  ['Q'] = 1,  ['R'] = 6,  ['S'] = 6,  ['T'] = 6,
+                ['U'] = 6,  ['V'] = 2,  ['W'] = 1,  ['X'] = 1,  ['Y'] = 1,
+                ['Z'] = 1,  ['*'] = 2
+            };
+
+            // CreateGameUseCase est Singleton : il stocke les parties en mémoire + JSON.
+            services.AddSingleton<CreateGameUseCase>(provider =>
+            {
+                var langProvider = provider.GetRequiredService<IGameLanguageProvider>();
+                var repository   = provider.GetRequiredService<IGameRepository>();
+                return new CreateGameUseCase(
+                    langProvider.GetDictionary(),
+                    langProvider.GetLetterScores(),
+                    frDistribution,
+                    repository);
+            });
+            services.AddSingleton<JoinGameUseCase>();
+            services.AddSingleton<PlayMoveUseCase>();
+            services.AddSingleton<PassTurnUseCase>();
+            services.AddSingleton<SwapLettersUseCase>();
+            services.AddSingleton<EndGameUseCase>();
 
             // ─── Middlewares ─────────────────────────────────────────────────
             services.AddSingleton<AccessControlMiddleware>();
-            // TODO: décommenter quand implémentés :
-            // services.AddSingleton<AccessibilityMiddleware>();
-            // services.AddSingleton<ErrorHandlingMiddleware>();
-            // services.AddSingleton<LoggingMiddleware>();
 
             // ─── Services console ────────────────────────────────────────────
             services.AddSingleton<ICommandDispatcher,       CommandDispatcher>();
@@ -87,7 +112,6 @@ try
             services.AddTransient<InteractiveMode>();
 
             // ─── Commandes — Authentification ────────────────────────────────
-            // login et logout n'ont pas de groupe CLI — commandId direct
             services.AddSingleton<ICommand, SystemCmds.SystemLoginCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemLogoutCommand>();
 
@@ -116,14 +140,11 @@ try
             services.AddSingleton<ICommand, ShowScoresCommand>();
             services.AddSingleton<ICommand, ShowHistoryCommand>();
 
-            // ─── Commandes — Dict ────────────────────────────────────────────
-            // NOTE: DictCheckCommand, DictSearchCommand, DictAnagramCommand
-            //       dépendent de IGameLanguageProvider.
-            //       Décommenter quand Lama.Languages.fr sera référencé.
+            // ─── Commandes — Dict (maintenant disponibles) ───────────────────
             services.AddSingleton<DictCommand>();
-            // services.AddSingleton<ICommand, DictCheckCommand>();
-            // services.AddSingleton<ICommand, DictSearchCommand>();
-            // services.AddSingleton<ICommand, DictAnagramCommand>();
+            services.AddSingleton<ICommand, DictCheckCommand>();
+            services.AddSingleton<ICommand, DictSearchCommand>();
+            services.AddSingleton<ICommand, DictAnagramCommand>();
 
             // ─── Commandes — Player ──────────────────────────────────────────
             services.AddSingleton<PlayerCommand>();
@@ -141,13 +162,6 @@ try
             services.AddSingleton<ICommand, SystemCmds.SystemAccountCreateCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemAccountListCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemAccountRevokeCommand>();
-
-            // ─── Renderers (stubs) ───────────────────────────────────────────
-            // TODO: décommenter quand implémentés :
-            // services.AddSingleton<Rendering.BoardRenderer>();
-            // services.AddSingleton<Rendering.RackRenderer>();
-            // services.AddSingleton<Rendering.ScoreRenderer>();
-            // services.AddSingleton<Rendering.ThemeManager>();
         })
         .Build();
 
@@ -157,7 +171,6 @@ try
 
     Log.Debug("Mode résolu : {ModeType}", mode.GetType().Name);
 
-    // Gestion propre de Ctrl+C / SIGTERM
     using var cts = new CancellationTokenSource();
     global::System.Console.CancelKeyPress += (_, e) =>
     {

@@ -112,18 +112,23 @@ public class GameEngineTests
         var act = () => engine.InitializeGame([]);
 
         act.Should().Throw<GameException>(
-            because: "une partie nécessite au moins 2 joueurs");
+            because: "une liste vide de joueurs est toujours invalide");
     }
 
     [Fact]
-    public void InitializeGame_WithOnePlayer_ThrowsException()
+    public void InitializeGame_WithOnePlayer_Works()
     {
+        // La contrainte '2 joueurs minimum' est dans Lama.Core (CreateGameUseCase),
+        // pas dans le moteur. Le moteur accepte 1 joueur (cas de création de partie
+        // avant que d'autres joueurs ne rejoignent).
         var engine = CreateEngine();
 
-        var act = () => engine.InitializeGame(["Solo"]);
+        engine.InitializeGame(["Solo"]);
+        var state = engine.GetGameState();
 
-        act.Should().Throw<GameException>(
-            because: "une partie nécessite au moins 2 joueurs");
+        state.Players.Should().HaveCount(1);
+        state.Players[0].Name.Should().Be("Solo");
+        state.Players[0].Rack.Should().HaveCount(7);
     }
 
     [Fact]

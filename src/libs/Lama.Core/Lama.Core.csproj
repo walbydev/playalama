@@ -1,3 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <ItemGroup>
+        <ProjectReference Include="..\Lama.Contracts\Lama.Contracts.csproj" />
+        <ProjectReference Include="..\Lama.Domain\Lama.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>Lama.Core.UnitTests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
 </Project>

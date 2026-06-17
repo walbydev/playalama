@@ -1,91 +1,92 @@
 using Lama.Console.Services;
 using Lama.Contracts;
+using Lama.Core.Models;
+using Lama.Core.UseCases;
 using Microsoft.Extensions.Logging;
 
 namespace Lama.Console.Commands.Game;
 
 /// <summary>
-/// Commande <c>lama game create</c> — crée une nouvelle partie et initialise la session.
+/// Commande <c>lama game create [--level casual|standard|competitive|tournament]</c>
+/// — crée une nouvelle partie et initialise la session locale.
 ///
-/// Options :
-/// <list type="bullet">
-///   <item><c>--size N</c>       Taille du plateau (défaut : 15, min : 15, max : 26)</item>
-///   <item><c>--players N</c>    Nombre de joueurs (défaut : 2)</item>
-///   <item><c>--time-limit N</c> Limite en secondes par tour (0 = illimité)</item>
-///   <item><c>--max-turns N</c>  Nombre maximum de tours</item>
-///   <item><c>--level</c>        Niveau : casual | standard | competitive | tournament (défaut : standard)</item>
-/// </list>
-///
-/// Réservée aux administrateurs.
-/// Écrit la session dans le fichier de session local après création.
+/// L'hôte (créateur) reçoit le rôle <see cref="Role.Host"/> dans la session.
+/// La session est persistée dans <c>session.json</c> pour les commandes suivantes.
 /// </summary>
-/// <remarks>
-/// TODO: l'appel à Lama.Core (cas d'usage CreateGame) est commenté — non encore implémenté.
-/// La gestion de session est déjà en place et sera activée dès que Lama.Core sera disponible.
-/// </remarks>
 public sealed class GameCreateCommand : ICommand
 {
     /// <inheritdoc />
     public string CommandId => "game.create";
 
-    private readonly ISessionService _sessionService;
+    private readonly CreateGameUseCase _createGameUseCase;
+    private readonly ISessionService   _sessionService;
     private readonly ILogger<GameCreateCommand> _logger;
 
     /// <summary>Initialise la commande.</summary>
-    public GameCreateCommand(ISessionService sessionService, ILogger<GameCreateCommand> logger)
+    public GameCreateCommand(
+        CreateGameUseCase createGameUseCase,
+        ISessionService   sessionService,
+        ILogger<GameCreateCommand> logger)
     {
-        _sessionService = sessionService;
-        _logger = logger;
+        _createGameUseCase = createGameUseCase;
+        _sessionService    = sessionService;
+        _logger            = logger;
     }
 
     /// <inheritdoc />
-    public Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken = default)
+    public async Task<int> ExecuteAsync(CommandContext context,
+        CancellationToken cancellationToken = default)
     {
-        // Lecture des options
+        // Lire le nom de l'hôte (argument positionnel ou option --host)
+        var hostName = context.GetArgument(0)
+                    ?? context.GetOption("host")
+                    ?? context.PlayerName
+                    ?? "Hôte";
+
+        // Lire le niveau de jeu
         var levelStr = context.GetOption("level") ?? "standard";
         if (!Enum.TryParse<GameLevel>(levelStr, ignoreCase: true, out var gameLevel))
         {
             global::System.Console.Error.WriteLine(
                 $"[game create] Niveau invalide : '{levelStr}'. " +
                 "Valeurs acceptées : casual, standard, competitive, tournament.");
-            return Task.FromResult(ExitCodes.InvalidArgument);
+            return ExitCodes.InvalidArgument;
         }
 
-        // TODO: appeler le cas d'usage CreateGame de Lama.Core pour :
-        //   - initialiser le plateau (--size)
-        //   - créer le sac de lettres
-        //   - préparer les racks
-        //   - retourner un GameId généré
-        // Exemple (à décommenter) :
-        // var result = await _gameUseCase.CreateAsync(new CreateGameRequest(
-        //     Size: int.TryParse(context.GetOption("size"), out var s) ? s : 15,
-        //     MaxPlayers: int.TryParse(context.GetOption("players"), out var p) ? p : 2,
-        //     TimeLimitSeconds: int.TryParse(context.GetOption("time-limit"), out var t) ? t : 0,
-        //     MaxTurns: int.TryParse(context.GetOption("max-turns"), out var mt) ? (int?)mt : null,
-        //     Level: gameLevel
-        // ));
-        // var gameId = result.GameId;
+        try
+        {
+            var request  = new CreateGameRequest(hostName, Language: context.Lang);
+            var response = await _createGameUseCase.ExecuteAsync(request);
 
-        _logger.LogWarning("{CommandId} : Lama.Core absent — session non créée", CommandId);
-        global::System.Console.Error.WriteLine(
-            "[game create] Non implémenté — Lama.Core absent. " +
-            "La session ne peut pas être créée sans le moteur de jeu.");
+            // Persister la session
+            var session = new SessionContext(
+                GameId:         response.GameId,
+                PlayerId:       response.HostPlayerId,
+                PlayerName:     hostName,
+                Role:           Role.Host,
+                GameLevel:      gameLevel,
+                AuthToken:      null,
+                TokenExpiresAt: null,
+                CreatedAt:      DateTimeOffset.UtcNow,
+                UpdatedAt:      DateTimeOffset.UtcNow);
 
-        // ── Ce bloc sera activé quand Lama.Core sera implémenté ──────────────
-        // var session = new SessionContext(
-        //     GameId:     gameId,
-        //     PlayerId:   Guid.NewGuid().ToString("N"),
-        //     PlayerName: "Admin",
-        //     Role:       Role.Admin,
-        //     GameLevel:  gameLevel,
-        //     CreatedAt:  DateTimeOffset.UtcNow,
-        //     UpdatedAt:  DateTimeOffset.UtcNow);
-        // _sessionService.SaveSession(session);
-        // global::System.Console.WriteLine($"Partie créée : {gameId} (niveau : {gameLevel})");
-        // global::System.Console.WriteLine($"Session sauvegardée : {_sessionService.SessionFilePath}");
-        // return Task.FromResult(ExitCodes.Success);
-        // ─────────────────────────────────────────────────────────────────────
+            _sessionService.SaveSession(session);
 
-        return Task.FromResult(ExitCodes.GeneralError);
+            global::System.Console.WriteLine($"✓ Partie créée (ID : {response.GameId})");
+            global::System.Console.WriteLine($"  Hôte      : {hostName}");
+            global::System.Console.WriteLine($"  Niveau    : {gameLevel}");
+            global::System.Console.WriteLine($"  Session   : {_sessionService.SessionFilePath}");
+            global::System.Console.WriteLine();
+            global::System.Console.WriteLine("Les autres joueurs peuvent rejoindre avec :");
+            global::System.Console.WriteLine("  lama game join <nom>");
+
+            _logger.LogInformation("Partie créée : {GameId} par {Host}", response.GameId, hostName);
+            return ExitCodes.Success;
+        }
+        catch (GameException ex)
+        {
+            global::System.Console.Error.WriteLine($"[game create] Erreur : {ex.Message}");
+            return ExitCodes.GeneralError;
+        }
     }
 }

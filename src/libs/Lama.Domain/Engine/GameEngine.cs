@@ -21,7 +21,7 @@ namespace Lama.Domain.Engine;
 public sealed class GameEngine : IGameEngine
 {
     private const int RackSize    = 7;
-    private const int MinPlayers  = 2;
+    private const int MinPlayers  = 1; // La contrainte 2 joueurs min est dans Lama.Core
 
     private readonly MoveValidator   _moveValidator;
     private readonly ScoreCalculator _scoreCalculator;
@@ -208,6 +208,53 @@ public sealed class GameEngine : IGameEngine
         {
             Rack = new List<char>(letters)
         };
+    }
+
+    /// <summary>
+    /// Restaure l'état complet du moteur depuis la persistance.
+    /// Appelé par <c>CreateGameUseCase</c> lors de la reconstruction après un redémarrage.
+    /// </summary>
+    internal void RestoreState(
+        int currentPlayerIndex,
+        int turnNumber,
+        bool isFirstMove,
+        bool isGameOver,
+        List<int> scores)
+    {
+        EnsureInitialized();
+        _currentPlayerIndex = currentPlayerIndex;
+        _turnNumber         = turnNumber;
+        _isFirstMove        = isFirstMove;
+        _isGameOver         = isGameOver;
+
+        for (var i = 0; i < Math.Min(scores.Count, _players!.Count); i++)
+            _players[i] = _players[i] with { Score = scores[i] };
+    }
+
+    /// <summary>
+    /// Restaure le plateau depuis un dictionnaire de tuiles persistées.
+    /// Appelé par <c>CreateGameUseCase</c> lors de la reconstruction.
+    /// </summary>
+    internal void RestoreBoard(IReadOnlyDictionary<Position, char> tiles)
+    {
+        EnsureInitialized();
+        var newGrid = new Tile?[15, 15];
+        foreach (var (pos, letter) in tiles)
+            newGrid[pos.Row, pos.Column] = new Tile(letter);
+        _board = new BoardState(newGrid);
+    }
+
+    /// <summary>
+    /// Retourne les lettres restantes dans le sac (sans les consommer).
+    /// Utilisé par <c>CreateGameUseCase</c> pour la persistance.
+    /// </summary>
+    internal List<char> GetRemainingTiles()
+    {
+        if (_bag is null) return [];
+        // On pioche tout puis on remet tout — lecture non destructive
+        var tiles = _bag.Draw(_bag.Count);
+        _bag.ReturnTiles(tiles);
+        return new List<char>(tiles);
     }
 
     // ── Helpers privés ────────────────────────────────────────────────────────
