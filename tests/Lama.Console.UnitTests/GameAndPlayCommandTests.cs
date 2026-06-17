@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Lama.Console.Commands.Game;
 using Lama.Console.Commands.Play;
+using Lama.Console.Commands.Show;
 using Lama.Console.Services;
 using Lama.Contracts;
 using Lama.Core.Models;
@@ -428,12 +429,224 @@ public sealed class GameAndPlayCommandTests : IDisposable
         stdout.Should().Contain("joué en H8 H");
     }
 
-    private async Task<(string GameId, string HostPlayerId, string BobPlayerId)> CreateTwoPlayerGameAsync()
+    [Fact]
+    public async Task PlayCheckCommand_ValidMove_ReturnsSuccessWithoutMutatingState()
     {
         var created = await _createGameUseCase.ExecuteAsync(new CreateGameRequest("Alice"));
-        var joined = await _joinGameUseCase.ExecuteAsync(new JoinGameRequest(created.GameId, "Bob"));
         SaveHostSession(created.GameId, created.HostPlayerId, "Alice");
-        return (created.GameId, created.HostPlayerId, joined.PlayerId);
+
+        var engine = _createGameUseCase.GetEngine(created.GameId)!;
+        var before = engine.GetGameState();
+
+        var command = new PlayCheckCommand(_createGameUseCase, NullLogger<PlayCheckCommand>.Instance);
+        var context = new CommandContext
+        {
+            Group = "play",
+            Action = "check",
+            GameId = created.GameId,
+            PlayerId = created.HostPlayerId,
+            PlayerName = "Alice",
+            Role = Role.Host,
+            GameLevel = GameLevel.Casual,
+            Arguments = ["H8", "LA", "H"]
+        };
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => command.ExecuteAsync(context));
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("Coup valide");
+
+        var after = engine.GetGameState();
+        after.CurrentPlayerIndex.Should().Be(before.CurrentPlayerIndex);
+        after.TurnNumber.Should().Be(before.TurnNumber);
+        after.Board.Grid[7, 7].Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("A1", "LA", "H")]
+    [InlineData("H8", "L", "X")]
+    public async Task PlayCheckCommand_InvalidMove_ReturnsPlacementError(string position, string word, string direction)
+    {
+        var created = await _createGameUseCase.ExecuteAsync(new CreateGameRequest("Alice"));
+        SaveHostSession(created.GameId, created.HostPlayerId, "Alice");
+
+        var command = new PlayCheckCommand(_createGameUseCase, NullLogger<PlayCheckCommand>.Instance);
+        var context = new CommandContext
+        {
+            Group = "play",
+            Action = "check",
+            GameId = created.GameId,
+            PlayerId = created.HostPlayerId,
+            PlayerName = "Alice",
+            Role = Role.Host,
+            GameLevel = GameLevel.Casual,
+            Arguments = [position, word, direction]
+        };
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => command.ExecuteAsync(context));
+
+        exitCode.Should().BeOneOf(ExitCodes.InvalidArgument, ExitCodes.InvalidPlacement);
+        stdout.Should().BeEmpty();
+        stderr.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task PlayChallengeCommand_OnValidMove_FailsAndPassesTurn()
+    {
+        var (gameId, hostId, bobId) = await CreateTwoPlayerGameAsync();
+        var playMove = new PlayMoveUseCase(_createGameUseCase);
+        await playMove.ExecuteAsync(new PlayMoveRequest(gameId, hostId,
+            new Dictionary<Position, char>
+            {
+                [new Position(7, 7)] = 'L',
+                [new Position(7, 8)] = 'A'
+            }));
+
+        SaveHostSession(gameId, bobId, "Bob");
+
+        var command = new PlayChallengeCommand(
+            new ChallengeWordUseCase(_createGameUseCase),
+            _createGameUseCase,
+            _sessionService,
+            NullLogger<PlayChallengeCommand>.Instance);
+
+        var context = new CommandContext
+        {
+            Group = "play",
+            Action = "challenge",
+            GameId = gameId,
+            PlayerId = bobId,
+            PlayerName = "Bob",
+            Role = Role.Player,
+            GameLevel = GameLevel.Standard
+        };
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => command.ExecuteAsync(context));
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("Challenge raté");
+        stdout.Should().Contain("Tour suivant : Alice");
+    }
+
+    [Fact]
+    public async Task PlayChallengeCommand_OnInvalidPersistedMove_SucceedsAndRollsBack()
+    {
+        var (gameId, hostId, bobId) = await CreateTwoPlayerGameAsync();
+        SeedInvalidChallengeGame(gameId, hostId, bobId);
+        SaveHostSession(gameId, bobId, "Bob");
+
+        var command = new PlayChallengeCommand(
+            new ChallengeWordUseCase(_createGameUseCase),
+            _createGameUseCase,
+            _sessionService,
+            NullLogger<PlayChallengeCommand>.Instance);
+
+        var context = new CommandContext
+        {
+            Group = "play",
+            Action = "challenge",
+            GameId = gameId,
+            PlayerId = bobId,
+            PlayerName = "Bob",
+            Role = Role.Player,
+            GameLevel = GameLevel.Standard
+        };
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => command.ExecuteAsync(context));
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("Challenge réussi");
+        stdout.Should().Contain("Tour suivant : Bob");
+
+        var state = _createGameUseCase.GetEngine(gameId)!.GetGameState();
+        state.History.Should().BeEmpty();
+        state.CurrentPlayerIndex.Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData("text")]
+    [InlineData("json")]
+    [InlineData("csv")]
+    public async Task ShowHistoryCommand_FormatsHistory(string format)
+    {
+        var (gameId, hostId, bobId) = await CreateTwoPlayerGameAsync();
+        var playMove = new PlayMoveUseCase(_createGameUseCase);
+        await playMove.ExecuteAsync(new PlayMoveRequest(gameId, hostId,
+            new Dictionary<Position, char>
+            {
+                [new Position(7, 7)] = 'L',
+                [new Position(7, 8)] = 'A'
+            }));
+
+        SaveHostSession(gameId, bobId, "Bob");
+
+        var command = new ShowHistoryCommand(_createGameUseCase, NullLogger<ShowHistoryCommand>.Instance);
+        var context = new CommandContext
+        {
+            Group = "show",
+            Action = "history",
+            GameId = gameId,
+            PlayerId = bobId,
+            PlayerName = "Bob",
+            Role = Role.Player,
+            GameLevel = GameLevel.Standard,
+            Options = new Dictionary<string, string?> { ["output"] = format, ["last"] = "1" }
+        };
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => command.ExecuteAsync(context));
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+
+        if (format == "json")
+        {
+            using var json = JsonDocument.Parse(stdout);
+            json.RootElement.ValueKind.Should().Be(JsonValueKind.Array);
+            json.RootElement.GetArrayLength().Should().Be(1);
+        }
+        else if (format == "csv")
+        {
+            stdout.Should().Contain("turn,player,placements,score,playedAt");
+            stdout.Should().Contain("Alice");
+        }
+        else
+        {
+            stdout.Should().Contain("Historique des coups");
+            stdout.Should().Contain("Alice");
+        }
+    }
+
+    private async Task<(string GameId, string HostPlayerId, string BobPlayerId)> CreateTwoPlayerGameAsync()
+    {
+        var gameId = Guid.NewGuid().ToString("N");
+        var hostId = Guid.NewGuid().ToString("N");
+        var bobId = Guid.NewGuid().ToString("N");
+
+        _gameRepository.Save(new PersistedGame(
+            GameId: gameId,
+            Language: "fr",
+            GameLevel: GameLevel.Standard,
+            IsFirstMove: true,
+            IsGameOver: false,
+            CurrentPlayerIndex: 0,
+            TurnNumber: 1,
+            Players: new List<PersistedPlayer>
+            {
+                new(hostId, "Alice", 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']),
+                new(bobId, "Bob", 0, ['B', 'C', 'D', 'E', 'F', 'G', 'H'])
+            },
+            Board: [],
+            RemainingTiles: ['X', 'Y', 'Z', 'Q', 'R'],
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow,
+            History: [],
+            LastMoveSnapshot: null));
+
+        SaveHostSession(gameId, hostId, "Alice");
+        return (gameId, hostId, bobId);
     }
 
     private void SaveHostSession(string gameId, string playerId, string playerName)
@@ -448,6 +661,57 @@ public sealed class GameAndPlayCommandTests : IDisposable
             TokenExpiresAt: null,
             CreatedAt:      DateTimeOffset.UtcNow,
             UpdatedAt:      DateTimeOffset.UtcNow));
+    }
+
+    private void SeedInvalidChallengeGame(string gameId, string hostId, string bobId)
+    {
+        _gameRepository.Save(new PersistedGame(
+            GameId: gameId,
+            Language: "fr",
+            GameLevel: GameLevel.Standard,
+            IsFirstMove: false,
+            IsGameOver: false,
+            CurrentPlayerIndex: 1,
+            TurnNumber: 1,
+            Players: new List<PersistedPlayer>
+            {
+                new(hostId, "Alice", 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']),
+                new(bobId, "Bob", 0, ['B', 'C', 'D', 'E', 'F', 'G', 'H'])
+            },
+            Board: new List<PersistedTile>
+            {
+                new(0, 0, 'L'),
+                new(0, 1, 'A')
+            },
+            RemainingTiles: ['X', 'Y', 'Z'],
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow,
+            History: new List<GameMove>
+            {
+                new(
+                    TurnNumber: 1,
+                    PlayerId: hostId,
+                    PlayerName: "Alice",
+                    Placements: new List<MovePlacement>
+                    {
+                        new(0, 0, 'L'),
+                        new(0, 1, 'A')
+                    },
+                    Score: 0,
+                    PlayedAt: DateTimeOffset.UtcNow)
+            },
+            LastMoveSnapshot: new GameStateSnapshot(
+                IsFirstMove: true,
+                IsGameOver: false,
+                CurrentPlayerIndex: 0,
+                TurnNumber: 1,
+                Players: new List<PersistedPlayer>
+                {
+                    new(hostId, "Alice", 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']),
+                    new(bobId, "Bob", 0, ['B', 'C', 'D', 'E', 'F', 'G', 'H'])
+                },
+                Board: [],
+                RemainingTiles: ['X', 'Y', 'Z'])));
     }
 
     private static async Task<(string StdOut, string StdErr, int ExitCode)> CaptureAsync(Func<Task<int>> action)

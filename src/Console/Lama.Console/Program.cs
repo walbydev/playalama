@@ -57,7 +57,7 @@ try
 
             // ─── Providers de langue ─────────────────────────────────────────
             // FrenchLanguageProvider — maintenant disponible via Lama.Languages.fr
-            services.AddSingleton<IGameLanguageProvider>(provider =>
+            services.AddSingleton<IGameLanguageProvider>(_ =>
             {
                 var basePath = Path.Combine(AppContext.BaseDirectory,
                     "assets", "languages", "fr");
@@ -92,6 +92,7 @@ try
             services.AddSingleton<PlayMoveUseCase>();
             services.AddSingleton<PassTurnUseCase>();
             services.AddSingleton<SwapLettersUseCase>();
+            services.AddSingleton<ChallengeWordUseCase>();
             services.AddSingleton<EndGameUseCase>();
 
             // ─── Middlewares ─────────────────────────────────────────────────
@@ -171,14 +172,17 @@ try
 
     Log.Debug("Mode résolu : {ModeType}", mode.GetType().Name);
 
-    using var cts = new CancellationTokenSource();
-    global::System.Console.CancelKeyPress += (_, e) =>
+    var cts = new CancellationTokenSource();
+    ConsoleCancelEventHandler cancelHandler = (_, e) =>
     {
         e.Cancel = true;
         cts.Cancel();
     };
+    Console.CancelKeyPress += cancelHandler;
 
     var exitCode = await mode.RunAsync(cts.Token);
+
+    Console.CancelKeyPress -= cancelHandler;
 
     Log.Information("LAMA terminé avec le code {ExitCode}", exitCode);
     await Log.CloseAndFlushAsync();

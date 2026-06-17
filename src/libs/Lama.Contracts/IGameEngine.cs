@@ -42,6 +42,12 @@ public interface IGameEngine
     void SwapLetters(IReadOnlyList<char> lettersToSwap);
 
     /// <summary>
+    /// Conteste le dernier mot joué.
+    /// Retourne l'état résultant après résolution du challenge.
+    /// </summary>
+    ChallengeResult ChallengeLastMove();
+
+    /// <summary>
     /// Obtient le joueur actuel.
     /// </summary>
     Player GetCurrentPlayer();

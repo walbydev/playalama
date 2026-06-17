@@ -55,7 +55,7 @@ public sealed class GameCreateCommand : ICommand
 
         try
         {
-            var request  = new CreateGameRequest(hostName, Language: context.Lang);
+            var request  = new CreateGameRequest(hostName, language: context.Lang, gameLevel: gameLevel);
             var response = await _createGameUseCase.ExecuteAsync(request);
 
             // Persister la session

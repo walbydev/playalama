@@ -59,6 +59,20 @@ public sealed class TileBag
     }
 
     /// <summary>
+    /// Retourne un instantané des tuiles restantes sans modifier le sac.
+    /// </summary>
+    internal List<char> SnapshotTiles() => new(_tiles);
+
+    /// <summary>
+    /// Restaure le contenu du sac à partir d'un instantané.
+    /// </summary>
+    internal void RestoreTiles(IReadOnlyList<char> tiles)
+    {
+        _tiles.Clear();
+        _tiles.AddRange(tiles);
+    }
+
+    /// <summary>
     /// Échange des tuiles : remet les anciennes dans le sac et pioche le même nombre.
     /// Si le sac est vide, retourne une liste vide (l'échange est refusé).
     /// </summary>

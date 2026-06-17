@@ -36,6 +36,8 @@ public sealed class GameEngine : IGameEngine
     private bool            _isGameOver;
     private bool            _isInitialized;
     private bool            _isFirstMove;
+    private List<GameMove>  _history = [];
+    private GameStateSnapshot? _lastMoveSnapshot;
 
     /// <summary>
     /// Initialise le moteur avec le dictionnaire, les scores et la distribution.
@@ -71,6 +73,8 @@ public sealed class GameEngine : IGameEngine
         _turnNumber         = 1;
         _isGameOver         = false;
         _isFirstMove        = true;
+        _history            = [];
+        _lastMoveSnapshot   = null;
         _isInitialized      = true;
     }
 
@@ -87,7 +91,10 @@ public sealed class GameEngine : IGameEngine
                 .ToList(),
             CurrentPlayerIndex = _currentPlayerIndex,
             TurnNumber         = _turnNumber,
-            IsGameOver         = _isGameOver
+            IsGameOver         = _isGameOver,
+            History            = _history
+                .Select(move => move with { Placements = move.Placements.ToList() })
+                .ToList()
         };
     }
 
@@ -130,6 +137,9 @@ public sealed class GameEngine : IGameEngine
         if (!isValid)
             throw new GameException(errorMessage);
 
+        // 2b. Mémoriser l'état précédent pour permettre un challenge
+        _lastMoveSnapshot = CaptureSnapshot();
+
         // 3. Appliquer le coup sur le plateau
         var newGrid = (Tile?[,])_board!.Grid.Clone();
         foreach (var (pos, letter) in letters)
@@ -161,8 +171,22 @@ public sealed class GameEngine : IGameEngine
             _isGameOver = true;
         }
 
+        var playedTurn = _turnNumber;
+
         // 8. Passer au joueur suivant
         AdvancePlayer();
+
+        _history.Add(new GameMove(
+            TurnNumber: playedTurn,
+            PlayerId: string.Empty,
+            PlayerName: player.Name,
+            Placements: letters
+                .OrderBy(kv => kv.Key.Row)
+                .ThenBy(kv => kv.Key.Column)
+                .Select(kv => new MovePlacement(kv.Key.Row, kv.Key.Column, kv.Value))
+                .ToList(),
+            Score: score,
+            PlayedAt: DateTimeOffset.UtcNow));
 
         return GetGameState();
     }
@@ -173,6 +197,7 @@ public sealed class GameEngine : IGameEngine
         EnsureInitialized();
         EnsureNotGameOver();
 
+        _lastMoveSnapshot = null;
         AdvancePlayer();
     }
 
@@ -208,7 +233,55 @@ public sealed class GameEngine : IGameEngine
         newRack.AddRange(replacements);
         _players[_currentPlayerIndex] = player with { Rack = newRack };
 
+        _lastMoveSnapshot = null;
+
         AdvancePlayer();
+    }
+
+    /// <inheritdoc />
+    public ChallengeResult ChallengeLastMove()
+    {
+        EnsureInitialized();
+        EnsureNotGameOver();
+
+        if (_lastMoveSnapshot is null || _history.Count == 0)
+            throw new GameException("Aucun dernier coup contestable n'est disponible.");
+
+        var challengerIndex = _currentPlayerIndex;
+        var currentTurn = _turnNumber;
+        var lastMove = _history[^1];
+        var challengeMove = lastMove.Placements.ToDictionary(
+            p => new Position(p.Row, p.Column),
+            p => p.Letter);
+
+        var validation = _moveValidator.Validate(
+            challengeMove,
+            BuildBoardFromSnapshot(_lastMoveSnapshot.Board),
+            _lastMoveSnapshot.IsFirstMove);
+
+        if (!validation.IsValid)
+        {
+            RestoreSnapshot(_lastMoveSnapshot);
+            _currentPlayerIndex = challengerIndex;
+            _turnNumber = currentTurn;
+            _history.RemoveAt(_history.Count - 1);
+            _lastMoveSnapshot = null;
+
+            return new ChallengeResult(
+                ChallengeSucceeded: true,
+                Message: "Challenge réussi : le mot était invalide et a été annulé.",
+                ChallengedMove: lastMove,
+                GameState: GetGameState());
+        }
+
+        _lastMoveSnapshot = null;
+        AdvancePlayer();
+
+        return new ChallengeResult(
+            ChallengeSucceeded: false,
+            Message: "Challenge raté : le mot était valide.",
+            ChallengedMove: lastMove,
+            GameState: GetGameState());
     }
 
     /// <inheritdoc />
@@ -280,16 +353,83 @@ public sealed class GameEngine : IGameEngine
     }
 
     /// <summary>
+    /// Restaure l'historique et le dernier snapshot contestable.
+    /// </summary>
+    internal void RestoreHistory(List<GameMove> history, GameStateSnapshot? lastMoveSnapshot)
+    {
+        EnsureInitialized();
+        _history = history
+            .Select(move => move with { Placements = move.Placements.ToList() })
+            .ToList();
+        _lastMoveSnapshot = lastMoveSnapshot;
+    }
+
+    /// <summary>
+    /// Retourne le snapshot du dernier coup contestable.
+    /// </summary>
+    internal GameStateSnapshot? GetLastMoveSnapshot() => _lastMoveSnapshot;
+
+    /// <summary>
     /// Retourne les lettres restantes dans le sac (sans les consommer).
     /// Utilisé par <c>CreateGameUseCase</c> pour la persistance.
     /// </summary>
     internal List<char> GetRemainingTiles()
     {
         if (_bag is null) return [];
-        // On pioche tout puis on remet tout — lecture non destructive
-        var tiles = _bag.Draw(_bag.Count);
-        _bag.ReturnTiles(tiles);
-        return new List<char>(tiles);
+        return _bag.SnapshotTiles();
+    }
+
+    private GameStateSnapshot CaptureSnapshot()
+    {
+        return new GameStateSnapshot(
+            IsFirstMove: _isFirstMove,
+            IsGameOver: _isGameOver,
+            CurrentPlayerIndex: _currentPlayerIndex,
+            TurnNumber: _turnNumber,
+            Players: _players!
+                .Select((p, i) => new PersistedPlayer(
+                    PlayerId: i.ToString(),
+                    Name: p.Name,
+                    Score: p.Score,
+                    Rack: new List<char>(p.Rack)))
+                .ToList(),
+            Board: CaptureBoard(),
+            RemainingTiles: _bag!.SnapshotTiles());
+    }
+
+    private void RestoreSnapshot(GameStateSnapshot snapshot)
+    {
+        _isFirstMove = snapshot.IsFirstMove;
+        _isGameOver = snapshot.IsGameOver;
+        _currentPlayerIndex = snapshot.CurrentPlayerIndex;
+        _turnNumber = snapshot.TurnNumber;
+        _players = snapshot.Players
+            .Select(p => new PlayerState(p.Name, p.Score, new List<char>(p.Rack)))
+            .ToList();
+        _board = BuildBoardFromSnapshot(snapshot.Board);
+        _bag!.RestoreTiles(snapshot.RemainingTiles);
+    }
+
+    private List<PersistedTile> CaptureBoard()
+    {
+        var tiles = new List<PersistedTile>();
+        for (var r = 0; r < 15; r++)
+            for (var c = 0; c < 15; c++)
+            {
+                var tile = _board!.Grid[r, c];
+                if (tile is not null)
+                    tiles.Add(new PersistedTile(r, c, tile.Letter, tile.IsWildcard));
+            }
+
+        return tiles;
+    }
+
+    private static BoardState BuildBoardFromSnapshot(IEnumerable<PersistedTile> tiles)
+    {
+        var newGrid = new Tile?[15, 15];
+        foreach (var tile in tiles)
+            newGrid[tile.Row, tile.Col] = new Tile(tile.Letter, tile.IsWildcard);
+        return new BoardState(newGrid);
     }
 
     // ── Helpers privés ────────────────────────────────────────────────────────

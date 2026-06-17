@@ -1,4 +1,6 @@
 using Lama.Console.Services;
+using Lama.Contracts;
+using Lama.Core.UseCases;
 using Microsoft.Extensions.Logging;
 
 namespace Lama.Console.Commands.Play;
@@ -9,19 +11,18 @@ namespace Lama.Console.Commands.Play;
 /// Accessible uniquement en mode Casual (et aux admins).
 /// Arguments : identiques à <c>play move</c>.
 /// </summary>
-/// <remarks>
-/// TODO: dépend de Lama.Core (IGameEngine.ValidateMove) — non encore implémenté.
-/// </remarks>
 public sealed class PlayCheckCommand : ICommand
 {
     /// <inheritdoc />
     public string CommandId => "play.check";
 
+    private readonly CreateGameUseCase _createGameUseCase;
     private readonly ILogger<PlayCheckCommand> _logger;
 
     /// <summary>Initialise la commande.</summary>
-    public PlayCheckCommand(ILogger<PlayCheckCommand> logger)
+    public PlayCheckCommand(CreateGameUseCase createGameUseCase, ILogger<PlayCheckCommand> logger)
     {
+        _createGameUseCase = createGameUseCase;
         _logger = logger;
     }
 
@@ -41,9 +42,85 @@ public sealed class PlayCheckCommand : ICommand
             return Task.FromResult(ExitCodes.InvalidArgument);
         }
 
-        // TODO: appeler IGameEngine.ValidateMove() via Lama.Core (sans consommer le tour)
-        _logger.LogWarning("{CommandId} : non implémenté (Lama.Core absent)", CommandId);
-        global::System.Console.Error.WriteLine("[play check] Non implémenté — Lama.Core absent.");
-        return Task.FromResult(ExitCodes.GeneralError);
+        if (!context.HasActiveSession || context.GameId is null)
+        {
+            global::System.Console.Error.WriteLine("[play check] Aucune partie active.");
+            return Task.FromResult(ExitCodes.GameNotFound);
+        }
+
+        var engine = _createGameUseCase.GetEngine(context.GameId);
+        if (engine is null)
+        {
+            global::System.Console.Error.WriteLine($"[play check] Partie introuvable : {context.GameId}");
+            return Task.FromResult(ExitCodes.GameNotFound);
+        }
+
+        var movePosition = position;
+        var moveWord = word;
+        var moveDirection = direction;
+
+        if (!TryParseMove(movePosition, moveWord, moveDirection, out var placements, out var error))
+        {
+            global::System.Console.Error.WriteLine($"[play check] {error}");
+            return Task.FromResult(ExitCodes.InvalidArgument);
+        }
+
+        var (isValid, validationError, score) = engine.ValidateMove(placements);
+        if (!isValid)
+        {
+            global::System.Console.Error.WriteLine($"[play check] Coup invalide : {validationError}");
+            return Task.FromResult(ExitCodes.InvalidPlacement);
+        }
+
+        global::System.Console.WriteLine($"✓ Coup valide : {moveWord.ToUpperInvariant()} en {movePosition.ToUpperInvariant()} {moveDirection.ToUpperInvariant()} — {score} pts");
+        _logger.LogInformation("{CommandId} : coup valide vérifié", CommandId);
+        return Task.FromResult(ExitCodes.Success);
+    }
+
+    private static bool TryParseMove(
+        string position,
+        string word,
+        string direction,
+        out Dictionary<Position, char> placements,
+        out string error)
+    {
+        placements = new Dictionary<Position, char>();
+        error = string.Empty;
+
+        var pos = position.Trim().ToUpperInvariant();
+        var dir = direction.Trim().ToUpperInvariant();
+        var letters = word.Trim().ToUpperInvariant();
+
+        if (pos.Length < 2)
+        {
+            error = $"Position invalide : '{position}'";
+            return false;
+        }
+
+        var colChar = pos[0];
+        if (colChar < 'A' || colChar > 'O' || !int.TryParse(pos[1..], out var row) || row < 1 || row > 15)
+        {
+            error = $"Position invalide : '{position}'";
+            return false;
+        }
+
+        if (dir is not ("H" or "V"))
+        {
+            error = "Direction invalide : utilisez H ou V";
+            return false;
+        }
+
+        var startRow = row - 1;
+        var startCol = colChar - 'A';
+        for (var i = 0; i < letters.Length; i++)
+        {
+            var target = dir == "H"
+                ? new Position(startRow, startCol + i)
+                : new Position(startRow + i, startCol);
+
+            placements[target] = letters[i];
+        }
+
+        return true;
     }
 }

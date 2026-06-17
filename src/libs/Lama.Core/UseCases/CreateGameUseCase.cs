@@ -1,6 +1,5 @@
 using Lama.Contracts;
 using Lama.Core.Models;
-using Lama.Domain.Bag;
 using Lama.Domain.Engine;
 
 namespace Lama.Core.UseCases;
@@ -58,7 +57,6 @@ public sealed class CreateGameUseCase
         var state   = engine.GetGameState();
         var session = new GameSession(
             engine,
-            hostId,
             new Dictionary<string, int> { [hostId] = 0 });
 
         _sessions[gameId] = session;
@@ -183,13 +181,15 @@ public sealed class CreateGameUseCase
             persisted.IsGameOver,
             persisted.Players.Select(p => p.Score).ToList());
 
+        // Restaurer l'historique + snapshot de challenge
+        engine.RestoreHistory(persisted.History, persisted.LastMoveSnapshot);
+
         // Reconstruire le mapping PlayerId → index
         var playerIndexById = persisted.Players
             .Select((p, i) => (p.PlayerId, i))
             .ToDictionary(t => t.PlayerId, t => t.i);
 
-        var hostPlayerId = persisted.Players.FirstOrDefault()?.PlayerId ?? string.Empty;
-        var session = new GameSession(engine, hostPlayerId, playerIndexById);
+        var session = new GameSession(engine, playerIndexById);
         _sessions[gameId] = session;
 
         return session;
@@ -250,6 +250,8 @@ public sealed class CreateGameUseCase
             Players:            players,
             Board:              board,
             RemainingTiles:     remaining,
+            History:            state.History.ToList(),
+            LastMoveSnapshot:   engine.GetLastMoveSnapshot(),
             CreatedAt:          DateTimeOffset.UtcNow,
             UpdatedAt:          DateTimeOffset.UtcNow);
     }
@@ -259,16 +261,13 @@ public sealed class CreateGameUseCase
 internal sealed class GameSession
 {
     public GameEngine               Engine           { get; }
-    public string                   HostPlayerId     { get; }
     public Dictionary<string, int>  PlayerIndexById  { get; }
 
     public GameSession(
         GameEngine engine,
-        string hostPlayerId,
         Dictionary<string, int> playerIndexById)
     {
         Engine          = engine;
-        HostPlayerId    = hostPlayerId;
         PlayerIndexById = playerIndexById;
     }
 }

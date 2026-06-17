@@ -19,6 +19,43 @@ public record Tile(char Letter, bool IsWildcard = false);
 public record Move(Dictionary<Position, char> Letters, int Score = 0);
 
 /// <summary>
+/// Représente la pose d'une lettre à une position précise.
+/// </summary>
+public record MovePlacement(int Row, int Column, char Letter);
+
+/// <summary>
+/// Représente un coup historisé pour l'affichage et le challenge.
+/// </summary>
+public record GameMove(
+    int TurnNumber,
+    string PlayerId,
+    string PlayerName,
+    IReadOnlyList<MovePlacement> Placements,
+    int Score,
+    DateTimeOffset PlayedAt);
+
+/// <summary>
+/// Snapshot complet d'une partie utilisé pour restaurer un état précédent.
+/// </summary>
+public record GameStateSnapshot(
+    bool IsFirstMove,
+    bool IsGameOver,
+    int CurrentPlayerIndex,
+    int TurnNumber,
+    List<PersistedPlayer> Players,
+    List<PersistedTile> Board,
+    List<char> RemainingTiles);
+
+/// <summary>
+/// Résultat d'un challenge.
+/// </summary>
+public record ChallengeResult(
+    bool ChallengeSucceeded,
+    string Message,
+    GameMove? ChallengedMove,
+    GameState GameState);
+
+/// <summary>
 /// Représente l'état immutable du plateau de jeu.
 /// </summary>
 public class BoardState
@@ -55,5 +92,6 @@ public record GameState
     public required int CurrentPlayerIndex { get; init; }
     public required int TurnNumber { get; init; }
     public bool IsGameOver { get; init; } = false;
+    public List<GameMove> History { get; init; } = [];
 }
 

@@ -15,6 +15,8 @@ namespace Lama.Contracts;
 /// <param name="Players">Liste des joueurs avec leur score et leur rack.</param>
 /// <param name="Board">Grille du plateau : liste de tuiles positionnées.</param>
 /// <param name="RemainingTiles">Lettres restantes dans le sac.</param>
+/// <param name="History">Historique des coups joués.</param>
+/// <param name="LastMoveSnapshot">Snapshot permettant d'annuler le dernier coup en cas de challenge réussi.</param>
 /// <param name="CreatedAt">Date de création de la partie (UTC).</param>
 /// <param name="UpdatedAt">Date de dernière modification (UTC).</param>
 public record PersistedGame(
@@ -29,7 +31,9 @@ public record PersistedGame(
     List<PersistedTile>       Board,
     List<char>                RemainingTiles,
     DateTimeOffset            CreatedAt,
-    DateTimeOffset            UpdatedAt);
+    DateTimeOffset            UpdatedAt,
+    List<GameMove>            History = null!,
+    GameStateSnapshot?        LastMoveSnapshot = null);
 
 /// <summary>
 /// Représente un joueur persisté (nom, score, rack).

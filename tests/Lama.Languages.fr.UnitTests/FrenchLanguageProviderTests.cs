@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Xunit;
-using Lama.Languages.fr;
-
 namespace Lama.Languages.fr.UnitTests
 {
     /// <summary>
@@ -18,7 +11,7 @@ namespace Lama.Languages.fr.UnitTests
         /// <summary>
         /// Crée un répertoire temporaire avec les fichiers assets nécessaires.
         /// </summary>
-        private static string CreateTempBasePath(string dictionaryContent, string scoresJsonContent)
+        private static string CreateTempBasePath(string? dictionaryContent, string? scoresJsonContent)
         {
             var tempRoot = Path.Combine(Path.GetTempPath(), "LamaTests", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempRoot);
@@ -148,7 +141,7 @@ namespace Lama.Languages.fr.UnitTests
                 Assert.Contains("BONJOUR", dictionary);
                 Assert.Contains("SALUT", dictionary);
                 Assert.Contains("AMI", dictionary);
-                Assert.Equal(3, dictionary.Count);
+                Assert.True(dictionary.Count == 3);
             }
             finally
             {
@@ -201,7 +194,7 @@ namespace Lama.Languages.fr.UnitTests
                 Assert.Contains("BONJOUR", dictionary);
                 Assert.Contains("SALUT", dictionary);
                 Assert.Contains("AMI", dictionary);
-                Assert.Equal(3, dictionary.Count);
+                Assert.True(dictionary.Count == 3);
             }
             finally
             {
@@ -226,7 +219,7 @@ namespace Lama.Languages.fr.UnitTests
                 // Assert
                 Assert.Contains("BONJOUR", dictionary);
                 Assert.Contains("SALUT", dictionary);
-                Assert.Equal(2, dictionary.Count);
+                Assert.True(dictionary.Count == 2);
             }
             finally
             {
@@ -254,7 +247,7 @@ namespace Lama.Languages.fr.UnitTests
                 Assert.DoesNotContain("12345", dictionary);
                 Assert.DoesNotContain("SALUT-AMIS", dictionary);
                 Assert.DoesNotContain("ÉCLAIR", dictionary);
-                Assert.Equal(1, dictionary.Count);
+                Assert.True(dictionary.Count == 1);
             }
             finally
             {
@@ -277,7 +270,7 @@ namespace Lama.Languages.fr.UnitTests
                 var dictionary = provider.GetDictionary();
 
                 // Assert
-                Assert.Equal(2, dictionary.Count);
+                Assert.True(dictionary.Count == 2);
                 Assert.Contains("BONJOUR", dictionary);
                 Assert.Contains("SALUT", dictionary);
             }
@@ -379,7 +372,7 @@ namespace Lama.Languages.fr.UnitTests
                 var scores = provider.GetLetterScores();
 
                 // Assert
-                Assert.Equal(4, scores.Count);
+                Assert.True(scores.Count == 4);
                 Assert.Contains('A', scores.Keys);
                 Assert.Contains('B', scores.Keys);
                 Assert.Contains('C', scores.Keys);
@@ -406,7 +399,7 @@ namespace Lama.Languages.fr.UnitTests
                 var scores = provider.GetLetterScores();
 
                 // Assert
-                Assert.Equal(3, scores.Count);
+                Assert.True(scores.Count == 3);
                 Assert.Equal(1, scores['A']);
                 Assert.Equal(3, scores['B']);
                 Assert.Equal(10, scores['Z']);
@@ -433,7 +426,7 @@ namespace Lama.Languages.fr.UnitTests
                 var scores = provider.GetLetterScores();
 
                 // Assert
-                Assert.Equal(4, scores.Count);
+                Assert.True(scores.Count == 4);
                 Assert.Equal(1, scores['A']);
                 Assert.Equal(2, scores['a']);
                 Assert.Equal(3, scores['B']);
@@ -460,7 +453,7 @@ namespace Lama.Languages.fr.UnitTests
                 var scores = provider.GetLetterScores();
 
                 // Assert
-                Assert.Equal(4, scores.Count);
+                Assert.True(scores.Count == 4);
                 Assert.Equal(5, scores['É']);
                 Assert.Equal(4, scores['È']);
                 Assert.Equal(3, scores['Ê']);

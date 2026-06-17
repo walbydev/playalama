@@ -9,18 +9,31 @@ namespace Lama.Core.Models;
 /// <summary>
 /// Requête pour créer une nouvelle partie.
 /// </summary>
-/// <param name="HostPlayerName">Nom de l'hôte (créateur de la partie).</param>
-/// <param name="Language">Code de langue (ex: "fr"). Défaut : "fr".</param>
-/// <param name="BoardSize">Taille du plateau (défaut : 15).</param>
-/// <param name="RackSize">Taille du rack par joueur (défaut : 7).</param>
-/// <param name="MinWordLength">Longueur minimale d'un mot (défaut : 2).</param>
-public record CreateGameRequest(
-    string    HostPlayerName,
-    string    Language      = "fr",
-    GameLevel GameLevel     = GameLevel.Standard,
-    int       BoardSize     = 15,
-    int       RackSize      = 7,
-    int       MinWordLength = 2);
+public record CreateGameRequest
+{
+    public string HostPlayerName { get; init; }
+    public string Language { get; init; } = "fr";
+    public GameLevel GameLevel { get; init; } = GameLevel.Standard;
+    public int BoardSize { get; init; } = 15;
+    public int RackSize { get; init; } = 7;
+    public int MinWordLength { get; init; } = 2;
+
+    public CreateGameRequest(
+        string hostPlayerName,
+        string language = "fr",
+        GameLevel gameLevel = GameLevel.Standard,
+        int boardSize = 15,
+        int rackSize = 7,
+        int minWordLength = 2)
+    {
+        HostPlayerName = hostPlayerName;
+        Language = language;
+        GameLevel = gameLevel;
+        BoardSize = boardSize;
+        RackSize = rackSize;
+        MinWordLength = minWordLength;
+    }
+}
 
 /// <summary>
 /// Requête pour qu'un joueur rejoigne une partie existante.
@@ -50,6 +63,21 @@ public record PlayMoveRequest(
 public record PassTurnRequest(
     string GameId,
     string PlayerId);
+
+/// <summary>
+/// Requête pour contester le dernier mot joué.
+/// </summary>
+public record ChallengeWordRequest
+{
+    public string GameId { get; init; }
+    public string PlayerId { get; init; }
+
+    public ChallengeWordRequest(string gameId, string playerId)
+    {
+        GameId = gameId;
+        PlayerId = playerId;
+    }
+}
 
 /// <summary>
 /// Requête pour échanger des lettres avec le sac.
