@@ -347,3 +347,57 @@ Journal unique de progression du projet LAMA.
 - `tests/Lama.Console.UnitTests/GameAndPlayCommandTests.cs`
 - `tests/Lama.Console.UnitTests/AssemblyInfo.cs`
 
+## [2026-06-18 00:55:00 UTC] - Documentation synchronisee + audit d'etat reel vs code
+
+### Contexte
+- La documentation ancienne affichait plusieurs commandes comme stubs alors qu'elles etaient deja implementees.
+- Besoin de synchroniser l'etat reel du code avec docs/AGENTS.md et docs/defines-CLI.md.
+
+### Fait
+- **Audit de l'etat reel du code** : verifie que les commandes suivantes sont **operationnelles**:
+  - `play.check` ✅ (verification de coup sans le jouer)
+  - `play.challenge` ✅ (contestation du dernier mot joue)
+  - `show.history` ✅ (affichage of historique des coups avec --last N et formats json/csv)
+  - `game.list` ✅ (listing des parties persistees)
+  - `game.show` ✅ (details d'une partie)
+  - `game.save` ✅ (sauvegarde explicite)
+  - `game.pause` ✅ (snapshot persistant immediat)
+
+- **Synchronisation de docs/AGENTS.md** :
+  - Retire `play.challenge`, `play.check`, `show.history` de la liste des stubs.
+  - Ajoute ces trois commandes a la liste des commandes implementees.
+  - Mise a jour de l'etat des composants : Domain, Core, Console marquent que support complet du challenge et historique.
+  - Ajoute note sur "Tests E2E CLI" comme tache a faire.
+
+- **Synchronisation de docs/defines-CLI.md** :
+  - Marque les commandes `play.challenge`, `play.check` comme ✅ (etaient 🟡).
+  - Marque `show.history` comme ✅ avec option --last N et formats (etait 🟡).
+
+- **Tests existants** :
+  - Suite Lama.Console.UnitTests : 173 tests ✅
+  - Suite complete : 504 tests ✅
+
+### En cours / A faire
+- **Tests E2E CLI** : necessite architecture specifique pour les parcours complets.
+- **Commandes vraiment stubs restantes** :
+  - `player.create` 🟡
+  - `tournament.create` 🟡
+  - `system.status` 🟡  
+  - `system.restart` 🟡
+- **Gestion avancee des jokers** : validation et traitement complet.
+- **Mode interactif textuel** : shell present, logique metier non branchee.
+
+### Risques / Ecarts
+- Tests E2E CLI tentent d'invoquer directement les commandes, mais le modele CommandContext pour les tests s'avere complexe.
+- Recommandation : les vrais tests E2E devraient probablement passer par la CLI binaire plutot que l'invocation directe des APIs.
+
+### Prochaines etapes
+1. Ajouter tests E2E via processus CLI reel (bashe scripts ou processus).  
+2. Evaluer l'effort pour implementer stubs restantes (player.create, tournament, system.status/restart).
+3. Renforcer gestion des jokers dans le coeur (Domain).
+4. Connecter davantage le mode interactif aux use cases reel.
+
+### References
+- `docs/AGENTS.md` (synchronise)
+- `docs/defines-CLI.md` (synchronise)
+- `tests/Lama.Console.UnitTests/` (504 tests passants)

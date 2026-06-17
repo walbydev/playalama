@@ -111,9 +111,12 @@ Le parser supporte:
 - `play.move`
 - `play.pass`
 - `play.swap`
+- `play.challenge`
+- `play.check`
 - `show.board`
 - `show.rack`
 - `show.scores`
+- `show.history`
 - `dict.check`
 - `dict.search`
 - `dict.anagram`
@@ -130,9 +133,6 @@ Le parser supporte:
 - `system.restart`
 - `player.create`
 - `tournament.create`
-- `play.challenge`
-- `play.check`
-- `show.history`
 
 ---
 
@@ -141,13 +141,14 @@ Le parser supporte:
 | Composant | Etat |
 |---|---|
 | `Lama.Contracts` | ✅ Matures |
-| `Lama.Domain` | ✅ Implante |
-| `Lama.Core` | ✅ Implante (avec limites sur challenge/historique) |
+| `Lama.Domain` | ✅ Implante (avec historique des coups et challenge complet) |
+| `Lama.Core` | ✅ Implante (avec UseCases pour challenge, move, pass, swap) |
 | `Lama.Infrastructure` | ✅ Implante (JSON/session/auth/accounts) |
 | `Lama.Languages.fr` | ✅ Implante |
-| `Lama.Console` mode commande | 🟡 Partiel: noyau OK, plusieurs commandes stubs |
+| `Lama.Console` mode commande | ✅ Principal operationnel - plusieurs commandes implementees |
 | `Lama.Console` mode interactif | 🟡 Shell present, logique metier non branchee |
 | Rendering dedie (`Rendering/*`) | 🔲 Classes vides |
+| Tests E2E CLI | 🔲 A creer (parcours complets create/join/move/show/end) |
 | Middlewares additionnels (`Accessibility/Logging/ErrorHandling`) | 🔲 Classes vides |
 
 ---

@@ -64,21 +64,21 @@ Ces options sont parsees dans `CommandContext` (pas toujours exploitees par tout
 ### 3.2 `play`
 
 | Commande | Etat | Notes |
-|---|---|---|
+| Commande | Etat | Notes |
 | `lama play move <case> <mot> <direction>` | ✅ | supporte `--dry-run` |
 | `lama play pass` | ✅ | passe le tour |
 | `lama play swap <lettres> [--all]` | ✅ | echange reel des lettres + consomme le tour |
-| `lama play challenge` | 🟡 | stub |
-| `lama play check <case> <mot> <direction>` | 🟡 | stub |
+| `lama play challenge` | ✅ | conteste dernier mot joué |
+| `lama play check <case> <mot> <direction>` | ✅ | verifie validite d'un coup sans le jouer |
 
 ### 3.3 `show`
 
 | Commande | Etat | Notes |
-|---|---|---|
+| Commande | Etat | Notes |
 | `lama show board` | ✅ | rendu Spectre.Console |
 | `lama show rack [--with-values]` | ✅ | rack joueur courant |
 | `lama show scores` | ✅ | scores + tri |
-| `lama show history` | 🟡 | stub |
+| `lama show history [--last N]` | ✅ | historique des coups (`text`, `json`, `csv`) |
 
 ### 3.4 `dict`
 
