@@ -52,7 +52,10 @@ public sealed class AccessControlService : IAccessControlService
             "system.setup",
             "game.create",
             "game.join",
-            "game.list"
+            "game.list",
+            // Auth : accessibles sans session pour permettre la connexion initiale
+            "login",
+            "logout"
         };
 
     // ── Commandes réservées à SuperAdmin + Admin (pas les joueurs) ────────────

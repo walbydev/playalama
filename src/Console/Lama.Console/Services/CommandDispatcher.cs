@@ -31,7 +31,7 @@ public sealed class CommandDispatcher : ICommandDispatcher
         {
             _logger.LogWarning("Commande inconnue : {CommandId}", context.CommandId);
             await System.Console.Error.WriteLineAsync(
-                $"Commande inconnue : {context.Group} {context.Action}");
+                $"Commande inconnue : {context.CommandId}");
             await System.Console.Error.WriteLineAsync(
                 "Utilisez --help pour afficher les commandes disponibles.");
             return ExitCodes.InvalidArgument;

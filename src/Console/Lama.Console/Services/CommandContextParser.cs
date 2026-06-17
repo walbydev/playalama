@@ -24,16 +24,53 @@ public static class CommandContextParser
     /// <returns>Le <see cref="CommandContext"/> enrichi, ou null si les arguments sont invalides.</returns>
     public static CommandContext? Parse(string[] args, ISessionService sessionService)
     {
-        if (args.Length < 2)
+        if (args.Length == 0)
             return null;
 
-        var group  = args[0].ToLowerInvariant();
-        var action = args[1].ToLowerInvariant();
+        // Resolution du CommandId + index de debut des arguments positionnels
+        string group;
+        string action;
+        string commandId;
+        int argsStartIndex;
+
+        // Commandes mono-niveau : lama login / lama logout
+        if (args.Length >= 1 &&
+            (args[0].Equals("login", StringComparison.OrdinalIgnoreCase) ||
+             args[0].Equals("logout", StringComparison.OrdinalIgnoreCase)))
+        {
+            group         = "system";
+            action        = args[0].ToLowerInvariant();
+            commandId     = action;
+            argsStartIndex = 1;
+        }
+        // Commandes tri-niveaux : lama system account <action>
+        else if (args.Length >= 3 &&
+                 args[0].Equals("system", StringComparison.OrdinalIgnoreCase) &&
+                 args[1].Equals("account", StringComparison.OrdinalIgnoreCase))
+        {
+            group         = "system";
+            action        = "account";
+            var subAction = args[2].ToLowerInvariant();
+            commandId     = $"system.account.{subAction}";
+            argsStartIndex = 3;
+        }
+        // Format historique : lama <groupe> <action>
+        else if (args.Length >= 2)
+        {
+            group         = args[0].ToLowerInvariant();
+            action        = args[1].ToLowerInvariant();
+            commandId     = $"{group}.{action}";
+            argsStartIndex = 2;
+        }
+        else
+        {
+            return null;
+        }
 
         var positionalArgs = new List<string>();
         var options = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
-        for (var i = 2; i < args.Length; i++)
+        for (var i = argsStartIndex; i < args.Length; i++)
         {
             var arg = args[i];
 
@@ -87,6 +124,7 @@ public static class CommandContextParser
         {
             Group       = group,
             Action      = action,
+            CommandId   = commandId,
             Arguments   = positionalArgs,
             Options     = options,
             GameId      = gameId,

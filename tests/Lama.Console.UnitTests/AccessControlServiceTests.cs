@@ -319,6 +319,19 @@ public class AccessControlServiceTests
         }
     }
 
+    [Theory]
+    [InlineData("login")]
+    [InlineData("logout")]
+    public void AuthCommands_AreAccessible_WithoutAuthentication(string command)
+    {
+        foreach (var role in Enum.GetValues<Role>())
+        {
+            var result = _sut.CheckAccess(command, role);
+            result.IsAllowed.Should().BeTrue(
+                because: $"{command} doit être accessible sans session ({role})");
+        }
+    }
+
     #endregion
 
     #region GetAllowedCommands

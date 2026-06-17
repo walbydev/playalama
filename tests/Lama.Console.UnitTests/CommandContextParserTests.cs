@@ -42,6 +42,16 @@ public class CommandContextParserTests : IDisposable
         result.Should().BeNull(because: "il faut au moins groupe + action");
     }
 
+    [Fact]
+    public void Parse_ReturnsNull_WhenArgsAreInsufficient_ForStandardFormat()
+    {
+        var result = CommandContextParser.Parse([], _sessionService);
+        result.Should().BeNull();
+
+        result = CommandContextParser.Parse(["game"], _sessionService);
+        result.Should().BeNull(because: "le format standard nécessite groupe + action");
+    }
+
     [Theory]
     [InlineData("game",   "create")]
     [InlineData("play",   "move")]
@@ -221,6 +231,34 @@ public class CommandContextParserTests : IDisposable
 
     #region CommandId
 
+    [Theory]
+    [InlineData("login")]
+    [InlineData("logout")]
+    public void Parse_SupportsSingleLevelCommands(string command)
+    {
+        var result = CommandContextParser.Parse([command], _sessionService);
+
+        result.Should().NotBeNull();
+        result!.CommandId.Should().Be(command.ToLowerInvariant());
+        result.Group.Should().Be("system");
+        result.Action.Should().Be(command.ToLowerInvariant());
+    }
+
+    [Fact]
+    public void Parse_SupportsSystemAccountThreeLevelCommand()
+    {
+        var result = CommandContextParser.Parse(
+            ["system", "account", "create", "alice", "--force"],
+            _sessionService);
+
+        result.Should().NotBeNull();
+        result!.CommandId.Should().Be("system.account.create");
+        result.Group.Should().Be("system");
+        result.Action.Should().Be("account");
+        result.Arguments.Should().ContainSingle().Which.Should().Be("alice");
+        result.HasOption("force").Should().BeTrue();
+    }
+
     [Fact]
     public void Parse_CommandId_IsLowercaseGroupDotAction()
     {
@@ -228,6 +266,22 @@ public class CommandContextParserTests : IDisposable
 
         result!.CommandId.Should().Be("game.create",
             because: "CommandId doit être en minuscules");
+    }
+
+    [Fact]
+    public void Parse_CommandId_IsExact_ForSingleLevelLogin()
+    {
+        var result = CommandContextParser.Parse(["LOGIN"], _sessionService);
+
+        result!.CommandId.Should().Be("login");
+    }
+
+    [Fact]
+    public void Parse_CommandId_IsExact_ForSystemAccountSubcommand()
+    {
+        var result = CommandContextParser.Parse(["system", "account", "LIST"], _sessionService);
+
+        result!.CommandId.Should().Be("system.account.list");
     }
 
     #endregion

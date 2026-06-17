@@ -24,9 +24,22 @@ public sealed class CommandContext
     public string Action { get; init; } = string.Empty;
 
     /// <summary>
-    /// L'identifiant complet de la commande au format "groupe.action" (ex: "play.move").
+    /// L'identifiant complet de la commande.
+    ///
+    /// Cas standard : <c>groupe.action</c> (ex: "play.move").
+    /// Cas spéciaux supportés par le parser :
+    /// - mono-niveau : "login", "logout"
+    /// - trois niveaux : "system.account.create"
     /// </summary>
-    public string CommandId => $"{Group}.{Action}";
+    private readonly string? _commandId;
+
+    public string CommandId
+    {
+        get => string.IsNullOrWhiteSpace(_commandId)
+            ? $"{Group}.{Action}"
+            : _commandId;
+        init => _commandId = value;
+    }
 
     /// <summary>
     /// Les arguments positionnels après le groupe et l'action.

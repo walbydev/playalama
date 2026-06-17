@@ -1,14 +1,15 @@
 # AGENTS.md — Guide pour agents IA
 
-Ce fichier décrit le projet LAMA à destination des agents IA (Copilot, Cline, Cursor, etc.).
-Il sert de référence rapide pour comprendre l'architecture, les conventions et l'état d'avancement du projet.
+Ce fichier décrit l'état réel du projet LAMA pour les agents IA (Copilot, Cline, Cursor, etc.).
+La source de vérité est le code dans `src/` et `tests/`.
 
 ---
 
 ## Vue d'ensemble
 
-**LAMA** est un jeu de mots en ligne de commande (CLI), inspiré du Scrabble, développé en **C# / .NET 10**.
-Les joueurs posent des mots sur un plateau en grille, accumulent des points selon la valeur des lettres et les cases bonus, et s'affrontent jusqu'à épuisement du sac de lettres.
+**LAMA** est un jeu de mots en CLI, inspiré du Scrabble, en **C# / .NET 10**.
+Objectif: proposer un mode commande par commande et un mode interactif textuel,
+avec un cœur métier reutilisable par d'autres interfaces.
 
 ---
 
@@ -17,185 +18,179 @@ Les joueurs posent des mots sur un plateau en grille, accumulent des points selo
 | Outil / Lib | Usage |
 |---|---|
 | .NET 10 / C# | Langage et runtime principal |
-| Spectre.Console 0.57 | Rendu CLI coloré (plateau, rack, scores) |
-| Microsoft.Extensions.Hosting | Generic Host + injection de dépendances |
+| Spectre.Console 0.57 | Rendu terminal (mode interactif + plateau) |
+| Microsoft.Extensions.Hosting | Generic Host + DI |
 | Microsoft.Extensions.Logging | Abstraction de logs |
-| Serilog | Implémentation des logs (console + fichier) |
+| Serilog | Logs console + fichier |
 | xUnit 2.9 | Tests unitaires |
+| FluentAssertions | Assertions tests |
 | coverlet | Couverture de code |
 
-Gestion centralisée des versions NuGet via `Directory.Packages.props` (Central Package Management).
-Propriétés communes (TargetFramework, Nullable, ImplicitUsings) dans `Directory.Build.props`.
+Gestion centralisée des versions NuGet via `Directory.Packages.props`.
+Propriétés communes via `Directory.Build.props`.
 
 ---
 
 ## Architecture
 
-Le projet suit une **Clean Architecture / Ports & Adapters** stricte.
-Aucune dépendance ne doit remonter vers les couches supérieures.
+Le projet suit une architecture type Clean / Ports & Adapters.
 
 ```
-Lama.Contracts       ← Interfaces et entités du domaine (pas de dépendances externes)
-       ↑
-Lama.Domain          ← Logique métier pure (implémente IGameEngine)
-       ↑
-Lama.Core            ← Cas d'usage / couche application
-       ↑
-Lama.Infrastructure  ← Adaptateurs : persistance, I/O, réseau
-       ↑
-Lama.Console         ← Interface CLI (Spectre.Console + Generic Host)
+Lama.Contracts       <- Interfaces et entités de base
+       ^
+Lama.Domain          <- Moteur de jeu (regles)
+       ^
+Lama.Core            <- Use cases applicatifs
+       ^
+Lama.Infrastructure  <- Persistance JSON, session, auth, comptes
+       ^
+Lama.Console         <- CLI (Program, modes, parser, commandes)
 
-Lama.Languages.fr    ← Plugin de langue (implémente IGameLanguageProvider)
+Lama.Languages.fr    <- Provider langue FR (dico + scores)
 ```
 
-### Projets et namespaces
+### Projets et rôle
 
-| Projet | Namespace racine | Rôle |
-|---|---|---|
-| `src/libs/Lama.Contracts` | `Lama.Contracts` | Interfaces et entités partagées |
-| `src/libs/Lama.Domain` | `Lama.Domain` | Moteur de jeu (logique métier) |
-| `src/libs/Lama.Core` | `Lama.Core` | Cas d'usage |
-| `src/libs/Lama.Infrastructure` | `Lama.Infrastructure` | Persistance, I/O |
-| `src/libs/Lama.Languages.fr` | `Lama.Languages.fr` | Dictionnaire et scoring français |
-| `src/Console/Lama.Console` | `Lama.Console` | CLI (point d'entrée) |
-| `tests/Lama.Console.UnitTests` | `Lama.Console.UnitTests` | Tests de la couche Console |
-| `tests/Lama.Languages.fr.UnitTests` | `Lama.Languages.fr.UnitTests` | Tests du provider français |
+| Projet | Role actuel |
+|---|---|
+| `src/libs/Lama.Contracts` | Entites + interfaces (jeu, auth, session, ACL) |
+| `src/libs/Lama.Domain` | Moteur de jeu implemente (`GameEngine`, validation, scoring, bag) |
+| `src/libs/Lama.Core` | Use cases de jeu implementes (create/join/move/pass/end + swap partiel) |
+| `src/libs/Lama.Infrastructure` | Repository JSON, session locale, auth/token, comptes |
+| `src/libs/Lama.Languages.fr` | Provider francais implemente |
+| `src/Console/Lama.Console` | Point d'entree + commandes CLI + mode interactif (partiel) |
 
 ---
 
-## Entités du domaine (`Lama.Contracts`)
+## Entites et interfaces clefs (`Lama.Contracts`)
 
-```csharp
-record Position(int Row, int Column)   // case du plateau, IsValid si 0..14
-record Tile(char Letter, bool IsWildcard = false)  // tuile posée
-record Move(Dictionary<Position, char> Letters, int Score = 0)  // coup joué
-class  BoardState { Tile?[,] Grid }    // état immutable du plateau 15×15
-record Player(string Name, int Score, List<char> Rack)
-record GameState { BoardState Board; List<Player> Players; int CurrentPlayerIndex; int TurnNumber; bool IsGameOver }
-```
-
-### Interfaces clés
-
-| Interface | Rôle |
-|---|---|
-| `IGameEngine` | Moteur de jeu : `InitializeGame`, `PlayMove`, `ValidateMove`, `PassTurn`, `EndGame`, `GetGameState`, `GetCurrentPlayer`, `CreatePlayerRack` |
-| `IGameLanguageProvider` | Plugin de langue : `GetDictionary()`, `GetLetterScores()`, `GetLanguageName()`, `GetLocale()` |
-| `IAccessControlService` | Contrôle d'accès : `CheckAccess(command, role, gameLevel?)`, `GetAllowedCommands(role, gameLevel?)` |
+- `Position`, `Tile`, `Move`, `BoardState`, `Player`, `GameState`
+- `IGameEngine`
+- `IGameRepository`
+- `IGameLanguageProvider`
+- `IAccessControlService`
+- `ISessionService`
+- `IAccountService`, `IAuthService`
+- `Role` = `SuperAdmin`, `Admin`, `Host`, `Player`, `Spectator`
+- `GameLevel` = `Casual`, `Standard`, `Competitive`, `Tournament`
 
 ---
 
-## Système de permissions
+## Permissions (etat reel)
 
-### Rôles (`Role`)
+Controle via `AccessControlService` + `AccessControlMiddleware`.
+Refus d'accès: exit code `11`.
 
-| Rôle | Description |
-|---|---|
-| `Admin` | Accès complet : système, parties, joueurs, tournois |
-| `Player` | Joueur actif : jouer, voir son rack, voir le plateau |
-| `Spectator` | Lecture seule, aucune action de jeu |
+### Rappels importants
 
-### Niveaux de partie (`GameLevel`)
-
-| Niveau | Aides | Challenge | Notes |
-|---|---|---|---|
-| `Casual` | ✅ activées | optionnel | Idéal débutants |
-| `Standard` | ✗ désactivées | autorisé | Équilibre |
-| `Competitive` | ✗ désactivées | obligatoire | Joueurs confirmés |
-| `Tournament` | ✗ désactivées | règles figées | Organisateur décide |
-
-### Matrice de permissions (résumé)
-
-| Commande | Admin | Player+Casual | Player+Standard/Compet./Tourn. | Spectator |
-|---|---|---|---|---|
-| `system.*` | ✅ | ✗ | ✗ | ✗ |
-| `game.create`, `game.end.force` | ✅ | ✗ | ✗ | ✗ |
-| `game.join`, `game.list`, `game.show` | ✅ | ✅ | ✅ | ✅ |
-| `game.pause`, `game.save` | ✅ | ✅ | ✅ | ✗ |
-| `play.move`, `play.pass`, `play.swap`, `play.challenge` | ✅ | ✅ | ✅ | ✗ |
-| `play.check`, `play.simulate`, `show.hints` | ✅ | ✅ | ✗ | ✗ |
-| `show.board`, `show.scores`, `show.history` | ✅ | ✅ | ✅ | ✅ |
-| `show.rack` | ✅ | ✅ | ✅ | ✗ |
-| `dict.check`, `dict.search`, `dict.anagram` | ✅ | ✅ | ✗ | ✗ |
-| `dict.install`, `dict.remove` | ✅ | ✗ | ✗ | ✗ |
-| `player.*`, `tournament.*` | ✅ | ✅ | ✅ | ✅ (lecture) |
-
-Implémenté dans `AccessControlService` + `AccessControlMiddleware` (exit code 11 si refus).
+- `SuperAdmin`: accès total.
+- `Admin`: ne peut pas jouer (`play.*`, `show.rack`) pour anti-triche.
+- `Host`: joue + droits de gestion de sa partie.
+- `Player`: joue sans droits admin.
+- `Spectator`: lecture seule.
+- `system.setup`, `game.create`, `game.join`, `game.list` sont traites comme commandes publiques cote ACL.
 
 ---
 
-## Commandes CLI
+## Commandes CLI — etat reel de l'implementation
 
-Les commandes sont organisées en groupes. Format : `lama <groupe> <action> [options]`
+Le parser CLI actuel est a 2 niveaux:
+`lama <groupe> <action> [arguments...] [options]`
 
-| Groupe | Actions |
-|---|---|
-| `game` | `create`, `join`, `list`, `show`, `pause`, `save`, `end` |
-| `play` | `move <case> <mot> <direction>`, `pass`, `swap <lettres>`, `challenge`, `check` |
-| `show` | `board`, `rack`, `scores`, `history` |
-| `dict` | `check <mot>`, `search <motif>` |
-| `player` | `create`, (autres à venir) |
-| `tournament` | `create`, (autres à venir) |
-| `system` | `status`, `restart` |
+### Commandes implementees et executables
 
-Options globales : `--help`, `--version`, `--verbose`, `--quiet`, `--no-color`, `--high-contrast`, `--lang <code>`, `--output <text|json|csv>`
+- `game.create`
+- `game.join`
+- `game.end`
+- `play.move`
+- `play.pass`
+- `show.board`
+- `show.rack`
+- `show.scores`
+- `dict.check`
+- `dict.search`
+- `dict.anagram`
+- `system.setup`
+- `system.status` (stub retourne non implemente)
+- `system.restart` (stub retourne non implemente)
+- `player.create` (stub retourne non implemente)
+- `tournament.create` (stub retourne non implemente)
+- `game.list` (stub retourne non implemente)
+- `game.show` (stub retourne non implemente)
+- `game.pause` (stub retourne non implemente)
+- `game.save` (stub retourne non implemente)
+- `play.swap` (stub cote commande; use case existant mais incomplet)
+- `play.challenge` (stub retourne non implemente)
+- `play.check` (stub retourne non implemente)
+- `show.history` (stub retourne non implemente)
 
-### Codes de retour
+### Commandes enregistrees mais non atteignables via le parser actuel
 
-| Code | Signification |
-|---|---|
-| 0 | Succès |
-| 1 | Erreur générale |
-| 2 | Argument invalide |
-| 3 | Partie introuvable |
-| 5 | Mot hors dictionnaire |
-| 6 | Placement impossible |
-| 8 | Pas votre tour |
-| 10 | Timeout dépassé |
-| 11 | Droits insuffisants (access denied) |
+Le parser ne construit que `groupe.action`, donc ces `CommandId` ne matchent pas:
 
----
-
-## Support multilingue
-
-| Code | Langue | Statut |
-|---|---|---|
-| `fr` | Français | ✅ Implémenté (`Lama.Languages.fr`) |
-| `en` | Anglais | 🔲 Prévu |
-| `de` | Allemand | 🔲 Prévu |
-| `es` | Espagnol | 🔲 Prévu |
-| `it` | Italien | 🔲 Prévu |
-
-Le `FrenchLanguageProvider` charge :
-- `assets/languages/fr/assets/dictionary.txt` — un mot par ligne (généré avec `aspell`)
-- `assets/languages/fr/assets/scores.json` — `{ "scores": { "A": 1, "Z": 10, ... } }`
+- `login`
+- `logout`
+- `system.account.create`
+- `system.account.list`
+- `system.account.revoke`
 
 ---
 
-## État d'avancement
+## Etat d'avancement par composant
 
-| Composant | État |
+| Composant | Etat |
 |---|---|
-| `Lama.Contracts` — entités et interfaces | ✅ Complet |
-| `Lama.Languages.fr` — dictionnaire FR | ✅ Complet |
-| `AccessControlService` + middleware | ✅ Complet + testé |
-| `Lama.Domain` — moteur de jeu | 🔲 Stub vide |
-| `Lama.Core` — cas d'usage | 🔲 Stub vide |
-| `Lama.Infrastructure` — persistance | 🔲 Stub vide |
-| `Lama.Console` — commandes CLI | 🔲 Stubs vides (Program.cs = "Hello World") |
-| Tests unitaires AccessControl | ✅ Complets |
-| Tests unitaires FrenchLanguageProvider | ✅ Présents |
+| `Lama.Contracts` | ✅ Matures |
+| `Lama.Domain` | ✅ Implante (plus un stub) |
+| `Lama.Core` | ✅ Implante (avec limites sur swap/challenge/historique) |
+| `Lama.Infrastructure` | ✅ Implante (JSON/session/auth/accounts) |
+| `Lama.Languages.fr` | ✅ Implante |
+| `Lama.Console` mode commande | 🟡 Partiel: noyau OK, plusieurs commandes stubs |
+| `Lama.Console` mode interactif | 🟡 Shell present, logique metier non branchee |
+| Rendering dedie (`Rendering/*`) | 🔲 Classes vides |
+| Middlewares additionnels (`Accessibility/Logging/ErrorHandling`) | 🔲 Classes vides |
+
+---
+
+## Tests
+
+### Couverture existante
+
+- `tests/Lama.Domain.UnitTests`:
+  - `GameEngine`, `MoveValidator`, `ScoreCalculator`, `TileBag`, `BonusMap`
+- `tests/Lama.Core.UnitTests`:
+  - `CreateGameUseCase`, `JoinGameUseCase`, `PlayMoveUseCase`, `PassTurn/Swap/End`
+- `tests/Lama.Infrastructure.UnitTests`:
+  - `JsonGameRepository`, `SessionService`, `AccountService`, `AuthService`, `PasswordHasher`
+- `tests/Lama.Console.UnitTests`:
+  - `AccessControlService`, `CommandContext`, `CommandContextParser`
+- `tests/Lama.Languages.fr.UnitTests`:
+  - `FrenchLanguageProvider`
+
+### A renforcer
+
+- Tests E2E CLI (parcours complet create -> join -> move -> show -> end)
+- Tests de non-regression sur parsing multi-niveaux (system.account.*, login/logout)
+- Tests des sorties `--output json` pour les commandes affichees
+
+---
+
+## Ecarts connus a traiter
+
+1. Incoherence doc/code historique: plusieurs docs decrivent encore Domain/Core/Infra comme stubs.
+2. Incoherence parser/commandes sur `login`, `logout`, `system.account.*`.
+3. `SwapLettersUseCase` encore transitoire (passe le tour sans vrai echange metier complet).
+4. Historique des coups absent du coeur, bloque `show.history` et scenarios challenge.
 
 ---
 
 ## Conventions de code
 
-- **Nullable activé** partout (`<Nullable>enable</Nullable>`)
-- **ImplicitUsings** activé (pas besoin de `using System;` etc.)
-- Records C# pour les entités immuables (`Position`, `Tile`, `Move`, `Player`, `GameState`)
-- `sealed` sur les implémentations de services (`AccessControlService`, `AccessControlMiddleware`)
-- Commentaires XML (`///`) obligatoires sur toutes les interfaces et classes publiques
-- Écriture sur `stderr` pour les messages d'erreur (ne pas polluer `stdout` utilisé pour `--output json`)
-- Identifiants de commandes en minuscules avec point : `"groupe.action"` (ex: `"play.move"`, `"show.hints"`)
+- `Nullable` active.
+- `ImplicitUsings` actif.
+- Commentaires XML sur API publiques.
+- Erreurs sur `stderr`, sortie exploitable sur `stdout`.
+- Identifiants commandes en minuscule, format `groupe.action`.
 
 ---
 
@@ -203,11 +198,23 @@ Le `FrenchLanguageProvider` charge :
 
 ```bash
 # Build
-dotnet build
+ dotnet build
 
 # Tests
-dotnet test
+ dotnet test
 
-# Lancer la console (quand implémentée)
-dotnet run --project src/Console/Lama.Console
+# Lancer la console
+ dotnet run --project src/Console/Lama.Console
 ```
+
+---
+
+## Regle pour agents
+
+Quand un doute apparait entre documentation et comportement, se fier au code:
+
+1. `src/Console/Lama.Console/Program.cs`
+2. `src/Console/Lama.Console/Services/CommandContextParser.cs`
+3. `src/Console/Lama.Console/Services/CommandDispatcher.cs`
+4. `src/Console/Lama.Console/Commands/**/*.cs`
+5. `src/libs/Lama.Core/**/*.cs` + `src/libs/Lama.Domain/**/*.cs`

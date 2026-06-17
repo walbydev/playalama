@@ -25,6 +25,27 @@ public class CommandContextTests
         context.CommandId.Should().Be(expected);
     }
 
+    [Fact]
+    public void CommandId_UsesExplicitValue_WhenProvided()
+    {
+        var context = new CommandContext
+        {
+            Group     = "system",
+            Action    = "account",
+            CommandId = "system.account.create"
+        };
+
+        context.CommandId.Should().Be("system.account.create");
+    }
+
+    [Fact]
+    public void CommandId_SupportsSingleLevelCommand_WhenExplicitlySet()
+    {
+        var context = new CommandContext { CommandId = "login" };
+
+        context.CommandId.Should().Be("login");
+    }
+
     #endregion
 
     #region Options globales — propriétés calculées
