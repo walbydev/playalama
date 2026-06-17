@@ -4,4 +4,15 @@
         <ProjectReference Include="..\Lama.Contracts\Lama.Contracts.csproj" />
     </ItemGroup>
 
+    <!-- Copie les assets de langue dans le répertoire de build du projet qui référence ce projet -->
+    <!-- Destination : assets/languages/fr/assets/{fichier} pour correspondre au chemin attendu -->
+    <ItemGroup>
+        <None Include="assets\dictionary.txt"
+              CopyToOutputDirectory="PreserveNewest"
+              Link="assets\languages\fr\assets\dictionary.txt" />
+        <None Include="assets\scores.json"
+              CopyToOutputDirectory="PreserveNewest"
+              Link="assets\languages\fr\assets\scores.json" />
+    </ItemGroup>
+
 </Project>

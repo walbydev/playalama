@@ -40,12 +40,19 @@ public sealed class AccessControlService : IAccessControlService
         };
 
     // ── Commandes publiques (pas d'authentification requise) ─────────────────
-    // system.setup est accessible sans token car c'est le point d'entrée
-    // du système. La commande elle-même refuse si un SuperAdmin existe déjà.
+    // Accessibles sans session ni token. La commande elle-même est son propre
+    // garde-fou.
+    // - system.setup : premier lancement, crée le SuperAdmin
+    // - game.create  : crée une partie et assigne le rôle Host dans la session
+    // - game.join    : rejoint une partie existante (session créée par game.create)
+    // - game.list    : lecture seule, pas besoin de session
     private static readonly HashSet<string> PublicCommands =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            "system.setup"
+            "system.setup",
+            "game.create",
+            "game.join",
+            "game.list"
         };
 
     // ── Commandes réservées à SuperAdmin + Admin (pas les joueurs) ────────────

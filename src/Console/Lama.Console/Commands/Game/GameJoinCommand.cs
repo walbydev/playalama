@@ -53,15 +53,16 @@ public sealed class GameJoinCommand : ICommand
             var response = await _joinGameUseCase.ExecuteAsync(
                 new JoinGameRequest(context.GameId, playerName));
 
-            // Mettre à jour la session avec le nouvel ID de joueur
-            var current  = _sessionService.LoadSession()!;
-            var updated = current with
-            {
-                PlayerId   = response.PlayerId,
-                PlayerName = playerName,
-                Role       = Role.Player,
-                UpdatedAt  = DateTimeOffset.UtcNow
-            };
+            // Mettre à jour la session :
+            // - Si une session existe (l'hôte est connecté), on met à jour les métadonnées
+            //   sans changer le PlayerId de l'hôte (il continue de jouer avec ses infos).
+            // - En mode local (une seule machine), la session représente toujours l'hôte.
+            //   Pour jouer avec plusieurs sessions distinctes, utiliser LAMA_SESSION_DIR.
+            var current = _sessionService.LoadSession()!;
+            // On conserve le PlayerId de l'hôte dans la session.
+            // Le nouveau joueur est enregistré dans le moteur mais la session
+            // reste celle de l'hôte pour les commandes suivantes sur ce terminal.
+            var updated = current with { UpdatedAt = DateTimeOffset.UtcNow };
             _sessionService.SaveSession(updated);
 
             global::System.Console.WriteLine($"✓ {playerName} a rejoint la partie.");
