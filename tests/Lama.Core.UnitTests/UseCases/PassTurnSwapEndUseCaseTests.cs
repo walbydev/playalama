@@ -126,6 +126,50 @@ public class PassTurnSwapEndUseCaseTests
         await act.Should().ThrowAsync<GameException>();
     }
 
+    [Fact]
+    public async Task SwapLetters_NotCurrentPlayer_ThrowsGameException()
+    {
+        var (gameId, _, bobId, _, _, _, _, swapUc, _) =
+            await GameFixture.CreateReadyGame();
+
+        var act = async () => await swapUc.ExecuteAsync(
+            new SwapLettersRequest(gameId, bobId, ['A']));
+
+        await act.Should().ThrowAsync<GameException>(
+            because: "un joueur ne peut pas echanger hors de son tour");
+    }
+
+    [Fact]
+    public async Task SwapLetters_LetterNotInRack_ThrowsGameException()
+    {
+        var (gameId, aliceId, _, createUc, _, _, _, swapUc, _) =
+            await GameFixture.CreateReadyGame();
+
+        createUc.GetEngine(gameId)!.ForceRackForTest(0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
+
+        var act = async () => await swapUc.ExecuteAsync(
+            new SwapLettersRequest(gameId, aliceId, ['Z']));
+
+        await act.Should().ThrowAsync<GameException>(
+            because: "les lettres a echanger doivent etre presentes dans le rack");
+    }
+
+    [Fact]
+    public async Task SwapLetters_WithSwapAll_UsesWholeRack()
+    {
+        var (gameId, aliceId, _, createUc, _, _, _, swapUc, _) =
+            await GameFixture.CreateReadyGame();
+
+        createUc.GetEngine(gameId)!.ForceRackForTest(0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
+
+        var response = await swapUc.ExecuteAsync(
+            new SwapLettersRequest(gameId, aliceId, SwapAll: true));
+
+        response.NewRack.Should().HaveCount(7);
+        response.GameState.CurrentPlayerIndex.Should().Be(1,
+            because: "un echange complet consomme le tour");
+    }
+
     #endregion
 
     #region EndGameUseCase

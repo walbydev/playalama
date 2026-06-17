@@ -177,6 +177,41 @@ public sealed class GameEngine : IGameEngine
     }
 
     /// <inheritdoc />
+    public void SwapLetters(IReadOnlyList<char> lettersToSwap)
+    {
+        EnsureInitialized();
+        EnsureNotGameOver();
+
+        if (lettersToSwap.Count == 0)
+            throw new GameException("Au moins une lettre doit etre fournie pour l'echange.");
+
+        if (_bag is null)
+            throw new GameException("Le sac de lettres est indisponible.");
+
+        if (_bag.Count < lettersToSwap.Count)
+            throw new GameException("Le sac ne contient pas assez de tuiles pour cet echange.");
+
+        var player = _players![_currentPlayerIndex];
+        var newRack = new List<char>(player.Rack);
+
+        foreach (var letter in lettersToSwap)
+        {
+            if (!newRack.Remove(letter))
+                throw new GameException(
+                    $"La lettre '{letter}' n'est pas dans le rack du joueur courant.");
+        }
+
+        var replacements = _bag.Swap(lettersToSwap);
+        if (replacements.Count != lettersToSwap.Count)
+            throw new GameException("Echange impossible: le sac n'a pas pu fournir assez de lettres.");
+
+        newRack.AddRange(replacements);
+        _players[_currentPlayerIndex] = player with { Rack = newRack };
+
+        AdvancePlayer();
+    }
+
+    /// <inheritdoc />
     public List<char> CreatePlayerRack(int size = 7)
     {
         // Si le moteur est initialisé, pioche depuis le sac en cours

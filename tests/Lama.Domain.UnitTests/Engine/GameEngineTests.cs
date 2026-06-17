@@ -445,6 +445,61 @@ public class GameEngineTests
 
     #endregion
 
+    #region SwapLetters
+
+    [Fact]
+    public void SwapLetters_ValidLetters_KeepsRackSizeAndAdvancesPlayer()
+    {
+        var engine = CreateEngine();
+        engine.InitializeGame(["Alice", "Bob"]);
+        ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
+
+        engine.SwapLetters(['L', 'A']);
+        var state = engine.GetGameState();
+
+        state.Players[0].Rack.Should().HaveCount(7,
+            because: "un echange conserve la taille du rack");
+        state.CurrentPlayerIndex.Should().Be(1,
+            because: "un echange valide consomme le tour");
+    }
+
+    [Fact]
+    public void SwapLetters_LetterNotInRack_ThrowsGameException()
+    {
+        var engine = CreateEngine();
+        engine.InitializeGame(["Alice", "Bob"]);
+        ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
+
+        var act = () => engine.SwapLetters(['Z']);
+
+        act.Should().Throw<GameException>(
+            because: "on ne peut pas echanger une lettre absente du rack");
+    }
+
+    [Fact]
+    public void SwapLetters_EmptySelection_ThrowsGameException()
+    {
+        var engine = CreateEngine();
+        engine.InitializeGame(["Alice", "Bob"]);
+
+        var act = () => engine.SwapLetters([]);
+
+        act.Should().Throw<GameException>(
+            because: "un echange sans lettre n'est pas valide");
+    }
+
+    [Fact]
+    public void SwapLetters_ThrowsException_BeforeInit()
+    {
+        var engine = CreateEngine();
+
+        var act = () => engine.SwapLetters(['A']);
+
+        act.Should().Throw<GameException>();
+    }
+
+    #endregion
+
     #region CreatePlayerRack
 
     [Fact]

@@ -56,10 +56,10 @@ Ces options sont parsees dans `CommandContext` (pas toujours exploitees par tout
 | `lama game create [--level ...]` | ✅ | cree partie + session locale |
 | `lama game join <nom>` | ✅ | rejoint partie active |
 | `lama game end` | ✅ | termine partie + efface session |
-| `lama game list` | 🟡 | stub (retour non implemente) |
-| `lama game show` | 🟡 | stub |
-| `lama game pause` | 🟡 | stub |
-| `lama game save` | 🟡 | stub |
+| `lama game list` | ✅ | liste les parties persistées (`text`, `json`, `csv`) |
+| `lama game show [gameId]` | ✅ | details partie (session courante ou `gameId`) |
+| `lama game pause` | ✅ | snapshot persistant de la partie courante |
+| `lama game save [--file <chemin>]` | ✅ | sauvegarde + export optionnel JSON |
 
 ### 3.2 `play`
 
@@ -67,7 +67,7 @@ Ces options sont parsees dans `CommandContext` (pas toujours exploitees par tout
 |---|---|---|
 | `lama play move <case> <mot> <direction>` | ✅ | supporte `--dry-run` |
 | `lama play pass` | ✅ | passe le tour |
-| `lama play swap <lettres> [--all]` | 🟡 | stub cote commande |
+| `lama play swap <lettres> [--all]` | ✅ | echange reel des lettres + consomme le tour |
 | `lama play challenge` | 🟡 | stub |
 | `lama play check <case> <mot> <direction>` | 🟡 | stub |
 
@@ -142,11 +142,14 @@ lama system account revoke admin2
 
 # Partie (commande par commande)
 lama game create
+lama game list
+lama game show
 lama game join alice
 lama show board
 lama show rack --with-values
 lama play move H8 LAMA H --dry-run
 lama play pass
+lama play swap AEI
 lama game end
 
 # Dictionnaire

@@ -219,3 +219,131 @@ Journal unique de progression du projet LAMA.
 - `tests/Lama.Console.UnitTests/AccessControlServiceTests.cs`
 - `docs/AGENTS.md`
 - `docs/defines-CLI.md`
+
+## [2026-06-17 23:11:09 UTC] - Swap complet + game.list/game.show operationnels
+
+### Contexte
+- La priorite immediate etait de traiter les deux chantiers proposes:
+  1) finaliser `play.swap` de bout en bout,
+  2) implémenter `game.list` et `game.show` sur la persistance existante.
+
+### Fait
+- `IGameEngine` et `GameEngine` supportent desormais un vrai echange de lettres (`SwapLetters`) avec validations metier:
+  - lettres presentes dans le rack,
+  - sac suffisamment fourni,
+  - consommation du tour apres succes.
+- `SwapLettersUseCase` branche sur la logique metier reelle (plus de fallback `PassTurn`), avec support `SwapAll`.
+- `PlaySwapCommand` est implementee de bout en bout (session active, `--all`, retour rack/tour suivant, erreurs metier).
+- `GameListCommand` implementee sur `IGameRepository` (sorties `text`, `json`, `csv`).
+- `GameShowCommand` implementee sur `IGameRepository` (session courante ou `gameId` explicite, sorties `text`, `json`, `csv`).
+- Documentation synchronisee:
+  - `docs/AGENTS.md`
+  - `docs/defines-CLI.md`
+
+### En cours
+- Stubs restant cote console:
+  - `game.pause`, `game.save`
+  - `play.challenge`, `play.check`
+  - `show.history`
+  - `player.create`, `tournament.create`
+  - `system.status`, `system.restart`
+
+### A faire
+- Ajouter des tests unitaires dedies pour `GameListCommand` et `GameShowCommand` (formats et cas limites).
+- Introduire l'historique des coups dans le coeur pour activer `show.history`/`challenge`.
+- Renforcer les tests E2E CLI sur les formats `--output json/csv`.
+
+### Risques / Ecarts
+- Les commandes de listing/affichage reposent sur l'etat persiste; en cas de scenario non sauvegarde, la vue peut diverger temporairement.
+- Le mode interactif reste principalement un shell de navigation.
+
+### Prochaines etapes
+1. Completer `game.save` puis `game.pause` pour fiabiliser les parcours longue duree.
+2. Ajouter l'historique des coups dans le state core.
+3. Cadrer une premiere batterie de tests E2E CLI (text/json/csv).
+
+### References
+- `src/libs/Lama.Contracts/IGameEngine.cs`
+- `src/libs/Lama.Domain/Engine/GameEngine.cs`
+- `src/libs/Lama.Core/UseCases/SwapLettersUseCase.cs`
+- `src/Console/Lama.Console/Commands/Play/PlaySwapCommand.cs`
+- `src/Console/Lama.Console/Commands/Game/GameListCommand.cs`
+- `src/Console/Lama.Console/Commands/Game/GameShowCommand.cs`
+
+## [2026-06-17 21:14:07 UTC] - game.save et game.pause implementes
+
+### Contexte
+- Suite du chantier CLI sur les commandes de gestion de partie encore en attente.
+- Objectif: enchaîner sur `game.save` puis `game.pause`.
+
+### Fait
+- `GameSaveCommand` est maintenant branchee sur `CreateGameUseCase.SaveGame(...)`.
+- `game.save` gere:
+  - verification de session active,
+  - sauvegarde explicite de la partie,
+  - export optionnel JSON via `--file <chemin>`.
+- `GamePauseCommand` est maintenant implementee comme snapshot persistant immediat de la partie courante.
+- Les deux commandes mettent a jour `UpdatedAt` de la session locale.
+- Documentation harmonisee:
+  - `docs/AGENTS.md`
+  - `docs/defines-CLI.md`
+
+### En cours
+- Stubs restants:
+  - `play.challenge`, `play.check`
+  - `show.history`
+  - `player.create`, `tournament.create`
+  - `system.status`, `system.restart`
+
+### A faire
+- Ajouter des tests unitaires dedies pour `GameSaveCommand` et `GamePauseCommand`.
+- Decider d'un vrai etat "pause" metier (aujourd'hui: pause = sauvegarde immediate).
+
+### Risques / Ecarts
+- `game.pause` ne bloque pas formellement une reprise metier (pas de flag "paused" dans l'etat core).
+- L'option `--file` exporte un snapshot JSON mais n'introduit pas encore un flux `game.load`.
+
+### Prochaines etapes
+1. Implementer `show.history` apres ajout d'un historique des coups dans le coeur.
+2. Ouvrir `play.check`/`play.challenge` sur les APIs metier disponibles.
+
+### References
+- `src/Console/Lama.Console/Commands/Game/GameSaveCommand.cs`
+- `src/Console/Lama.Console/Commands/Game/GamePauseCommand.cs`
+- `docs/AGENTS.md`
+- `docs/defines-CLI.md`
+
+## [2026-06-17 21:22:40 UTC] - Couverture de tests console completee sur les commandes manquantes
+
+### Contexte
+- Une partie des commandes console nouvellement implantees n'avait encore aucun test direct.
+
+### Fait
+- Ajout d'une suite de tests console couvrant les commandes manquantes/recentes:
+  - `game.create`
+  - `game.join`
+  - `game.list`
+  - `game.show`
+  - `game.save`
+  - `game.pause`
+  - `game.end`
+  - `play.pass`
+  - `play.swap`
+  - `play.move`
+- Ajout d'une configuration xUnit pour executer ces tests sans parallelisation d'assembly.
+- Validation completee sur toute la solution.
+
+### Resultat
+- `dotnet test /home/philippe/RiderProjects/Games/Lama/Lama.slnx` : **496/496**
+
+### Risques / Ecarts
+- Les avertissements `NU1900` persistent a cause de la source NuGet interne indisponible, mais n'empechent pas les tests.
+
+### Prochaines etapes
+1. Si besoin, ajouter les tests d'erreur sur les commandes restantes (`play.check`, `play.challenge`, `show.history`).
+2. Continuer la remontee de couverture sur le mode interactif.
+
+### References
+- `tests/Lama.Console.UnitTests/GameAndPlayCommandTests.cs`
+- `tests/Lama.Console.UnitTests/AssemblyInfo.cs`
+

@@ -55,7 +55,7 @@ Lama.Languages.fr    <- Provider langue FR (dico + scores)
 |---|---|
 | `src/libs/Lama.Contracts` | Entites + interfaces (jeu, auth, session, ACL) |
 | `src/libs/Lama.Domain` | Moteur de jeu implemente (`GameEngine`, validation, scoring, bag) |
-| `src/libs/Lama.Core` | Use cases de jeu implementes (create/join/move/pass/end + swap partiel) |
+| `src/libs/Lama.Core` | Use cases de jeu implementes (create/join/move/pass/swap/end) |
 | `src/libs/Lama.Infrastructure` | Repository JSON, session locale, auth/token, comptes |
 | `src/libs/Lama.Languages.fr` | Provider francais implemente |
 | `src/Console/Lama.Console` | Point d'entree + commandes CLI + mode interactif (partiel) |
@@ -103,9 +103,14 @@ Le parser supporte:
 
 - `game.create`
 - `game.join`
+- `game.list`
+- `game.show`
+- `game.pause`
+- `game.save`
 - `game.end`
 - `play.move`
 - `play.pass`
+- `play.swap`
 - `show.board`
 - `show.rack`
 - `show.scores`
@@ -125,11 +130,6 @@ Le parser supporte:
 - `system.restart`
 - `player.create`
 - `tournament.create`
-- `game.list`
-- `game.show`
-- `game.pause`
-- `game.save`
-- `play.swap` (stub cote commande; use case existant mais incomplet)
 - `play.challenge`
 - `play.check`
 - `show.history`
@@ -142,7 +142,7 @@ Le parser supporte:
 |---|---|
 | `Lama.Contracts` | ✅ Matures |
 | `Lama.Domain` | ✅ Implante |
-| `Lama.Core` | ✅ Implante (avec limites sur swap/challenge/historique) |
+| `Lama.Core` | ✅ Implante (avec limites sur challenge/historique) |
 | `Lama.Infrastructure` | ✅ Implante (JSON/session/auth/accounts) |
 | `Lama.Languages.fr` | ✅ Implante |
 | `Lama.Console` mode commande | 🟡 Partiel: noyau OK, plusieurs commandes stubs |
@@ -181,9 +181,8 @@ Le parser supporte:
 ## Ecarts connus a traiter
 
 1. Incoherence doc/code historique: plusieurs docs decrivent encore Domain/Core/Infra comme stubs.
-2. `SwapLettersUseCase` encore transitoire (passe le tour sans vrai echange metier complet).
-3. Historique des coups absent du coeur, bloque `show.history` et scenarios challenge.
-4. Mode interactif textuel encore largement placeholder.
+2. Historique des coups absent du coeur, bloque `show.history` et scenarios challenge.
+3. Mode interactif textuel encore largement placeholder.
 
 ---
 

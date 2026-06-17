@@ -57,10 +57,12 @@ public record PassTurnRequest(
 /// <param name="GameId">Identifiant de la partie.</param>
 /// <param name="PlayerId">Identifiant du joueur.</param>
 /// <param name="Letters">Lettres à échanger.</param>
+/// <param name="SwapAll">True pour échanger tout le rack du joueur courant.</param>
 public record SwapLettersRequest(
     string GameId,
     string PlayerId,
-    IReadOnlyList<char> Letters);
+    IReadOnlyList<char>? Letters = null,
+    bool SwapAll = false);
 
 /// <summary>
 /// Requête pour terminer la partie.

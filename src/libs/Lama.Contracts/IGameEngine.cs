@@ -35,6 +35,13 @@ public interface IGameEngine
     void PassTurn();
 
     /// <summary>
+    /// Echange des lettres du rack du joueur courant avec le sac.
+    /// Consomme le tour en cas de succes.
+    /// </summary>
+    /// <param name="lettersToSwap">Lettres a echanger.</param>
+    void SwapLetters(IReadOnlyList<char> lettersToSwap);
+
+    /// <summary>
     /// Obtient le joueur actuel.
     /// </summary>
     Player GetCurrentPlayer();

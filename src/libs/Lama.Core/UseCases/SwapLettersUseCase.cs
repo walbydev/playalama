@@ -33,15 +33,19 @@ public sealed class SwapLettersUseCase
                 "Ce n'est pas votre tour. " +
                 $"C'est au tour de {state.Players[state.CurrentPlayerIndex].Name}.");
 
-        // Construire le move d'échange : swap = pass + redistribution
-        // Le moteur n'a pas de méthode SwapLetters dédiée dans IGameEngine —
-        // on implémente via ReturnTiles + Draw directement sur TileBag n'est
-        // pas accessible depuis Core. On passe le tour pour l'instant.
-        // TODO: ajouter SwapLetters à IGameEngine dans la prochaine itération.
-        engine.PassTurn();
-        var newState = engine.GetGameState();
+        var lettersToSwap = request.SwapAll
+            ? new List<char>(state.Players[playerIndex].Rack)
+            : (request.Letters ?? [])
+                .Select(char.ToUpperInvariant)
+                .ToList();
 
-        // Retourner le rack inchangé pour l'instant (le swap complet sera fait dans IGameEngine)
+        if (lettersToSwap.Count == 0)
+            throw new GameException("Aucune lettre a echanger.");
+
+        engine.SwapLetters(lettersToSwap);
+        var newState = engine.GetGameState();
+        _createUseCase.SaveGame(request.GameId, isFirstMove: state.TurnNumber == 1 && !state.IsGameOver);
+
         var newRack = newState.Players[playerIndex].Rack;
 
         return Task.FromResult(new SwapLettersResponse(

@@ -8,6 +8,7 @@
     <File Path="docs\console-interface-architecture.md" />
     <File Path="docs\defines-CLI.md" />
     <File Path="docs\tools.md" />
+    <File Path="PROGRESS.md" />
     <File Path="README.md" />
   </Folder>
   <Folder Name="/Libraries/">
