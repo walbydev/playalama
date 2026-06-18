@@ -268,6 +268,8 @@ public sealed class InteractiveMode : IConsoleMode
                     .Title("[green]Options[/]")
                     .AddChoices(
                         "Afficher la session locale",
+                        "Mon profil",
+                        "Annuaire joueurs",
                         "Mon rating",
                         "Mes stats (30 jours)",
                         "Top 10 mondial",
@@ -292,6 +294,39 @@ public sealed class InteractiveMode : IConsoleMode
                         AnsiConsole.MarkupLine($"- Partie  : [white]{session.GameId ?? "(aucune)"}[/]");
                         AnsiConsole.MarkupLine($"- MAJ     : [grey]{session.UpdatedAt:O}[/]");
                     }
+                    break;
+
+                case "Mon profil":
+                    if (session?.PlayerId is null)
+                    {
+                        AnsiConsole.MarkupLine("[yellow]Aucun joueur actif dans la session.[/]");
+                        break;
+                    }
+
+                    await _dispatcher.DispatchAsync(new CommandContext
+                    {
+                        Group = "player",
+                        Action = "show",
+                        CommandId = "player.show",
+                        Arguments = [session.PlayerId],
+                        Options = new Dictionary<string, string?> { ["output"] = "text" },
+                        PlayerId = session.PlayerId,
+                        PlayerName = session.PlayerName,
+                        Role = session.Role,
+                        GameLevel = session.GameLevel
+                    }, cancellationToken);
+                    break;
+
+                case "Annuaire joueurs":
+                    await _dispatcher.DispatchAsync(new CommandContext
+                    {
+                        Group = "player",
+                        Action = "list",
+                        CommandId = "player.list",
+                        Options = new Dictionary<string, string?> { ["output"] = "text" },
+                        Role = session?.Role ?? Role.Player,
+                        GameLevel = session?.GameLevel
+                    }, cancellationToken);
                     break;
 
                 case "Mon rating":

@@ -49,6 +49,19 @@ public sealed class CommandLineHelpTests
     }
 
     [Fact]
+    public async Task GroupHelp_PrintsPlayerHelp()
+    {
+        var mode = CreateMode(["player", "--help"]);
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => mode.RunAsync());
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("Profil joueur local");
+        stdout.Should().Contain("list");
+    }
+
+    [Fact]
     public async Task CommandHelp_SystemRestart_ExplainsLogicalRestart()
     {
         var mode = CreateMode(["system", "restart", "--help"]);
