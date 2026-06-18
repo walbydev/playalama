@@ -12,6 +12,7 @@ public static class HelpCatalog
         new("game", "Gerer les parties", "create, join, list, show, pause, save, end"),
         new("play", "Jouer un tour", "move, pass, swap, challenge, check"),
         new("show", "Afficher l'etat de jeu", "board, rack, scores, history"),
+        new("rating", "Classement global", "show, leaderboard, stats"),
         new("dict", "Dictionnaire", "check, search, anagram"),
         new("player", "Profil joueur local", "create"),
         new("tournament", "Tournoi", "create"),
@@ -240,6 +241,46 @@ public static class HelpCatalog
                 new("--output", "Format de sortie (text|json|csv)")
             ],
             Examples: ["lama show history", "lama show history --last 10 --output csv"]),
+        new(
+            CommandId: "rating.show",
+            Group: "rating",
+            ActionPath: "show",
+            Usage: "lama rating show [playerId] [--output text|json|csv]",
+            Description: "Affiche le rating global d'un joueur (ou joueur de la session).",
+            AllowedRoles: "Tous roles",
+            OutputFormats: "text, json, csv",
+            Options: [new("--output", "Format de sortie (text|json|csv)")],
+            Examples: ["lama rating show", "lama rating show alice --output json"]),
+        new(
+            CommandId: "rating.leaderboard",
+            Group: "rating",
+            ActionPath: "leaderboard",
+            Usage: "lama rating leaderboard [--top <n>] [--output text|json|csv]",
+            Description: "Affiche le classement mondial par Elo.",
+            AllowedRoles: "Tous roles",
+            OutputFormats: "text, json, csv",
+            Options:
+            [
+                new("--top", "Nombre de joueurs a afficher (defaut: 20)"),
+                new("--output", "Format de sortie (text|json|csv)")
+            ],
+            Examples: ["lama rating leaderboard", "lama rating leaderboard --top 50 --output csv"]),
+        new(
+            CommandId: "rating.stats",
+            Group: "rating",
+            ActionPath: "stats",
+            Usage: "lama rating stats [playerId] [--7d|--30d|--365d] [--output text|json|csv]",
+            Description: "Affiche les statistiques d'un joueur sur une periode.",
+            AllowedRoles: "Tous roles",
+            OutputFormats: "text, json, csv",
+            Options:
+            [
+                new("--7d", "Filtre les stats sur les 7 derniers jours"),
+                new("--30d", "Filtre les stats sur les 30 derniers jours"),
+                new("--365d", "Filtre les stats sur les 365 derniers jours"),
+                new("--output", "Format de sortie (text|json|csv)")
+            ],
+            Examples: ["lama rating stats", "lama rating stats bob --30d --output json"]),
         new(
             CommandId: "dict.check",
             Group: "dict",

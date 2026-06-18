@@ -258,23 +258,110 @@ public sealed class InteractiveMode : IConsoleMode
         return await _dispatcher.DispatchAsync(context, cancellationToken);
     }
 
-    private Task<int> HandleOptions(CancellationToken cancellationToken)
+    private async Task<int> HandleOptions(CancellationToken cancellationToken)
     {
         var session = _sessionService.LoadSession();
-        AnsiConsole.MarkupLine("[green]Session locale[/]");
-        AnsiConsole.MarkupLine($"- Fichier : [grey]{_sessionService.SessionFilePath}[/]");
-        if (session is null)
+        while (!cancellationToken.IsCancellationRequested)
         {
-            AnsiConsole.MarkupLine("- Etat    : [yellow]aucune session active[/]");
+            var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[green]Options[/]")
+                    .AddChoices(
+                        "Afficher la session locale",
+                        "Mon rating",
+                        "Mes stats (30 jours)",
+                        "Top 10 mondial",
+                        "Retour"));
+
+            if (choice == "Retour")
+                return ExitCodes.Success;
+
+            switch (choice)
+            {
+                case "Afficher la session locale":
+                    AnsiConsole.MarkupLine("[green]Session locale[/]");
+                    AnsiConsole.MarkupLine($"- Fichier : [grey]{_sessionService.SessionFilePath}[/]");
+                    if (session is null)
+                    {
+                        AnsiConsole.MarkupLine("- Etat    : [yellow]aucune session active[/]");
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine($"- Joueur  : [white]{session.PlayerName ?? "(aucun)"}[/]");
+                        AnsiConsole.MarkupLine($"- Role    : [white]{session.Role}[/]");
+                        AnsiConsole.MarkupLine($"- Partie  : [white]{session.GameId ?? "(aucune)"}[/]");
+                        AnsiConsole.MarkupLine($"- MAJ     : [grey]{session.UpdatedAt:O}[/]");
+                    }
+                    break;
+
+                case "Mon rating":
+                    if (session?.PlayerId is null)
+                    {
+                        AnsiConsole.MarkupLine("[yellow]Aucun joueur actif dans la session.[/]");
+                        break;
+                    }
+
+                    await _dispatcher.DispatchAsync(new CommandContext
+                    {
+                        Group = "rating",
+                        Action = "show",
+                        CommandId = "rating.show",
+                        Arguments = [session.PlayerId],
+                        Options = new Dictionary<string, string?> { ["output"] = "text" },
+                        PlayerId = session.PlayerId,
+                        PlayerName = session.PlayerName,
+                        Role = session.Role,
+                        GameLevel = session.GameLevel
+                    }, cancellationToken);
+                    break;
+
+                case "Mes stats (30 jours)":
+                    if (session?.PlayerId is null)
+                    {
+                        AnsiConsole.MarkupLine("[yellow]Aucun joueur actif dans la session.[/]");
+                        break;
+                    }
+
+                    await _dispatcher.DispatchAsync(new CommandContext
+                    {
+                        Group = "rating",
+                        Action = "stats",
+                        CommandId = "rating.stats",
+                        Arguments = [session.PlayerId],
+                        Options = new Dictionary<string, string?>
+                        {
+                            ["30d"] = null,
+                            ["output"] = "text"
+                        },
+                        PlayerId = session.PlayerId,
+                        PlayerName = session.PlayerName,
+                        Role = session.Role,
+                        GameLevel = session.GameLevel
+                    }, cancellationToken);
+                    break;
+
+                case "Top 10 mondial":
+                    await _dispatcher.DispatchAsync(new CommandContext
+                    {
+                        Group = "rating",
+                        Action = "leaderboard",
+                        CommandId = "rating.leaderboard",
+                        Options = new Dictionary<string, string?>
+                        {
+                            ["top"] = "10",
+                            ["output"] = "text"
+                        },
+                        Role = session?.Role ?? Role.Player,
+                        GameLevel = session?.GameLevel
+                    }, cancellationToken);
+                    break;
+            }
+
+            AnsiConsole.WriteLine();
+            session = _sessionService.LoadSession();
         }
-        else
-        {
-            AnsiConsole.MarkupLine($"- Joueur  : [white]{session.PlayerName ?? "(aucun)"}[/]");
-            AnsiConsole.MarkupLine($"- Role    : [white]{session.Role}[/]");
-            AnsiConsole.MarkupLine($"- Partie  : [white]{session.GameId ?? "(aucune)"}[/]");
-            AnsiConsole.MarkupLine($"- MAJ     : [grey]{session.UpdatedAt:O}[/]");
-        }
-        return Task.FromResult(ExitCodes.Success);
+
+        return ExitCodes.Success;
     }
 
     private async Task<int> HandleDashboard(CancellationToken cancellationToken)

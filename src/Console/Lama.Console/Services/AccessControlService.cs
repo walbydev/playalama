@@ -113,7 +113,10 @@ public sealed class AccessControlService : IAccessControlService
             "tournament.standings",
             "player.list",
             "player.show",
-            "player.stats"
+            "player.stats",
+            "rating.show",
+            "rating.leaderboard",
+            "rating.stats"
         };
 
     // ── Commandes de jeu — Host et Player (pas Admin ni Spectator) ───────────

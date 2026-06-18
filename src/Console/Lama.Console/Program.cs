@@ -3,6 +3,7 @@ using Lama.Console.Commands.Game;
 using Lama.Console.Commands.Middleware;
 using Lama.Console.Commands.Play;
 using Lama.Console.Commands.Player;
+using Lama.Console.Commands.Rating;
 using Lama.Console.Commands.Show;
 using Lama.Console.Commands.Tournament;
 using Lama.Console.Modes;
@@ -144,6 +145,12 @@ try
             services.AddSingleton<ICommand, ShowRackCommand>();
             services.AddSingleton<ICommand, ShowScoresCommand>();
             services.AddSingleton<ICommand, ShowHistoryCommand>();
+
+            // ─── Commandes — Rating ──────────────────────────────────────────
+            services.AddSingleton<RatingCommand>();
+            services.AddSingleton<ICommand, RatingShowCommand>();
+            services.AddSingleton<ICommand, RatingLeaderboardCommand>();
+            services.AddSingleton<ICommand, RatingStatsCommand>();
 
             // ─── Commandes — Dict (maintenant disponibles) ───────────────────
             services.AddSingleton<DictCommand>();

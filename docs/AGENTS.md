@@ -117,6 +117,9 @@ Le parser supporte:
 - `show.rack`
 - `show.scores`
 - `show.history`
+- `rating.show`
+- `rating.leaderboard`
+- `rating.stats`
 - `dict.check`
 - `dict.search`
 - `dict.anagram`
