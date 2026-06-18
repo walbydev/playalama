@@ -1157,3 +1157,59 @@ Journal unique de progression du projet LAMA.
 - `README.md`
 - `src/Console/Lama.Console/Program.cs`
 - `docs/CLASSIC_GAME_SHORTLIST.md`
+
+## [2026-06-18 16:53:16 UTC] - Phase 1 EF Core enchainee sur Lama.Server
+
+### Contexte
+- Demande utilisateur: enchaîner la phase 1 EF (ORM Entity Framework) pour le serveur online.
+- Objectif de phase 1: brancher l'infrastructure EF Core PostgreSQL sans refactorer encore le gameplay memory-first.
+
+### Fait
+- Ajout des packages EF Core serveur:
+  - `Npgsql.EntityFrameworkCore.PostgreSQL`
+  - `Microsoft.EntityFrameworkCore.Design`
+  - `Microsoft.EntityFrameworkCore.Tools`
+- Ajout du `DbContext` minimal:
+  - `src/Server/Lama.Server/Data/LamaDbContext.cs`
+- Wiring DI dans `Program.cs`:
+  - lecture `ConnectionStrings:LamaServerDb`
+  - `AddDbContext<LamaDbContext>(...UseNpgsql(...))`
+- Ajout d'un healthcheck DB:
+  - `GET /health/db`
+  - `200` si PostgreSQL joignable
+  - `503` si base non joignable
+- Documentation serveur mise a jour:
+  - `src/Server/Lama.Server/README.md`
+- Config base de connexion ajoutee dans:
+  - `src/Server/Lama.Server/appsettings.json`
+
+### Verification executee
+- Build serveur: `dotnet build src/Server/Lama.Server/Lama.Server.csproj -c Debug` ✅
+- Run smoke local:
+  - `GET /health` => `200` ✅
+  - `GET /health/db` => `503` attendu sans PostgreSQL lancee ✅
+
+### En cours
+- Les endpoints gameplay (`/api/games/*`) restent en `GameHubState` en memoire (design volontaire phase 1).
+
+### A faire (phase 2)
+- Creer les entites EF (schemas `sessions`, `history`, `rating`).
+- Ajouter les migrations initiales et appliquer sur instance dev Docker.
+- Migrer progressivement les endpoints de lecture/ecriture vers repository EF.
+
+### Risques / Ecarts
+- Version package: provider Npgsql `10.0.2` + EF tools/design `10.0.9` (a surveiller).
+- Sans PostgreSQL lancee, `/health/db` retourne naturellement `503`.
+
+### Prochaines etapes
+1. Verrouiller les versions EF/Npgsql si besoin (alignement strict).
+2. Implementer Phase 2 (entites + migrations).
+3. Brancher un premier endpoint read-only sur EF pour valider le flux de bout en bout.
+
+### References
+- `src/Server/Lama.Server/Lama.Server.csproj`
+- `Directory.Packages.props`
+- `src/Server/Lama.Server/Data/LamaDbContext.cs`
+- `src/Server/Lama.Server/Program.cs`
+- `src/Server/Lama.Server/appsettings.json`
+- `src/Server/Lama.Server/README.md`

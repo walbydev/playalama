@@ -2,11 +2,19 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Threading.Channels;
 using Lama.Contracts;
+using Lama.Server.Data;
 using Lama.Domain.Board;
 using Lama.Domain.Engine;
 using Lama.Languages.fr;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = builder.Configuration.GetConnectionString("LamaServerDb")
+    ?? "Host=localhost;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me";
+
+builder.Services.AddDbContext<LamaDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddSingleton<IGameLanguageProvider>(_ =>
 {
@@ -27,6 +35,33 @@ app.MapGet("/health", () => Results.Ok(new
     status = "ok",
     utcNow = DateTimeOffset.UtcNow
 }));
+
+app.MapGet("/health/db", async (LamaDbContext db, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var canConnect = await db.Database.CanConnectAsync(cancellationToken);
+        if (!canConnect)
+            return Results.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Database unavailable",
+                detail: "PostgreSQL is configured but not reachable.");
+
+        return Results.Ok(new
+        {
+            status = "ok",
+            provider = db.Database.ProviderName,
+            utcNow = DateTimeOffset.UtcNow
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(
+            statusCode: StatusCodes.Status503ServiceUnavailable,
+            title: "Database healthcheck failed",
+            detail: ex.Message);
+    }
+});
 
 app.MapPost("/internal/shutdown", (IHostApplicationLifetime lifetime) =>
 {

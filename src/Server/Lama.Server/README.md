@@ -11,6 +11,7 @@ Serveur central autoritaire pour le mode multijoueur en ligne de commande.
 ## Endpoints MVP
 
 - `GET /health`
+- `GET /health/db`
 - `POST /api/games`
 - `POST /api/games/{gameId}/join`
 - `POST /api/games/{gameId}/moves`
@@ -43,6 +44,7 @@ curl -s -X POST http://localhost:5000/api/games \
 
 ## Notes
 
-- Stockage en memoire (phase alpha) ; la persistance PostgreSQL est prevue dans l'etape suivante.
+- Phase 1 EF Core activee: `LamaDbContext` + provider PostgreSQL + endpoint `GET /health/db`.
+- Les endpoints gameplay restent en memoire dans `GameHubState` pour cette etape.
 - Le mode local CLI reste disponible et isole des parties/classements en ligne.
 
