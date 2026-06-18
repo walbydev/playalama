@@ -3,10 +3,17 @@
     <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
   </Folder>
   <Folder Name="/docs/">
+    <File Path="ALIAS_QUICK_SETUP.md" />
     <File Path="docs\AGENTS.md" />
+    <File Path="docs\ALIAS_LAMA_CONFIG.md" />
+    <File Path="docs\CLASSIC_GAME_SHORTLIST.md" />
     <File Path="docs\CLI-instructions.md" />
     <File Path="docs\console-interface-architecture.md" />
+    <File Path="docs\crossing-rules.md" />
     <File Path="docs\defines-CLI.md" />
+    <File Path="docs\RATING_INTEGRATION.md" />
+    <File Path="docs\RATING_SYSTEM.md" />
+    <File Path="docs\SCOPE.md" />
     <File Path="docs\tools.md" />
     <File Path="PROGRESS.md" />
     <File Path="README.md" />
