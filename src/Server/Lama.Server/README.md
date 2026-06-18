@@ -19,6 +19,10 @@ Serveur central autoritaire pour le mode multijoueur en ligne de commande.
 - `POST /api/games/{gameId}/end`
 - `POST /internal/shutdown` (dev/test uniquement, active avec `LAMA_SERVER_ALLOW_SHUTDOWN=true`)
 
+Notes:
+- Les commandes de jeu online (`play.move`, `play.pass`, etc.) transitent via `POST /api/games/{gameId}/moves`.
+- L'historique online est lu depuis `GET /api/games/{gameId}` (`moves`).
+
 ## Lancer en local
 
 ```bash

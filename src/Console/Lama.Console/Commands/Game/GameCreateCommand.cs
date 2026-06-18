@@ -79,6 +79,7 @@ public sealed class GameCreateCommand : ICommand
         {
             string gameId;
             string hostPlayerId;
+            List<char>? initialRack = null;
 
             if (_runtimeMode.IsOnline)
             {
@@ -89,6 +90,7 @@ public sealed class GameCreateCommand : ICommand
                     cancellationToken);
                 gameId = response.GameId;
                 hostPlayerId = response.HostPlayerId;
+                initialRack = response.Rack;
             }
             else
             {
@@ -116,6 +118,8 @@ public sealed class GameCreateCommand : ICommand
             global::System.Console.WriteLine($"  Mode      : {(_runtimeMode.IsOnline ? "online" : "local")}");
             global::System.Console.WriteLine($"  Hôte      : {hostName}");
             global::System.Console.WriteLine($"  Niveau    : {gameLevel}");
+            if (initialRack is not null)
+                global::System.Console.WriteLine($"  Rack      : {string.Join(" ", initialRack)}");
             global::System.Console.WriteLine($"  Session   : {_sessionService.SessionFilePath}");
             global::System.Console.WriteLine();
             global::System.Console.WriteLine("Les autres joueurs peuvent rejoindre avec :");

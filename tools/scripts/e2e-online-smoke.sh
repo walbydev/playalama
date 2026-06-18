@@ -83,7 +83,7 @@ if ! curl -fsS "http://127.0.0.1:${SERVER_PORT}/health" >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "[E2E-ONLINE] Scenario: host create -> guest join -> host show -> host end"
+echo "[E2E-ONLINE] Scenario: host create -> guest join -> host pass -> guest pass -> history -> host show -> host end"
 
 out_create="$(run_lama_with_session "$SESSION_DIR_HOST" game create Alice --level standard)"
 assert_contains "$out_create" "Partie créée" "game.create"
@@ -97,6 +97,15 @@ fi
 
 out_join="$(run_lama_with_session "$SESSION_DIR_GUEST" game join Bob --game-id "$game_id")"
 assert_contains "$out_join" "rejoint la partie online" "game.join online"
+
+out_pass_host="$(run_lama_with_session "$SESSION_DIR_HOST" play pass)"
+assert_contains "$out_pass_host" "Tour passé (online)" "play.pass host"
+
+out_pass_guest="$(run_lama_with_session "$SESSION_DIR_GUEST" play pass)"
+assert_contains "$out_pass_guest" "Tour passé (online)" "play.pass guest"
+
+out_history="$(run_lama_with_session "$SESSION_DIR_HOST" show history --output json)"
+assert_contains "$out_history" "play.pass" "show.history online"
 
 out_show="$(run_lama_with_session "$SESSION_DIR_HOST" game show "$game_id" --output json)"
 assert_contains "$out_show" "$game_id" "game.show json"

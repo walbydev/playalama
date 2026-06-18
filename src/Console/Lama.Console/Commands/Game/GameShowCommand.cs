@@ -74,9 +74,9 @@ public sealed class GameShowCommand : ICommand
                         break;
 
                     case "csv":
-                        global::System.Console.WriteLine("gameId,level,queue,isGameOver,currentPlayer,players,moves,createdAt");
+                        global::System.Console.WriteLine("gameId,level,queue,isGameOver,turnNumber,currentPlayer,players,moves,tilesOnBoard,createdAt,updatedAt");
                         global::System.Console.WriteLine(
-                            $"{onlineGame.Id},{onlineGame.GameLevel},{onlineGame.Queue},{onlineGame.IsGameOver},{onlineCurrentPlayer},{onlineGame.Players.Count},{onlineGame.Moves.Count},{onlineGame.CreatedAt:O}");
+                            $"{onlineGame.Id},{onlineGame.GameLevel},{onlineGame.Queue},{onlineGame.IsGameOver},{onlineGame.TurnNumber},{onlineCurrentPlayer},{onlineGame.Players.Count},{onlineGame.Moves.Count},{onlineGame.Board.Count},{onlineGame.CreatedAt:O},{onlineGame.UpdatedAt:O}");
                         break;
 
                     default:
@@ -84,14 +84,16 @@ public sealed class GameShowCommand : ICommand
                         global::System.Console.WriteLine($"  Niveau        : {onlineGame.GameLevel}");
                         global::System.Console.WriteLine($"  Queue         : {onlineGame.Queue}");
                         global::System.Console.WriteLine($"  Statut        : {(onlineGame.IsGameOver ? "terminee" : "active")}");
+                        global::System.Console.WriteLine($"  Tour          : {onlineGame.TurnNumber}");
                         global::System.Console.WriteLine($"  Joueur courant: {onlineCurrentPlayer}");
                         global::System.Console.WriteLine($"  Coups joues   : {onlineGame.Moves.Count}");
+                        global::System.Console.WriteLine($"  Tuiles posees : {onlineGame.Board.Count}");
                         global::System.Console.WriteLine("  Joueurs       :");
 
                         foreach (var player in onlineGame.Players)
                         {
                             global::System.Console.WriteLine(
-                                $"    - {player.PlayerName,-15} id: {player.PlayerId}");
+                                $"    - {player.PlayerName,-15} score: {player.Score,4} | rack: {player.RackCount} lettres | id: {player.PlayerId}");
                         }
                         break;
                 }

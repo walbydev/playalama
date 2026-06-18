@@ -1069,6 +1069,51 @@ Journal unique de progression du projet LAMA.
 - `tools/scripts/e2e-online-smoke.sh`
 - `docs/AGENTS.md`
 
+## [2026-06-18 10:45:26 UTC] - Extension flux online: pass/history/scores/end
+
+### Contexte
+- L'objectif immediate etait de rendre le jeu connecte plus concret sur reseau local (au-dela de create/join/show).
+
+### Fait
+- Cote serveur `Lama.Server`:
+  - endpoint `POST /api/games/{gameId}/end` ajoute,
+  - emission d'evenement SSE `game.ended`.
+- Cote CLI online:
+  - `play.pass` route vers `/api/games/{gameId}/moves`.
+  - `play.move` route vers `/api/games/{gameId}/moves` (payload position/mot/direction).
+  - `show.history` online lit les `moves` du snapshot serveur.
+  - `show.scores` online affiche les joueurs et le tour courant depuis le snapshot.
+  - `game.end` online route vers `/api/games/{gameId}/end`.
+- Script `tools/scripts/e2e-online-smoke.sh` etendu:
+  - scenario valide: `create -> join -> pass host -> pass guest -> history -> show -> end`.
+
+### En cours
+- Le mode online est jouable en tour de base via commandes, avec arbitrage de tour cote serveur.
+
+### A faire
+- Brancher `show.board` online (representation serveur du plateau).
+- Implementer validation metier serveur des coups (`play.move`) au lieu de simple journalisation de commande.
+- Ajouter persistance PostgreSQL et auth JWT.
+
+### Risques / Ecarts
+- Les scores online restent placeholders (0) tant que le moteur metier n'est pas execute cote serveur.
+- Le plateau online n'est pas encore expose (`show.board` reste local-only).
+
+### Prochaines etapes
+1. Integrer `GameEngine` cote serveur pour valider/appliquer les coups online.
+2. Exposer un snapshot plateau pour `show.board` online.
+3. Ajouter tests E2E online supplementaires incluant `play.move` reel et score.
+
+### References
+- `src/Server/Lama.Server/Program.cs`
+- `src/Console/Lama.Console/Services/OnlineGameGateway.cs`
+- `src/Console/Lama.Console/Commands/Play/PlayPassCommand.cs`
+- `src/Console/Lama.Console/Commands/Play/PlayMoveCommand.cs`
+- `src/Console/Lama.Console/Commands/Show/ShowHistoryCommand.cs`
+- `src/Console/Lama.Console/Commands/Show/ShowScoresCommand.cs`
+- `src/Console/Lama.Console/Commands/Game/GameEndCommand.cs`
+- `tools/scripts/e2e-online-smoke.sh`
+
 ## [2026-06-18 09:40:01 UTC] - Synchronisation documentaire (AGENTS / README / PROGRESS)
 
 ### Contexte

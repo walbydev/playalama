@@ -16,6 +16,8 @@ public sealed class ShowBoardCommand : ICommand
     public string CommandId => "show.board";
 
     private readonly CreateGameUseCase _createGameUseCase;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<ShowBoardCommand> _logger;
 
     // Codes couleur des cases bonus pour l'affichage Spectre.Console
@@ -31,20 +33,55 @@ public sealed class ShowBoardCommand : ICommand
 
     /// <summary>Initialise la commande.</summary>
     public ShowBoardCommand(CreateGameUseCase createGameUseCase, ILogger<ShowBoardCommand> logger)
+        : this(
+            createGameUseCase,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
+    {
+    }
+
+    /// <summary>Initialise la commande.</summary>
+    public ShowBoardCommand(
+        CreateGameUseCase createGameUseCase,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
+        ILogger<ShowBoardCommand> logger)
     {
         _createGameUseCase = createGameUseCase;
+        _runtimeMode = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger            = logger;
     }
 
     /// <inheritdoc />
-    public Task<int> ExecuteAsync(CommandContext context,
+    public async Task<int> ExecuteAsync(CommandContext context,
         CancellationToken cancellationToken = default)
     {
         if (!context.HasActiveSession || context.GameId is null)
         {
             global::System.Console.Error.WriteLine(
                 "[show board] Aucune partie active.");
-            return Task.FromResult(ExitCodes.GameNotFound);
+            return ExitCodes.GameNotFound;
+        }
+
+        if (_runtimeMode.IsOnline)
+        {
+            try
+            {
+                var snapshot = await _onlineGameGateway.GetGameAsync(context.GameId, cancellationToken);
+                var board = new BoardState();
+                foreach (var tile in snapshot.Board)
+                    board.Grid[tile.Row, tile.Column] = new Tile(tile.Letter, tile.IsWildcard);
+
+                RenderBoard(board, context.NoColor);
+                return ExitCodes.Success;
+            }
+            catch (HttpRequestException ex)
+            {
+                global::System.Console.Error.WriteLine($"[show board] Erreur online : {ex.Message}");
+                return ExitCodes.GeneralError;
+            }
         }
 
         var engine = _createGameUseCase.GetEngine(context.GameId);
@@ -53,13 +90,13 @@ public sealed class ShowBoardCommand : ICommand
             global::System.Console.Error.WriteLine(
                 "[show board] Partie introuvable en mémoire. " +
                 "Note : les parties ne survivent pas au redémarrage du processus.");
-            return Task.FromResult(ExitCodes.GameNotFound);
+            return ExitCodes.GameNotFound;
         }
 
         var state = engine.GetGameState();
         RenderBoard(state.Board, context.NoColor);
 
-        return Task.FromResult(ExitCodes.Success);
+        return ExitCodes.Success;
     }
 
     private static void RenderBoard(BoardState board, bool noColor)

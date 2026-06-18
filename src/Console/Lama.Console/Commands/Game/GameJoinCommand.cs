@@ -104,6 +104,7 @@ public sealed class GameJoinCommand : ICommand
                 global::System.Console.WriteLine($"✓ {playerName} a rejoint la partie online.");
                 global::System.Console.WriteLine($"  Partie  : {onlineResponse.GameId}");
                 global::System.Console.WriteLine($"  Joueurs : {onlineResponse.Players}");
+                global::System.Console.WriteLine($"  Rack    : {string.Join(" ", onlineResponse.Rack)}");
                 global::System.Console.WriteLine($"  Session : {_sessionService.SessionFilePath}");
 
                 _logger.LogInformation("{Player} a rejoint (online) {GameId}", playerName, gameId);

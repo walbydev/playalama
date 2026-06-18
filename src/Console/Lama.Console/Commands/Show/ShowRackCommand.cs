@@ -15,6 +15,8 @@ public sealed class ShowRackCommand : ICommand
     public string CommandId => "show.rack";
 
     private readonly CreateGameUseCase _createGameUseCase;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly IGameLanguageProvider _languageProvider;
     private readonly ILogger<ShowRackCommand> _logger;
 
@@ -23,20 +25,67 @@ public sealed class ShowRackCommand : ICommand
         CreateGameUseCase  createGameUseCase,
         IGameLanguageProvider languageProvider,
         ILogger<ShowRackCommand> logger)
+        : this(
+            createGameUseCase,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            languageProvider,
+            logger)
+    {
+    }
+
+    /// <summary>Initialise la commande.</summary>
+    public ShowRackCommand(
+        CreateGameUseCase  createGameUseCase,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
+        IGameLanguageProvider languageProvider,
+        ILogger<ShowRackCommand> logger)
     {
         _createGameUseCase = createGameUseCase;
+        _runtimeMode       = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _languageProvider  = languageProvider;
         _logger            = logger;
     }
 
     /// <inheritdoc />
-    public Task<int> ExecuteAsync(CommandContext context,
+    public async Task<int> ExecuteAsync(CommandContext context,
         CancellationToken cancellationToken = default)
     {
         if (!context.HasActiveSession || context.GameId is null || context.PlayerId is null)
         {
             global::System.Console.Error.WriteLine("[show rack] Aucune session active.");
-            return Task.FromResult(ExitCodes.GameNotFound);
+            return ExitCodes.GameNotFound;
+        }
+
+        if (_runtimeMode.IsOnline)
+        {
+            try
+            {
+                var snapshot = await _onlineGameGateway.GetGameAsync(context.GameId, cancellationToken);
+                var onlinePlayer = context.PlayerId is not null
+                    ? snapshot.Players.FirstOrDefault(p => p.PlayerId == context.PlayerId)
+                    : null;
+
+                onlinePlayer ??= context.PlayerName is not null
+                    ? snapshot.Players.FirstOrDefault(p => p.PlayerName == context.PlayerName)
+                    : snapshot.Players.ElementAtOrDefault(snapshot.CurrentPlayerIndex);
+
+                if (onlinePlayer is null)
+                {
+                    global::System.Console.Error.WriteLine("[show rack] Joueur introuvable.");
+                    return ExitCodes.GeneralError;
+                }
+
+                PrintRack(onlinePlayer.PlayerName, onlinePlayer.Rack, context.HasOption("with-values"));
+                return ExitCodes.Success;
+            }
+            catch (HttpRequestException ex)
+            {
+                global::System.Console.Error.WriteLine($"[show rack] Erreur online : {ex.Message}");
+                return ExitCodes.GeneralError;
+            }
         }
 
         var engine = _createGameUseCase.GetEngine(context.GameId);
@@ -44,7 +93,7 @@ public sealed class ShowRackCommand : ICommand
         {
             global::System.Console.Error.WriteLine(
                 "[show rack] Partie introuvable en mémoire.");
-            return Task.FromResult(ExitCodes.GameNotFound);
+            return ExitCodes.GameNotFound;
         }
 
         var state       = engine.GetGameState();
@@ -58,14 +107,19 @@ public sealed class ShowRackCommand : ICommand
         if (player is null)
         {
             global::System.Console.Error.WriteLine("[show rack] Joueur introuvable.");
-            return Task.FromResult(ExitCodes.GeneralError);
+            return ExitCodes.GeneralError;
         }
 
-        var rack        = player.Rack;
-        var withValues  = context.HasOption("with-values");
-        var scores      = _languageProvider.GetLetterScores();
+        PrintRack(player.Name, player.Rack, context.HasOption("with-values"));
 
-        global::System.Console.WriteLine($"Rack de {player.Name} :");
+        return ExitCodes.Success;
+    }
+
+    private void PrintRack(string playerName, IReadOnlyList<char> rack, bool withValues)
+    {
+        var scores = _languageProvider.GetLetterScores();
+
+        global::System.Console.WriteLine($"Rack de {playerName} :");
         global::System.Console.Write("  ");
 
         foreach (var letter in rack)
@@ -78,7 +132,5 @@ public sealed class ShowRackCommand : ICommand
 
         global::System.Console.WriteLine();
         global::System.Console.WriteLine($"  {rack.Count} lettre(s)");
-
-        return Task.FromResult(ExitCodes.Success);
     }
 }

@@ -31,16 +31,38 @@ public sealed class PlayMoveCommand : ICommand
 
     private readonly PlayMoveUseCase _playMoveUseCase;
     private readonly ISessionService _sessionService;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<PlayMoveCommand> _logger;
+
+    /// <summary>
+    /// Constructeur de rétrocompatibilité (mode local uniquement).
+    /// </summary>
+    public PlayMoveCommand(
+        PlayMoveUseCase playMoveUseCase,
+        ISessionService sessionService,
+        ILogger<PlayMoveCommand> logger)
+        : this(
+            playMoveUseCase,
+            sessionService,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
+    {
+    }
 
     /// <summary>Initialise la commande.</summary>
     public PlayMoveCommand(
         PlayMoveUseCase  playMoveUseCase,
         ISessionService  sessionService,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
         ILogger<PlayMoveCommand> logger)
     {
         _playMoveUseCase = playMoveUseCase;
         _sessionService  = sessionService;
+        _runtimeMode     = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger          = logger;
     }
 
@@ -120,6 +142,40 @@ public sealed class PlayMoveCommand : ICommand
 
         try
         {
+            if (_runtimeMode.IsOnline)
+            {
+                var payload = new
+                {
+                    position = posStr,
+                    word,
+                    direction = dirStr,
+                    wildcardCount = word.Count(char.IsLower)
+                };
+
+                var playResponse = await _onlineGameGateway.PlayCommandAsync(
+                    context.GameId,
+                    context.PlayerId,
+                    "play.move",
+                    payload,
+                    cancellationToken);
+
+                var snapshot = await _onlineGameGateway.GetGameAsync(context.GameId, cancellationToken);
+                var nextPlayerName = snapshot.CurrentPlayerIndex >= 0 && snapshot.CurrentPlayerIndex < snapshot.Players.Count
+                    ? snapshot.Players[snapshot.CurrentPlayerIndex].PlayerName
+                    : playResponse.NextPlayerId ?? "inconnu";
+
+                global::System.Console.WriteLine(
+                    $"✓ {ToDisplayWord(word)} joué en {posStr} {dirStr} (online) — {playResponse.Score} pts");
+                global::System.Console.WriteLine($"  MoveId       : {playResponse.MoveId}");
+                if (playResponse.NewRack is not null)
+                    global::System.Console.WriteLine($"  Nouveau rack : {string.Join(" ", playResponse.NewRack)}");
+                global::System.Console.WriteLine($"  Tour suivant : {nextPlayerName}");
+
+                _logger.LogInformation("{Player} a joué (online) {Word} en {Pos}{Dir}",
+                    context.PlayerName, ToDisplayWord(word), posStr, dirStr);
+                return ExitCodes.Success;
+            }
+
             var request  = new PlayMoveRequest(context.GameId, context.PlayerId, letters);
             var response = await _playMoveUseCase.ExecuteAsync(request);
 
@@ -151,6 +207,11 @@ public sealed class PlayMoveCommand : ICommand
         {
             global::System.Console.Error.WriteLine($"[play move] Coup invalide : {ex.Message}");
             return ExitCodes.InvalidPlacement;
+        }
+        catch (HttpRequestException ex)
+        {
+            global::System.Console.Error.WriteLine($"[play move] Erreur online : {ex.Message}");
+            return ExitCodes.GeneralError;
         }
     }
 

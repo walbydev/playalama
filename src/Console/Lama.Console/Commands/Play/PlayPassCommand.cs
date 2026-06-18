@@ -15,12 +15,32 @@ public sealed class PlayPassCommand : ICommand
     public string CommandId => "play.pass";
 
     private readonly PassTurnUseCase _passTurnUseCase;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<PlayPassCommand> _logger;
 
-    /// <summary>Initialise la commande.</summary>
+    /// <summary>
+    /// Constructeur de rétrocompatibilité (mode local uniquement).
+    /// </summary>
     public PlayPassCommand(PassTurnUseCase passTurnUseCase, ILogger<PlayPassCommand> logger)
+        : this(
+            passTurnUseCase,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
+    {
+    }
+
+    /// <summary>Initialise la commande.</summary>
+    public PlayPassCommand(
+        PassTurnUseCase passTurnUseCase,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
+        ILogger<PlayPassCommand> logger)
     {
         _passTurnUseCase = passTurnUseCase;
+        _runtimeMode = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger          = logger;
     }
 
@@ -37,6 +57,27 @@ public sealed class PlayPassCommand : ICommand
 
         try
         {
+            if (_runtimeMode.IsOnline)
+            {
+                var response = await _onlineGameGateway.PlayCommandAsync(
+                    context.GameId,
+                    context.PlayerId,
+                    "play.pass",
+                    payload: null,
+                    cancellationToken);
+
+                var snapshot = await _onlineGameGateway.GetGameAsync(context.GameId, cancellationToken);
+                var nextPlayerName = snapshot.CurrentPlayerIndex >= 0 && snapshot.CurrentPlayerIndex < snapshot.Players.Count
+                    ? snapshot.Players[snapshot.CurrentPlayerIndex].PlayerName
+                    : response.NextPlayerId ?? "inconnu";
+
+                global::System.Console.WriteLine(
+                    $"✓ Tour passé (online). C'est maintenant au tour de : {nextPlayerName}");
+
+                _logger.LogInformation("{Player} a passé son tour (online)", context.PlayerName);
+                return ExitCodes.Success;
+            }
+
             var newState = await _passTurnUseCase.ExecuteAsync(
                 new PassTurnRequest(context.GameId, context.PlayerId));
 
@@ -50,6 +91,11 @@ public sealed class PlayPassCommand : ICommand
         catch (GameException ex)
         {
             global::System.Console.Error.WriteLine($"[play pass] Erreur : {ex.Message}");
+            return ExitCodes.GeneralError;
+        }
+        catch (HttpRequestException ex)
+        {
+            global::System.Console.Error.WriteLine($"[play pass] Erreur online : {ex.Message}");
             return ExitCodes.GeneralError;
         }
     }

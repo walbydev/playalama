@@ -7,6 +7,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\libs\Lama.Contracts\Lama.Contracts.csproj" />
+    <ProjectReference Include="..\..\libs\Lama.Core\Lama.Core.csproj" />
+    <ProjectReference Include="..\..\libs\Lama.Languages.fr\Lama.Languages.fr.csproj" />
   </ItemGroup>
 
 </Project>

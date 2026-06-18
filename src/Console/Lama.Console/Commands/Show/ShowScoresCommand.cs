@@ -2,6 +2,7 @@ using Lama.Console.Services;
 using Lama.Contracts;
 using Lama.Core.UseCases;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Lama.Console.Commands.Show;
 
@@ -14,23 +15,83 @@ public sealed class ShowScoresCommand : ICommand
     public string CommandId => "show.scores";
 
     private readonly CreateGameUseCase _createGameUseCase;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<ShowScoresCommand> _logger;
 
-    /// <summary>Initialise la commande.</summary>
+    /// <summary>
+    /// Constructeur de rétrocompatibilité (mode local uniquement).
+    /// </summary>
     public ShowScoresCommand(CreateGameUseCase createGameUseCase, ILogger<ShowScoresCommand> logger)
+        : this(
+            createGameUseCase,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
+    {
+    }
+
+    /// <summary>Initialise la commande.</summary>
+    public ShowScoresCommand(
+        CreateGameUseCase createGameUseCase,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
+        ILogger<ShowScoresCommand> logger)
     {
         _createGameUseCase = createGameUseCase;
+        _runtimeMode = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger            = logger;
     }
 
     /// <inheritdoc />
-    public Task<int> ExecuteAsync(CommandContext context,
+    public async Task<int> ExecuteAsync(CommandContext context,
         CancellationToken cancellationToken = default)
     {
         if (!context.HasActiveSession || context.GameId is null)
         {
             global::System.Console.Error.WriteLine("[show scores] Aucune partie active.");
-            return Task.FromResult(ExitCodes.GameNotFound);
+            return ExitCodes.GameNotFound;
+        }
+
+        if (_runtimeMode.IsOnline)
+        {
+            try
+            {
+                var snapshot = await _onlineGameGateway.GetGameAsync(context.GameId, cancellationToken);
+
+                global::System.Console.WriteLine($"Partie online {snapshot.Id} — Scores :");
+                global::System.Console.WriteLine(new string('─', 42));
+
+                var sortedPlayers = snapshot.Players
+                    .OrderByDescending(p => p.Score)
+                    .ToList();
+
+                for (var i = 0; i < sortedPlayers.Count; i++)
+                {
+                    var player = sortedPlayers[i];
+                    var marker = snapshot.Players.FindIndex(p => p.PlayerId == player.PlayerId) == snapshot.CurrentPlayerIndex ? "▶ " : "  ";
+                    global::System.Console.WriteLine($"{marker}{i + 1}. {player.PlayerName,-20} {player.Score,5} pts");
+                }
+
+                global::System.Console.WriteLine(new string('─', 42));
+
+                if (context.OutputFormat == "json")
+                {
+                    global::System.Console.WriteLine(JsonSerializer.Serialize(snapshot.Players.Select(p => new
+                    {
+                        name = p.PlayerName,
+                        score = p.Score
+                    })));
+                }
+
+                return ExitCodes.Success;
+            }
+            catch (HttpRequestException ex)
+            {
+                global::System.Console.Error.WriteLine($"[show scores] Erreur online : {ex.Message}");
+                return ExitCodes.GeneralError;
+            }
         }
 
         var engine = _createGameUseCase.GetEngine(context.GameId);
@@ -38,7 +99,7 @@ public sealed class ShowScoresCommand : ICommand
         {
             global::System.Console.Error.WriteLine(
                 "[show scores] Partie introuvable en mémoire.");
-            return Task.FromResult(ExitCodes.GameNotFound);
+            return ExitCodes.GameNotFound;
         }
 
         var state = engine.GetGameState();
@@ -68,6 +129,6 @@ public sealed class ShowScoresCommand : ICommand
             global::System.Console.WriteLine(json);
         }
 
-        return Task.FromResult(ExitCodes.Success);
+        return ExitCodes.Success;
     }
 }

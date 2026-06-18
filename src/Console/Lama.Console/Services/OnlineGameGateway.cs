@@ -77,6 +77,29 @@ public sealed class OnlineGameGateway
         return payload ?? throw new InvalidOperationException("Réponse serveur invalide sur game.show.");
     }
 
+    public async Task<OnlinePlayCommandResponse> PlayCommandAsync(
+        string gameId,
+        string playerId,
+        string command,
+        object? payload,
+        CancellationToken cancellationToken)
+    {
+        EnsureOnlineMode();
+
+        var request = new
+        {
+            playerId,
+            command,
+            payload
+        };
+
+        var response = await _httpClient.PostAsJsonAsync($"/api/games/{gameId}/moves", request, cancellationToken);
+        await EnsureSuccessAsync(response, "play.command", cancellationToken);
+
+        var model = await response.Content.ReadFromJsonAsync<OnlinePlayCommandResponse>(JsonOptions, cancellationToken);
+        return model ?? throw new InvalidOperationException("Réponse serveur invalide sur play.command.");
+    }
+
     public async Task<OnlineEndGameResponse> EndGameAsync(
         string gameId,
         string? playerId,
@@ -108,9 +131,17 @@ public sealed class OnlineGameGateway
             return;
 
         string? body = null;
+        string? errorMessage = null;
         try
         {
             body = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(body))
+            {
+                using var document = JsonDocument.Parse(body);
+                if (document.RootElement.ValueKind == JsonValueKind.Object &&
+                    document.RootElement.TryGetProperty("error", out var errorProperty))
+                    errorMessage = errorProperty.GetString();
+            }
         }
         catch
         {
@@ -123,7 +154,10 @@ public sealed class OnlineGameGateway
             (int)response.StatusCode,
             body ?? "(empty)");
 
-        throw new HttpRequestException($"Echec API online {op}: {(int)response.StatusCode}");
+        throw new HttpRequestException(
+            string.IsNullOrWhiteSpace(errorMessage)
+                ? $"Echec API online {op}: {(int)response.StatusCode}"
+                : $"{errorMessage} (API online {op}, {(int)response.StatusCode})");
     }
 }
 
@@ -136,6 +170,7 @@ public sealed record OnlineCreateGameResponse(
     int RackSize,
     int MinWordLength,
     string Language,
+    List<char> Rack,
     DateTimeOffset CreatedAt);
 
 public sealed record OnlineJoinGameResponse(
@@ -143,7 +178,8 @@ public sealed record OnlineJoinGameResponse(
     string PlayerId,
     int Players,
     GameLevel GameLevel,
-    RankingQueue Queue);
+    RankingQueue Queue,
+    List<char> Rack);
 
 public sealed record OnlineGameSnapshot(
     string Id,
@@ -155,19 +191,41 @@ public sealed record OnlineGameSnapshot(
     string Language,
     string? TournamentId,
     DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
     bool IsGameOver,
     int CurrentPlayerIndex,
+    int TurnNumber,
     List<OnlineSnapshotPlayer> Players,
+    List<OnlineBoardTile> Board,
     List<OnlineSnapshotMove> Moves);
 
-public sealed record OnlineSnapshotPlayer(string PlayerId, string PlayerName, bool IsHost);
+public sealed record OnlineSnapshotPlayer(
+    string PlayerId,
+    string PlayerName,
+    bool IsHost,
+    int Score,
+    List<char> Rack,
+    int RackCount);
+
+public sealed record OnlineBoardTile(int Row, int Column, char Letter, bool IsWildcard);
 
 public sealed record OnlineSnapshotMove(
     string MoveId,
     string PlayerId,
+    string PlayerName,
     string Command,
     JsonElement? Payload,
-    DateTimeOffset PlayedAt);
+    DateTimeOffset PlayedAt,
+    int Score);
+
+public sealed record OnlinePlayCommandResponse(
+    string GameId,
+    string MoveId,
+    DateTimeOffset PlayedAt,
+    int Score,
+    List<char>? NewRack,
+    int CurrentPlayerIndex,
+    string? NextPlayerId);
 
 public sealed record OnlineEndGameResponse(
     string GameId,
