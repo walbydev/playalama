@@ -81,7 +81,9 @@ public class EndGameRatingIntegrationTests
             return Task.FromResult(new PlayerStatistics(playerId, empty, empty, empty, empty));
         }
 
-        public Task<IReadOnlyList<PlayerRating>> GetLeaderboardAsync(int topCount = 100) =>
+        public Task<IReadOnlyList<PlayerRating>> GetLeaderboardAsync(
+            RankingQueue queue = RankingQueue.GlobalPrestige,
+            int topCount = 100) =>
             Task.FromResult((IReadOnlyList<PlayerRating>)Array.Empty<PlayerRating>());
 
         public Task<IReadOnlyList<PlayerRating>> GetPlayersByLevelAsync(int level) =>

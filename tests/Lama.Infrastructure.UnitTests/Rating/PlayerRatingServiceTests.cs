@@ -174,7 +174,7 @@ public class PlayerRatingServiceTests
             new PlayerRating(playerId2, 1200, 1, "🌱 Jeune Lama", WinsCount: 2)
         });
 
-        var leaderboard = await _service.GetLeaderboardAsync(10);
+        var leaderboard = await _service.GetLeaderboardAsync(topCount: 10);
 
         Assert.NotEmpty(leaderboard);
         Assert.True(leaderboard[0].EloRating >= leaderboard[1].EloRating,

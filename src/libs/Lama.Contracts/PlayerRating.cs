@@ -4,7 +4,9 @@ namespace Lama.Contracts;
 /// Représente le rating (Elo) et le niveau d'un joueur.
 /// </summary>
 /// <param name="PlayerId">Identifiant du joueur.</param>
-/// <param name="EloRating">Rating Elo actuel (base 1200).</param>
+/// <param name="EloRating">Rating historique (compat) — reflète EloOpen.</param>
+/// <param name="EloOpen">Rating Elo en file classée ouverte (hors tournoi).</param>
+/// <param name="EloTournament">Rating Elo en file tournoi.</param>
 /// <param name="Level">Niveau délibéré (1-6, voir LevelEnum).</param>
 /// <param name="LevelName">Nom du niveau (ex: "Jeune Lama").</param>
 /// <param name="WinsCount">Nombre total de victoires.</param>
@@ -21,6 +23,8 @@ public record PlayerRating(
     double EloRating,
     int Level,
     string LevelName,
+    double EloOpen = 1200,
+    double EloTournament = 1200,
     int WinsCount = 0,
     int LossesCount = 0,
     int AbandonedCount = 0,
@@ -31,6 +35,11 @@ public record PlayerRating(
     DateTimeOffset? LastGameAt = null,
     DateTimeOffset UpdatedAt = default)
 {
+    /// <summary>
+    /// Score prestige global, combine tournoi + open.
+    /// </summary>
+    public double GlobalPrestige => EloTournament * 0.7 + EloOpen * 0.3;
+
     /// <summary>Taux de victoire (0-100%).</summary>
     public double WinRate => WinsCount + LossesCount > 0 
         ? (double)WinsCount / (WinsCount + LossesCount) * 100 
@@ -38,6 +47,17 @@ public record PlayerRating(
 
     /// <summary>Total de parties jouées (moins les abandons).</summary>
     public int TotalGames => WinsCount + LossesCount;
+}
+
+/// <summary>
+/// Files de classement pour séparer les contextes compétitifs.
+/// </summary>
+public enum RankingQueue
+{
+    OpenRanked = 1,
+    Tournament = 2,
+    CasualUnranked = 3,
+    GlobalPrestige = 4
 }
 
 /// <summary>
@@ -67,6 +87,14 @@ public enum LevelEnum
 /// <param name="OpponentRatings">Ratings Elo des adversaires.</param>
 /// <param name="PlayedAt">Date/heure de la partie.</param>
 /// <param name="DurationSeconds">Durée de la partie en secondes.</param>
+/// <param name="Queue">File de classement associée à la partie.</param>
+/// <param name="GameLevel">Niveau de partie applicatif.</param>
+/// <param name="BoardSize">Taille du plateau utilisé.</param>
+/// <param name="RackSize">Taille du rack utilisé.</param>
+/// <param name="MinWordLength">Longueur minimale des mots.</param>
+/// <param name="Language">Langue de la partie.</param>
+/// <param name="IsRanked">Indique si la partie influence le classement Elo.</param>
+/// <param name="TournamentId">Identifiant tournoi optionnel.</param>
 public record GameResult(
     string GameId,
     string PlayerId,
@@ -77,7 +105,15 @@ public record GameResult(
     IReadOnlyList<string> OpponentIds,
     IReadOnlyList<double> OpponentRatings,
     DateTimeOffset PlayedAt,
-    int DurationSeconds);
+    int DurationSeconds,
+    RankingQueue Queue = RankingQueue.OpenRanked,
+    GameLevel GameLevel = GameLevel.Standard,
+    int BoardSize = 15,
+    int RackSize = 7,
+    int MinWordLength = 2,
+    string Language = "fr",
+    bool IsRanked = true,
+    string? TournamentId = null);
 
 /// <summary>
 /// Résumé des statistiques d'un joueur sur différentes périodes.

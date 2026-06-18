@@ -24,7 +24,9 @@ public interface IPlayerRatingService
     /// <summary>
     /// Obtient un classement mondial par Elo (top N).
     /// </summary>
-    Task<IReadOnlyList<PlayerRating>> GetLeaderboardAsync(int topCount = 100);
+    Task<IReadOnlyList<PlayerRating>> GetLeaderboardAsync(
+        RankingQueue queue = RankingQueue.GlobalPrestige,
+        int topCount = 100);
 
     /// <summary>
     /// Obtient les joueurs du même niveau.

@@ -56,6 +56,8 @@ public sealed class EndGameUseCase
         if (_playerRatingService is not null)
         {
             var playedAt = DateTimeOffset.UtcNow;
+            var queue = ResolveQueue(request.GameLevel);
+            var isRanked = queue != RankingQueue.CasualUnranked;
 
             var participants = session.PlayerIndexById
                 .Select(kv =>
@@ -74,7 +76,12 @@ public sealed class EndGameUseCase
             foreach (var participant in participants)
             {
                 var rating = await _playerRatingService.GetRatingAsync(participant.PlayerId);
-                ratings[participant.PlayerId] = rating.EloRating;
+                ratings[participant.PlayerId] = queue switch
+                {
+                    RankingQueue.Tournament => rating.EloTournament,
+                    RankingQueue.OpenRanked => rating.EloOpen,
+                    _ => rating.GlobalPrestige
+                };
             }
 
             var sortedByScore = participants
@@ -109,7 +116,15 @@ public sealed class EndGameUseCase
                         .Select(o => ratings[o.PlayerId])
                         .ToList(),
                     PlayedAt: playedAt,
-                    DurationSeconds: 0))
+                    DurationSeconds: 0,
+                    Queue: queue,
+                    GameLevel: request.GameLevel ?? GameLevel.Standard,
+                    BoardSize: request.BoardSize,
+                    RackSize: request.RackSize,
+                    MinWordLength: request.MinWordLength,
+                    Language: request.Language,
+                    IsRanked: isRanked,
+                    TournamentId: request.TournamentId))
                 .ToList();
 
             await _playerRatingService.UpdateRatingsAsync(results);
@@ -123,4 +138,12 @@ public sealed class EndGameUseCase
             Winner:     winner,
             Scores:     scores);
     }
+
+    private static RankingQueue ResolveQueue(GameLevel? level) =>
+        level switch
+        {
+            GameLevel.Casual => RankingQueue.CasualUnranked,
+            GameLevel.Tournament => RankingQueue.Tournament,
+            _ => RankingQueue.OpenRanked
+        };
 }

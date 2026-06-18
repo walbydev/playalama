@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace Lama.Console.Commands.Rating;
 
 /// <summary>
-/// Commande <c>lama rating leaderboard [--top N]</c>.
+/// Commande <c>lama rating leaderboard [--queue open|tournament|global] [--top N]</c>.
 /// Affiche le classement mondial par Elo.
 /// </summary>
 public sealed class RatingLeaderboardCommand : ICommand
@@ -31,6 +31,13 @@ public sealed class RatingLeaderboardCommand : ICommand
         CommandContext context,
         CancellationToken cancellationToken = default)
     {
+        var queue = ParseQueue(context.GetOption("queue"), out var queueError);
+        if (queueError is not null)
+        {
+            global::System.Console.Error.WriteLine(queueError);
+            return ExitCodes.InvalidArgument;
+        }
+
         var topRaw = context.GetOption("top");
         var top = 20;
 
@@ -41,7 +48,7 @@ public sealed class RatingLeaderboardCommand : ICommand
             return ExitCodes.InvalidArgument;
         }
 
-        var leaderboard = await _playerRatingService.GetLeaderboardAsync(top);
+        var leaderboard = await _playerRatingService.GetLeaderboardAsync(queue, top);
 
         switch (context.OutputFormat.ToLowerInvariant())
         {
@@ -54,17 +61,25 @@ public sealed class RatingLeaderboardCommand : ICommand
 
             case "csv":
                 global::System.Console.WriteLine(
-                    "rank,playerId,elo,level,levelName,wins,losses,abandoned,winRate");
+                    "rank,playerId,queue,elo,level,levelName,wins,losses,abandoned,winRate");
                 for (var i = 0; i < leaderboard.Count; i++)
                 {
                     var player = leaderboard[i];
+                    var queueElo = ResolveQueueElo(player, queue);
                     global::System.Console.WriteLine(
-                        $"{i + 1},{player.PlayerId},{player.EloRating:F0},{player.Level},{EscapeCsv(player.LevelName)},{player.WinsCount},{player.LossesCount},{player.AbandonedCount},{player.WinRate:F2}");
+                        $"{i + 1},{player.PlayerId},{queue.ToString().ToLowerInvariant()},{queueElo:F0},{player.Level},{EscapeCsv(player.LevelName)},{player.WinsCount},{player.LossesCount},{player.AbandonedCount},{player.WinRate:F2}");
                 }
                 break;
 
             default:
-                global::System.Console.WriteLine($"=== CLASSEMENT MONDIAL (Top {top}) ===");
+                var queueLabel = queue switch
+                {
+                    RankingQueue.OpenRanked => "OPEN",
+                    RankingQueue.Tournament => "TOURNOI",
+                    _ => "GLOBAL"
+                };
+
+                global::System.Console.WriteLine($"=== CLASSEMENT {queueLabel} (Top {top}) ===");
                 if (leaderboard.Count == 0)
                 {
                     global::System.Console.WriteLine("Aucun joueur classé pour le moment.");
@@ -74,15 +89,50 @@ public sealed class RatingLeaderboardCommand : ICommand
                 for (var i = 0; i < leaderboard.Count; i++)
                 {
                     var p = leaderboard[i];
+                    var queueElo = ResolveQueueElo(p, queue);
                     global::System.Console.WriteLine(
-                        $"{i + 1,2}. {p.PlayerId,-24} {p.EloRating,5:F0} Elo  {p.LevelName}");
+                        $"{i + 1,2}. {p.PlayerId,-24} {queueElo,5:F0} Elo  {p.LevelName}");
                 }
                 break;
         }
 
-        _logger.LogInformation("Leaderboard consulté (top={Top}, format={Format})", top, context.OutputFormat);
+        _logger.LogInformation(
+            "Leaderboard consulté (queue={Queue}, top={Top}, format={Format})",
+            queue,
+            top,
+            context.OutputFormat);
         return ExitCodes.Success;
     }
+
+    private static RankingQueue ParseQueue(string? raw, out string? error)
+    {
+        error = null;
+        if (string.IsNullOrWhiteSpace(raw))
+            return RankingQueue.GlobalPrestige;
+
+        switch (raw.Trim().ToLowerInvariant())
+        {
+            case "open":
+            case "ranked":
+                return RankingQueue.OpenRanked;
+            case "tournament":
+            case "tournoi":
+                return RankingQueue.Tournament;
+            case "global":
+                return RankingQueue.GlobalPrestige;
+            default:
+                error = "[rating leaderboard] --queue doit valoir open|tournament|global.";
+                return RankingQueue.GlobalPrestige;
+        }
+    }
+
+    private static double ResolveQueueElo(PlayerRating rating, RankingQueue queue) =>
+        queue switch
+        {
+            RankingQueue.OpenRanked => rating.EloOpen,
+            RankingQueue.Tournament => rating.EloTournament,
+            _ => rating.GlobalPrestige
+        };
 
     private static string EscapeCsv(string value)
     {

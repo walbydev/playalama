@@ -96,7 +96,20 @@ public record SwapLettersRequest(
 /// Requête pour terminer la partie.
 /// </summary>
 /// <param name="GameId">Identifiant de la partie.</param>
-public record EndGameRequest(string GameId);
+/// <param name="GameLevel">Niveau de partie courant.</param>
+/// <param name="BoardSize">Taille du plateau.</param>
+/// <param name="RackSize">Taille du rack.</param>
+/// <param name="MinWordLength">Longueur minimale des mots.</param>
+/// <param name="Language">Langue de la partie.</param>
+/// <param name="TournamentId">Identifiant de tournoi éventuel.</param>
+public record EndGameRequest(
+    string GameId,
+    GameLevel? GameLevel = null,
+    int BoardSize = 15,
+    int RackSize = 7,
+    int MinWordLength = 2,
+    string Language = "fr",
+    string? TournamentId = null);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Réponses (sorties des cas d'usage)

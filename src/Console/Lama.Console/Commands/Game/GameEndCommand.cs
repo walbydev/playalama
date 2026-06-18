@@ -43,7 +43,9 @@ public sealed class GameEndCommand : ICommand
         try
         {
             var response = await _endGameUseCase.ExecuteAsync(
-                new EndGameRequest(context.GameId));
+                new EndGameRequest(
+                    GameId: context.GameId,
+                    GameLevel: context.GameLevel));
 
             // Afficher le classement final
             global::System.Console.WriteLine("═══════════════════════════════════");

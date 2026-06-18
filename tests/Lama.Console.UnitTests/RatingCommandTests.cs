@@ -82,6 +82,25 @@ public sealed class RatingCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task RatingLeaderboard_InvalidQueue_ReturnsInvalidArgument()
+    {
+        var command = new RatingLeaderboardCommand(_ratingService, NullLogger<RatingLeaderboardCommand>.Instance);
+        var context = new CommandContext
+        {
+            Group = "rating",
+            Action = "leaderboard",
+            CommandId = "rating.leaderboard",
+            Options = new Dictionary<string, string?> { ["queue"] = "invalid" }
+        };
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => command.ExecuteAsync(context));
+
+        exitCode.Should().Be(ExitCodes.InvalidArgument);
+        stdout.Should().BeEmpty();
+        stderr.Should().Contain("--queue");
+    }
+
+    [Fact]
     public async Task RatingStats_JsonScope30Days_IsReturned()
     {
         await SeedRatingsAsync();

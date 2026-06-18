@@ -54,18 +54,25 @@ public sealed class PlayerRatingService : IPlayerRatingService
         {
             var currentRating = currentRatings[result.PlayerId];
 
+            var sourceElo = GetEloForQueue(currentRating, result.Queue);
+
             // Calculer le changement Elo
-            var ratingChange = _eloCalculator.CalculateRatingChange(
-                currentRating.EloRating,
-                result.OpponentRatings,
-                result.Rank,
-                gameResults.Count);
+            var ratingChange = (result.IsRanked && result.Queue != RankingQueue.CasualUnranked)
+                ? _eloCalculator.CalculateRatingChange(
+                    sourceElo,
+                    result.OpponentRatings,
+                    result.Rank,
+                    gameResults.Count)
+                : 0;
 
             // Appliquer le changement
-            var newElo = _eloCalculator.ApplyRatingChange(currentRating.EloRating, ratingChange);
+            var newQueueElo = _eloCalculator.ApplyRatingChange(sourceElo, ratingChange);
+            var newOpenElo = result.Queue == RankingQueue.OpenRanked ? newQueueElo : currentRating.EloOpen;
+            var newTournamentElo = result.Queue == RankingQueue.Tournament ? newQueueElo : currentRating.EloTournament;
+            var compatibilityElo = newOpenElo;
 
             // Déterminer le nouveau niveau
-            var (level, levelName, _) = _levelDeterminer.DetermineLevel(newElo);
+            var (level, levelName, _) = _levelDeterminer.DetermineLevel(compatibilityElo);
 
             // Mettre à jour les statistiques
             int newWins = currentRating.WinsCount;
@@ -103,9 +110,11 @@ public sealed class PlayerRatingService : IPlayerRatingService
 
             var updatedRating = new PlayerRating(
                 PlayerId: result.PlayerId,
-                EloRating: newElo,
+                EloRating: compatibilityElo,
                 Level: (int)level,
                 LevelName: levelName,
+                EloOpen: newOpenElo,
+                EloTournament: newTournamentElo,
                 WinsCount: newWins,
                 LossesCount: newLosses,
                 AbandonedCount: newAbandoned,
@@ -121,8 +130,8 @@ public sealed class PlayerRatingService : IPlayerRatingService
             _logger.LogDebug(
                 "Rating mis à jour : {PlayerId} | Elo {Old} → {New} ({Change:+0;-0}) | {Level}",
                 result.PlayerId,
-                currentRating.EloRating,
-                newElo,
+                sourceElo,
+                newQueueElo,
                 ratingChange,
                 levelName);
         }
@@ -156,9 +165,20 @@ public sealed class PlayerRatingService : IPlayerRatingService
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<PlayerRating>> GetLeaderboardAsync(int topCount = 100)
+    public Task<IReadOnlyList<PlayerRating>> GetLeaderboardAsync(
+        RankingQueue queue = RankingQueue.GlobalPrestige,
+        int topCount = 100)
     {
-        var leaderboard = _ratingRepository.GetLeaderboard(topCount);
+        var all = _ratingRepository.LoadAllRatings().Values;
+
+        IEnumerable<PlayerRating> sorted = queue switch
+        {
+            RankingQueue.OpenRanked => all.OrderByDescending(r => r.EloOpen),
+            RankingQueue.Tournament => all.OrderByDescending(r => r.EloTournament),
+            _ => all.OrderByDescending(r => r.GlobalPrestige)
+        };
+
+        var leaderboard = sorted.Take(topCount).ToList();
         return Task.FromResult((IReadOnlyList<PlayerRating>)leaderboard);
     }
 
@@ -177,6 +197,16 @@ public sealed class PlayerRatingService : IPlayerRatingService
         _resultRepository.ClearAllResults();
         return Task.CompletedTask;
     }
+
+    private static double GetEloForQueue(PlayerRating rating, RankingQueue queue) =>
+        queue switch
+        {
+            RankingQueue.Tournament => rating.EloTournament,
+            RankingQueue.OpenRanked => rating.EloOpen,
+            RankingQueue.CasualUnranked => rating.EloOpen,
+            RankingQueue.GlobalPrestige => rating.GlobalPrestige,
+            _ => rating.EloOpen
+        };
 
     /// <summary>
     /// Calcule les statistiques sur une période.

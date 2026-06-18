@@ -48,6 +48,9 @@ public sealed class RatingShowCommand : ICommand
                 {
                     rating.PlayerId,
                     rating.EloRating,
+                    rating.EloOpen,
+                    rating.EloTournament,
+                    rating.GlobalPrestige,
                     rating.Level,
                     rating.LevelName,
                     rating.WinsCount,
@@ -65,16 +68,18 @@ public sealed class RatingShowCommand : ICommand
 
             case "csv":
                 global::System.Console.WriteLine(
-                    "playerId,elo,level,levelName,wins,losses,abandoned,winRate,currentStreak,highestStreak,highScore,averageScore,lastGameAt,updatedAt");
+                    "playerId,eloOpen,eloTournament,globalPrestige,level,levelName,wins,losses,abandoned,winRate,currentStreak,highestStreak,highScore,averageScore,lastGameAt,updatedAt");
                 global::System.Console.WriteLine(
-                    $"{rating.PlayerId},{rating.EloRating:F0},{rating.Level},{EscapeCsv(rating.LevelName)},{rating.WinsCount},{rating.LossesCount},{rating.AbandonedCount},{rating.WinRate:F2},{rating.CurrentStreak},{rating.HighestStreak},{rating.HighScore},{rating.AverageScore:F2},{rating.LastGameAt:O},{rating.UpdatedAt:O}");
+                    $"{rating.PlayerId},{rating.EloOpen:F0},{rating.EloTournament:F0},{rating.GlobalPrestige:F0},{rating.Level},{EscapeCsv(rating.LevelName)},{rating.WinsCount},{rating.LossesCount},{rating.AbandonedCount},{rating.WinRate:F2},{rating.CurrentStreak},{rating.HighestStreak},{rating.HighScore},{rating.AverageScore:F2},{rating.LastGameAt:O},{rating.UpdatedAt:O}");
                 break;
 
             default:
                 global::System.Console.WriteLine("=== RATING JOUEUR ===");
                 global::System.Console.WriteLine($"Joueur      : {rating.PlayerId}");
                 global::System.Console.WriteLine($"Niveau      : {rating.LevelName} (#{rating.Level})");
-                global::System.Console.WriteLine($"Elo         : {rating.EloRating:F0}");
+                global::System.Console.WriteLine($"Elo Open    : {rating.EloOpen:F0}");
+                global::System.Console.WriteLine($"Elo Tournoi : {rating.EloTournament:F0}");
+                global::System.Console.WriteLine($"Global      : {rating.GlobalPrestige:F0}");
                 global::System.Console.WriteLine($"Bilan       : {rating.WinsCount}V / {rating.LossesCount}D / {rating.AbandonedCount}A");
                 global::System.Console.WriteLine($"WinRate     : {rating.WinRate:F1}%");
                 global::System.Console.WriteLine($"Serie       : {rating.CurrentStreak:+#;-#;0} (max {rating.HighestStreak})");

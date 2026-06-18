@@ -89,6 +89,16 @@ public sealed class PlayerRatingRepository
             var json = File.ReadAllText(_ratingsFile);
             var ratings = JsonSerializer.Deserialize<List<PlayerRating>>(json, JsonOptions) ?? new();
 
+            // Migration douce: anciens fichiers n'avaient pas EloOpen/EloTournament.
+            ratings = ratings
+                .Select(r => r with
+                {
+                    EloOpen = r.EloOpen > 0 ? r.EloOpen : (r.EloRating > 0 ? r.EloRating : 1200),
+                    EloTournament = r.EloTournament > 0 ? r.EloTournament : 1200,
+                    EloRating = r.EloRating > 0 ? r.EloRating : (r.EloOpen > 0 ? r.EloOpen : 1200)
+                })
+                .ToList();
+
             _cache = ratings.ToDictionary(r => r.PlayerId);
             return new Dictionary<string, PlayerRating>(_cache);
         }

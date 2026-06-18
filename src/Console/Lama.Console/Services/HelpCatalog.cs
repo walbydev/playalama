@@ -246,7 +246,7 @@ public static class HelpCatalog
             Group: "rating",
             ActionPath: "show",
             Usage: "lama rating show [playerId] [--output text|json|csv]",
-            Description: "Affiche le rating global d'un joueur (ou joueur de la session).",
+            Description: "Affiche les ratings open/tournoi et le prestige global d'un joueur.",
             AllowedRoles: "Tous roles",
             OutputFormats: "text, json, csv",
             Options: [new("--output", "Format de sortie (text|json|csv)")],
@@ -255,16 +255,17 @@ public static class HelpCatalog
             CommandId: "rating.leaderboard",
             Group: "rating",
             ActionPath: "leaderboard",
-            Usage: "lama rating leaderboard [--top <n>] [--output text|json|csv]",
-            Description: "Affiche le classement mondial par Elo.",
+            Usage: "lama rating leaderboard [--queue open|tournament|global] [--top <n>] [--output text|json|csv]",
+            Description: "Affiche le classement mondial par file de classement.",
             AllowedRoles: "Tous roles",
             OutputFormats: "text, json, csv",
             Options:
             [
+                new("--queue", "File de classement (open|tournament|global, defaut: global)"),
                 new("--top", "Nombre de joueurs a afficher (defaut: 20)"),
                 new("--output", "Format de sortie (text|json|csv)")
             ],
-            Examples: ["lama rating leaderboard", "lama rating leaderboard --top 50 --output csv"]),
+            Examples: ["lama rating leaderboard", "lama rating leaderboard --queue tournament --top 50 --output csv"]),
         new(
             CommandId: "rating.stats",
             Group: "rating",
