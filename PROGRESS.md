@@ -910,3 +910,34 @@ Journal unique de progression du projet LAMA.
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
 - `docs/CLASSIC_GAME_SHORTLIST.md`
 
+## [2026-06-18 17:00:00 UTC] - CG-02 correctif UX: rejoindre une partie en interactif
+
+### Contexte
+- Retour utilisateur en recette manuelle: apres `Nouvelle partie` (hote Alice), l'action `Rejoindre une partie` echouait avec "Aucune partie active".
+
+### Fait
+- Cause racine identifiee: `InteractiveMode.HandleJoinGame` construisait un `CommandContext` sans `GameId/PlayerId`.
+- Correctif applique:
+  - `HandleJoinGame` charge la session active,
+  - refuse proprement si session de partie absente,
+  - construit `game.join` via `BuildSessionBoundContext(...)` pour propager `GameId/PlayerId/Role/GameLevel`.
+- Validation executee:
+  - `Lama.Console.UnitTests` complet ✅ (194/194).
+
+### En cours
+- `CG-02` reste en cours jusqu'a recette interactive manuelle complete.
+
+### A faire
+- Rejouer la recette manuelle interactive complete pour confirmer la fermeture de CG-02.
+
+### Risques / Ecarts
+- Aucun ecart detecte en tests automatiques apres correctif.
+
+### Prochaines etapes
+1. Valider la recette interactive complete en TTY reel.
+2. Clore `CG-02` si aucun blocage supplementaire.
+
+### References
+- `src/Console/Lama.Console/Modes/InteractiveMode.cs`
+- `tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj`
+

@@ -121,6 +121,13 @@ public sealed class InteractiveMode : IConsoleMode
 
     private async Task<int> HandleJoinGame(CancellationToken cancellationToken)
     {
+        var session = _sessionService.LoadSession();
+        if (session?.GameId is null || session.PlayerId is null)
+        {
+            AnsiConsole.MarkupLine("[yellow]Aucune partie active a rejoindre dans cette session. Creez d'abord une partie.[/]");
+            return ExitCodes.GameNotFound;
+        }
+
         var defaultName = _sessionService.LoadSession()?.PlayerName ?? "Joueur";
         var playerName = AnsiConsole.Prompt(
             new TextPrompt<string>("[green]Nom du joueur :[/]")
@@ -129,13 +136,7 @@ public sealed class InteractiveMode : IConsoleMode
                     ? ValidationResult.Success()
                     : ValidationResult.Error("Le nom ne peut pas être vide.")));
 
-        var context = new CommandContext
-        {
-            Group = "game",
-            Action = "join",
-            CommandId = "game.join",
-            Arguments = [playerName]
-        };
+        var context = BuildSessionBoundContext("game", "join", "game.join", session, [playerName]);
 
         return await _dispatcher.DispatchAsync(context, cancellationToken);
     }
