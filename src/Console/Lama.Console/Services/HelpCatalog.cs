@@ -151,6 +151,10 @@ public static class HelpCatalog
             [
                 "lama play move H8 LAMA H",
                 "lama play move H8 LAMA V --dry-run"
+            ],
+            Notes:
+            [
+                "Notation joker explicite: une lettre minuscule force l'utilisation d'un joker '*' (ex: lAMA)."
             ]),
         new(
             CommandId: "play.pass",

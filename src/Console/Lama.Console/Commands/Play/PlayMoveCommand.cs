@@ -40,7 +40,7 @@ public sealed class PlayMoveCommand : ICommand
         CancellationToken cancellationToken = default)
     {
         var posStr    = context.GetArgument(0);
-        var word      = context.GetArgument(1)?.ToUpperInvariant();
+        var word      = context.GetArgument(1);
         var dirStr    = context.GetArgument(2)?.ToUpperInvariant();
 
         if (string.IsNullOrWhiteSpace(posStr) ||
@@ -51,6 +51,8 @@ public sealed class PlayMoveCommand : ICommand
                 "[play move] Usage : lama play move <case> <mot> <direction>");
             global::System.Console.Error.WriteLine(
                 "  Exemple : lama play move H8 LAMA H");
+            global::System.Console.Error.WriteLine(
+                "  Joker explicite : mettez la lettre en minuscule (ex: lAMA force un joker pour L)");
             return ExitCodes.InvalidArgument;
         }
 
@@ -84,7 +86,7 @@ public sealed class PlayMoveCommand : ICommand
         if (isDryRun)
         {
             global::System.Console.WriteLine(
-                $"[dry-run] Simulation de {word} en {posStr} direction {dirStr}");
+                $"[dry-run] Simulation de {ToDisplayWord(word)} en {posStr} direction {dirStr}");
             global::System.Console.WriteLine("(le coup n'est pas joué)");
             return ExitCodes.Success;
         }
@@ -94,8 +96,11 @@ public sealed class PlayMoveCommand : ICommand
             var request  = new PlayMoveRequest(context.GameId, context.PlayerId, letters);
             var response = await _playMoveUseCase.ExecuteAsync(request);
 
+            var wildcardCount = word.Count(char.IsLower);
             global::System.Console.WriteLine(
-                $"✓ {word} joué en {posStr} {dirStr} — {response.Score} pts");
+                $"✓ {ToDisplayWord(word)} joué en {posStr} {dirStr} — {response.Score} pts");
+            if (wildcardCount > 0)
+                global::System.Console.WriteLine($"  Jokers forcés: {wildcardCount}");
             global::System.Console.WriteLine(
                 $"  Nouveau rack : {string.Join(" ", response.NewRack)}");
             global::System.Console.WriteLine(
@@ -104,7 +109,7 @@ public sealed class PlayMoveCommand : ICommand
                 $"  Tour suivant : {response.GameState.Players[response.GameState.CurrentPlayerIndex].Name}");
 
             _logger.LogInformation("{Player} a joué {Word} en {Pos}{Dir}",
-                context.PlayerName, word, posStr, dirStr);
+                context.PlayerName, ToDisplayWord(word), posStr, dirStr);
 
             // Mettre à jour la session (rack mis à jour)
             var session = _sessionService.LoadSession();
@@ -121,6 +126,8 @@ public sealed class PlayMoveCommand : ICommand
             return ExitCodes.InvalidPlacement;
         }
     }
+
+    private static string ToDisplayWord(string word) => word.ToUpperInvariant();
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 

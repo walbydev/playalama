@@ -145,7 +145,8 @@ public sealed class GameEngine : IGameEngine
         // 3. Appliquer le coup sur le plateau
         var newGrid = (Tile?[,])_board!.Grid.Clone();
         foreach (var (pos, letter) in letters)
-            newGrid[pos.Row, pos.Column] = new Tile(letter, wildcardPositions.Contains(pos));
+            newGrid[pos.Row, pos.Column] =
+                new Tile(char.ToUpperInvariant(letter), wildcardPositions.Contains(pos));
         _board = new BoardState(newGrid);
 
         // 4. Mettre à jour le score du joueur courant
@@ -183,7 +184,7 @@ public sealed class GameEngine : IGameEngine
             Placements: letters
                 .OrderBy(kv => kv.Key.Row)
                 .ThenBy(kv => kv.Key.Column)
-                .Select(kv => new MovePlacement(kv.Key.Row, kv.Key.Column, kv.Value))
+                .Select(kv => new MovePlacement(kv.Key.Row, kv.Key.Column, char.ToUpperInvariant(kv.Value)))
                 .ToList(),
             Score: score,
             PlayedAt: DateTimeOffset.UtcNow));
@@ -467,6 +468,17 @@ public sealed class GameEngine : IGameEngine
 
         foreach (var (pos, letter) in letters)
         {
+            // Convention CLI: une lettre minuscule force l'usage d'un joker.
+            if (char.IsLower(letter))
+            {
+                if (!rack.Remove('*'))
+                    throw new GameException(
+                        $"La lettre '{char.ToUpperInvariant(letter)}' requiert un joker '*' dans le rack.");
+
+                wildcardPositions.Add(pos);
+                continue;
+            }
+
             var normalized = char.ToUpperInvariant(letter);
 
             if (rack.Remove(normalized))

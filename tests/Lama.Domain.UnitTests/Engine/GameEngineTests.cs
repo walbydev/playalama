@@ -370,6 +370,27 @@ public class GameEngineTests
     }
 
     [Fact]
+    public void PlayMove_LowercaseLetter_ForcesWildcardEvenIfLetterExistsInRack()
+    {
+        var engine = CreateEngine();
+        engine.InitializeGame(["Alice", "Bob"]);
+
+        // Le rack contient L et * : la notation minuscule doit consommer * et garder L.
+        ForceRack(engine, 0, ['L', '*', 'A', 'I', 'S', 'T', 'O']);
+
+        var state = engine.PlayMove(new Dictionary<Position, char>
+        {
+            [new Position(7, 7)] = 'l',
+            [new Position(7, 8)] = 'A'
+        });
+
+        state.Board.Grid[7, 7]!.Letter.Should().Be('L');
+        state.Board.Grid[7, 7]!.IsWildcard.Should().BeTrue();
+        state.Players[0].Rack.Should().Contain('L',
+            because: "la lettre L du rack ne doit pas etre consommee quand 'l' force le joker");
+    }
+
+    [Fact]
     public void PlayMove_IncrementsTurnNumber_AfterFullRound()
     {
         var engine = CreateEngine();

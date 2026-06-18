@@ -134,7 +134,7 @@ public sealed class InteractiveMode : IConsoleMode
         var action = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title("[green]Action de tour[/]")
-                .AddChoices("Jouer un mot", "Passer", "Echanger", "Retour"));
+                .AddChoices("Jouer un mot", "Verifier un coup", "Contester (challenge)", "Passer", "Echanger", "Retour"));
 
         if (action == "Retour")
             return ExitCodes.Success;
@@ -143,6 +143,8 @@ public sealed class InteractiveMode : IConsoleMode
         {
             "Passer" => BuildSessionBoundContext("play", "pass", "play.pass", session),
             "Jouer un mot" => BuildMoveContext(session),
+            "Verifier un coup" => BuildCheckContext(session),
+            "Contester (challenge)" => BuildSessionBoundContext("play", "challenge", "play.challenge", session),
             "Echanger" => BuildSwapContext(session),
             _ => null
         };
@@ -150,7 +152,11 @@ public sealed class InteractiveMode : IConsoleMode
         if (context is null)
             return ExitCodes.InvalidArgument;
 
-        return await _dispatcher.DispatchAsync(context, cancellationToken);
+        var exitCode = await _dispatcher.DispatchAsync(context, cancellationToken);
+        if (exitCode == ExitCodes.Success)
+            await RenderTurnDashboard(session, cancellationToken);
+
+        return exitCode;
     }
 
     private async Task<int> HandleLoadGame(CancellationToken cancellationToken)
@@ -204,7 +210,7 @@ public sealed class InteractiveMode : IConsoleMode
                     : ValidationResult.Error("La position est requise.")));
 
         var word = AnsiConsole.Prompt(
-            new TextPrompt<string>("[green]Mot :[/]")
+            new TextPrompt<string>("[green]Mot (minuscule = joker force) :[/]")
                 .Validate(value => !string.IsNullOrWhiteSpace(value)
                     ? ValidationResult.Success()
                     : ValidationResult.Error("Le mot est requis.")));
@@ -234,6 +240,45 @@ public sealed class InteractiveMode : IConsoleMode
                     : ValidationResult.Error("Les lettres sont requises.")));
 
         return BuildSessionBoundContext("play", "swap", "play.swap", session, [letters]);
+    }
+
+    private static CommandContext BuildCheckContext(SessionContext session)
+    {
+        var position = AnsiConsole.Prompt(
+            new TextPrompt<string>("[green]Position de depart (ex: H8) :[/]")
+                .Validate(value => !string.IsNullOrWhiteSpace(value)
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error("La position est requise.")));
+
+        var word = AnsiConsole.Prompt(
+            new TextPrompt<string>("[green]Mot a verifier :[/]")
+                .Validate(value => !string.IsNullOrWhiteSpace(value)
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error("Le mot est requis.")));
+
+        var direction = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[green]Direction[/]")
+                .AddChoices("H", "V"));
+
+        return BuildSessionBoundContext("play", "check", "play.check", session, [position, word, direction]);
+    }
+
+    private async Task RenderTurnDashboard(SessionContext session, CancellationToken cancellationToken)
+    {
+        var contexts = new[]
+        {
+            BuildSessionBoundContext("show", "board", "show.board", session),
+            BuildSessionBoundContext("show", "rack", "show.rack", session),
+            BuildSessionBoundContext("show", "scores", "show.scores", session)
+        };
+
+        foreach (var context in contexts)
+        {
+            var code = await _dispatcher.DispatchAsync(context, cancellationToken);
+            if (code != ExitCodes.Success)
+                _logger.LogDebug("Dashboard interactif: {CommandId} => {ExitCode}", context.CommandId, code);
+        }
     }
 
     private static CommandContext BuildSessionBoundContext(

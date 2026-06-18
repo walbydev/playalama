@@ -490,9 +490,16 @@ Journal unique de progression du projet LAMA.
   - Ajout d'une entree de menu `Jouer un tour`.
   - Flux de tour connecte aux commandes reelles:
     - `play.move`
+    - `play.check`
+    - `play.challenge`
     - `play.pass`
     - `play.swap` (avec confirmation `--all` ou saisie lettres)
   - Construction d'un `CommandContext` lie a la session active (GameId/PlayerId/Role/GameLevel).
+  - Mini tableau de bord post-action (si succes): `show.board`, `show.rack`, `show.scores`.
+
+- **Notation joker explicite**:
+  - `play.move` supporte maintenant une convention explicite: lettre minuscule => joker force (ex: `lAMA`).
+  - Cote moteur, la minuscule force la consommation d'un `*` meme si la lettre existe deja dans le rack.
 
 - **Tests E2E processus reel supplements** (`RealCliE2ETests`):
   - Verification `game.list --output json`.
@@ -502,7 +509,7 @@ Journal unique de progression du projet LAMA.
 
 ### En cours / A faire
 - Ajouter un rendu interactif in-loop apres chaque action (`show.board` + `show.rack` + `show.scores`) pour une experience de tour plus fluide.
-- Cadrer la navigation interactive pour challenge/check dans le meme sous-menu `Jouer un tour`.
+- Etendre les E2E formats a `show.history` des qu'un scenario de coups deterministe est fixe.
 
 ### Risques / Ecarts
 - Le mode interactif reste couple a des prompts sequentiels (pas encore boucle de partie unique continue).
