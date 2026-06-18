@@ -463,6 +463,7 @@ app.MapGet("/api/games/{gameId}", async (string gameId, GameHubState state, Lama
 
     var persistedPlayers = new List<object>();
     var persistedMoves = new List<object>();
+    IReadOnlyList<OnlineBoardTile> persistedBoard = [];
     var lastTurnNumber = 0;
 
     try
@@ -515,6 +516,13 @@ app.MapGet("/api/games/{gameId}", async (string gameId, GameHubState state, Lama
                 };
             })
             .ToList();
+
+        var dbBoardState = await db.SessionBoardStates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.GameId == gameGuid, cancellationToken);
+
+        if (dbBoardState is not null)
+            persistedBoard = ParseBoardTilesFromJson(dbBoardState.BoardJson);
     }
     catch (PostgresException ex) when (IsMissingDatabaseObject(ex))
     {
@@ -541,7 +549,7 @@ app.MapGet("/api/games/{gameId}", async (string gameId, GameHubState state, Lama
         CurrentPlayerIndex = currentPlayerIndex,
         TurnNumber = lastTurnNumber,
         players = persistedPlayers,
-        board = Array.Empty<OnlineBoardTile>(),
+        board = persistedBoard,
         moves = persistedMoves,
         source = "database"
     });
@@ -756,6 +764,145 @@ static IReadOnlyList<OnlineMovePlacement> ExtractPlacementsFromPayload(JsonEleme
     }
 
     return placements;
+}
+
+static IReadOnlyList<OnlineBoardTile> ParseBoardTilesFromJson(string? boardJson)
+{
+    if (string.IsNullOrWhiteSpace(boardJson))
+        return [];
+
+    try
+    {
+        using var document = JsonDocument.Parse(boardJson);
+        var root = document.RootElement;
+
+        if (root.ValueKind == JsonValueKind.Array)
+            return ParseBoardTilesFromArray(root);
+
+        if (root.ValueKind != JsonValueKind.Object)
+            return [];
+
+        if (root.TryGetProperty("tiles", out var tilesElement) && tilesElement.ValueKind == JsonValueKind.Array)
+            return ParseBoardTilesFromArray(tilesElement);
+
+        if (root.TryGetProperty("grid", out var gridElement) && gridElement.ValueKind == JsonValueKind.Array)
+            return ParseBoardTilesFromGrid(gridElement);
+
+        return [];
+    }
+    catch
+    {
+        return [];
+    }
+}
+
+static IReadOnlyList<OnlineBoardTile> ParseBoardTilesFromArray(JsonElement tilesElement)
+{
+    var tiles = new List<OnlineBoardTile>();
+
+    foreach (var tileElement in tilesElement.EnumerateArray())
+    {
+        if (tileElement.ValueKind != JsonValueKind.Object)
+            continue;
+
+        if (!TryGetIntProperty(tileElement, "row", out var row))
+            continue;
+        if (!TryGetIntProperty(tileElement, "column", out var column))
+            continue;
+        if (!TryGetLetterProperty(tileElement, "letter", out var letter))
+            continue;
+
+        var isWildcard = TryGetBoolProperty(tileElement, "isWildcard", out var wildcard) && wildcard;
+        tiles.Add(new OnlineBoardTile(row, column, letter, isWildcard));
+    }
+
+    return tiles;
+}
+
+static IReadOnlyList<OnlineBoardTile> ParseBoardTilesFromGrid(JsonElement gridElement)
+{
+    var tiles = new List<OnlineBoardTile>();
+    var rowIndex = 0;
+
+    foreach (var rowElement in gridElement.EnumerateArray())
+    {
+        if (rowElement.ValueKind != JsonValueKind.Array)
+        {
+            rowIndex++;
+            continue;
+        }
+
+        var columnIndex = 0;
+        foreach (var cellElement in rowElement.EnumerateArray())
+        {
+            if (cellElement.ValueKind == JsonValueKind.Object &&
+                TryGetLetterProperty(cellElement, "letter", out var letter))
+            {
+                var isWildcard = TryGetBoolProperty(cellElement, "isWildcard", out var wildcard) && wildcard;
+                tiles.Add(new OnlineBoardTile(rowIndex, columnIndex, letter, isWildcard));
+            }
+
+            columnIndex++;
+        }
+
+        rowIndex++;
+    }
+
+    return tiles;
+}
+
+static bool TryGetIntProperty(JsonElement element, string name, out int value)
+{
+    value = 0;
+    if (!element.TryGetProperty(name, out var property))
+        return false;
+
+    return property.ValueKind switch
+    {
+        JsonValueKind.Number when property.TryGetInt32(out value) => true,
+        JsonValueKind.String when int.TryParse(property.GetString(), out value) => true,
+        _ => false
+    };
+}
+
+static bool TryGetBoolProperty(JsonElement element, string name, out bool value)
+{
+    value = false;
+    if (!element.TryGetProperty(name, out var property))
+        return false;
+
+    if (property.ValueKind == JsonValueKind.True)
+    {
+        value = true;
+        return true;
+    }
+
+    if (property.ValueKind == JsonValueKind.False)
+    {
+        value = false;
+        return true;
+    }
+
+    return property.ValueKind == JsonValueKind.String && bool.TryParse(property.GetString(), out value);
+}
+
+static bool TryGetLetterProperty(JsonElement element, string name, out char value)
+{
+    value = default;
+    if (!element.TryGetProperty(name, out var property))
+        return false;
+
+    var raw = property.ValueKind switch
+    {
+        JsonValueKind.String => property.GetString(),
+        _ => property.ToString()
+    };
+
+    if (string.IsNullOrWhiteSpace(raw))
+        return false;
+
+    value = raw[0];
+    return true;
 }
 
 static bool IsMissingDatabaseObject(PostgresException ex) =>

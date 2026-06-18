@@ -9,6 +9,7 @@ namespace Lama.Server.Data;
 public sealed class LamaDbContext(DbContextOptions<LamaDbContext> options) : DbContext(options)
 {
     public DbSet<SessionGameEntity> SessionGames => Set<SessionGameEntity>();
+    public DbSet<SessionBoardStateEntity> SessionBoardStates => Set<SessionBoardStateEntity>();
     public DbSet<SessionPlayerInGameEntity> SessionPlayersInGame => Set<SessionPlayerInGameEntity>();
     public DbSet<SessionTurnLogEntity> SessionTurnLogs => Set<SessionTurnLogEntity>();
     public DbSet<CompletedGameEntity> CompletedGames => Set<CompletedGameEntity>();
@@ -18,6 +19,7 @@ public sealed class LamaDbContext(DbContextOptions<LamaDbContext> options) : DbC
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new SessionGameEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new SessionBoardStateEntityConfiguration());
         modelBuilder.ApplyConfiguration(new SessionPlayerInGameEntityConfiguration());
         modelBuilder.ApplyConfiguration(new SessionTurnLogEntityConfiguration());
         modelBuilder.ApplyConfiguration(new CompletedGameEntityConfiguration());

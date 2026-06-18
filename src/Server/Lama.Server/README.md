@@ -25,7 +25,7 @@ Notes:
 - Les commandes de jeu online (`play.move`, `play.pass`, etc.) transitent via `POST /api/games/{gameId}/moves`.
 - L'historique online est lu depuis `GET /api/games/{gameId}` (`moves`).
 - `GET /api/games` fonctionne en mode hybride: fusion memoire + fallback EF (`sessions.games`) et, si present, comptage `sessions.players_in_game` / `sessions.turn_log`.
-- `GET /api/games/{gameId}` fonctionne en mode hybride: priorite state memoire, fallback EF metadata (`sessions.games`) + joueurs/coups (`sessions.players_in_game`, `sessions.turn_log`) quand disponibles.
+- `GET /api/games/{gameId}` fonctionne en mode hybride: priorite state memoire, fallback EF metadata (`sessions.games`) + joueurs/coups/plateau (`sessions.players_in_game`, `sessions.turn_log`, `sessions.board_state`) quand disponibles.
 
 ## Lancer en local
 

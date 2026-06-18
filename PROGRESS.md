@@ -1500,4 +1500,45 @@ This is the code block that represents the suggested code change:
 - `src/Server/Lama.Server/Data/Configurations/SessionTurnLogEntityConfiguration.cs`
 - `src/Server/Lama.Server/README.md`
 
+## [2026-06-18 17:48:52 UTC] - Etape 4 livree: fallback plateau branche sur `sessions.board_state`
+
+### Contexte
+- Demande utilisateur: "Enchaine le board".
+- Le fallback DB de `GET /api/games/{gameId}` retournait encore `board: []` meme avec donnees persistées.
+
+### Fait
+- Ajout de l'entite EF `SessionBoardStateEntity` mappee sur `sessions.board_state`.
+- Ajout de la configuration EF `SessionBoardStateEntityConfiguration` (PK `game_id`, `board_json` en `jsonb`, index `updated_at`).
+- `LamaDbContext` etendu avec:
+  - `DbSet<SessionBoardStateEntity> SessionBoardStates`
+  - application de `SessionBoardStateEntityConfiguration`.
+- `GET /api/games/{gameId}` enrichi:
+  - lecture de `sessions.board_state.board_json`
+  - parsing robuste multi-formats JSON:
+    - tableau direct de tuiles
+    - objet avec `tiles[]`
+    - objet avec `grid[][]`
+  - conversion vers `OnlineBoardTile` dans la reponse fallback DB.
+- Documentation serveur alignee (`src/Server/Lama.Server/README.md`) pour inclure la source `sessions.board_state`.
+
+### Verification executee
+- A executer avec donnees de board persistées (cf. etape suivante smoke API).
+
+### En cours
+- `rack_state` reste non branche: les racks fallback joueurs sont encore vides (`rackCount = 0`).
+
+### A faire
+1. Mapper `sessions.rack_state` et brancher les racks joueurs dans `GET /api/games/{gameId}`.
+2. Ajouter un test integration API qui valide `board` non vide depuis `board_json`.
+
+### Risques / Ecarts
+- Le parseur board est best-effort et tolerant; si le format JSON diverge fortement, la reponse peut revenir avec `board` partiel/vide sans casser l'endpoint.
+
+### References
+- `src/Server/Lama.Server/Program.cs`
+- `src/Server/Lama.Server/Data/LamaDbContext.cs`
+- `src/Server/Lama.Server/Data/Models/Sessions/SessionBoardStateEntity.cs`
+- `src/Server/Lama.Server/Data/Configurations/SessionBoardStateEntityConfiguration.cs`
+- `src/Server/Lama.Server/README.md`
+
 
