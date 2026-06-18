@@ -770,3 +770,38 @@ Journal unique de progression du projet LAMA.
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
 - `docs/CLASSIC_GAME_SHORTLIST.md`
 
+## [2026-06-18 15:50:00 UTC] - CG-03 valide: coherence `play.check` / `play.move` en E2E reel
+
+### Contexte
+- Priorite P0 suivante: garantir qu'un coup valide en `play.check` reste jouable en `play.move` dans un vrai processus CLI.
+
+### Fait
+- Ajout d'un test E2E reel dedie dans `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`:
+  - `Cli_RealProcess_PlayCheckThenMove_CrossingLetter_RemainsConsistent`
+- Le test prepare un etat persiste deterministe (session + partie):
+  - plateau avec croisement existant (`LA` horizontal),
+  - rack sans la lettre de croisement,
+  - verification `play check I8 AS V` puis `play move I8 AS V`.
+- Validation executee:
+  - test cible CG-03 ✅
+  - suite complete `RealCliE2ETests` ✅ (4/4).
+
+### En cours
+- Preparation de `CG-04` (robustesse scoring croisements/jokers/bonus).
+
+### A faire
+- Ajouter des scenarios E2E score-oriented pour valider les points affiches apres coups croises/jokers.
+- Completer la couverture sur cas limites de challenge lies au score.
+
+### Risques / Ecarts
+- Le scenario CG-03 est deterministe cote persistance; il reste utile d'ajouter un second scenario base uniquement sur commandes utilisateur pour recette manuelle.
+
+### Prochaines etapes
+1. Lancer `CG-04` avec une batterie de cas score deterministes.
+2. Completer ensuite `CG-02` (parcours interactif complet fiable).
+3. Garder la priorisation stricte sur P0.
+
+### References
+- `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
+- `docs/CLASSIC_GAME_SHORTLIST.md`
+

@@ -1,10 +1,20 @@
 using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentAssertions;
+using Lama.Contracts;
 
 namespace Lama.Console.UnitTests;
 
 public sealed class RealCliE2ETests : IDisposable
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+    };
+
     private readonly string _repoRoot;
     private readonly string _consoleProjectPath;
     private readonly string _sessionDir;
@@ -120,6 +130,24 @@ public sealed class RealCliE2ETests : IDisposable
         scoresJson.StdOut.Should().Contain("\"score\"");
     }
 
+    [Fact]
+    public async Task Cli_RealProcess_PlayCheckThenMove_CrossingLetter_RemainsConsistent()
+    {
+        var gameId = Guid.NewGuid().ToString("N");
+        var playerId = Guid.NewGuid().ToString("N");
+
+        SeedCrossingScenario(gameId, playerId);
+
+        var check = await RunCliAsync("play", "check", "I8", "AS", "V");
+        check.ExitCode.Should().Be(0);
+        check.StdOut.Should().Contain("Coup valide");
+
+        var move = await RunCliAsync("play", "move", "I8", "AS", "V");
+        move.ExitCode.Should().Be(0);
+        move.StdOut.Should().Contain("joué en I8 V");
+        move.StdErr.Should().NotContain("Coup invalide");
+    }
+
     private async Task<(int ExitCode, string StdOut, string StdErr)> RunCliAsync(params string[] args)
     {
         var psi = new ProcessStartInfo("dotnet")
@@ -162,6 +190,53 @@ public sealed class RealCliE2ETests : IDisposable
         }
 
         throw new InvalidOperationException("Impossible de localiser la racine du repository.");
+    }
+
+    private void SeedCrossingScenario(string gameId, string playerId)
+    {
+        var session = new SessionContext(
+            GameId: gameId,
+            PlayerId: playerId,
+            PlayerName: "Alice",
+            Role: Role.Host,
+            GameLevel: GameLevel.Casual,
+            AuthToken: null,
+            TokenExpiresAt: null,
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow);
+
+        var persisted = new PersistedGame(
+            GameId: gameId,
+            Language: "fr",
+            GameLevel: GameLevel.Casual,
+            IsFirstMove: false,
+            IsGameOver: false,
+            CurrentPlayerIndex: 0,
+            TurnNumber: 2,
+            Players:
+            [
+                // Rack sans 'A': la lettre de croisement ne doit pas etre consommee.
+                new PersistedPlayer(playerId, "Alice", 0, ['S', 'B', 'C', 'D', 'E', 'F', 'G'])
+            ],
+            Board:
+            [
+                // Mot existant "LA" horizontal: H8='L', I8='A'.
+                new PersistedTile(7, 7, 'L'),
+                new PersistedTile(7, 8, 'A')
+            ],
+            RemainingTiles: ['A', 'A', 'A', 'A', 'A'],
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow,
+            History: [],
+            LastMoveSnapshot: null);
+
+        File.WriteAllText(Path.Combine(_sessionDir, "session.json"),
+            JsonSerializer.Serialize(session, JsonOptions));
+
+        var gamesDir = Path.Combine(_sessionDir, "games");
+        Directory.CreateDirectory(gamesDir);
+        File.WriteAllText(Path.Combine(gamesDir, $"{gameId}.json"),
+            JsonSerializer.Serialize(persisted, JsonOptions));
     }
 }
 
