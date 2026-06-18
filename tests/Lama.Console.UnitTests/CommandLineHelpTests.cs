@@ -76,6 +76,18 @@ public sealed class CommandLineHelpTests
         stderr.Should().Contain("Groupe inconnu");
     }
 
+    [Fact]
+    public async Task SingleLevelHelp_Login_Works()
+    {
+        var mode = CreateMode(["login", "--help"]);
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => mode.RunAsync());
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("Usage : lama login");
+    }
+
     private static CommandLineMode CreateMode(string[] args)
     {
         var middleware = new AccessControlMiddleware(new AccessControlService());

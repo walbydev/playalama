@@ -98,8 +98,11 @@ public sealed class CommandLineMode : IConsoleMode
             {
                 if (!PrintGroupHelp(group))
                 {
-                    global::System.Console.Error.WriteLine($"Groupe inconnu : {group}");
-                    exitCode = ExitCodes.InvalidArgument;
+                    if (!PrintSingleLevelCommandHelp(group))
+                    {
+                        global::System.Console.Error.WriteLine($"Groupe inconnu : {group}");
+                        exitCode = ExitCodes.InvalidArgument;
+                    }
                 }
 
                 return true;
@@ -117,7 +120,8 @@ public sealed class CommandLineMode : IConsoleMode
 
         if (args.Count == 2 && IsHelpToken(args[1]))
         {
-            if (!PrintGroupHelp(args[0].ToLowerInvariant()))
+            var token = args[0].ToLowerInvariant();
+            if (!PrintGroupHelp(token) && !PrintSingleLevelCommandHelp(token))
             {
                 global::System.Console.Error.WriteLine($"Groupe inconnu : {args[0]}");
                 exitCode = ExitCodes.InvalidArgument;
@@ -223,6 +227,14 @@ public sealed class CommandLineMode : IConsoleMode
         }
 
         return true;
+    }
+
+    private static bool PrintSingleLevelCommandHelp(string commandId)
+    {
+        if (!HelpCatalog.TryGetSingleLevelCommand(commandId, out var command) || command is null)
+            return false;
+
+        return PrintCommandHelp(command.Group, command.ActionPath);
     }
 
     private static void PrintVersion()

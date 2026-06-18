@@ -449,6 +449,8 @@ Journal unique de progression du projet LAMA.
     - ACL (roles),
     - formats de sortie.
   - Support de l'aide pour commandes multi-niveaux: `lama system account create --help`.
+  - Couverture etendue a l'ensemble des commandes enregistrees dans `Program.cs`.
+  - Ajout d'un test automatique de coherence `Program.cs` <-> `HelpCatalog` pour detecter les desynchronisations futures.
 
 ### En cours / A faire
 - Definir un vrai modele metier de tournoi (aujourd'hui: `tournament.create` s'appuie sur une partie `GameLevel.Tournament`).
