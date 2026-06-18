@@ -38,7 +38,7 @@ pgadmin-lama-dev        dpage/pgadmin4:latest   Up 2 minutes
 docker compose -f docker-compose.postgresdev.yml ps
 
 # Ou connectez-vous directement
-psql -h localhost -U lama_dev -d lama_dev \
+psql -h localhost -p 55432 -U lama_dev -d lama_dev \
   -c "SELECT version();"
 ```
 
@@ -66,7 +66,7 @@ docker exec -it postgres-lama-dev psql -U lama_dev -d lama_dev -c "\dt rating.*"
 docker exec -it postgres-lama-dev psql -U lama_dev -d lama_dev
 
 # Ou via psql local
-psql -h localhost -P 5432 -U lama_dev -d lama_dev
+psql -h localhost -p 55432 -U lama_dev -d lama_dev
 ```
 
 **Commandes SQL utiles** :
@@ -115,11 +115,25 @@ Vous pouvez alors explorer graphiquement les schémas, tables et exécuter des q
 
 ## Configuration Lama.Server
 
+## Choisir une seule strategie d'initialisation
+
+Sur un volume vierge, **n'utilisez pas simultanement**:
+
+1. les scripts Docker `docker-entrypoint-initdb.d` (actifs dans `docker-compose.postgresdev.yml`), et
+2. `dotnet-ef database update` avec une migration qui cree les memes tables.
+
+Sinon vous aurez des erreurs du type `relation "..." already exists`.
+
+Strategie recommandee actuellement:
+
+- **Dev rapide**: scripts SQL auto-executes au premier boot (pas de `database update` juste apres)
+- **Dev full EF**: desactiver temporairement les mounts de scripts puis utiliser `dotnet-ef`
+
 Le fichier `appsettings.Development.json` est automatiquement configuré pour se connecter à PostgreSQL locale.
 
 ```json
 "ConnectionStrings": {
-  "LamaServerDb": "Host=localhost;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;..."
+  "LamaServerDb": "Host=localhost;Port=55432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;..."
 }
 ```
 
@@ -168,7 +182,7 @@ Vous pouvez personnaliser la configuration via variables `.env` :
 
 ```bash
 # .env (à créer à la racine du projet)
-POSTGRES_PORT=5432
+POSTGRES_PORT=55432
 POSTGRES_PASSWORD=ma_custom_password
 PGADMIN_EMAIL=monmail@example.com
 PGADMIN_PASSWORD=monmotdepasse

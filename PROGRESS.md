@@ -1302,3 +1302,43 @@ Journal unique de progression du projet LAMA.
 - `src/Server/Lama.Server/appsettings.Development.json`
 - `docker-compose.postgresdev.yml`
 
+## [2026-06-18 17:12:53 UTC] - Alignement connexion dev PostgreSQL (port 55432) + clarification init SQL vs EF
+
+### Contexte
+- Demande utilisateur explicite: aligner la configuration serveur sur le port PostgreSQL effectivement monte en local.
+- Contrainte observee: ports 5432 et 5433 deja occupes sur l'hote, PostgreSQL dev demarre sur 55432.
+
+### Fait
+- `appsettings.Development.json` mis a jour:
+  - `ConnectionStrings:LamaServerDb` -> `Host=localhost;Port=55432;...`
+- `docs/POSTGRESQL_QUICKSTART.md` harmonise:
+  - exemples `psql` aligns sur `-p 55432`
+  - exemple de connection string aligne sur `Port=55432`
+  - variable `.env` exemple `POSTGRES_PORT=55432`
+- Ajout d'une note de garde-fou dans `docs/POSTGRESQL_QUICKSTART.md`:
+  - ne pas cumuler init par scripts SQL Docker + `dotnet-ef database update` sur un volume vierge,
+  - sinon erreur `relation already exists`.
+
+### Verification executee
+- Verification Docker:
+  - conteneur `postgres-lama-dev` en `healthy` sur `0.0.0.0:55432->5432`
+  - volume de data monte: `lama_postgres_lama_dev_data`
+- Verification init auto scripts:
+  - schemas presentes: `sessions`, `history`, `rating`
+  - tables presentes dans les 3 schemas (via `\dt`)
+- Verification build serveur:
+  - `dotnet build src/Server/Lama.Server/Lama.Server.csproj -c Debug` ✅
+
+### Risques / Ecarts
+- Si les scripts Docker auto-init sont actifs, la migration EF initiale ne doit pas recreer les memes tables sans baseline; sinon conflit `relation already exists`.
+
+### Prochaines etapes
+1. Choisir une strategie unique par environnement dev:
+   - soit init SQL Docker auto,
+   - soit migrations EF only.
+2. Si strategie EF-only retenue, desactiver mounts scripts dans `docker-compose.postgresdev.yml` et reappliquer migrations.
+
+### References
+- `src/Server/Lama.Server/appsettings.Development.json`
+- `docs/POSTGRESQL_QUICKSTART.md`
+- `docker-compose.postgresdev.yml`
