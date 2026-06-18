@@ -1213,3 +1213,92 @@ Journal unique de progression du projet LAMA.
 - `src/Server/Lama.Server/Program.cs`
 - `src/Server/Lama.Server/appsettings.json`
 - `src/Server/Lama.Server/README.md`
+
+## [2026-06-18 17:00:00 UTC] - Phase 2 EF enchainee + alignement versions/outillage
+
+### Contexte
+- Demande utilisateur: "Enchaine et aligne".
+- Suite logique apres la phase 1 EF: ajouter des entites concretes, generer migration, et aligner les versions EF/outils.
+
+### Fait
+- **Phase 2 EF implementee (minimum vertical slice)**
+  - Entites creees:
+    - `sessions.games` -> `SessionGameEntity`
+    - `history.completed_games` -> `CompletedGameEntity`
+    - `rating.players` -> `PlayerEntity`
+    - `rating.player_ratings` -> `PlayerRatingEntity`
+  - Fichiers ajoutes:
+    - `src/Server/Lama.Server/Data/Models/Sessions/SessionGameEntity.cs`
+    - `src/Server/Lama.Server/Data/Models/History/CompletedGameEntity.cs`
+    - `src/Server/Lama.Server/Data/Models/Rating/PlayerEntity.cs`
+    - `src/Server/Lama.Server/Data/Models/Rating/PlayerRatingEntity.cs`
+- **Configurations EF ajoutees**
+  - `IEntityTypeConfiguration` par aggregate:
+    - `SessionGameEntityConfiguration`
+    - `CompletedGameEntityConfiguration`
+    - `PlayerEntityConfiguration`
+    - `PlayerRatingEntityConfiguration`
+  - Mapping explicite multi-schemas (`sessions`, `history`, `rating`), indexes et contraintes de base.
+- **DbContext phase 2**
+  - `LamaDbContext` enrichi:
+    - `DbSet<SessionGameEntity>`
+    - `DbSet<CompletedGameEntity>`
+    - `DbSet<PlayerEntity>`
+    - `DbSet<PlayerRatingEntity>`
+  - `ApplyConfiguration(...)` ajoute pour les 4 configurations.
+- **Design-time factory ajoutee**
+  - `src/Server/Lama.Server/Data/LamaDbContextFactory.cs`
+  - Permet l'execution fiable de `dotnet-ef` hors host runtime.
+- **Migration EF creee**
+  - `src/Server/Lama.Server/Data/Migrations/20260618165737_InitialThreeSchemas.cs`
+  - Snapshot: `LamaDbContextModelSnapshot.cs`
+- **Migration appliquee sur PostgreSQL dev**
+  - `dotnet tool run dotnet-ef database update ...` execute avec succes.
+
+### Alignements realises
+- **Versions EF/outillage alignees**
+  - `dotnet-ef` local tool -> `10.0.4`
+  - `Microsoft.EntityFrameworkCore.Design` -> `10.0.4`
+  - `Microsoft.EntityFrameworkCore.Tools` -> `10.0.4`
+- **Connexion dev alignee**
+  - `appsettings.Development.json` passe en `Host=localhost` (plus coherent avec `dotnet run` hors reseau Docker interne).
+- **Compose warning corrige**
+  - `docker-compose.postgresdev.yml`: suppression du champ `version` obsolete.
+- **Doc serveur completee**
+  - `src/Server/Lama.Server/README.md` enrichi avec commandes EF (`migrations list`, `database update`).
+
+### Verification executee
+- Build serveur: `dotnet build src/Server/Lama.Server/Lama.Server.csproj -c Debug` ✅
+- Creation migration: `dotnet tool run dotnet-ef migrations add InitialThreeSchemas ...` ✅
+- Liste migrations avant apply: migration `Pending` detectee ✅
+- Apply migration sur DB dev: `dotnet tool run dotnet-ef database update ...` ✅
+- Liste migrations apres apply: `InitialThreeSchemas` appliquee ✅
+
+### En cours
+- Endpoints online (`/api/games/*`) restent sur `GameHubState` en memoire pour cette iteration.
+
+### A faire
+- Phase suivante: brancher un premier endpoint read-only en EF (ex: game list/history) pour valider le flux online persistant.
+- Ajouter les entites restantes (`players_in_game`, `turn_log`, etc.) et relations completes.
+- Introduire repository/service layer EF pour decoupler `Program.cs`.
+
+### Risques / Ecarts
+- Le port `8080` etait deja occupe pendant certains smoke-runs locaux (verif HTTP a refaire sur port libre ou process stoppe).
+- Le schema EF couvre le "minimum viable" phase 2, pas encore la totalite du modele cible.
+
+### Prochaines etapes
+1. Basculer `GET /api/games/{gameId}` vers lecture EF (feature toggle possible).
+2. Completer la couche `sessions` (players, board/rack states, turn log).
+3. Ajouter tests integration EF contre PostgreSQL dev.
+
+### References
+- `src/Server/Lama.Server/Data/LamaDbContext.cs`
+- `src/Server/Lama.Server/Data/LamaDbContextFactory.cs`
+- `src/Server/Lama.Server/Data/Configurations/*.cs`
+- `src/Server/Lama.Server/Data/Models/**/*.cs`
+- `src/Server/Lama.Server/Data/Migrations/*.cs`
+- `Directory.Packages.props`
+- `dotnet-tools.json`
+- `src/Server/Lama.Server/appsettings.Development.json`
+- `docker-compose.postgresdev.yml`
+

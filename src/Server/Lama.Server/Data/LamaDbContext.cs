@@ -1,13 +1,25 @@
+using Lama.Server.Data.Configurations;
+using Lama.Server.Data.Models.History;
+using Lama.Server.Data.Models.Rating;
+using Lama.Server.Data.Models.Sessions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lama.Server.Data;
 
 public sealed class LamaDbContext(DbContextOptions<LamaDbContext> options) : DbContext(options)
 {
+    public DbSet<SessionGameEntity> SessionGames => Set<SessionGameEntity>();
+    public DbSet<CompletedGameEntity> CompletedGames => Set<CompletedGameEntity>();
+    public DbSet<PlayerEntity> Players => Set<PlayerEntity>();
+    public DbSet<PlayerRatingEntity> PlayerRatings => Set<PlayerRatingEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Phase 1: only the DbContext and provider wiring are introduced.
-        // Entity sets and mappings are added in Phase 2.
+        modelBuilder.ApplyConfiguration(new SessionGameEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new CompletedGameEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new PlayerEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new PlayerRatingEntityConfiguration());
+
         base.OnModelCreating(modelBuilder);
     }
 }

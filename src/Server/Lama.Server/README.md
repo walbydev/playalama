@@ -32,6 +32,20 @@ dotnet run --project src/Server/Lama.Server
 
 Par defaut le serveur ecoute sur les URLs configurees par ASP.NET.
 
+## EF Core (phase 2)
+
+```bash
+dotnet tool run dotnet-ef migrations list \
+  --project src/Server/Lama.Server/Lama.Server.csproj \
+  --startup-project src/Server/Lama.Server/Lama.Server.csproj \
+  --context LamaDbContext
+
+dotnet tool run dotnet-ef database update \
+  --project src/Server/Lama.Server/Lama.Server.csproj \
+  --startup-project src/Server/Lama.Server/Lama.Server.csproj \
+  --context LamaDbContext
+```
+
 ## Exemple rapide
 
 ```bash
