@@ -40,15 +40,22 @@ public sealed class InteractiveMode : IConsoleMode
 
         while (!cancellationToken.IsCancellationRequested)
         {
+            var active = _sessionService.LoadSession();
+            var subtitle = active?.GameId is null
+                ? "[grey]Aucune partie active[/]"
+                : $"[grey]Partie: {active.GameId[..Math.Min(8, active.GameId.Length)]} | Joueur: {active.PlayerName ?? "?"} | Role: {active.Role}[/]";
+
             var choice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("[green]Menu principal[/]")
+                    .Title($"[green]Menu principal[/]\n{subtitle}")
                     .AddChoices(
                         "Nouvelle partie",
                         "Rejoindre une partie",
                         "Jouer un tour",
                         "Charger une partie",
                         "Options",
+                        "Reafficher le dashboard",
+                        "Effacer la session locale",
                         "Quitter"));
 
             var exitCode = choice switch
@@ -58,6 +65,8 @@ public sealed class InteractiveMode : IConsoleMode
                 "Jouer un tour"         => await HandlePlayTurn(cancellationToken),
                 "Charger une partie"    => await HandleLoadGame(cancellationToken),
                 "Options"               => await HandleOptions(cancellationToken),
+                "Reafficher le dashboard" => await HandleDashboard(cancellationToken),
+                "Effacer la session locale" => HandleClearSession(),
                 "Quitter"               => ExitCodes.Success,
                 _                       => ExitCodes.InvalidArgument
             };
@@ -131,32 +140,89 @@ public sealed class InteractiveMode : IConsoleMode
             return ExitCodes.GameNotFound;
         }
 
-        var action = AnsiConsole.Prompt(
-            new SelectionPrompt<string>()
-                .Title("[green]Action de tour[/]")
-                .AddChoices("Jouer un mot", "Verifier un coup", "Contester (challenge)", "Passer", "Echanger", "Retour"));
+        AnsiConsole.MarkupLine("[grey]Mode tour continu actif. Choisissez une action (Retour pour quitter ce mode).[/]");
+        await RenderTurnDashboard(session, cancellationToken);
 
-        if (action == "Retour")
-            return ExitCodes.Success;
-
-        CommandContext? context = action switch
+        while (!cancellationToken.IsCancellationRequested)
         {
-            "Passer" => BuildSessionBoundContext("play", "pass", "play.pass", session),
-            "Jouer un mot" => BuildMoveContext(session),
-            "Verifier un coup" => BuildCheckContext(session),
-            "Contester (challenge)" => BuildSessionBoundContext("play", "challenge", "play.challenge", session),
-            "Echanger" => BuildSwapContext(session),
-            _ => null
-        };
+            var action = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[green]Action de tour[/]")
+                    .AddChoices(
+                        "Jouer un mot",
+                        "Verifier un coup",
+                        "Contester (challenge)",
+                        "Passer",
+                        "Echanger",
+                        "Reafficher le dashboard",
+                        "Abandonner la partie",
+                        "Retour"));
 
-        if (context is null)
-            return ExitCodes.InvalidArgument;
+            if (action == "Retour")
+                return ExitCodes.Success;
 
-        var exitCode = await _dispatcher.DispatchAsync(context, cancellationToken);
-        if (exitCode == ExitCodes.Success)
-            await RenderTurnDashboard(session, cancellationToken);
+            if (action == "Reafficher le dashboard")
+            {
+                await RenderTurnDashboard(session, cancellationToken);
+                continue;
+            }
 
-        return exitCode;
+            if (action == "Abandonner la partie")
+            {
+                var confirm = AnsiConsole.Confirm("[yellow]Confirmer l'abandon et terminer la partie ?[/]", defaultValue: false);
+                if (!confirm)
+                    continue;
+
+                var endContext = BuildSessionBoundContext("game", "end", "game.end", session);
+                var endCode = await _dispatcher.DispatchAsync(endContext, cancellationToken);
+                if (endCode == ExitCodes.Success)
+                {
+                    AnsiConsole.MarkupLine("[green]Partie terminee. Retour au menu principal.[/]");
+                    return ExitCodes.Success;
+                }
+
+                AnsiConsole.MarkupLine($"[yellow]Impossible de terminer la partie (code {endCode}).[/]");
+                continue;
+            }
+
+            // Recharge la session a chaque tour pour suivre les evolutions eventuelles.
+            session = _sessionService.LoadSession();
+            if (session?.GameId is null || session.PlayerId is null)
+            {
+                AnsiConsole.MarkupLine("[yellow]Session de partie indisponible. Retour au menu principal.[/]");
+                return ExitCodes.GameNotFound;
+            }
+
+            CommandContext? context = action switch
+            {
+                "Passer" => BuildSessionBoundContext("play", "pass", "play.pass", session),
+                "Jouer un mot" => BuildMoveContext(session),
+                "Verifier un coup" => BuildCheckContext(session),
+                "Contester (challenge)" => BuildSessionBoundContext("play", "challenge", "play.challenge", session),
+                "Echanger" => BuildSwapContext(session),
+                _ => null
+            };
+
+            if (context is null)
+                return ExitCodes.InvalidArgument;
+
+            var exitCode = await _dispatcher.DispatchAsync(context, cancellationToken);
+            if (exitCode == ExitCodes.Success)
+            {
+                await RenderTurnDashboard(session, cancellationToken);
+                continue;
+            }
+
+            if (exitCode == ExitCodes.GameNotFound)
+            {
+                AnsiConsole.MarkupLine("[yellow]Partie indisponible. Retour au menu principal.[/]");
+                return exitCode;
+            }
+
+            AnsiConsole.MarkupLine($"[yellow]Action terminee avec le code {exitCode}. Reessayez ou consultez 'Verifier un coup'.[/]");
+        }
+
+        return ExitCodes.Success;
     }
 
     private async Task<int> HandleLoadGame(CancellationToken cancellationToken)
@@ -199,6 +265,30 @@ public sealed class InteractiveMode : IConsoleMode
             AnsiConsole.MarkupLine($"- MAJ     : [grey]{session.UpdatedAt:O}[/]");
         }
         return Task.FromResult(ExitCodes.Success);
+    }
+
+    private async Task<int> HandleDashboard(CancellationToken cancellationToken)
+    {
+        var session = _sessionService.LoadSession();
+        if (session?.GameId is null || session.PlayerId is null)
+        {
+            AnsiConsole.MarkupLine("[yellow]Aucune partie active.[/]");
+            return ExitCodes.GameNotFound;
+        }
+
+        await RenderTurnDashboard(session, cancellationToken);
+        return ExitCodes.Success;
+    }
+
+    private int HandleClearSession()
+    {
+        var confirm = AnsiConsole.Confirm("[yellow]Supprimer la session locale ?[/]", defaultValue: false);
+        if (!confirm)
+            return ExitCodes.Success;
+
+        _sessionService.ClearSession();
+        AnsiConsole.MarkupLine("[green]Session locale effacee.[/]");
+        return ExitCodes.Success;
     }
 
     private static CommandContext BuildMoveContext(SessionContext session)

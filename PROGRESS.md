@@ -496,6 +496,12 @@ Journal unique de progression du projet LAMA.
     - `play.swap` (avec confirmation `--all` ou saisie lettres)
   - Construction d'un `CommandContext` lie a la session active (GameId/PlayerId/Role/GameLevel).
   - Mini tableau de bord post-action (si succes): `show.board`, `show.rack`, `show.scores`.
+  - Mode `tour continu` active dans ce sous-menu: enchainement d'actions sans retour force au menu principal.
+  - Polish UX ajoute:
+    - en-tete de contexte au menu principal (partie/joueur/role),
+    - action `Reafficher le dashboard`,
+    - action `Abandonner la partie` dans le sous-menu de tour,
+    - action `Effacer la session locale` au menu principal.
 
 - **Notation joker explicite**:
   - `play.move` supporte maintenant une convention explicite: lettre minuscule => joker force (ex: `lAMA`).
@@ -513,6 +519,8 @@ Journal unique de progression du projet LAMA.
 
 ### Risques / Ecarts
 - Le mode interactif reste couple a des prompts sequentiels (pas encore boucle de partie unique continue).
+- Le mode interactif est jouable en tour continu, mais l'UX reste textuelle sequentielle (pas de navigation contextuelle avancee).
+- Le mode interactif est maintenant pertinent pour une recette manuelle de bout en bout en solo/local.
 - Les tests E2E via `dotnet run` restent plus lents qu'une execution binaire precompilee.
 
 ### Prochaines etapes
