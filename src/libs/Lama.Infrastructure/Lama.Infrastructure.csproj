@@ -2,6 +2,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Lama.Contracts\Lama.Contracts.csproj" />
+        <ProjectReference Include="..\Lama.Domain\Lama.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>
