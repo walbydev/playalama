@@ -19,6 +19,7 @@
     <File Path="docs\tools.md" />
   </Folder>
   <Folder Name="/docs/root/">
+    <File Path="AGENTS.md" />
     <File Path="PROGRESS.md" />
     <File Path="README.md" />
   </Folder>

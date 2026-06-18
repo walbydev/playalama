@@ -20,6 +20,8 @@ public sealed class PlayChallengeCommand : ICommand
     private readonly ChallengeWordUseCase _challengeWordUseCase;
     private readonly CreateGameUseCase _createGameUseCase;
     private readonly ISessionService _sessionService;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<PlayChallengeCommand> _logger;
 
     /// <summary>Initialise la commande.</summary>
@@ -28,27 +30,68 @@ public sealed class PlayChallengeCommand : ICommand
         CreateGameUseCase createGameUseCase,
         ISessionService sessionService,
         ILogger<PlayChallengeCommand> logger)
+        : this(
+            challengeWordUseCase,
+            createGameUseCase,
+            sessionService,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
+    {
+    }
+
+    /// <summary>Initialise la commande.</summary>
+    public PlayChallengeCommand(
+        ChallengeWordUseCase challengeWordUseCase,
+        CreateGameUseCase createGameUseCase,
+        ISessionService sessionService,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
+        ILogger<PlayChallengeCommand> logger)
     {
         _challengeWordUseCase = challengeWordUseCase;
         _createGameUseCase = createGameUseCase;
         _sessionService = sessionService;
+        _runtimeMode = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken = default)
+    public async Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken = default)
     {
         if (!context.HasActiveSession || context.GameId is null || context.PlayerId is null)
         {
             global::System.Console.Error.WriteLine(
                 "[play challenge] Aucune session active. Créez/rejoignez une partie d'abord.");
-            return Task.FromResult(ExitCodes.GameNotFound);
+            return ExitCodes.GameNotFound;
         }
 
         try
         {
-            var result = _challengeWordUseCase.ExecuteAsync(
-                new ChallengeWordRequest(context.GameId, context.PlayerId)).GetAwaiter().GetResult();
+            if (_runtimeMode.IsOnline)
+            {
+                var response = await _onlineGameGateway.PlayCommandAsync(
+                    context.GameId,
+                    context.PlayerId,
+                    "play.challenge",
+                    payload: null,
+                    cancellationToken);
+
+                var snapshot = await _onlineGameGateway.GetGameAsync(context.GameId, cancellationToken);
+                var nextPlayerName = snapshot.CurrentPlayerIndex >= 0 && snapshot.CurrentPlayerIndex < snapshot.Players.Count
+                    ? snapshot.Players[snapshot.CurrentPlayerIndex].PlayerName
+                    : response.NextPlayerId ?? "inconnu";
+
+                global::System.Console.WriteLine(response.Message ?? "Challenge traité (online).");
+                global::System.Console.WriteLine($"  Tour suivant : {nextPlayerName}");
+
+                _logger.LogInformation("{CommandId} online : challenge traite", CommandId);
+                return ExitCodes.Success;
+            }
+
+            var result = await _challengeWordUseCase.ExecuteAsync(
+                new ChallengeWordRequest(context.GameId, context.PlayerId));
 
             var session = _sessionService.LoadSession();
             var gameLevel = session?.GameLevel ?? GameLevel.Standard;
@@ -63,12 +106,17 @@ public sealed class PlayChallengeCommand : ICommand
                 $"  Tour suivant : {result.GameState.Players[result.GameState.CurrentPlayerIndex].Name}");
 
             _logger.LogInformation("{CommandId} : challenge traité", CommandId);
-            return Task.FromResult(ExitCodes.Success);
+            return ExitCodes.Success;
         }
         catch (GameException ex)
         {
             global::System.Console.Error.WriteLine($"[play challenge] Erreur : {ex.Message}");
-            return Task.FromResult(ExitCodes.GeneralError);
+            return ExitCodes.GeneralError;
+        }
+        catch (HttpRequestException ex)
+        {
+            global::System.Console.Error.WriteLine($"[play challenge] Erreur online : {ex.Message}");
+            return ExitCodes.GeneralError;
         }
     }
 

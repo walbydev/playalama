@@ -300,6 +300,8 @@ app.MapPost("/api/games/{gameId}/moves", (string gameId, PlayMoveRequest request
     string? nextPlayerId;
     int playedTurn = 0;
     List<OnlineMovePlacement> placements = [];
+    string? actionMessage = null;
+    bool? challengeSucceeded = null;
 
     lock (game)
     {
@@ -348,6 +350,48 @@ app.MapPost("/api/games/{gameId}/moves", (string gameId, PlayMoveRequest request
                         .Select(p => new OnlineMovePlacement(p.Row, p.Column, p.Letter))
                         .ToList();
                     newRack = stateAfterMove.Players[playerIndex].Rack.ToList();
+                    break;
+
+                case "play.swap":
+                    var swapLetters = BuildSwapLettersFromPayload(request.Payload, currentState.Players[playerIndex].Rack);
+                    game.Engine.SwapLetters(swapLetters);
+                    var stateAfterSwap = game.Engine.GetGameState();
+                    newRack = stateAfterSwap.Players[playerIndex].Rack.ToList();
+                    break;
+
+                case "play.challenge":
+                    var challengeResult = game.Engine.ChallengeLastMove();
+                    challengeSucceeded = challengeResult.ChallengeSucceeded;
+                    actionMessage = challengeResult.Message;
+
+                    if (challengeResult.ChallengeSucceeded)
+                    {
+                        var lastPlayableMoveIndex = game.Moves.FindLastIndex(m => m.Command == "play.move");
+                        if (lastPlayableMoveIndex >= 0)
+                            game.Moves.RemoveAt(lastPlayableMoveIndex);
+                    }
+
+                    placements = challengeResult.ChallengedMove.Placements
+                        .Select(p => new OnlineMovePlacement(p.Row, p.Column, p.Letter))
+                        .ToList();
+                    score = 0;
+                    newRack = challengeResult.GameState.Players[playerIndex].Rack.ToList();
+                    break;
+
+                case "play.check":
+                    var simulatedLetters = BuildLetterPlacementsFromPayload(request.Payload);
+                    var simulatedValidation = game.Engine.ValidateMove(simulatedLetters);
+                    if (!simulatedValidation.IsValid)
+                        return Results.BadRequest(new { error = simulatedValidation.ErrorMessage });
+
+                    score = simulatedValidation.Score;
+                    placements = simulatedLetters
+                        .OrderBy(kv => kv.Key.Row)
+                        .ThenBy(kv => kv.Key.Column)
+                        .Select(kv => new OnlineMovePlacement(kv.Key.Row, kv.Key.Column, char.ToUpperInvariant(kv.Value)))
+                        .ToList();
+                    newRack = currentState.Players[playerIndex].Rack.ToList();
+                    actionMessage = $"Coup valide : {score} pts";
                     break;
 
                 default:
@@ -402,7 +446,9 @@ app.MapPost("/api/games/{gameId}/moves", (string gameId, PlayMoveRequest request
         score,
         newRack,
         currentPlayerIndex = nextCurrentPlayerIndex,
-        nextPlayerId
+        nextPlayerId,
+        message = actionMessage,
+        challengeSucceeded
     });
 });
 
@@ -946,6 +992,44 @@ static Dictionary<Position, char> BuildLetterPlacementsFromPayload(JsonElement? 
     }
 
     return placements;
+}
+
+static IReadOnlyList<char> BuildSwapLettersFromPayload(JsonElement? payload, IReadOnlyList<char> currentRack)
+{
+    if (payload is null || payload.Value.ValueKind != JsonValueKind.Object)
+        throw new GameException("Payload play.swap invalide.");
+
+    var swapAll = false;
+    if (payload.Value.TryGetProperty("swapAll", out var swapAllProperty))
+    {
+        swapAll = swapAllProperty.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String when bool.TryParse(swapAllProperty.GetString(), out var parsed) => parsed,
+            _ => false
+        };
+    }
+
+    if (swapAll)
+        return currentRack.ToList();
+
+    if (!payload.Value.TryGetProperty("letters", out var lettersProperty))
+        throw new GameException("Payload play.swap incomplet (letters requis sans swapAll).");
+
+    var lettersRaw = lettersProperty.ValueKind switch
+    {
+        JsonValueKind.String => lettersProperty.GetString(),
+        _ => lettersProperty.ToString()
+    };
+
+    if (string.IsNullOrWhiteSpace(lettersRaw))
+        throw new GameException("Aucune lettre fournie pour play.swap.");
+
+    return lettersRaw
+        .Trim()
+        .ToUpperInvariant()
+        .ToCharArray();
 }
 
 static bool TryParsePosition(string input, out Position position)

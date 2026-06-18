@@ -17,17 +17,35 @@ public sealed class PlayCheckCommand : ICommand
     public string CommandId => "play.check";
 
     private readonly CreateGameUseCase _createGameUseCase;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<PlayCheckCommand> _logger;
 
     /// <summary>Initialise la commande.</summary>
     public PlayCheckCommand(CreateGameUseCase createGameUseCase, ILogger<PlayCheckCommand> logger)
+        : this(
+            createGameUseCase,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
+    {
+    }
+
+    /// <summary>Initialise la commande.</summary>
+    public PlayCheckCommand(
+        CreateGameUseCase createGameUseCase,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
+        ILogger<PlayCheckCommand> logger)
     {
         _createGameUseCase = createGameUseCase;
+        _runtimeMode = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken = default)
+    public async Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken = default)
     {
         var position  = context.GetArgument(0);
         var word      = context.GetArgument(1);
@@ -39,20 +57,55 @@ public sealed class PlayCheckCommand : ICommand
         {
             global::System.Console.Error.WriteLine(
                 "[play check] Arguments requis : <case> <mot> <direction>");
-            return Task.FromResult(ExitCodes.InvalidArgument);
+            return ExitCodes.InvalidArgument;
         }
 
         if (!context.HasActiveSession || context.GameId is null)
         {
             global::System.Console.Error.WriteLine("[play check] Aucune partie active.");
-            return Task.FromResult(ExitCodes.GameNotFound);
+            return ExitCodes.GameNotFound;
+        }
+
+        if (_runtimeMode.IsOnline)
+        {
+            if (context.PlayerId is null)
+            {
+                global::System.Console.Error.WriteLine("[play check] Session joueur invalide en mode online.");
+                return ExitCodes.GameNotFound;
+            }
+
+            try
+            {
+                var payload = new
+                {
+                    position,
+                    word,
+                    direction = direction.ToUpperInvariant()
+                };
+
+                var response = await _onlineGameGateway.PlayCommandAsync(
+                    context.GameId,
+                    context.PlayerId,
+                    "play.check",
+                    payload,
+                    cancellationToken);
+
+                global::System.Console.WriteLine($"✓ Coup valide : {word.ToUpperInvariant()} en {position.ToUpperInvariant()} {direction.ToUpperInvariant()} — {response.Score} pts");
+                _logger.LogInformation("{CommandId} online : coup valide verifie", CommandId);
+                return ExitCodes.Success;
+            }
+            catch (HttpRequestException ex)
+            {
+                global::System.Console.Error.WriteLine($"[play check] Erreur online : {ex.Message}");
+                return ExitCodes.InvalidPlacement;
+            }
         }
 
         var engine = _createGameUseCase.GetEngine(context.GameId);
         if (engine is null)
         {
             global::System.Console.Error.WriteLine($"[play check] Partie introuvable : {context.GameId}");
-            return Task.FromResult(ExitCodes.GameNotFound);
+            return ExitCodes.GameNotFound;
         }
 
         var movePosition = position;
@@ -62,19 +115,19 @@ public sealed class PlayCheckCommand : ICommand
         if (!TryParseMove(movePosition, moveWord, moveDirection, out var placements, out var error))
         {
             global::System.Console.Error.WriteLine($"[play check] {error}");
-            return Task.FromResult(ExitCodes.InvalidArgument);
+            return ExitCodes.InvalidArgument;
         }
 
         var (isValid, validationError, score) = engine.ValidateMove(placements);
         if (!isValid)
         {
             global::System.Console.Error.WriteLine($"[play check] Coup invalide : {validationError}");
-            return Task.FromResult(ExitCodes.InvalidPlacement);
+            return ExitCodes.InvalidPlacement;
         }
 
         global::System.Console.WriteLine($"✓ Coup valide : {moveWord.ToUpperInvariant()} en {movePosition.ToUpperInvariant()} {moveDirection.ToUpperInvariant()} — {score} pts");
         _logger.LogInformation("{CommandId} : coup valide vérifié", CommandId);
-        return Task.FromResult(ExitCodes.Success);
+        return ExitCodes.Success;
     }
 
     private static bool TryParseMove(

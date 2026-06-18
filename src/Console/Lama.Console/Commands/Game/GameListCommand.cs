@@ -16,18 +16,81 @@ public sealed class GameListCommand : ICommand
     public string CommandId => "game.list";
 
     private readonly IGameRepository _gameRepository;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<GameListCommand> _logger;
 
     /// <summary>Initialise la commande.</summary>
     public GameListCommand(IGameRepository gameRepository, ILogger<GameListCommand> logger)
+        : this(
+            gameRepository,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
+    {
+    }
+
+    /// <summary>Initialise la commande.</summary>
+    public GameListCommand(
+        IGameRepository gameRepository,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
+        ILogger<GameListCommand> logger)
     {
         _gameRepository = gameRepository;
+        _runtimeMode = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken = default)
+    public async Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken = default)
     {
+        if (_runtimeMode.IsOnline)
+        {
+            try
+            {
+                var list = await _onlineGameGateway.ListGamesAsync(cancellationToken);
+
+                switch (context.OutputFormat.ToLowerInvariant())
+                {
+                    case "json":
+                        global::System.Console.WriteLine(JsonSerializer.Serialize(list.Games));
+                        break;
+
+                    case "csv":
+                        global::System.Console.WriteLine("id,level,queue,status,isGameOver,players,moves,updatedAt,source");
+                        foreach (var game in list.Games)
+                            global::System.Console.WriteLine(
+                                $"{game.Id},{game.GameLevel},{game.Queue},{game.Status},{game.IsGameOver},{game.Players},{game.Moves},{game.UpdatedAt:O},{game.Source}");
+                        break;
+
+                    default:
+                        if (list.Games.Count == 0)
+                        {
+                            global::System.Console.WriteLine("Aucune partie online disponible.");
+                            return ExitCodes.Success;
+                        }
+
+                        global::System.Console.WriteLine("Parties online :");
+                        foreach (var game in list.Games)
+                        {
+                            global::System.Console.WriteLine(
+                                $"- {game.Id} | {game.GameLevel,-11} | joueurs: {game.Players,2} | coups: {game.Moves,3} | {game.Status,-8} | src:{game.Source}");
+                        }
+                        break;
+                }
+
+                _logger.LogInformation("{CommandId} online : {Count} partie(s) retournee(s)", CommandId, list.Games.Count);
+                return ExitCodes.Success;
+            }
+            catch (HttpRequestException ex)
+            {
+                global::System.Console.Error.WriteLine($"[game list] Erreur online : {ex.Message}");
+                return ExitCodes.GeneralError;
+            }
+        }
+
         var games = _gameRepository.ListGameIds()
             .Select(id => _gameRepository.Load(id))
             .Where(game => game is not null)
@@ -60,7 +123,7 @@ public sealed class GameListCommand : ICommand
                 if (games.Count == 0)
                 {
                     global::System.Console.WriteLine("Aucune partie persistée.");
-                    return Task.FromResult(ExitCodes.Success);
+                    return ExitCodes.Success;
                 }
 
                 global::System.Console.WriteLine("Parties disponibles :");
@@ -74,6 +137,6 @@ public sealed class GameListCommand : ICommand
         }
 
         _logger.LogInformation("{CommandId} : {Count} partie(s) retournee(s)", CommandId, games.Count);
-        return Task.FromResult(ExitCodes.Success);
+        return ExitCodes.Success;
     }
 }

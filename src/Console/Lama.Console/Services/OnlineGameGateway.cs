@@ -77,6 +77,17 @@ public sealed class OnlineGameGateway
         return payload ?? throw new InvalidOperationException("Réponse serveur invalide sur game.show.");
     }
 
+    public async Task<OnlineGameListResponse> ListGamesAsync(CancellationToken cancellationToken)
+    {
+        EnsureOnlineMode();
+
+        var response = await _httpClient.GetAsync("/api/games", cancellationToken);
+        await EnsureSuccessAsync(response, "game.list", cancellationToken);
+
+        var payload = await response.Content.ReadFromJsonAsync<OnlineGameListResponse>(JsonOptions, cancellationToken);
+        return payload ?? throw new InvalidOperationException("Réponse serveur invalide sur game.list.");
+    }
+
     public async Task<OnlinePlayCommandResponse> PlayCommandAsync(
         string gameId,
         string playerId,
@@ -229,7 +240,29 @@ public sealed record OnlinePlayCommandResponse(
     int Score,
     List<char>? NewRack,
     int CurrentPlayerIndex,
-    string? NextPlayerId);
+    string? NextPlayerId,
+    string? Message = null,
+    bool? ChallengeSucceeded = null);
+
+public sealed record OnlineGameListResponse(
+    int Total,
+    List<OnlineGameListItem> Games);
+
+public sealed record OnlineGameListItem(
+    string Id,
+    GameLevel GameLevel,
+    RankingQueue Queue,
+    int BoardSize,
+    int RackSize,
+    int MinWordLength,
+    string Language,
+    string Status,
+    bool IsGameOver,
+    int Players,
+    int Moves,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    string Source);
 
 public sealed record OnlineEndGameResponse(
     string GameId,
