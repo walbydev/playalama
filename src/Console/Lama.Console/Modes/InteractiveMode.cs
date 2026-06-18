@@ -34,6 +34,15 @@ public sealed class InteractiveMode : IConsoleMode
     {
         _logger.LogInformation("Démarrage du mode interactif");
 
+        if (!AnsiConsole.Profile.Capabilities.Interactive)
+        {
+            global::System.Console.Error.WriteLine(
+                "[interactive] Ce terminal n'est pas interactif (TTY requis). " +
+                "Utilisez le mode commande par commande (ex: lama game create ...)."
+            );
+            return ExitCodes.InvalidArgument;
+        }
+
         AnsiConsole.Write(new FigletText("LAMA").Color(Color.Green));
         AnsiConsole.MarkupLine("[grey]Jeu de mots inspiré du Scrabble — .NET 10[/]");
         AnsiConsole.WriteLine();

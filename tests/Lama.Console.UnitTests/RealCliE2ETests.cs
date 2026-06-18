@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FluentAssertions;
+using Lama.Console.Services;
 using Lama.Contracts;
 
 namespace Lama.Console.UnitTests;
@@ -165,6 +166,16 @@ public sealed class RealCliE2ETests : IDisposable
         scores.ExitCode.Should().Be(0);
         scores.StdOut.Should().Contain("\"name\":\"Alice\"");
         scores.StdOut.Should().Contain("\"score\":2");
+    }
+
+    [Fact]
+    public async Task Cli_RealProcess_InteractiveMode_NonInteractiveTerminal_ReturnsFriendlyError()
+    {
+        var interactive = await RunCliAsync("interactive");
+
+        interactive.ExitCode.Should().Be(ExitCodes.InvalidArgument);
+        interactive.StdErr.Should().Contain("terminal n'est pas interactif");
+        interactive.StdErr.Should().NotContain("System.NotSupportedException");
     }
 
     private async Task<(int ExitCode, string StdOut, string StdErr)> RunCliAsync(params string[] args)

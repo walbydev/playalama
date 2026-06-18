@@ -877,3 +877,36 @@ Journal unique de progression du projet LAMA.
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
 - `docs/CLASSIC_GAME_SHORTLIST.md`
 
+## [2026-06-18 16:35:00 UTC] - CG-02 en cours: mode interactif durci hors TTY
+
+### Contexte
+- Demarrage de `CG-02` (parcours interactif fiable) avec un point de fiabilite critique: execution en terminal non interactif.
+
+### Fait
+- `InteractiveMode` detecte desormais l'absence de TTY interactif et retourne une erreur explicite sans exception fatale.
+- Ajout d'un test E2E reel dedie:
+  - `Cli_RealProcess_InteractiveMode_NonInteractiveTerminal_ReturnsFriendlyError`.
+- Validation executee:
+  - test cible CG-02 ✅,
+  - suite `RealCliE2ETests` complete ✅ (6/6).
+
+### En cours
+- `CG-02` reste en cours: il manque la validation finale du parcours interactif complet en recette manuelle guidee.
+
+### A faire
+- Realiser une recette interactive complete (create/join/play/check/challenge/pass/swap/show/end) en TTY reel.
+- Verifier la fluidite de la boucle de tour et la persistance de session sur l'ensemble du parcours.
+
+### Risques / Ecarts
+- Les tests automatises en CI ne peuvent pas couvrir integralement les prompts Spectre (necessitent un vrai terminal interactif).
+
+### Prochaines etapes
+1. Executer une recette interactive manuelle de reference.
+2. Corriger les ecarts UX eventuels releves pendant la recette.
+3. Clore `CG-02` puis valider le jalon P0 global.
+
+### References
+- `src/Console/Lama.Console/Modes/InteractiveMode.cs`
+- `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
+- `docs/CLASSIC_GAME_SHORTLIST.md`
+
