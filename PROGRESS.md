@@ -705,3 +705,33 @@ Journal unique de progression du projet LAMA.
 ### References
 - `docs/SCOPE.md`
 
+## [2026-06-18 15:20:00 UTC] - Shortlist must-have pour finaliser le mode classique
+
+### Contexte
+- Suite au recentrage, besoin d'une liste courte et priorisee des manques pour atteindre un jeu fonctionnel.
+
+### Fait
+- Creation de `docs/CLASSIC_GAME_SHORTLIST.md` avec une shortlist priorisee:
+  - P0 (bloquants): parcours CLI/interactif complet, coherence check/move, scoring robuste.
+  - P1: formats JSON/CSV, historique fiable, UX d'erreur harmonisee.
+  - P2: perf de base E2E, nettoyage docs etat reel.
+- Ajout d'un ordre de sprint court recommande et d'une definition claire du jalon "Jeu fonctionnel".
+
+### En cours
+- Preparation du sequencing execution sur les items P0.
+
+### A faire
+- Convertir chaque item P0 en taches techniques concretes (code + tests).
+- Lancer l'execution par lot en commencant par coherence `play.check`/`play.move` et parcours CLI reel.
+
+### Risques / Ecarts
+- Le jalon peut deriver si des travaux P1/P2 sont traites avant la cloture P0.
+
+### Prochaines etapes
+1. Ouvrir les tickets d'implementation pour `CG-01` a `CG-04`.
+2. Executer et valider les scenarios E2E cibles.
+3. Passer aux items P1 seulement apres validation P0.
+
+### References
+- `docs/CLASSIC_GAME_SHORTLIST.md`
+
