@@ -11,6 +11,7 @@
     <File Path="docs\console-interface-architecture.md" />
     <File Path="docs\crossing-rules.md" />
     <File Path="docs\defines-CLI.md" />
+    <File Path="docs\multiplayer-migration-plan.md" />
     <File Path="docs\RATING_INTEGRATION.md" />
     <File Path="docs\RATING_SYSTEM.md" />
     <File Path="docs\SCOPE.md" />
@@ -28,6 +29,9 @@
     <Project Path="src/libs/Lama.Domain/Lama.Domain.csproj" />
     <Project Path="src/libs/Lama.Infrastructure/Lama.Infrastructure.csproj" />
     <Project Path="src/libs/Lama.Languages.fr/Lama.Languages.fr.csproj" />
+  </Folder>
+  <Folder Name="/Server/">
+    <Project Path="src/Server/Lama.Server/Lama.Server.csproj" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />

@@ -941,6 +941,52 @@ Journal unique de progression du projet LAMA.
 - `src/Console/Lama.Console/Modes/InteractiveMode.cs`
 - `tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj`
 
+## [2026-06-18 09:57:52 UTC] - Demarrage implementation multijoueur central + plan migration local
+
+### Contexte
+- Decision produit validee: serveur central autoritaire pour le online + conservation du mode local offline.
+- Besoin explicite: garder un mode dev/test sans internet, isole des parties/classements mondiaux.
+
+### Fait
+- Ajout d'un nouveau projet serveur `src/Server/Lama.Server` (ASP.NET Core Minimal API):
+  - `GET /health`
+  - `POST /api/games`
+  - `POST /api/games/{gameId}/join`
+  - `POST /api/games/{gameId}/moves`
+  - `GET /api/games/{gameId}`
+  - `GET /api/games/{gameId}/events` (SSE)
+- Ajout d'une doc serveur locale: `src/Server/Lama.Server/README.md`.
+- Ajout d'un plan de migration dedie: `docs/multiplayer-migration-plan.md`.
+- Mise a jour de la solution `Lama.slnx` pour inclure le projet serveur et la doc migration.
+- Mise a jour `README.md` avec section multijoueur explicitant:
+  - mode local offline isole,
+  - mode online centralise,
+  - commandes de demarrage serveur alpha.
+
+### En cours
+- Le CLI principal reste en mode local (pas encore route vers le serveur online).
+
+### A faire
+- Introduire un gateway online cote console (routing local/online selon mode runtime).
+- Ajouter auth (JWT) et persistance serveur (PostgreSQL).
+- Brancher les commandes `game.*` sur le mode online en conservant retrocompat local.
+
+### Risques / Ecarts
+- Le serveur alpha est en memoire uniquement (pas de persistence durable).
+- Le protocole online est valide pour MVP, mais necessitera durcissement (auth, idempotence, observabilite).
+
+### Prochaines etapes
+1. Ajouter un `IOnlineGameGateway` et un switch runtime `local|online` cote CLI.
+2. Implementer un premier flux CLI online (`create/join/show`) via HTTP.
+3. Introduire persistence Postgres dans `Lama.Server`.
+
+### References
+- `src/Server/Lama.Server/Program.cs`
+- `src/Server/Lama.Server/README.md`
+- `docs/multiplayer-migration-plan.md`
+- `README.md`
+- `Lama.slnx`
+
 ## [2026-06-18 09:40:01 UTC] - Synchronisation documentaire (AGENTS / README / PROGRESS)
 
 ### Contexte

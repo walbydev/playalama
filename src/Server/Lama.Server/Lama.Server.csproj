@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <AssemblyName>Lama.Server</AssemblyName>
+    <RootNamespace>Lama.Server</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\libs\Lama.Contracts\Lama.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
+

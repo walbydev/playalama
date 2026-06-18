@@ -353,3 +353,29 @@ Liste complète dans [`docs/defines-CLI.md`](docs/defines-CLI.md).
 | `it` | Italien | Prévu |
 
 
+---
+
+## Multijoueur (serveur central + local offline)
+
+LAMA conserve deux modes de fonctionnement:
+
+- **Mode local (offline)**: jeu sur la machine locale, sans internet, ideal pour dev/test.
+- **Mode online (serveur central)**: parties centralisees via `Lama.Server`, necessaire pour classement mondial.
+
+Le mode local reste **isole** des classements mondiaux.
+
+Voir le plan de migration detaille : [`docs/multiplayer-migration-plan.md`](docs/multiplayer-migration-plan.md).
+
+### Demarrer le serveur central alpha
+
+```bash
+dotnet run --project src/Server/Lama.Server
+```
+
+### Verifier la sante du serveur
+
+```bash
+curl -s http://localhost:5000/health
+```
+
+
