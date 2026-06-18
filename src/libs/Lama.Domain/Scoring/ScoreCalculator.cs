@@ -61,7 +61,8 @@ public sealed class ScoreCalculator
             var bonus       = BonusMap.GetBonus(pos);
 
             // Le bonus s'applique seulement si la case était libre avant ce coup
-            var isNewSquare = board.Grid[pos.Row, pos.Column] is null;
+            var existingTile = board.Grid[pos.Row, pos.Column];
+            var isNewSquare = existingTile is null;
 
             if (isNewSquare)
             {
@@ -71,8 +72,11 @@ public sealed class ScoreCalculator
             }
             else
             {
-                // Case déjà occupée : pas de bonus
-                wordScore += letterValue;
+                // Case déjà occupée : pas de bonus, et un joker déjà posé vaut toujours 0.
+                var existingLetterValue = existingTile!.IsWildcard
+                    ? 0
+                    : GetLetterValue(existingTile.Letter);
+                wordScore += existingLetterValue;
             }
         }
 

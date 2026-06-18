@@ -422,6 +422,35 @@ public class GameEngineTests
     }
 
     [Fact]
+    public void PlayMove_CrossingExistingWildcardTile_DoesNotCountWildcardPointsTwice()
+    {
+        var engine = CreateEngine();
+        engine.InitializeGame(["Alice"]);
+
+        // Premier coup: "lA" en H8-I8, avec joker force sur 'l'.
+        // Score attendu premier coup: (0 + 1) x 2 = 2.
+        ForceRack(engine, 0, ['*', 'A', 'M', 'I', 'S', 'T', 'O']);
+        var first = engine.PlayMove(new Dictionary<Position, char>
+        {
+            [new Position(7, 7)] = 'l',
+            [new Position(7, 8)] = 'A'
+        });
+        first.Players[0].Score.Should().Be(2);
+
+        // Coup suivant: vertical depuis H8, on croise la tuile joker existante ('L').
+        // On joue "LA": seul le nouveau 'A' doit rapporter 1 point.
+        ForceRack(engine, 0, ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+        var second = engine.PlayMove(new Dictionary<Position, char>
+        {
+            [new Position(7, 7)] = 'L',
+            [new Position(8, 7)] = 'A'
+        });
+
+        second.Players[0].Score.Should().Be(3,
+            because: "la tuile existante issue d'un joker vaut 0 et le nouveau A vaut 1");
+    }
+
+    [Fact]
     public void PlayMove_IncrementsTurnNumber_AfterFullRound()
     {
         var engine = CreateEngine();

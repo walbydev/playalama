@@ -805,3 +805,39 @@ Journal unique de progression du projet LAMA.
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
 - `docs/CLASSIC_GAME_SHORTLIST.md`
 
+## [2026-06-18 16:05:00 UTC] - CG-04 avance: robustesse scoring jokers/croisements renforcee
+
+### Contexte
+- Priorite P0 `CG-04`: fiabiliser le scoring sur les cas limites (croisements, jokers, bonus).
+
+### Fait
+- Correctif applique dans `ScoreCalculator`:
+  - une lettre deja presente sur le plateau et issue d'un joker (`IsWildcard=true`) vaut desormais 0 point sur les coups suivants.
+- Ajout de tests de regression:
+  - `Score_ExistingWildcardTile_CountsAsZero_WhenIncludedInWord` (ScoreCalculator),
+  - `PlayMove_CrossingExistingWildcardTile_DoesNotCountWildcardPointsTwice` (GameEngine).
+- Validation executee:
+  - tests cibles CG-04 ✅
+  - suite `Lama.Domain.UnitTests` complete ✅ (165/165).
+
+### En cours
+- Consolidation des scenarios score-oriented additionnels (bonus mot/lettre + challenge) pour couverture CG-04 complete.
+
+### A faire
+- Ajouter un scenario E2E reel orienté score (sortie utilisateur) avec croisements/jokers.
+- Verifier la coherence des points affiches cote commandes `play.move` et `show.scores`.
+
+### Risques / Ecarts
+- A ce stade, la robustesse score est renforcee au niveau Domain; la verification complete cote parcours CLI score reste a etendre.
+
+### Prochaines etapes
+1. Ajouter un E2E CLI score-deterministe pour cloturer CG-04.
+2. Enchainer sur `CG-02` (parcours interactif complet fiable).
+3. Conserver la priorisation P0 stricte avant les items P1.
+
+### References
+- `src/libs/Lama.Domain/Scoring/ScoreCalculator.cs`
+- `tests/Lama.Domain.UnitTests/Scoring/ScoreCalculatorTests.cs`
+- `tests/Lama.Domain.UnitTests/Engine/GameEngineTests.cs`
+- `docs/CLASSIC_GAME_SHORTLIST.md`
+

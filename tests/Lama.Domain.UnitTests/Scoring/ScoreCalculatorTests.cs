@@ -343,5 +343,28 @@ public class ScoreCalculatorTests
             because: "le bonus Scrabble ne s'applique que si 7 nouvelles tuiles sont posees");
     }
 
+    [Fact]
+    public void Score_ExistingWildcardTile_CountsAsZero_WhenIncludedInWord()
+    {
+        // Une tuile deja presente est un joker representant 'L' (0 point).
+        var grid = new Tile?[15, 15];
+        grid[7, 8] = new Tile('L', IsWildcard: true); // I8
+        var board = new BoardState(grid);
+
+        // On forme verticalement I8-I9: "LA".
+        // 'L' est deja present via joker => 0 point, seul 'A' nouveau compte.
+        var placements = new Dictionary<Position, char>
+        {
+            [new Position(7, 8)] = 'L', // tuile existante joker
+            [new Position(8, 8)] = 'A'  // nouvelle tuile
+        };
+
+        var score = _sut.Calculate(placements, board);
+
+        var expected = Scores['A'] * BonusMap.GetBonus(8, 8).LetterMultiplier;
+        score.Should().Be(expected,
+            because: "la lettre existante issue d'un joker vaut 0 et seule la nouvelle lettre A est scoree avec le bonus de sa case");
+    }
+
     #endregion
 }
