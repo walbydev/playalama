@@ -15,7 +15,7 @@ public static class HelpCatalog
         new("dict", "Dictionnaire", "check, search, anagram"),
         new("player", "Profil joueur local", "create"),
         new("tournament", "Tournoi", "create"),
-        new("system", "Administration systeme", "setup, status, restart, account.*")
+        new("system", "Administration systeme", "setup, status, restart, clean, account.*")
     ];
 
     public static IReadOnlyList<HelpOption> GlobalOptions { get; } =
@@ -304,6 +304,25 @@ public static class HelpCatalog
             [
                 "Ne redemarre pas un service OS externe.",
                 "Conserve les donnees persistees sur disque."
+            ]),
+        new(
+            CommandId: "system.clean",
+            Group: "system",
+            ActionPath: "clean",
+            Usage: "lama system clean",
+            Description: "Nettoie toutes les parties actives et reinitialise les sessions.",
+            AllowedRoles: "Admin, SuperAdmin",
+            OutputFormats: "text",
+            Options: [],
+            Examples:
+            [
+                "lama system clean"
+            ],
+            Notes:
+            [
+                "Supprime TOUS les fichiers de parties persistees.",
+                "Reinitialise les sessions en memoire et la session courante.",
+                "Operation irreversible."
             ]),
         new(
             CommandId: "system.setup",

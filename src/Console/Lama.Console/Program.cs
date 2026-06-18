@@ -155,11 +155,12 @@ try
             services.AddSingleton<TournamentCommand>();
             services.AddSingleton<ICommand, TournamentCreateCommand>();
 
-            // ─── Commandes — System ──────────────────────────────────────────
+            // ─── Commandes — System ──────────────────────────────────────────────
             services.AddSingleton<SystemCmds.SystemCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemStatusCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemRestartCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemSetupCommand>();
+            services.AddSingleton<ICommand, SystemCmds.SystemCleanCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemAccountCreateCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemAccountListCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemAccountRevokeCommand>();

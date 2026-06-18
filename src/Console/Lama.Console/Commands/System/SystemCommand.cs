@@ -26,5 +26,6 @@ public sealed class SystemCommand
         global::System.Console.WriteLine("Actions (réservées aux administrateurs) :");
         global::System.Console.WriteLine("  status     Affiche l'état du système");
         global::System.Console.WriteLine("  restart    Redémarre le service");
+        global::System.Console.WriteLine("  clean      Nettoie toutes les parties actives");
     }
 }
