@@ -601,3 +601,107 @@ Journal unique de progression du projet LAMA.
 - `docs/crossing-rules.md` (guide complet)
 - Tests masses : 504 passants
 
+## [2026-06-18 14:20:00 UTC] - Backlog produit capture pour mode "Crazy Lama"
+
+### Contexte
+- Besoin utilisateur de noter les evolutions futures gameplay dans un emplacement unique et durable.
+- Orientation souhaitee: variantes fun/chaotiques avec options activables par partie.
+
+### Fait
+- `docs/SCOPE.md` renseigne avec un cadrage complet du mode futur "Crazy Lama".
+- Idees structurees en 4 axes:
+  - cases bonus/malus aleatoires (visibles ou cachees),
+  - cartes action (boost/protection/attaque),
+  - economie de points (check/dict payants, achat de lettre),
+  - regles punitives/competitives (challenge, anti-abus).
+- Proposition de roadmap incremental (v1 -> v2 -> PvP avance).
+- Liste de questions produit ouvertes pour arbitrage futur.
+
+### En cours
+- Aucun dev technique demarre pour Crazy Lama (phase ideation/cadrage uniquement).
+
+### A faire
+- Prioriser 2-3 mecaniques MVP pour un premier prototype jouable.
+- Definir un schema de configuration partie pour activer/desactiver les modules Crazy.
+- Ajouter tests de non-regression garantissant qu'un mode classique reste intact.
+
+### Risques / Ecarts
+- Risque d'explosion de complexite si trop de mecaniques sont introduites en meme temps.
+- Necessite de conserver une lisibilite UX forte en mode interactif CLI.
+
+### Prochaines etapes
+1. Valider un "Crazy MVP v1" minimal (ex: cases dynamiques + cout de check).
+2. Definir les options CLI (`--mode crazy`, flags associes) et leur persistance.
+3. Ecrire les specs de regles detaillees avant implementation.
+
+### References
+- `docs/SCOPE.md`
+
+## [2026-06-18 14:40:00 UTC] - Crazy Lama passe en backlog priorise (epics/stories)
+
+### Contexte
+- Demande utilisateur explicite: rester en mode backlog, sans implementation technique immediate.
+- Objectif: rendre les idees Crazy actionnables pour priorisation produit.
+
+### Fait
+- Enrichissement de `docs/SCOPE.md` avec un backlog detaille:
+  - epics (`CL-1` a `CL-4`),
+  - stories priorisees (`P0`, `P1`, `P2`),
+  - criteres d'acceptation orientés produit.
+- Proposition d'un perimetre "Crazy MVP v1" minimal:
+  - cases dynamiques visibles,
+  - `play.check` payant,
+  - challenge avec enjeu points simple.
+- Ajout des questions produit bloquantes avant kickoff v1.
+
+### En cours
+- Aucun dev code lance pour Crazy Lama (toujours phase backlog/spec).
+
+### A faire
+- Arbitrer les valeurs par defaut des couts/penalites v1.
+- Decider du statut classe/non-classe du mode Crazy.
+- Preparer un atelier de priorisation (impact joueur vs complexite tech).
+
+### Risques / Ecarts
+- Sans bornes claires sur v1, risque de glissement vers une "v1 trop large".
+- Certaines stories (cartes d'attaque) exigent des regles anti-abus precises.
+
+### Prochaines etapes
+1. Valider la shortlist MVP v1 (`CL-1.1`, `CL-2.1`, `CL-4.2`).
+2. Fixer les parametres par defaut (couts, bonus/malus) dans une spec courte.
+3. Ouvrir ensuite des tickets techniques separes par epic.
+
+### References
+- `docs/SCOPE.md`
+
+## [2026-06-18 15:00:00 UTC] - Cloture backlog futur et recentrage sur jeu fonctionnel
+
+### Contexte
+- Demande utilisateur: clore le sujet backlog des evolutions futures et revenir aux manques du jeu fonctionnel.
+
+### Fait
+- Le backlog "Crazy Lama" est formalise comme capture complete (epics, stories, priorites, criteres) dans `docs/SCOPE.md`.
+- Ajout d'un statut explicite de cloture backlog:
+  - freeze des nouvelles idees Crazy a court terme,
+  - pas d'implementation Crazy prioritaire avant stabilisation du mode classique.
+- Ajout d'un cadrage de recentrage dans `docs/SCOPE.md` sur le livrable immediat: jeu classique jouable de bout en bout.
+
+### En cours
+- Recentrage produit vers les manques bloquants du mode classique (hors Crazy).
+
+### A faire
+- Etablir une shortlist definitive des gaps restants pour "jeu fonctionnel" (CLI + interactif).
+- Prioriser les correctifs/ameliorations impactant directement une partie complete.
+- Consolider les tests E2E de parcours reel sur les scenarios cle.
+
+### Risques / Ecarts
+- Risque de reouverture prematuree du scope Crazy si le cadre de freeze n'est pas respecte.
+
+### Prochaines etapes
+1. Produire une liste courte des manques "must-have" pour finaliser le mode classique.
+2. Sequencer les taches en sprint court axe fiabilite/UX/tests E2E.
+3. Ne reouvrir Crazy qu'apres validation explicite du jalon "jeu fonctionnel".
+
+### References
+- `docs/SCOPE.md`
+
