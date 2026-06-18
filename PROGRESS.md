@@ -1451,3 +1451,53 @@ This is the code block that represents the suggested code change:
 - `src/Server/Lama.Server/README.md`
 - `src/Server/Lama.Server/Data/Models/Sessions/SessionGameEntity.cs`
 
+
+## [2026-06-18 17:37:04 UTC] - Etape 3 livree: fallback EF enrichi avec joueurs/coups persists
+
+### Contexte
+- Suite de la migration hybride online: combler le manque de detail du fallback DB (`players`, `moves`) sur `GET /api/games/{gameId}`.
+- Objectif secondaire: enrichir `GET /api/games` avec des compteurs fiables quand les tables relationnelles sessions sont disponibles.
+
+### Fait
+- Ajout de deux entites EF sessions:
+  - `SessionPlayerInGameEntity` (`sessions.players_in_game`)
+  - `SessionTurnLogEntity` (`sessions.turn_log`)
+- Ajout des configurations EF correspondantes:
+  - `SessionPlayerInGameEntityConfiguration`
+  - `SessionTurnLogEntityConfiguration`
+- `LamaDbContext` etendu avec `DbSet` + `ApplyConfiguration` pour ces deux tables.
+- `GET /api/games` enrichi:
+  - comptage `players` via `sessions.players_in_game`
+  - comptage `moves` via `sessions.turn_log`
+  - fallback silencieux a `0` si schema partiel (table/colonne absente).
+- `GET /api/games/{gameId}` enrichi:
+  - fallback DB retourne maintenant des joueurs (`nickname`, `isHost`) et coups (`action_type`, `action_payload`, `turn_number`, `executed_at`)
+  - mapping action -> commande online (`move` -> `play.move`, etc.)
+  - extraction best-effort de `score` et `placements` depuis `action_payload` JSON
+  - calcul simple de `currentPlayerIndex` sur base du tour courant et du nombre de joueurs persistés.
+- Robustesse ajoutee pour coexistence de schemas:
+  - interception des exceptions PostgreSQL `UndefinedTable` / `UndefinedColumn`
+  - maintien du comportement metadata-only quand l'environnement n'a pas encore `players_in_game` / `turn_log`.
+- Documentation serveur mise a jour (`src/Server/Lama.Server/README.md`) pour refléter ce fallback enrichi.
+
+### En cours
+- Le fallback DB reste volontairement partiel sur l'etat du plateau/racks (`sessions.board_state`, `sessions.rack_state` non branches).
+
+### A faire
+1. Mapper `sessions.board_state` pour alimenter `board` en fallback DB.
+2. Mapper `sessions.rack_state` pour fournir `rack`/`rackCount` reelles cote joueurs persistés.
+3. Ajouter un test d'integration API dedie aux deux modes (schema minimal vs schema complet).
+
+### Risques / Ecarts
+- En schema minimal EF-only (sans tables relationnelles sessions), l'API reste fonctionnelle mais continue de renvoyer peu de details en fallback DB.
+
+### References
+- `src/Server/Lama.Server/Program.cs`
+- `src/Server/Lama.Server/Data/LamaDbContext.cs`
+- `src/Server/Lama.Server/Data/Models/Sessions/SessionPlayerInGameEntity.cs`
+- `src/Server/Lama.Server/Data/Models/Sessions/SessionTurnLogEntity.cs`
+- `src/Server/Lama.Server/Data/Configurations/SessionPlayerInGameEntityConfiguration.cs`
+- `src/Server/Lama.Server/Data/Configurations/SessionTurnLogEntityConfiguration.cs`
+- `src/Server/Lama.Server/README.md`
+
+

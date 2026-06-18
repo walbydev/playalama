@@ -7,6 +7,7 @@ using Lama.Domain.Board;
 using Lama.Domain.Engine;
 using Lama.Languages.fr;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -136,6 +137,8 @@ app.MapPost("/api/games", (CreateGameRequest request, GameHubState state) =>
 app.MapGet("/api/games", async (GameHubState state, LamaDbContext db, CancellationToken cancellationToken) =>
 {
     var merged = new Dictionary<string, OnlineGameListItem>(StringComparer.Ordinal);
+    var persistedPlayerCountsByGame = new Dictionary<Guid, int>();
+    var persistedMoveCountsByGame = new Dictionary<Guid, int>();
 
     foreach (var game in state.ListGames())
     {
@@ -167,6 +170,25 @@ app.MapGet("/api/games", async (GameHubState state, LamaDbContext db, Cancellati
         .OrderByDescending(x => x.UpdatedAt)
         .ToListAsync(cancellationToken);
 
+    try
+    {
+        persistedPlayerCountsByGame = await db.SessionPlayersInGame
+            .AsNoTracking()
+            .GroupBy(x => x.GameId)
+            .Select(x => new { x.Key, Count = x.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
+
+        persistedMoveCountsByGame = await db.SessionTurnLogs
+            .AsNoTracking()
+            .GroupBy(x => x.GameId)
+            .Select(x => new { x.Key, Count = x.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
+    }
+    catch (PostgresException ex) when (IsMissingDatabaseObject(ex))
+    {
+        // Backward compatibility: DB may still be at the minimal sessions.games schema.
+    }
+
     foreach (var persistedGame in persistedGames)
     {
         var gameId = persistedGame.GameId.ToString("N");
@@ -189,8 +211,8 @@ app.MapGet("/api/games", async (GameHubState state, LamaDbContext db, Cancellati
             Language: persistedGame.Language,
             Status: normalizedStatus,
             IsGameOver: isGameOver,
-            Players: 0,
-            Moves: 0,
+            Players: persistedPlayerCountsByGame.GetValueOrDefault(persistedGame.GameId, 0),
+            Moves: persistedMoveCountsByGame.GetValueOrDefault(persistedGame.GameId, 0),
             CreatedAt: persistedGame.CreatedAt,
             UpdatedAt: persistedGame.UpdatedAt,
             Source: "database");
@@ -439,6 +461,70 @@ app.MapGet("/api/games/{gameId}", async (string gameId, GameHubState state, Lama
     var isGameOver = string.Equals(persistedGame.Status, "ended", StringComparison.OrdinalIgnoreCase)
                      || string.Equals(persistedGame.Status, "abandoned", StringComparison.OrdinalIgnoreCase);
 
+    var persistedPlayers = new List<object>();
+    var persistedMoves = new List<object>();
+    var lastTurnNumber = 0;
+
+    try
+    {
+        var dbPlayers = await db.SessionPlayersInGame
+            .AsNoTracking()
+            .Where(x => x.GameId == gameGuid)
+            .OrderBy(x => x.PlayerIndex)
+            .ToListAsync(cancellationToken);
+
+        var playersBySessionId = dbPlayers.ToDictionary(x => x.PlayerSessionId, x => x);
+        persistedPlayers = dbPlayers
+            .Select(x => (object)new
+            {
+                PlayerId = x.PlayerId.ToString("N"),
+                PlayerName = x.Nickname,
+                x.IsHost,
+                Score = 0,
+                Rack = Array.Empty<char>(),
+                RackCount = 0
+            })
+            .ToList();
+
+        var dbTurns = await db.SessionTurnLogs
+            .AsNoTracking()
+            .Where(x => x.GameId == gameGuid)
+            .OrderBy(x => x.TurnNumber)
+            .ThenBy(x => x.ExecutedAt)
+            .ToListAsync(cancellationToken);
+
+        lastTurnNumber = dbTurns.Count == 0 ? 0 : dbTurns.Max(x => x.TurnNumber);
+
+        persistedMoves = dbTurns
+            .Select(x =>
+            {
+                var payload = ParseActionPayload(x.ActionPayload);
+                playersBySessionId.TryGetValue(x.PlayerSessionId, out var owner);
+
+                return (object)new
+                {
+                    MoveId = x.TurnId.ToString("N"),
+                    PlayerId = owner?.PlayerId.ToString("N") ?? x.PlayerSessionId.ToString("N"),
+                    PlayerName = owner?.Nickname ?? "unknown",
+                    Command = ToOnlineCommand(x.ActionType),
+                    Payload = payload,
+                    PlayedAt = x.ExecutedAt,
+                    Score = ExtractScoreFromPayload(payload),
+                    TurnNumber = x.TurnNumber,
+                    Placements = ExtractPlacementsFromPayload(payload)
+                };
+            })
+            .ToList();
+    }
+    catch (PostgresException ex) when (IsMissingDatabaseObject(ex))
+    {
+        // Backward compatibility: DB may still be at the minimal sessions.games schema.
+    }
+
+    var currentPlayerIndex = persistedPlayers.Count == 0
+        ? 0
+        : lastTurnNumber % persistedPlayers.Count;
+
     return Results.Ok(new
     {
         Id = persistedGame.GameId.ToString("N"),
@@ -452,11 +538,11 @@ app.MapGet("/api/games/{gameId}", async (string gameId, GameHubState state, Lama
         persistedGame.CreatedAt,
         persistedGame.UpdatedAt,
         IsGameOver = isGameOver,
-        CurrentPlayerIndex = 0,
-        TurnNumber = 0,
-        players = Array.Empty<object>(),
+        CurrentPlayerIndex = currentPlayerIndex,
+        TurnNumber = lastTurnNumber,
+        players = persistedPlayers,
         board = Array.Empty<OnlineBoardTile>(),
-        moves = Array.Empty<object>(),
+        moves = persistedMoves,
         source = "database"
     });
 });
@@ -585,6 +671,95 @@ static string NormalizeStatusToken(string? token)
 
     return token.Trim().ToLowerInvariant();
 }
+
+static string ToOnlineCommand(string? actionType)
+{
+    if (string.IsNullOrWhiteSpace(actionType))
+        return "play.move";
+
+    return actionType.Trim().ToLowerInvariant() switch
+    {
+        "move" => "play.move",
+        "pass" => "play.pass",
+        "swap" => "play.swap",
+        "challenge" => "play.challenge",
+        "check" => "play.check",
+        var other => $"play.{other}"
+    };
+}
+
+static JsonElement? ParseActionPayload(string? payload)
+{
+    if (string.IsNullOrWhiteSpace(payload))
+        return null;
+
+    try
+    {
+        using var document = JsonDocument.Parse(payload);
+        return document.RootElement.Clone();
+    }
+    catch
+    {
+        return null;
+    }
+}
+
+static int ExtractScoreFromPayload(JsonElement? payload)
+{
+    if (payload is null || payload.Value.ValueKind != JsonValueKind.Object)
+        return 0;
+
+    if (!payload.Value.TryGetProperty("score", out var scoreElement))
+        return 0;
+
+    return scoreElement.ValueKind switch
+    {
+        JsonValueKind.Number when scoreElement.TryGetInt32(out var score) => score,
+        JsonValueKind.String when int.TryParse(scoreElement.GetString(), out var score) => score,
+        _ => 0
+    };
+}
+
+static IReadOnlyList<OnlineMovePlacement> ExtractPlacementsFromPayload(JsonElement? payload)
+{
+    if (payload is null || payload.Value.ValueKind != JsonValueKind.Object)
+        return [];
+
+    if (!payload.Value.TryGetProperty("placements", out var placementsElement) ||
+        placementsElement.ValueKind != JsonValueKind.Array)
+        return [];
+
+    var placements = new List<OnlineMovePlacement>();
+
+    foreach (var item in placementsElement.EnumerateArray())
+    {
+        if (item.ValueKind != JsonValueKind.Object)
+            continue;
+
+        if (!item.TryGetProperty("row", out var rowElement) || !rowElement.TryGetInt32(out var row))
+            continue;
+        if (!item.TryGetProperty("column", out var columnElement) || !columnElement.TryGetInt32(out var column))
+            continue;
+        if (!item.TryGetProperty("letter", out var letterElement))
+            continue;
+
+        var letterRaw = letterElement.ValueKind switch
+        {
+            JsonValueKind.String => letterElement.GetString(),
+            _ => letterElement.ToString()
+        };
+
+        if (string.IsNullOrWhiteSpace(letterRaw))
+            continue;
+
+        placements.Add(new OnlineMovePlacement(row, column, letterRaw[0]));
+    }
+
+    return placements;
+}
+
+static bool IsMissingDatabaseObject(PostgresException ex) =>
+    ex.SqlState is PostgresErrorCodes.UndefinedTable or PostgresErrorCodes.UndefinedColumn;
 
 static async Task WriteEventAsync(HttpContext context, ServerEvent evt)
 {

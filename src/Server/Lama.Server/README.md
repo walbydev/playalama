@@ -24,8 +24,8 @@ Serveur central autoritaire pour le mode multijoueur en ligne de commande.
 Notes:
 - Les commandes de jeu online (`play.move`, `play.pass`, etc.) transitent via `POST /api/games/{gameId}/moves`.
 - L'historique online est lu depuis `GET /api/games/{gameId}` (`moves`).
-- `GET /api/games` fonctionne en mode hybride: fusion memoire + fallback lecture EF (`sessions.games`) pour les parties absentes en memoire.
-- `GET /api/games/{gameId}` fonctionne en mode hybride: priorite state memoire, fallback lecture EF (`sessions.games`) si absent en memoire.
+- `GET /api/games` fonctionne en mode hybride: fusion memoire + fallback EF (`sessions.games`) et, si present, comptage `sessions.players_in_game` / `sessions.turn_log`.
+- `GET /api/games/{gameId}` fonctionne en mode hybride: priorite state memoire, fallback EF metadata (`sessions.games`) + joueurs/coups (`sessions.players_in_game`, `sessions.turn_log`) quand disponibles.
 
 ## Lancer en local
 
