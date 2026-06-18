@@ -941,3 +941,47 @@ Journal unique de progression du projet LAMA.
 - `src/Console/Lama.Console/Modes/InteractiveMode.cs`
 - `tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj`
 
+## [2026-06-18 09:40:01 UTC] - Synchronisation documentaire (AGENTS / README / PROGRESS)
+
+### Contexte
+- Demande explicite de mise a jour documentaire pour refleter l'etat reel du code.
+- Ecart principal observe: `docs/AGENTS.md` mentionnait encore des commandes en stubs alors qu'elles sont executees dans `Program.cs`.
+
+### Fait
+- **AGENTS harmonise**:
+  - `system.status`, `system.restart`, `player.create/list/show/update`, `tournament.create` deplaces dans les commandes implementees.
+  - section stubs remplacee par une note claire: aucune commande enregistree n'est marquee stub.
+  - etat composant interactif ajuste (jouable mais perfectible UX).
+  - etat tests ajuste (tests console > 200, E2E reels presents).
+
+- **README reactualise**:
+  - sections mal formatees converties en blocs Markdown valides (`text`/`bash`).
+  - commandes examples alignees sur la CLI reelle.
+  - ajout des sections `Profils joueurs` et `Classement et rating`.
+  - documentation des queues leaderboard `open|tournament|global`.
+  - section administration systeme completee (`system status`, `system restart`).
+
+- **Verification rapide etat reel**:
+  - la liste des commandes documentees est alignee sur les enregistrements `ICommand` dans `Program.cs`.
+
+### En cours
+- Le suivi P0/P1/P2 de `docs/CLASSIC_GAME_SHORTLIST.md` reste la reference prioritaire pour les prochains sprints.
+
+### A faire
+- Mettre a jour `docs/defines-CLI.md` au meme niveau de detail que `README.md` pour `player.*` et `rating.leaderboard --queue`.
+- Ajouter une section "classements" dediee dans la doc utilisateur (guide produit) si besoin de communication externe.
+
+### Risques / Ecarts
+- `README.md` est a nouveau coherent avec le code courant, mais devra etre maintenu a chaque ajout de commande pour eviter un nouvel ecart.
+
+### Prochaines etapes
+1. Completer l'alignement de `docs/defines-CLI.md` avec les nouvelles commandes profil/rating.
+2. Continuer la fermeture de `CG-02` (recette interactive TTY complete).
+3. Conserver la discipline "doc-sync" a chaque livraison de commande CLI.
+
+### References
+- `docs/AGENTS.md`
+- `README.md`
+- `src/Console/Lama.Console/Program.cs`
+- `docs/CLASSIC_GAME_SHORTLIST.md`
+

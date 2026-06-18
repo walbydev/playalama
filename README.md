@@ -87,12 +87,25 @@ La console actuelle, le futur mode interactif textuel et une éventuelle future 
 
 L'application console prend en charge deux modes :
 
-text Lama.Console ├── Mode commande par commande │ ├── lama game create │ ├── lama play move H8 LAMA H │ └── lama show board │ └── Mode interactif textuel ├── menus ├── prompts ├── boucle de jeu └── rendu textuel du plateau, du rack et des scores
+```text
+Lama.Console
+├── Mode commande par commande
+│   ├── lama game create
+│   ├── lama play move H8 LAMA H
+│   └── lama show board
+└── Mode interactif textuel
+    ├── menus
+    ├── prompts
+    ├── boucle de jeu
+    └── rendu textuel du plateau, du rack et des scores
+```
 
 Le point d'entrée `Program.cs` ne contient pas la logique du jeu.
 Il configure l'application, enregistre les services, puis délègue l'exécution au mode approprié.
 
-text Program.cs -> ApplicationModeResolver -> CommandLineMode -> InteractiveMode
+```text
+Program.cs -> ApplicationModeResolver -> CommandLineMode -> InteractiveMode
+```
 
 ### Décision sur le parsing des commandes
 
@@ -100,7 +113,12 @@ Le projet ne s'appuie pas sur le paquet `CommandLine` comme dépendance structur
 
 Le parsing reste volontairement simple dans le mode commande par commande :
 
-text lama game create lama game join lama play move lama show board
+```text
+lama game create
+lama game join
+lama play move
+lama show board
+```
 
 Cette décision permet de :
 
@@ -129,20 +147,30 @@ Voir aussi : [`docs/console-interface-architecture.md`](docs/console-interface-a
 
 ### Construire le projet
 
-bash dotnet build
+```bash
+dotnet build
+```
 
 ### Lancer le mode interactif textuel
 
 Le mode interactif est l'expérience principale pour jouer dans un terminal.
 
-bash lama
+```bash
+lama
+```
 
 ou explicitement :
 
-bash lama interactive
+```bash
+lama interactive
+```
 
 Alias prévus :
-bash lama shell lama ui
+
+```bash
+lama shell
+lama ui
+```
 
 Dans ce mode, le joueur est guidé par des menus textuels, des prompts et des écrans de jeu.
 
@@ -162,7 +190,16 @@ Exemples d'actions proposées :
 
 Le mode commande par commande permet d'exécuter une action unique puis de terminer le processus.
 
-bash lama game create lama game join lama show board lama play move H8 MAISON H lama play pass lama play swap AEI lama game save lama game end
+```bash
+lama game create
+lama game join Bob
+lama show board
+lama play move H8 MAISON H
+lama play pass
+lama play swap AEI
+lama game save
+lama game end
+```
 
 
 Ce mode est adapté :
@@ -175,53 +212,101 @@ Ce mode est adapté :
 
 ### Démarrer une partie en mode commande
 
-bash
+```bash
 # Partie classique à 2 joueurs
-lama game create lama game join philippe lama game join sophie
+lama game create Alice
+lama game join Philippe
+lama game join Sophie
 # Partie avec options
-lama game create --size 19 --players 3 --time-limit 90
+lama game create --level tournament
+```
 
 ### Jouer en mode commande
 
-bash
+```bash
 # Poser un mot en H8 horizontalement
 lama play move H8 MAISON H
 # Poser un mot avec croisement
 lama play move J8 MAISON V
-# Poser un mot avec un joker
-lama play move H8 MAISON H --joker 3=I
+# Poser un mot avec joker force (notation minuscule)
+lama play move H8 mAISON H
 # Simuler un coup sans le jouer
 lama play move A1 ZEN H --dry-run
 # Passer son tour
 lama play pass
 # Échanger des lettres
-lama play swap AEI lama play swap --all
+lama play swap AEI
+lama play swap --all
+```
 
 ### Affichage
 
-bash
+```bash
 # Plateau avec mise en évidence du dernier coup
-lama show board --last-move
-# Rack avec valeurs de lettres
-lama show rack --with-values
+lama show board
+# Rack
+lama show rack
 # Scores
 lama show scores
 # Historique des 5 derniers coups
 lama show history --last 5
+```
+
+### Profils joueurs
+
+```bash
+# Créer un profil avec métadonnées optionnelles
+lama player create Carla --pseudo Krl --country FR --region Bretagne --birth-year 1995
+
+# Lister les profils (filtrable)
+lama player list
+lama player list --country FR --output json
+
+# Consulter / mettre à jour un profil
+lama player show
+lama player update --pseudo LamaQueen --region Occitanie
+```
+
+### Classement et rating
+
+```bash
+# Rating joueur (open/tournoi/global)
+lama rating show
+
+# Leaderboard par file de classement
+lama rating leaderboard --queue global --top 20
+lama rating leaderboard --queue open --top 20
+lama rating leaderboard --queue tournament --top 20
+
+# Stats période
+lama rating stats --30d
+```
 
 ### Dictionnaire
 
-bash
+```bash
 # Vérifier un mot
 lama dict check QUARTZ
 # Rechercher par motif
 lama dict search "?OISETTE" --lang fr
 # Trouver des anagrammes
 lama dict anagram NOISETTE --min-length 4
+```
+
+### Administration système
+
+```bash
+lama system setup
+lama system status --output json
+lama system restart
+lama system account list
+```
 
 ### Fin de partie
 
-bash lama game end --with-scores lama game end --with-scores --export resultat.json
+```bash
+lama game end
+```
 
 ---
 

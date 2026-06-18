@@ -120,10 +120,17 @@ Le parser supporte:
 - `rating.show`
 - `rating.leaderboard`
 - `rating.stats`
+- `player.create`
+- `player.list`
+- `player.show`
+- `player.update`
+- `tournament.create`
 - `dict.check`
 - `dict.search`
 - `dict.anagram`
 - `system.setup`
+- `system.status`
+- `system.restart`
 - `login`
 - `logout`
 - `system.account.create`
@@ -132,13 +139,8 @@ Le parser supporte:
 
 ### Commandes presentes mais encore stubs
 
-- `system.status`
-- `system.restart`
-- `player.create`
-- `player.list`
-- `player.show`
-- `player.update`
-- `tournament.create`
+- Aucune commande enregistree dans `Program.cs` n'est marquee stub.
+- Le mode interactif reste partiellement guide (menu + sous-flux), mais execute des commandes reelles.
 
 ---
 
@@ -152,9 +154,9 @@ Le parser supporte:
 | `Lama.Infrastructure` | ✅ Implante (JSON/session/auth/accounts) |
 | `Lama.Languages.fr` | ✅ Implante |
 | `Lama.Console` mode commande | ✅ Principal operationnel - plusieurs commandes implementees |
-| `Lama.Console` mode interactif | 🟡 Shell present, logique metier non branchee |
+| `Lama.Console` mode interactif | 🟡 Boucle jouable presente, encore perfectible UX (recette manuelle CG-02) |
 | Rendering dedie (`Rendering/*`) | 🔲 Classes vides |
-| Tests E2E CLI | 🔲 A creer (parcours complets create/join/move/show/end) |
+| Tests E2E CLI | ✅ Parcours reels presents + a etendre |
 | Middlewares additionnels (`Accessibility/Logging/ErrorHandling`) | 🔲 Classes vides |
 
 ---
@@ -176,7 +178,7 @@ Le parser supporte:
 
 ### Etat actuel des tests console
 
-- `Lama.Console.UnitTests`: ✅ vert (149/149)
+- `Lama.Console.UnitTests`: ✅ vert (etat recent > 200 tests)
 
 ### A renforcer
 
