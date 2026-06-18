@@ -504,6 +504,78 @@ public sealed class GameAndPlayCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task PlayCheckThenMove_CrossingWithExistingLetter_DoesNotReturnInvalidPlacement()
+    {
+        var gameId = Guid.NewGuid().ToString("N");
+        var hostId = Guid.NewGuid().ToString("N");
+
+        _gameRepository.Save(new PersistedGame(
+            GameId: gameId,
+            Language: "fr",
+            GameLevel: GameLevel.Casual,
+            IsFirstMove: false,
+            IsGameOver: false,
+            CurrentPlayerIndex: 0,
+            TurnNumber: 2,
+            Players: new List<PersistedPlayer>
+            {
+                // Rack sans 'A': la lettre de croisement ne doit pas etre consommee.
+                new(hostId, "Alice", 0, ['M', 'B', 'C', 'D', 'E', 'F', 'G'])
+            },
+            Board: new List<PersistedTile>
+            {
+                new(7, 7, 'L'), // H8
+                new(7, 8, 'A')  // I8
+            },
+            RemainingTiles: ['A', 'A', 'A'],
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow,
+            History: [],
+            LastMoveSnapshot: null));
+
+        SaveHostSession(gameId, hostId, "Alice");
+
+        var checkCommand = new PlayCheckCommand(_createGameUseCase, NullLogger<PlayCheckCommand>.Instance);
+        var checkContext = new CommandContext
+        {
+            Group = "play",
+            Action = "check",
+            GameId = gameId,
+            PlayerId = hostId,
+            PlayerName = "Alice",
+            Role = Role.Host,
+            GameLevel = GameLevel.Casual,
+            Arguments = ["I8", "AM", "V"]
+        };
+
+        var (checkStdout, checkStderr, checkExitCode) = await CaptureAsync(() => checkCommand.ExecuteAsync(checkContext));
+
+        checkExitCode.Should().Be(ExitCodes.Success);
+        checkStderr.Should().BeEmpty();
+        checkStdout.Should().Contain("Coup valide");
+
+        var moveCommand = new PlayMoveCommand(new PlayMoveUseCase(_createGameUseCase), _sessionService,
+            NullLogger<PlayMoveCommand>.Instance);
+        var moveContext = new CommandContext
+        {
+            Group = "play",
+            Action = "move",
+            GameId = gameId,
+            PlayerId = hostId,
+            PlayerName = "Alice",
+            Role = Role.Host,
+            GameLevel = GameLevel.Casual,
+            Arguments = ["I8", "AM", "V"]
+        };
+
+        var (moveStdout, moveStderr, moveExitCode) = await CaptureAsync(() => moveCommand.ExecuteAsync(moveContext));
+
+        moveExitCode.Should().Be(ExitCodes.Success);
+        moveStderr.Should().BeEmpty();
+        moveStdout.Should().Contain("joué en I8 V");
+    }
+
+    [Fact]
     public async Task PlayChallengeCommand_OnValidMove_FailsAndPassesTurn()
     {
         var (gameId, hostId, bobId) = await CreateTwoPlayerGameAsync();
