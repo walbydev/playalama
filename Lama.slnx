@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Apps/">
+    <File Path="wwwroot\index.html" />
     <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
   </Folder>
   <Folder Name="/docs/">
