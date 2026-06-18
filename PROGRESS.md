@@ -735,3 +735,38 @@ Journal unique de progression du projet LAMA.
 ### References
 - `docs/CLASSIC_GAME_SHORTLIST.md`
 
+## [2026-06-18 15:35:00 UTC] - CG-01 renforce: parcours CLI reel fiabilise
+
+### Contexte
+- Demarrage de l'execution de la shortlist classique sur l'item `CG-01` (parcours CLI complet fiable).
+
+### Fait
+- Renforcement du smoke E2E reel:
+  - `tools/scripts/e2e-cli-smoke.sh` couvre maintenant `create -> join -> swap --all -> game.show --output json -> show scores -> end`.
+- Ajustement du test processus reel associe:
+  - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
+  - scenario principal aligne sur le meme parcours avec assertions de sortie.
+- Validation executee:
+  - test cible `Cli_RealProcess_FullGameJourney_Works` ✅
+  - script `tools/scripts/e2e-cli-smoke.sh` ✅
+
+### En cours
+- Passage progressif aux autres items P0 (`CG-03`, `CG-04`, puis `CG-02`).
+
+### A faire
+- Ajouter un scenario E2E reel centré sur `play.move` (cas nominal deterministe) pour completer `CG-01`.
+- Verifier un cas d'echec attendu (erreur metier) avec code de sortie controle.
+
+### Risques / Ecarts
+- Le parcours CG-01 est plus robuste, mais reste partiellement dependant du contexte de session joueur sur certaines actions de tour.
+
+### Prochaines etapes
+1. Completer `CG-03` (coherence `play.check` vs `play.move`) avec E2E reel dedie.
+2. Etendre le parcours CG-01 avec un coup `play.move` deterministe.
+3. Garder le scope strictement sur les P0 avant P1/P2.
+
+### References
+- `tools/scripts/e2e-cli-smoke.sh`
+- `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
+- `docs/CLASSIC_GAME_SHORTLIST.md`
+

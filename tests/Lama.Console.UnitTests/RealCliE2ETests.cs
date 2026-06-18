@@ -41,13 +41,17 @@ public sealed class RealCliE2ETests : IDisposable
         join.ExitCode.Should().Be(0);
         join.StdOut.Should().Contain("a rejoint la partie");
 
-        var pass = await RunCliAsync("play", "pass");
-        pass.ExitCode.Should().Be(0);
-        pass.StdOut.Should().Contain("Tour passé");
+        var swap = await RunCliAsync("play", "swap", "--all");
+        swap.ExitCode.Should().Be(0);
+        swap.StdOut.Should().Contain("Echange effectue");
 
         var show = await RunCliAsync("game", "show", "--output", "json");
         show.ExitCode.Should().Be(0);
         show.StdOut.Should().Contain("\"GameId\"");
+
+        var scores = await RunCliAsync("show", "scores");
+        scores.ExitCode.Should().Be(0);
+        scores.StdOut.Should().Contain("Scores");
 
         var end = await RunCliAsync("game", "end");
         end.ExitCode.Should().Be(0);

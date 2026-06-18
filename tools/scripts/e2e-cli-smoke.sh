@@ -27,7 +27,7 @@ assert_contains() {
   fi
 }
 
-echo "[E2E] Scenario CLI reel: create -> join -> pass -> show -> end"
+echo "[E2E] Scenario CLI reel: create -> join -> swap -> show -> end"
 
 out_create="$(run_lama game create Alice)"
 assert_contains "$out_create" "Partie créée" "game.create"
@@ -41,8 +41,8 @@ fi
 out_join="$(run_lama game join Bob)"
 assert_contains "$out_join" "a rejoint la partie" "game.join"
 
-out_pass="$(run_lama play pass)"
-assert_contains "$out_pass" "Tour passé" "play.pass"
+out_swap="$(run_lama play swap --all)"
+assert_contains "$out_swap" "Echange effectue" "play.swap --all"
 
 out_show="$(run_lama game show --output json)"
 assert_contains "$out_show" "$game_id" "game.show --output json"
