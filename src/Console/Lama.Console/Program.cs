@@ -163,6 +163,7 @@ try
             // ─── Commandes — Player ──────────────────────────────────────────
             services.AddSingleton<PlayerCommand>();
             services.AddSingleton<ICommand, PlayerCreateCommand>();
+            services.AddSingleton<ICommand, PlayerListCommand>();
             services.AddSingleton<ICommand, PlayerShowCommand>();
             services.AddSingleton<ICommand, PlayerUpdateCommand>();
 

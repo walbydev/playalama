@@ -141,6 +141,75 @@ public sealed class PlayerProfileCommandTests : IDisposable
         stdout.Should().Contain("RATING");
     }
 
+    [Fact]
+    public async Task PlayerList_Text_ReturnsProfiles()
+    {
+        await _profileService.SaveAsync(new PlayerProfile(
+            PlayerId: "p-list-1",
+            DisplayName: "Alice",
+            Pseudo: "A",
+            Country: "FR",
+            Region: "Occitanie",
+            BirthYear: 1998,
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow));
+
+        await _profileService.SaveAsync(new PlayerProfile(
+            PlayerId: "p-list-2",
+            DisplayName: "Bob",
+            Pseudo: "B",
+            Country: "CA",
+            Region: "Quebec",
+            BirthYear: 1996,
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow));
+
+        var list = new PlayerListCommand(_profileService, _ratingService, NullLogger<PlayerListCommand>.Instance);
+        var ctx = new CommandContext { CommandId = "player.list" };
+
+        var (stdout, stderr, code) = await CaptureAsync(() => list.ExecuteAsync(ctx));
+        code.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("JOUEURS");
+        stdout.Should().Contain("Alice");
+        stdout.Should().Contain("Bob");
+    }
+
+    [Fact]
+    public async Task PlayerList_FilterByCountry_ReturnsOnlyMatchingProfile()
+    {
+        await _profileService.SaveAsync(new PlayerProfile(
+            PlayerId: "p-filter-1",
+            DisplayName: "Claire",
+            Country: "FR",
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow));
+
+        await _profileService.SaveAsync(new PlayerProfile(
+            PlayerId: "p-filter-2",
+            DisplayName: "Diego",
+            Country: "ES",
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow));
+
+        var list = new PlayerListCommand(_profileService, _ratingService, NullLogger<PlayerListCommand>.Instance);
+        var ctx = new CommandContext
+        {
+            CommandId = "player.list",
+            Options = new Dictionary<string, string?>
+            {
+                ["country"] = "FR",
+                ["output"] = "json"
+            }
+        };
+
+        var (stdout, stderr, code) = await CaptureAsync(() => list.ExecuteAsync(ctx));
+        code.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("Claire");
+        stdout.Should().NotContain("Diego");
+    }
+
     private static async Task<(string StdOut, string StdErr, int ExitCode)> CaptureAsync(Func<Task<int>> action)
     {
         var originalOut = System.Console.Out;

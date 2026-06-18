@@ -14,7 +14,7 @@ public static class HelpCatalog
         new("show", "Afficher l'etat de jeu", "board, rack, scores, history"),
         new("rating", "Classement global", "show, leaderboard, stats"),
         new("dict", "Dictionnaire", "check, search, anagram"),
-        new("player", "Profil joueur local", "create, show, update"),
+        new("player", "Profil joueur local", "create, list, show, update"),
         new("tournament", "Tournoi", "create"),
         new("system", "Administration systeme", "setup, status, restart, clean, account.*")
     ];
@@ -394,6 +394,26 @@ public static class HelpCatalog
             [
                 "lama player create Carla",
                 "lama player create Carla --pseudo Krl --country FR --region Bretagne --birth-year 1995"
+            ]),
+        new(
+            CommandId: "player.list",
+            Group: "player",
+            ActionPath: "list",
+            Usage: "lama player list [--country <pays>] [--region <region>] [--output text|json|csv]",
+            Description: "Liste les profils joueurs avec leur niveau et rating.",
+            AllowedRoles: "Tous roles",
+            OutputFormats: "text, json, csv",
+            Options:
+            [
+                new("--country", "Filtre par pays"),
+                new("--region", "Filtre par region"),
+                new("--output", "Format de sortie (text|json|csv)")
+            ],
+            Examples:
+            [
+                "lama player list",
+                "lama player list --country FR",
+                "lama player list --region Bretagne --output json"
             ]),
         new(
             CommandId: "player.show",
