@@ -11,12 +11,12 @@ public sealed class PlayerEntityConfiguration : IEntityTypeConfiguration<PlayerE
         builder.ToTable("players", "rating");
 
         builder.HasKey(x => x.PlayerId);
-        builder.Property(x => x.PlayerId).HasDefaultValueSql("gen_random_uuid()");
+        builder.Property(x => x.PlayerId).HasColumnName("player_id").HasDefaultValueSql("gen_random_uuid()");
 
-        builder.Property(x => x.Username).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Username).HasColumnName("username").HasMaxLength(100).IsRequired();
         builder.HasIndex(x => x.Username).IsUnique();
 
-        builder.Property(x => x.CreatedAt).IsRequired();
+        builder.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
     }
 }
 

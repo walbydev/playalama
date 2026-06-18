@@ -310,42 +310,81 @@ app.MapPost("/api/games/{gameId}/moves", (string gameId, PlayMoveRequest request
     });
 });
 
-app.MapGet("/api/games/{gameId}", (string gameId, GameHubState state) =>
+app.MapGet("/api/games/{gameId}", async (string gameId, GameHubState state, LamaDbContext db, CancellationToken cancellationToken) =>
 {
-    if (!state.TryGet(gameId, out var game))
+    // Priority to in-memory state to preserve the current online flow.
+    if (state.TryGet(gameId, out var game))
+    {
+        lock (game)
+        {
+            var stateSnapshot = game.Engine.GetGameState();
+            return Results.Ok(new
+            {
+                game.Id,
+                game.GameLevel,
+                game.Queue,
+                game.BoardSize,
+                game.RackSize,
+                game.MinWordLength,
+                game.Language,
+                game.TournamentId,
+                game.CreatedAt,
+                game.UpdatedAt,
+                stateSnapshot.IsGameOver,
+                stateSnapshot.CurrentPlayerIndex,
+                stateSnapshot.TurnNumber,
+                players = game.Players.Select((player, index) => new
+                {
+                    player.PlayerId,
+                    player.PlayerName,
+                    player.IsHost,
+                    Score = stateSnapshot.Players[index].Score,
+                    Rack = stateSnapshot.Players[index].Rack,
+                    RackCount = stateSnapshot.Players[index].Rack.Count
+                }),
+                board = CaptureBoard(stateSnapshot.Board),
+                moves = game.Moves,
+                source = "memory"
+            });
+        }
+    }
+
+    // EF fallback for read-only persisted metadata.
+    if (!Guid.TryParse(gameId, out var gameGuid))
         return Results.NotFound(new { error = "game not found" });
 
-    lock (game)
+    var persistedGame = await db.SessionGames
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x => x.GameId == gameGuid, cancellationToken);
+
+    if (persistedGame is null)
+        return Results.NotFound(new { error = "game not found" });
+
+    var parsedLevel = ParseGameLevelToken(persistedGame.GameLevel);
+    var parsedQueue = ParseRankingQueueToken(persistedGame.Queue);
+    var isGameOver = string.Equals(persistedGame.Status, "ended", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(persistedGame.Status, "abandoned", StringComparison.OrdinalIgnoreCase);
+
+    return Results.Ok(new
     {
-        var stateSnapshot = game.Engine.GetGameState();
-        return Results.Ok(new
-        {
-            game.Id,
-            game.GameLevel,
-            game.Queue,
-            game.BoardSize,
-            game.RackSize,
-            game.MinWordLength,
-            game.Language,
-            game.TournamentId,
-            game.CreatedAt,
-            game.UpdatedAt,
-            stateSnapshot.IsGameOver,
-            stateSnapshot.CurrentPlayerIndex,
-            stateSnapshot.TurnNumber,
-            players = game.Players.Select((player, index) => new
-            {
-                player.PlayerId,
-                player.PlayerName,
-                player.IsHost,
-                Score = stateSnapshot.Players[index].Score,
-                Rack = stateSnapshot.Players[index].Rack,
-                RackCount = stateSnapshot.Players[index].Rack.Count
-            }),
-            board = CaptureBoard(stateSnapshot.Board),
-            moves = game.Moves
-        });
-    }
+        Id = persistedGame.GameId.ToString("N"),
+        GameLevel = parsedLevel,
+        Queue = parsedQueue,
+        persistedGame.BoardSize,
+        persistedGame.RackSize,
+        persistedGame.MinWordLength,
+        persistedGame.Language,
+        TournamentId = (string?)null,
+        persistedGame.CreatedAt,
+        persistedGame.UpdatedAt,
+        IsGameOver = isGameOver,
+        CurrentPlayerIndex = 0,
+        TurnNumber = 0,
+        players = Array.Empty<object>(),
+        board = Array.Empty<OnlineBoardTile>(),
+        moves = Array.Empty<object>(),
+        source = "database"
+    });
 });
 
 app.MapPost("/api/games/{gameId}/end", (string gameId, EndGameRequest request, GameHubState state) =>
@@ -444,6 +483,26 @@ static RankingQueue ResolveQueue(GameLevel level) => level switch
     GameLevel.Tournament => RankingQueue.Tournament,
     _ => RankingQueue.OpenRanked
 };
+
+static GameLevel ParseGameLevelToken(string token)
+{
+    if (Enum.TryParse<GameLevel>(token, ignoreCase: true, out var parsed))
+        return parsed;
+
+    return GameLevel.Standard;
+}
+
+static RankingQueue ParseRankingQueueToken(string token)
+{
+    return token.Trim().ToLowerInvariant() switch
+    {
+        "open" => RankingQueue.OpenRanked,
+        "tournament" => RankingQueue.Tournament,
+        "global" => RankingQueue.GlobalPrestige,
+        "casual" => RankingQueue.CasualUnranked,
+        _ => RankingQueue.OpenRanked
+    };
+}
 
 static async Task WriteEventAsync(HttpContext context, ServerEvent evt)
 {

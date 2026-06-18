@@ -1342,3 +1342,73 @@ Journal unique de progression du projet LAMA.
 - `src/Server/Lama.Server/appsettings.Development.json`
 - `docs/POSTGRESQL_QUICKSTART.md`
 - `docker-compose.postgresdev.yml`
+
+````
+This is the description of what the code block changes:
+<changeDescription>
+Journaliser la bascule du endpoint GET /api/games/{gameId} en mode hybride mémoire + fallback EF read-only
+</changeDescription>
+
+This is the code block that represents the suggested code change:
+```markdown
+## [2026-06-18 17:18:52 UTC] - Etape 1 livree: `GET /api/games/{gameId}` bascule hybride memoire + EF read-only
+
+### Contexte
+- Choix utilisateur: executer l'option `1` = basculer `GET /api/games/{gameId}` vers EF en lecture seule, sans casser le flow actuel.
+- Contraintes:
+  - Conserver compatibilite comportement actuel en memoire (`GameHubState`).
+  - Permettre lecture d'une partie persistée meme si non chargee en memoire.
+
+### Fait
+- Endpoint `GET /api/games/{gameId}` refactore en **mode hybride** dans `src/Server/Lama.Server/Program.cs`:
+  1. Priorite au state memoire (comportement actuel conserve)
+  2. Fallback EF read-only via `LamaDbContext.SessionGames` si partie absente en memoire
+- Reponse fallback EF compatible snapshot online:
+  - champs principaux (`id`, `gameLevel`, `queue`, `boardSize`, `rackSize`, etc.)
+  - `players`, `board`, `moves` renvoyes en listes vides tant que la couche `sessions.*` complete n'est pas branchee
+  - champ `source` ajoute (`memory` ou `database`) pour faciliter debug/observabilite
+- Ajout de helpers de parsing:
+  - `ParseGameLevelToken(...)`
+  - `ParseRankingQueueToken(...)`
+- Alignement mapping EF sur les tables SQL existantes (snake_case) pour eviter mismatch colonnes:
+  - `SessionGameEntityConfiguration`
+  - `CompletedGameEntityConfiguration`
+  - `PlayerEntityConfiguration`
+  - `PlayerRatingEntityConfiguration`
+  - `HasColumnName(...)` ajoute sur les proprietes clefs
+- Correctif de robustesse config prod:
+  - `appsettings.Production.json` ne contient plus de pseudo interpolation `${...}` non supportee par .NET config
+- Doc serveur completee:
+  - `src/Server/Lama.Server/README.md` note le fonctionnement hybride de `GET /api/games/{gameId}`
+
+### Verification executee
+- Build serveur: `dotnet build src/Server/Lama.Server/Lama.Server.csproj -c Debug` ✅
+- Test endpoint reel:
+  - insertion d'une partie de test en base (`sessions.games`)
+  - run serveur en `ASPNETCORE_ENVIRONMENT=Development`
+  - appel HTTP:
+    - `GET /api/games/11111111111111111111111111111111`
+    - resultat `200 OK` + payload avec `"source":"database"` ✅
+
+### En cours
+- Endpoint hybride fournit aujourd'hui un fallback metadata-level.
+- Les details riches (players/rack/board/moves persistes) restent a brancher via tables `sessions.players_in_game`, `sessions.turn_log`, etc.
+
+### A faire
+1. Etendre le fallback DB avec joueurs/coups persists (`players_in_game`, `turn_log`).
+2. Ajouter endpoint `game.list` read-only base (online) pour valider la navigation EF.
+3. Ajouter tests integration API + EF sur PostgreSQL dev.
+
+### Risques / Ecarts
+- Tant que `players/moves` fallback sont vides, certains clients online peuvent avoir une vue partielle d'une partie persistee hors memoire.
+
+### References
+- `src/Server/Lama.Server/Program.cs`
+- `src/Server/Lama.Server/Data/Configurations/SessionGameEntityConfiguration.cs`
+- `src/Server/Lama.Server/Data/Configurations/CompletedGameEntityConfiguration.cs`
+- `src/Server/Lama.Server/Data/Configurations/PlayerEntityConfiguration.cs`
+- `src/Server/Lama.Server/Data/Configurations/PlayerRatingEntityConfiguration.cs`
+- `src/Server/Lama.Server/appsettings.Production.json`
+- `src/Server/Lama.Server/README.md`
+```
+
