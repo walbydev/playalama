@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Lama.Contracts;
 using Lama.Server.Data;
+using Lama.Server.Endpoints;
 using Lama.Domain.Board;
 using Lama.Domain.Engine;
 using Lama.Languages.fr;
@@ -31,51 +32,8 @@ var allowShutdown = string.Equals(
     "true",
     StringComparison.OrdinalIgnoreCase);
 
-app.MapGet("/health", () => Results.Ok(new
-{
-    status = "ok",
-    utcNow = DateTimeOffset.UtcNow
-}));
-
-app.MapGet("/health/db", async (LamaDbContext db, CancellationToken cancellationToken) =>
-{
-    try
-    {
-        var canConnect = await db.Database.CanConnectAsync(cancellationToken);
-        if (!canConnect)
-            return Results.Problem(
-                statusCode: StatusCodes.Status503ServiceUnavailable,
-                title: "Database unavailable",
-                detail: "PostgreSQL is configured but not reachable.");
-
-        return Results.Ok(new
-        {
-            status = "ok",
-            provider = db.Database.ProviderName,
-            utcNow = DateTimeOffset.UtcNow
-        });
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem(
-            statusCode: StatusCodes.Status503ServiceUnavailable,
-            title: "Database healthcheck failed",
-            detail: ex.Message);
-    }
-});
-
-app.MapPost("/internal/shutdown", (IHostApplicationLifetime lifetime) =>
-{
-    if (!allowShutdown)
-        return Results.NotFound();
-
-    lifetime.StopApplication();
-    return Results.Ok(new
-    {
-        status = "stopping",
-        utcNow = DateTimeOffset.UtcNow
-    });
-});
+app.MapHealthEndpoints();
+app.MapInternalEndpoints(allowShutdown);
 
 app.MapPost("/api/games", (CreateGameRequest request, GameHubState state) =>
 {
