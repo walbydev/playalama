@@ -391,6 +391,37 @@ public class GameEngineTests
     }
 
     [Fact]
+    public void PlayMove_CrossingExistingLetter_DoesNotRequireLetterInRack()
+    {
+        var engine = CreateEngine();
+        engine.InitializeGame(["Alice"]);
+
+        // Premier mot: LA en H8-I8
+        ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
+        engine.PlayMove(new Dictionary<Position, char>
+        {
+            [new Position(7, 7)] = 'L',
+            [new Position(7, 8)] = 'A'
+        });
+
+        // Coup croisé: AME vertical depuis I8 (A déjà présent en I8).
+        // Le rack ne contient pas de A: seules M et E doivent être consommées.
+        ForceRack(engine, 0, ['M', 'E', 'T', 'O', 'N', 'S', 'R']);
+
+        var state = engine.PlayMove(new Dictionary<Position, char>
+        {
+            [new Position(7, 8)] = 'A',
+            [new Position(8, 8)] = 'M',
+            [new Position(9, 8)] = 'E'
+        });
+
+        state.Board.Grid[8, 8]!.Letter.Should().Be('M');
+        state.Board.Grid[9, 8]!.Letter.Should().Be('E');
+        state.Players[0].Rack.Should().HaveCount(7,
+            because: "seules les nouvelles lettres posees doivent etre consommees puis repiochees");
+    }
+
+    [Fact]
     public void PlayMove_IncrementsTurnNumber_AfterFullRound()
     {
         var engine = CreateEngine();

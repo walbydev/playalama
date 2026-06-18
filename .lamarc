@@ -1,0 +1,24 @@
+# Configuration shell locale pour LAMA - Projet Rider
+# Cette configuration est lue automatiquement par les shells dans Rider
+
+# Charger les variables d'environnement locales du projet
+export LAMA_PROJECT_ROOT="/home/philippe/RiderProjects/Games/Lama"
+export LAMA_CONSOLE_PROJECT="$LAMA_PROJECT_ROOT/src/Console/Lama.Console/Lama.Console.csproj"
+
+# Créer l'alias lama permanent
+alias lama="dotnet run --project '$LAMA_CONSOLE_PROJECT' --"
+
+# Alias utiles pour le débogage
+alias lama-build="dotnet build $LAMA_PROJECT_ROOT/Lama.slnx"
+alias lama-test="dotnet test $LAMA_PROJECT_ROOT/Lama.slnx"
+alias lama-clean="dotnet clean $LAMA_PROJECT_ROOT/Lama.slnx && rm -rf $LAMA_PROJECT_ROOT/**/bin $LAMA_PROJECT_ROOT/**/obj"
+
+# Pour les tests spécifiques au mode CLI
+alias lama-test-cli="dotnet test $LAMA_PROJECT_ROOT/tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj --logger 'console;verbosity=detailed'"
+
+# Variable pour les sessions de débogage
+export LAMA_SESSION_DIR="${TMPDIR:-/tmp}/lama-sessions"
+mkdir -p "$LAMA_SESSION_DIR"
+
+echo "✓ Environnement LAMA chargé (alias 'lama' disponible)"
+

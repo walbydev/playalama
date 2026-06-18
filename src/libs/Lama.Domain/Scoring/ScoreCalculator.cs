@@ -50,8 +50,9 @@ public sealed class ScoreCalculator
     {
         if (placements.Count == 0) return 0;
 
-        var wordScore     = 0;
+        var wordScore      = 0;
         var wordMultiplier = 1;
+        var newlyPlacedTiles = 0;
 
         foreach (var (pos, letter) in placements)
         {
@@ -64,6 +65,7 @@ public sealed class ScoreCalculator
 
             if (isNewSquare)
             {
+                newlyPlacedTiles++;
                 wordScore      += letterValue * bonus.LetterMultiplier;
                 wordMultiplier *= bonus.WordMultiplier;
             }
@@ -77,7 +79,7 @@ public sealed class ScoreCalculator
         var total = wordScore * wordMultiplier;
 
         // Bonus Scrabble : +50 pts si 7 lettres posées en un coup
-        if (placements.Count >= ScrabbleBonusTiles)
+        if (newlyPlacedTiles >= ScrabbleBonusTiles)
             total += ScrabbleBonus;
 
         return total;

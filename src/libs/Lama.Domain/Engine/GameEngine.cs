@@ -129,44 +129,49 @@ public sealed class GameEngine : IGameEngine
         EnsureInitialized();
         EnsureNotGameOver();
 
-        // 1. Vérifier que les lettres sont dans le rack du joueur courant
-        var wildcardPositions = ConsumeLettersFromRack(letters);
-
-        // 2. Valider le coup
+        // 1. Valider le coup (avant toute mutation du rack)
         var result = _moveValidator.Validate(letters, _board!, _isFirstMove);
         if (!result.IsValid)
             throw new GameException(result.ErrorMessage ?? "Coup invalide.");
+
+        // 2. Isoler les tuiles réellement nouvelles (les croisements existants ne consomment pas le rack)
+        var newPlacements = letters
+            .Where(kv => _board!.Grid[kv.Key.Row, kv.Key.Column] is null)
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+        // 3. Vérifier que les nouvelles lettres sont bien dans le rack du joueur courant
+        var wildcardPositions = ConsumeLettersFromRack(newPlacements);
 
         var score = _scoreCalculator.Calculate(letters, _board!, wildcardPositions);
 
         // 2b. Mémoriser l'état précédent pour permettre un challenge
         _lastMoveSnapshot = CaptureSnapshot();
 
-        // 3. Appliquer le coup sur le plateau
+        // 4. Appliquer les nouvelles lettres sur le plateau
         var newGrid = (Tile?[,])_board!.Grid.Clone();
-        foreach (var (pos, letter) in letters)
+        foreach (var (pos, letter) in newPlacements)
             newGrid[pos.Row, pos.Column] =
                 new Tile(char.ToUpperInvariant(letter), wildcardPositions.Contains(pos));
         _board = new BoardState(newGrid);
 
-        // 4. Mettre à jour le score du joueur courant
+        // 5. Mettre à jour le score du joueur courant
         _players![_currentPlayerIndex] = _players[_currentPlayerIndex] with
         {
             Score = _players[_currentPlayerIndex].Score + score
         };
 
-        // 5. Retirer les lettres jouées du rack et recompléter depuis le sac
+        // 6. Recompléter le rack selon le nombre réel de nouvelles tuiles posées
         var player  = _players[_currentPlayerIndex];
         var newRack = new List<char>(player.Rack);
 
-        var refill = _bag!.Draw(letters.Count);
+        var refill = _bag!.Draw(newPlacements.Count);
         newRack.AddRange(refill);
         _players[_currentPlayerIndex] = player with { Rack = newRack };
 
-        // 6. Le premier coup est joué
+        // 7. Le premier coup est joué
         _isFirstMove = false;
 
-        // 7. Vérifier si la partie est terminée (sac vide + rack vide)
+        // 8. Vérifier si la partie est terminée (sac vide + rack vide)
         if (_bag.IsEmpty && _players[_currentPlayerIndex].Rack.Count == 0)
         {
             _isGameOver = true;
@@ -174,14 +179,14 @@ public sealed class GameEngine : IGameEngine
 
         var playedTurn = _turnNumber;
 
-        // 8. Passer au joueur suivant
+        // 9. Passer au joueur suivant
         AdvancePlayer();
 
         _history.Add(new GameMove(
             TurnNumber: playedTurn,
             PlayerId: string.Empty,
             PlayerName: player.Name,
-            Placements: letters
+            Placements: newPlacements
                 .OrderBy(kv => kv.Key.Row)
                 .ThenBy(kv => kv.Key.Column)
                 .Select(kv => new MovePlacement(kv.Key.Row, kv.Key.Column, char.ToUpperInvariant(kv.Value)))

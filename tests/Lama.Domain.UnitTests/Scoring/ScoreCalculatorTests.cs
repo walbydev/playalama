@@ -317,5 +317,31 @@ public class ScoreCalculatorTests
             because: "6×A(1pt) sans bonus Scrabble = 6pts");
     }
 
+    [Fact]
+    public void Score_NoScrabbleBonus_WhenOnly6NewTiles_AndOneExistingTileIsIncluded()
+    {
+        // Une lettre existe deja au centre de la sequence (10,10).
+        var grid = new Tile?[15, 15];
+        grid[10, 10] = new Tile('A');
+        var board = new BoardState(grid);
+
+        // Le mot complet contient 7 lettres, mais seulement 6 nouvelles cases.
+        var placements = new Dictionary<Position, char>
+        {
+            [new Position(10, 7)] = 'A',
+            [new Position(10, 8)] = 'A',
+            [new Position(10, 9)] = 'A',
+            [new Position(10, 10)] = 'A', // deja present sur le plateau
+            [new Position(10, 11)] = 'A',
+            [new Position(10, 12)] = 'A',
+            [new Position(10, 13)] = 'A'
+        };
+
+        var score = _sut.Calculate(placements, board);
+
+        score.Should().Be(7,
+            because: "le bonus Scrabble ne s'applique que si 7 nouvelles tuiles sont posees");
+    }
+
     #endregion
 }
