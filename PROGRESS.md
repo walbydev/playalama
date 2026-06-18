@@ -435,6 +435,14 @@ Journal unique de progression du projet LAMA.
     - Charger -> `game.show --game-id`
   - La section Options affiche l'etat de session locale en direct.
 
+- **Aide CLI renforcee**:
+  - Ajout d'une aide contextuelle fonctionnelle:
+    - `lama help`
+    - `lama <groupe> --help`
+    - `lama <groupe> <action> --help`
+    - `lama help <groupe> <action>`
+  - `system.restart` documente explicitement comme redemarrage logique in-process (pas de restart de service OS externe).
+
 ### En cours / A faire
 - Definir un vrai modele metier de tournoi (aujourd'hui: `tournament.create` s'appuie sur une partie `GameLevel.Tournament`).
 - Ajouter un support explicite de notation joker cote CLI (`play.move`) pour choisir visuellement les lettres jokers si necessaire.
