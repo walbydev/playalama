@@ -442,6 +442,13 @@ Journal unique de progression du projet LAMA.
     - `lama <groupe> <action> --help`
     - `lama help <groupe> <action>`
   - `system.restart` documente explicitement comme redemarrage logique in-process (pas de restart de service OS externe).
+  - Niveau 2 implemente: catalogue d'aide centralise (`HelpCatalog`) avec metadonnees par commande:
+    - usage,
+    - options,
+    - exemples,
+    - ACL (roles),
+    - formats de sortie.
+  - Support de l'aide pour commandes multi-niveaux: `lama system account create --help`.
 
 ### En cours / A faire
 - Definir un vrai modele metier de tournoi (aujourd'hui: `tournament.create` s'appuie sur une partie `GameLevel.Tournament`).

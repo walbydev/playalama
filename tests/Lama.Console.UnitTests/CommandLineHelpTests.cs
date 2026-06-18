@@ -30,7 +30,9 @@ public sealed class CommandLineHelpTests
 
         exitCode.Should().Be(ExitCodes.Success);
         stderr.Should().BeEmpty();
-        stdout.Should().Contain("Actions : setup, status, restart");
+        stdout.Should().Contain("Administration systeme");
+        stdout.Should().Contain("status");
+        stdout.Should().Contain("restart");
     }
 
     [Fact]
@@ -42,8 +44,24 @@ public sealed class CommandLineHelpTests
 
         exitCode.Should().Be(ExitCodes.Success);
         stderr.Should().BeEmpty();
-        stdout.Should().Contain("redémarrage logique in-process");
-        stdout.Should().Contain("ne redémarre pas un service OS externe");
+        stdout.Should().Contain("Redemarrage logique in-process");
+        stdout.Should().Contain("ACL");
+        stdout.Should().Contain("Formats sortie");
+        stdout.Should().Contain("Ne redemarre pas un service OS externe");
+    }
+
+    [Fact]
+    public async Task CommandHelp_SystemAccountCreate_WorksWithThreeLevelPath()
+    {
+        var mode = CreateMode(["system", "account", "create", "--help"]);
+
+        var (stdout, stderr, exitCode) = await CaptureAsync(() => mode.RunAsync());
+
+        exitCode.Should().Be(ExitCodes.Success);
+        stderr.Should().BeEmpty();
+        stdout.Should().Contain("lama system account create <username>");
+        stdout.Should().Contain("ACL");
+        stdout.Should().Contain("SuperAdmin");
     }
 
     [Fact]

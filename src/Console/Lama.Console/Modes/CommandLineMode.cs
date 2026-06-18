@@ -105,10 +105,10 @@ public sealed class CommandLineMode : IConsoleMode
                 return true;
             }
 
-            var action = args[2].ToLowerInvariant();
-            if (!PrintCommandHelp(group, action))
+            var actionPath = string.Join(' ', args.Skip(2)).ToLowerInvariant();
+            if (!PrintCommandHelp(group, actionPath))
             {
-                global::System.Console.Error.WriteLine($"Commande inconnue : {group}.{action}");
+                global::System.Console.Error.WriteLine($"Commande inconnue : {group} {actionPath}");
                 exitCode = ExitCodes.InvalidArgument;
             }
 
@@ -126,11 +126,13 @@ public sealed class CommandLineMode : IConsoleMode
             return true;
         }
 
-        if (args.Count >= 3 && IsHelpToken(args[2]))
+        if (args.Count >= 3 && IsHelpToken(args[^1]))
         {
-            if (!PrintCommandHelp(args[0].ToLowerInvariant(), args[1].ToLowerInvariant()))
+            var group = args[0].ToLowerInvariant();
+            var actionPath = string.Join(' ', args.Skip(1).Take(args.Count - 2)).ToLowerInvariant();
+            if (!PrintCommandHelp(group, actionPath))
             {
-                global::System.Console.Error.WriteLine($"Commande inconnue : {args[0]}.{args[1]}");
+                global::System.Console.Error.WriteLine($"Commande inconnue : {group} {actionPath}");
                 exitCode = ExitCodes.InvalidArgument;
             }
 
@@ -153,143 +155,74 @@ public sealed class CommandLineMode : IConsoleMode
         global::System.Console.WriteLine("        lama help [groupe] [action]");
         global::System.Console.WriteLine();
         global::System.Console.WriteLine("Groupes :");
-        global::System.Console.WriteLine("  game        Gérer les parties (create, join, list, show, pause, save, end)");
-        global::System.Console.WriteLine("  play        Jouer (move, pass, swap, challenge, check)");
-        global::System.Console.WriteLine("  show        Afficher (board, rack, scores, history)");
-        global::System.Console.WriteLine("  dict        Dictionnaire (check, search, anagram)");
-        global::System.Console.WriteLine("  player      Profil joueur local (create)");
-        global::System.Console.WriteLine("  tournament  Tournoi (create)");
-        global::System.Console.WriteLine("  system      Système (setup, status, restart, account.*)");
+        foreach (var group in HelpCatalog.Groups)
+            global::System.Console.WriteLine(
+                $"  {group.Group,-10} {group.Summary} ({group.ActionsSummary})");
         global::System.Console.WriteLine();
         global::System.Console.WriteLine("Aide contextuelle :");
         global::System.Console.WriteLine("  lama game --help");
         global::System.Console.WriteLine("  lama play move --help");
+        global::System.Console.WriteLine("  lama system account create --help");
         global::System.Console.WriteLine("  lama help system restart");
         global::System.Console.WriteLine();
         global::System.Console.WriteLine("Options globales :");
-        global::System.Console.WriteLine("  -h, --help              Aide contextuelle");
-        global::System.Console.WriteLine("  -v, --version           Version du jeu");
-        global::System.Console.WriteLine("  -V, --verbose           Mode verbeux");
-        global::System.Console.WriteLine("  -q, --quiet             Mode silencieux");
-        global::System.Console.WriteLine("      --no-color          Désactive les couleurs ANSI");
-        global::System.Console.WriteLine("      --high-contrast     Mode contraste élevé");
-        global::System.Console.WriteLine("  -l, --lang <code>       Langue (fr, en, de, es, it)");
-        global::System.Console.WriteLine("  -o, --output <fmt>      Format de sortie (text, json, csv)");
-        global::System.Console.WriteLine("      --game-id <id>      Surcharge l'identifiant de partie (session)");
-        global::System.Console.WriteLine("      --player <id>       Surcharge l'identifiant joueur (session)");
+        foreach (var option in HelpCatalog.GlobalOptions)
+            global::System.Console.WriteLine($"  {option.Name,-24} {option.Description}");
     }
 
     private static bool PrintGroupHelp(string group)
     {
-        switch (group)
-        {
-            case "game":
-                global::System.Console.WriteLine("Usage : lama game <action> [arguments...] [options]");
-                global::System.Console.WriteLine("Actions : create, join, list, show, pause, save, end");
-                global::System.Console.WriteLine("Exemples :");
-                global::System.Console.WriteLine("  lama game create Alice --level standard");
-                global::System.Console.WriteLine("  lama game show --output json");
-                return true;
+        if (!HelpCatalog.TryGetGroup(group, out var helpGroup) || helpGroup is null)
+            return false;
 
-            case "play":
-                global::System.Console.WriteLine("Usage : lama play <action> [arguments...] [options]");
-                global::System.Console.WriteLine("Actions : move, pass, swap, challenge, check");
-                global::System.Console.WriteLine("Exemples :");
-                global::System.Console.WriteLine("  lama play move H8 LAMA H");
-                global::System.Console.WriteLine("  lama play swap --all");
-                return true;
-
-            case "show":
-                global::System.Console.WriteLine("Usage : lama show <action> [options]");
-                global::System.Console.WriteLine("Actions : board, rack, scores, history");
-                global::System.Console.WriteLine("Exemples :");
-                global::System.Console.WriteLine("  lama show board");
-                global::System.Console.WriteLine("  lama show history --output csv --last 10");
-                return true;
-
-            case "dict":
-                global::System.Console.WriteLine("Usage : lama dict <action> <arguments> [options]");
-                global::System.Console.WriteLine("Actions : check, search, anagram");
-                global::System.Console.WriteLine("Exemples :");
-                global::System.Console.WriteLine("  lama dict check lama");
-                global::System.Console.WriteLine("  lama dict anagram lam --min-length 2");
-                return true;
-
-            case "player":
-                global::System.Console.WriteLine("Usage : lama player create <nom>");
-                global::System.Console.WriteLine("Crée un profil local hors partie (session locale). ");
-                return true;
-
-            case "tournament":
-                global::System.Console.WriteLine("Usage : lama tournament create <nom> [--host <nom>]");
-                global::System.Console.WriteLine("Crée une partie de niveau Tournament et prépare la session hôte.");
-                return true;
-
-            case "system":
-                global::System.Console.WriteLine("Usage : lama system <action> [options]");
-                global::System.Console.WriteLine("Actions : setup, status, restart, account.create, account.list, account.revoke");
-                global::System.Console.WriteLine("Exemples :");
-                global::System.Console.WriteLine("  lama system status --output json");
-                global::System.Console.WriteLine("  lama system restart");
-                return true;
-
-            default:
-                return false;
-        }
+        global::System.Console.WriteLine($"Usage : lama {helpGroup.Group} <action> [arguments...] [options]");
+        global::System.Console.WriteLine(helpGroup.Summary);
+        global::System.Console.WriteLine();
+        global::System.Console.WriteLine("Commandes :");
+        foreach (var cmd in HelpCatalog.GetGroupCommands(helpGroup.Group))
+            global::System.Console.WriteLine($"  {cmd.ActionPath,-16} {cmd.Description}");
+        global::System.Console.WriteLine();
+        global::System.Console.WriteLine($"Exemple : lama help {helpGroup.Group} <action>");
+        return true;
     }
 
-    private static bool PrintCommandHelp(string group, string action)
+    private static bool PrintCommandHelp(string group, string actionPath)
     {
-        if (group == "system" && action == "restart")
+        if (!HelpCatalog.TryGetCommand(group, actionPath, out var command) || command is null)
+            return false;
+
+        global::System.Console.WriteLine($"Usage : {command.Usage}");
+        global::System.Console.WriteLine();
+        global::System.Console.WriteLine(command.Description);
+        global::System.Console.WriteLine();
+        global::System.Console.WriteLine($"ACL            : {command.AllowedRoles}");
+        global::System.Console.WriteLine($"Formats sortie : {command.OutputFormats}");
+
+        if (command.Options.Count > 0)
         {
-            global::System.Console.WriteLine("Usage : lama system restart");
             global::System.Console.WriteLine();
-            global::System.Console.WriteLine("Effectue un redémarrage logique in-process :");
-            global::System.Console.WriteLine("- vide le cache mémoire des sessions de jeu");
-            global::System.Console.WriteLine("- conserve les données persistées");
-            global::System.Console.WriteLine("- tente de recharger la partie active depuis la session");
+            global::System.Console.WriteLine("Options :");
+            foreach (var option in command.Options)
+                global::System.Console.WriteLine($"  {option.Name,-16} {option.Description}");
+        }
+
+        if (command.Examples.Count > 0)
+        {
             global::System.Console.WriteLine();
-            global::System.Console.WriteLine("Notes : cette commande ne redémarre pas un service OS externe.");
-            return true;
+            global::System.Console.WriteLine("Exemples :");
+            foreach (var example in command.Examples)
+                global::System.Console.WriteLine($"  {example}");
         }
 
-        if (group == "play" && action == "move")
+        if (command.Notes is { Count: > 0 })
         {
-            global::System.Console.WriteLine("Usage : lama play move <case> <mot> <direction>");
-            global::System.Console.WriteLine("Exemple : lama play move H8 LAMA H");
-            global::System.Console.WriteLine("Direction : H (horizontal) ou V (vertical)");
-            return true;
+            global::System.Console.WriteLine();
+            global::System.Console.WriteLine("Notes :");
+            foreach (var note in command.Notes)
+                global::System.Console.WriteLine($"- {note}");
         }
 
-        if (group == "game" && action == "create")
-        {
-            global::System.Console.WriteLine("Usage : lama game create [<hote>] [--level casual|standard|competitive|tournament]");
-            global::System.Console.WriteLine("Crée une nouvelle partie et initialise la session locale.");
-            return true;
-        }
-
-        if (group == "system" && action == "status")
-        {
-            global::System.Console.WriteLine("Usage : lama system status [--output text|json|csv]");
-            global::System.Console.WriteLine("Affiche l'état système: initialisation, comptes, parties persistées, session.");
-            return true;
-        }
-
-        if (group == "player" && action == "create")
-        {
-            global::System.Console.WriteLine("Usage : lama player create <nom>");
-            global::System.Console.WriteLine("Crée un profil joueur local (hors partie active).");
-            return true;
-        }
-
-        if (group == "tournament" && action == "create")
-        {
-            global::System.Console.WriteLine("Usage : lama tournament create <nom> [--host <nom>]");
-            global::System.Console.WriteLine("Crée une partie niveau Tournament et met à jour la session hôte.");
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     private static void PrintVersion()
