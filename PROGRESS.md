@@ -1412,3 +1412,42 @@ This is the code block that represents the suggested code change:
 - `src/Server/Lama.Server/README.md`
 ```
 
+
+## [2026-06-18 17:22:15 UTC] - Etape 2 livree: `GET /api/games` en mode hybride memoire + EF read-only
+
+### Contexte
+- Suite de la bascule hybride online: ajouter un endpoint de navigation globale des parties.
+- Objectif: exposer un listing online sans casser le flux runtime actuel base sur `GameHubState`.
+
+### Fait
+- Ajout de `GET /api/games` dans `src/Server/Lama.Server/Program.cs`.
+- Le endpoint fusionne:
+  - parties en memoire (`GameHubState`) en priorite,
+  - fallback EF read-only (`sessions.games`) pour les parties absentes en memoire.
+- Dedoublonnage par `gameId` (la source memoire prime).
+- Reponse standardisee avec `total` + `games[]` et metadonnees:
+  - `id`, `gameLevel`, `queue`, `boardSize`, `rackSize`, `status`, `isGameOver`, `players`, `moves`, `source`, timestamps.
+- Ajout d'un helper `NormalizeStatusToken(...)` pour durcir la normalisation des statuts persistés.
+- Documentation serveur mise a jour (`src/Server/Lama.Server/README.md`) pour inclure `GET /api/games`.
+
+### Verification executee
+- Build serveur: `dotnet build src/Server/Lama.Server/Lama.Server.csproj -c Debug` ✅
+- Smoke runtime en `Development` avec surcharge port:
+  - `GET /health` ✅
+  - `GET /api/games` ✅ (retour `200` avec `total` et `games[]`)
+
+### En cours
+- Les champs detaillees de fallback DB (`players`, `moves`) restent metadata-level (0) tant que les tables relationnelles `sessions.*` ne sont pas branchees cote endpoint.
+
+### A faire
+1. Ajouter tests d'integration API pour `GET /api/games` (priorite memoire + fallback DB + dedoublonnage).
+2. Etendre le fallback EF avec joueurs/coups quand `players_in_game` et `turn_log` seront connectes.
+
+### Risques / Ecarts
+- Tant que le fallback DB n'inclut pas les details joueurs/coups, le listing d'une partie persistee hors memoire peut rester partiel.
+
+### References
+- `src/Server/Lama.Server/Program.cs`
+- `src/Server/Lama.Server/README.md`
+- `src/Server/Lama.Server/Data/Models/Sessions/SessionGameEntity.cs`
+

@@ -133,6 +133,80 @@ app.MapPost("/api/games", (CreateGameRequest request, GameHubState state) =>
     });
 });
 
+app.MapGet("/api/games", async (GameHubState state, LamaDbContext db, CancellationToken cancellationToken) =>
+{
+    var merged = new Dictionary<string, OnlineGameListItem>(StringComparer.Ordinal);
+
+    foreach (var game in state.ListGames())
+    {
+        lock (game)
+        {
+            var stateSnapshot = game.Engine.GetGameState();
+            var status = stateSnapshot.IsGameOver ? "ended" : "active";
+
+            merged[game.Id] = new OnlineGameListItem(
+                Id: game.Id,
+                GameLevel: game.GameLevel,
+                Queue: game.Queue,
+                BoardSize: game.BoardSize,
+                RackSize: game.RackSize,
+                MinWordLength: game.MinWordLength,
+                Language: game.Language,
+                Status: status,
+                IsGameOver: stateSnapshot.IsGameOver,
+                Players: game.Players.Count,
+                Moves: game.Moves.Count,
+                CreatedAt: game.CreatedAt,
+                UpdatedAt: game.UpdatedAt,
+                Source: "memory");
+        }
+    }
+
+    var persistedGames = await db.SessionGames
+        .AsNoTracking()
+        .OrderByDescending(x => x.UpdatedAt)
+        .ToListAsync(cancellationToken);
+
+    foreach (var persistedGame in persistedGames)
+    {
+        var gameId = persistedGame.GameId.ToString("N");
+        if (merged.ContainsKey(gameId))
+            continue;
+
+        var parsedLevel = ParseGameLevelToken(persistedGame.GameLevel);
+        var parsedQueue = ParseRankingQueueToken(persistedGame.Queue);
+        var normalizedStatus = NormalizeStatusToken(persistedGame.Status);
+        var isGameOver = string.Equals(normalizedStatus, "ended", StringComparison.OrdinalIgnoreCase)
+                         || string.Equals(normalizedStatus, "abandoned", StringComparison.OrdinalIgnoreCase);
+
+        merged[gameId] = new OnlineGameListItem(
+            Id: gameId,
+            GameLevel: parsedLevel,
+            Queue: parsedQueue,
+            BoardSize: persistedGame.BoardSize,
+            RackSize: persistedGame.RackSize,
+            MinWordLength: persistedGame.MinWordLength,
+            Language: persistedGame.Language,
+            Status: normalizedStatus,
+            IsGameOver: isGameOver,
+            Players: 0,
+            Moves: 0,
+            CreatedAt: persistedGame.CreatedAt,
+            UpdatedAt: persistedGame.UpdatedAt,
+            Source: "database");
+    }
+
+    var ordered = merged.Values
+        .OrderByDescending(x => x.UpdatedAt)
+        .ToList();
+
+    return Results.Ok(new
+    {
+        total = ordered.Count,
+        games = ordered
+    });
+});
+
 app.MapPost("/api/games/{gameId}/join", (string gameId, JoinGameRequest request, GameHubState state) =>
 {
     if (string.IsNullOrWhiteSpace(request.PlayerName))
@@ -504,6 +578,14 @@ static RankingQueue ParseRankingQueueToken(string token)
     };
 }
 
+static string NormalizeStatusToken(string? token)
+{
+    if (string.IsNullOrWhiteSpace(token))
+        return "unknown";
+
+    return token.Trim().ToLowerInvariant();
+}
+
 static async Task WriteEventAsync(HttpContext context, ServerEvent evt)
 {
     var payloadJson = JsonSerializer.Serialize(evt.Payload);
@@ -637,6 +719,22 @@ public sealed record OnlineMove(
     IReadOnlyList<OnlineMovePlacement> Placements,
     int Score = 0);
 
+public sealed record OnlineGameListItem(
+    string Id,
+    GameLevel GameLevel,
+    RankingQueue Queue,
+    int BoardSize,
+    int RackSize,
+    int MinWordLength,
+    string Language,
+    string Status,
+    bool IsGameOver,
+    int Players,
+    int Moves,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    string Source);
+
 public sealed record OnlineScoreEntry(string PlayerName, int Score);
 public sealed record OnlineBoardTile(int Row, int Column, char Letter, bool IsWildcard);
 public sealed record OnlineMovePlacement(int Row, int Column, char Letter);
@@ -679,6 +777,8 @@ public sealed class GameHubState
     public bool Exists(string gameId) => _games.ContainsKey(gameId);
 
     public bool TryGet(string gameId, out OnlineGame game) => _games.TryGetValue(gameId, out game!);
+
+    public IReadOnlyList<OnlineGame> ListGames() => _games.Values.ToList();
 
     public SubscriberToken Subscribe(string gameId)
     {
