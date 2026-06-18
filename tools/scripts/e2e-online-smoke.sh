@@ -10,10 +10,12 @@ SESSION_DIR_GUEST="$(mktemp -d)"
 LOG_FILE="$(mktemp)"
 SERVER_PID=""
 SERVER_PORT=""
+SERVER_URL=""
+STARTED_LOCAL_SERVER=false
 
 cleanup() {
-  if [[ -n "$SERVER_PORT" ]]; then
-    curl -fsS -X POST "http://127.0.0.1:${SERVER_PORT}/internal/shutdown" >/dev/null 2>&1 || true
+  if [[ "$STARTED_LOCAL_SERVER" == "true" && -n "$SERVER_URL" ]]; then
+    curl -fsS -X POST "${SERVER_URL}/internal/shutdown" >/dev/null 2>&1 || true
   fi
 
   if [[ -n "$SERVER_PID" ]]; then
@@ -54,7 +56,7 @@ run_lama_with_session() {
   shift
 
   LAMA_RUNTIME_MODE=online \
-  LAMA_SERVER_URL="http://127.0.0.1:${SERVER_PORT}" \
+  LAMA_SERVER_URL="$SERVER_URL" \
   LAMA_SESSION_DIR="$session_dir" \
   dotnet run --project "$CONSOLE_PROJECT" -- "$@"
 }
@@ -95,27 +97,38 @@ PY
   fi
 }
 
-SERVER_PORT="$(find_free_port)"
-if [[ -z "$SERVER_PORT" ]]; then
-  echo "[E2E-ONLINE][ERREUR] Aucun port libre trouve entre 5100 et 5199" >&2
-  exit 1
+SERVER_URL="${LAMA_E2E_SERVER_URL:-}"
+SERVER_URL="${SERVER_URL%/}"
+
+if [[ -z "$SERVER_URL" ]]; then
+  SERVER_PORT="$(find_free_port)"
+  if [[ -z "$SERVER_PORT" ]]; then
+    echo "[E2E-ONLINE][ERREUR] Aucun port libre trouve entre 5100 et 5199" >&2
+    exit 1
+  fi
+
+  SERVER_URL="http://127.0.0.1:${SERVER_PORT}"
+  echo "[E2E-ONLINE] Demarrage serveur local sur ${SERVER_URL}"
+  LAMA_SERVER_ALLOW_SHUTDOWN=true \
+    dotnet run --project "$SERVER_PROJECT" --urls "$SERVER_URL" >| "$LOG_FILE" 2>&1 &
+  SERVER_PID=$!
+  STARTED_LOCAL_SERVER=true
+else
+  echo "[E2E-ONLINE] Utilisation du serveur distant ${SERVER_URL}"
 fi
 
-echo "[E2E-ONLINE] Demarrage serveur sur port ${SERVER_PORT}"
-LAMA_SERVER_ALLOW_SHUTDOWN=true \
-  dotnet run --project "$SERVER_PROJECT" --urls "http://127.0.0.1:${SERVER_PORT}" >| "$LOG_FILE" 2>&1 &
-SERVER_PID=$!
-
 for _ in $(seq 1 40); do
-  if curl -fsS "http://127.0.0.1:${SERVER_PORT}/health" >/dev/null 2>&1; then
+  if curl -fsS "${SERVER_URL}/health" >/dev/null 2>&1; then
     break
   fi
   sleep 0.2
 done
 
-if ! curl -fsS "http://127.0.0.1:${SERVER_PORT}/health" >/dev/null 2>&1; then
+if ! curl -fsS "${SERVER_URL}/health" >/dev/null 2>&1; then
   echo "[E2E-ONLINE][ERREUR] Le serveur n'a pas repondu a /health" >&2
-  tail -40 "$LOG_FILE" >&2 || true
+  if [[ "$STARTED_LOCAL_SERVER" == "true" ]]; then
+    tail -40 "$LOG_FILE" >&2 || true
+  fi
   exit 1
 fi
 
