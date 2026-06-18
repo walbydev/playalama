@@ -12,10 +12,10 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_lama_dev_data:/var/lib/postgresql/data
-      # Scripts d'initialisation (crées dans l'étape suivante)
-      # - ./scripts/postgres/01-init-schemas.sql:/docker-entrypoint-initdb.d/01-init-schemas.sql
-      # - ./scripts/postgres/02-init-tables.sql:/docker-entrypoint-initdb.d/02-init-tables.sql
-      # - ./scripts/postgres/03-seed-dev.sql:/docker-entrypoint-initdb.d/03-seed-dev.sql
+      # Scripts SQL auto-appliques au premier boot (volume vierge)
+      - ./tools/postgres/01-init-sessions-schema.sql:/docker-entrypoint-initdb.d/01-init-sessions-schema.sql:ro
+      - ./tools/postgres/02-init-history-schema.sql:/docker-entrypoint-initdb.d/02-init-history-schema.sql:ro
+      - ./tools/postgres/03-init-rating-schema.sql:/docker-entrypoint-initdb.d/03-init-rating-schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lama_dev"]
       interval: 10s

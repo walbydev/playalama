@@ -42,18 +42,19 @@ psql -h localhost -U lama_dev -d lama_dev \
   -c "SELECT version();"
 ```
 
-### 3. Appliquer les scripts d'initialisation
+### 3. Vérifier l'initialisation des schémas
 
 ```bash
-# Option A : Via docker exec (si les scripts ne sont pas auto-appliqués)
-docker exec postgres-lama-dev psql -U lama_dev -d lama_dev \
-  -f /docker-entrypoint-initdb.d/01-init-schemas.sql
+# Les scripts sous tools/postgres sont montes automatiquement
+# et executes au premier boot (volume vierge).
 
-# Option B : Via psql local
-psql -h localhost -U lama_dev -d lama_dev \
-  -f tools/postgres/01-init-sessions-schema.sql \
-  -f tools/postgres/02-init-history-schema.sql \
-  -f tools/postgres/03-init-rating-schema.sql
+# Verifier que les 3 schemas existent
+docker exec -it postgres-lama-dev psql -U lama_dev -d lama_dev -c "\dn"
+
+# Verifier quelques tables
+docker exec -it postgres-lama-dev psql -U lama_dev -d lama_dev -c "\dt sessions.*"
+docker exec -it postgres-lama-dev psql -U lama_dev -d lama_dev -c "\dt history.*"
+docker exec -it postgres-lama-dev psql -U lama_dev -d lama_dev -c "\dt rating.*"
 ```
 
 ## Accès aux interfaces
@@ -118,11 +119,11 @@ Le fichier `appsettings.Development.json` est automatiquement configuré pour se
 
 ```json
 "ConnectionStrings": {
-  "LamaServerDb": "Server=postgres-lama;Port=5432;Database=lama_dev;User Id=lama_dev;Password=dev_password_change_me;..."
+  "LamaServerDb": "Host=localhost;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;..."
 }
 ```
 
-**Note** : `postgres-lama` est le hostname du container Docker. Il reste valide tant que vous lancez Lama.Server depuis le même réseau Docker.
+**Note** : le serveur .NET est lance sur l'hote avec `dotnet run`, donc `Host=localhost` est le choix attendu.
 
 ### Lancer Lama.Server localement
 
@@ -157,6 +158,8 @@ docker compose -f docker-compose.postgresdev.yml down -v
 ```bash
 docker compose -f docker-compose.postgresdev.yml down -v
 docker compose -f docker-compose.postgresdev.yml up -d
+
+# Important: les scripts /docker-entrypoint-initdb.d sont rejoues seulement apres down -v
 ```
 
 ## Variables d'environnement
