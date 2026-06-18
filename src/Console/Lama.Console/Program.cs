@@ -11,6 +11,7 @@ using Lama.Contracts;
 using Lama.Core.UseCases;
 using Lama.Infrastructure.Auth;
 using Lama.Infrastructure.Persistence;
+using Lama.Infrastructure.Rating;
 using Lama.Infrastructure.Session;
 using Lama.Languages.fr;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +52,9 @@ try
             services.AddSingleton<IAccountService,  AccountService>();
             services.AddSingleton<IAuthService,     AuthService>();
             services.AddSingleton<IGameRepository,  JsonGameRepository>();
+            services.AddSingleton<PlayerRatingRepository>();
+            services.AddSingleton<GameResultRepository>();
+            services.AddSingleton<IPlayerRatingService, PlayerRatingService>();
 
             // ─── Services Contracts ──────────────────────────────────────────
             services.AddSingleton<IAccessControlService, AccessControlService>();
