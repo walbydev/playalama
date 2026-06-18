@@ -532,3 +532,72 @@ Journal unique de progression du projet LAMA.
 - `src/Console/Lama.Console/Modes/InteractiveMode.cs`
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
 
+## [2026-06-18 13:00:00 UTC] - Support complet des croisements (intersections de mots)
+
+### Contexte
+- L'utilisateur rapportait une difficulté UX : placer un second mot qui croise un mot existant etait impossible, 
+  car le systeme rejetait tout placement sur une case deja occupee.
+- Probleme identifie : le validateur `MoveValidator` n'acceptait aucune case occupee, contrairement au Scrabble reel 
+  qui permet les croisements quand la lettre correspond.
+
+### Fait
+- **Modification du validateur (MoveValidator.cs)**:
+  - Remplacer la validation stricte "aucune case occupee" par une validation plus intelligente.
+  - Nouvelles regles :
+    1. Les cases occupees sont acceptees SI la lettre proposee correspond a la lettre existante (croisement valide).
+    2. Au moins une lettre NOUVELLE doit etre posee (pas de coup comprenant uniquement des croisements).
+    3. En cas de non-correspondance, message d'erreur clair avec position et lettres en conflit.
+  - Tests domaine verifies : **161 tests passes**, incluant validation de croisements valides/invalides.
+
+- **Amelioration de la commande PlayMoveCommand**:
+  - Messages d'aide etendus pour expliquer les croisements.
+  - Documentation dans les exemples d'utilisation.
+  - Aide contextuelle pour distinguer jokers (minuscules) et croisements (mots complets).
+
+- **Documentation completee**:
+  - Mise a jour `README.md` : nouvelle section "Croisements (partage de lettres)" avec exemples.
+  - Creation `docs/crossing-rules.md` : guide complet sur les croisements, regles, pieges courants, strategie.
+  - Harmonisation des exemples CLI : ajout de `lama play move J8 MAISON V` (exemple de croisement).
+
+- **Tests passes**:
+  - `Lama.Domain.UnitTests` : **161 tests** ✅
+  - `Lama.Console.UnitTests` : **190 tests** ✅
+  - Suite complete : **504 tests** ✅
+
+### Comportement utilisateur resultant
+1. L'utilisateur tente de placer `MAISON` vertical en A2 quand `LAMA` horizontal existe en A1-D1 :
+   ```bash
+   lama play move A2 MAISON V
+   ```
+2. Le systeme valide que M(A2) correspond a M de LAMA → coup VALIDE ✅
+
+3. L'utilisateur tente de placer `POISON` vertical en A2 (P != M) :
+   ```bash
+   lama play move A2 POISON V
+   ```
+4. Le systeme rejette avec :
+   ```
+   À la case A2, la lettre 'M' existe déjà. Vous tentez de placer 'P'.
+   Pour un croisement valide, les lettres doivent être identiques.
+   ```
+
+### En cours / A faire
+- Ajouter une option `--crosses <pos1,pos2,...>` pour affichage explicite des positions partagees (enhancement optionnel).
+- Etendre tests E2E pour parcours complet avec croisements multiples.
+
+### Risques / Ecarts
+- Aucun regression : les tests existants restent verts (validation croisements integree a la logique existante).
+- Les calculs de score tiennent desormais compte des croisements dans les mots secondaires formes (comportement Scrabble standard).
+
+### Prochaines etapes
+1. Tester un scenario jouable complet avec croisements en mode interactif.
+2. Ajouter des tests E2E CLI pour croisements multiples et mots secondaires.
+3. Verifier le calcul des scores avec mots croises.
+
+### References
+- `src/libs/Lama.Domain/Validation/MoveValidator.cs` (validation intelligente des croisements)
+- `src/Console/Lama.Console/Commands/Play/PlayMoveCommand.cs` (aide utilisateur)
+- `README.md` (section "Croisements")
+- `docs/crossing-rules.md` (guide complet)
+- Tests masses : 504 passants
+

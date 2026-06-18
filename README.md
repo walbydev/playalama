@@ -49,6 +49,22 @@ L'application console prend en charge deux modes :
 - Tous les mots formés, principal et croisements, doivent être dans le dictionnaire
 - Longueur minimale : **2 lettres** par défaut
 
+### Croisements (partage de lettres)
+
+Quand vous posez un mot qui croise un mot existant :
+
+1. **Spécifiez le mot complet**, incluant la lettre du croisement
+2. **La lettre doit correspondre** à celle qui existe déjà sur le plateau
+3. Le système valide automatiquement les croisements
+
+**Exemple** : Si `LAMA` est déjà horizontal en H8, vous pouvez poser `MAISON`verticalement en J8 :
+```bash
+lama play move J8 MAISON V
+```
+Dans ce cas, le `M` de `MAISON` (en J8) croise avec le `M` de `LAMA` — c'est valide.
+
+Si vous tentez `MAISON` en J8 avec un `M` incompatible, le système rejette le placement avec un message clair.
+
 ### Fin de partie
 
 La partie se termine quand :
@@ -170,6 +186,8 @@ lama game create --size 19 --players 3 --time-limit 90
 bash
 # Poser un mot en H8 horizontalement
 lama play move H8 MAISON H
+# Poser un mot avec croisement
+lama play move J8 MAISON V
 # Poser un mot avec un joker
 lama play move H8 MAISON H --joker 3=I
 # Simuler un coup sans le jouer

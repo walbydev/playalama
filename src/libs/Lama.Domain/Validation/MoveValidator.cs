@@ -2,19 +2,20 @@ using Lama.Contracts;
 
 namespace Lama.Domain.Validation;
 
-/// <summary>
-/// Valide un coup selon les règles officielles Scrabble.
-///
-/// Règles vérifiées :
-/// 1. Le coup ne doit pas être vide.
-/// 2. Toutes les lettres doivent être sur la même ligne ou la même colonne (alignement).
-/// 3. Les cases ciblées ne doivent pas déjà être occupées.
-/// 4. Entre la première et la dernière lettre posée, toutes les cases intermédiaires
-///    doivent être soit posées maintenant, soit déjà occupées (pas de trou).
-/// 5. Premier coup : le mot doit passer par la case centrale H8 (7, 7).
-/// 6. Hors premier coup : le mot doit être adjacent (connexion) à au moins une tuile existante.
-/// 7. Le mot formé doit avoir au moins 2 lettres (posées + existantes contiguës).
-/// </summary>
+    /// <summary>
+    /// Valide un coup selon les règles officielles Scrabble.
+    ///
+    /// Règles vérifiées :
+    /// 1. Le coup doit avoir au moins une lettre (posée ou croisement valide).
+    /// 2. Toutes les lettres doivent être sur la même ligne ou la même colonne (alignement).
+    /// 3. Les croisements doivent avoir la même lettre que celle existante.
+    /// 4. Au moins une lettre doit être nouvellement posée (pas seulement des croisements).
+    /// 5. Entre la première et la dernière lettre, toutes les cases intermédiaires
+    ///    doivent être soit posées maintenant, soit déjà occupées (pas de trou).
+    /// 6. Premier coup : le mot doit passer par la case centrale H8 (7, 7).
+    /// 7. Hors premier coup : le mot doit être adjacent (connexion) à au moins une tuile existante.
+    /// 8. Le mot formé doit avoir au moins 2 lettres (posées + existantes contiguës).
+    /// </summary>
 public sealed class MoveValidator
 {
     private static readonly Position Center = new(7, 7);
@@ -45,19 +46,39 @@ public sealed class MoveValidator
         if (placements.Count == 0)
             return MoveValidationResult.Invalid("Un coup doit contenir au moins une lettre.");
 
-        // 2. Aucune case ne doit déjà être occupée
+        // 2. Chaque case doit soit être vide, soit avoir la même lettre (croisement valide)
+        var newLetterCount = 0;
         foreach (var (pos, letter) in placements)
         {
             if (!IsAllowedLetter(letter))
                 return MoveValidationResult.Invalid(
                     $"Lettre invalide '{letter}'. Utilisez A-Z ou '*' pour un joker.");
 
-            if (board.Grid[pos.Row, pos.Column] is not null)
-                return MoveValidationResult.Invalid(
-                    $"La case ({pos.Row},{pos.Column}) est déjà occupée.");
+            var existingTile = board.Grid[pos.Row, pos.Column];
+            if (existingTile is not null)
+            {
+                // Croisement : la lettre proposée doit correspondre à la lettre existante
+                var existingLetter = char.ToUpperInvariant(existingTile.Letter);
+                var proposedLetter = char.ToUpperInvariant(letter);
+                if (existingLetter != proposedLetter)
+                    return MoveValidationResult.Invalid(
+                        $"À la case {FormatPosition(pos)}, la lettre '{existingLetter}' existe déjà. " +
+                        $"Vous tentez de placer '{proposedLetter}'. " +
+                        $"Pour un croisement valide, les lettres doivent être identiques.");
+            }
+            else
+            {
+                newLetterCount++;
+            }
         }
 
-        // 3. Alignement : toutes sur la même ligne ou la même colonne
+        // 3. Au moins une lettre doit être nouvellement posée
+        if (newLetterCount == 0)
+            return MoveValidationResult.Invalid(
+                "Au moins une lettre doit être nouvellement posée. " +
+                "Un coup ne peut pas être constitué uniquement de croisements avec des lettres existantes.");
+
+        // 4. Alignement : toutes sur la même ligne ou la même colonne
         var rows = placements.Keys.Select(p => p.Row).Distinct().ToList();
         var cols = placements.Keys.Select(p => p.Column).Distinct().ToList();
 
@@ -68,7 +89,7 @@ public sealed class MoveValidator
             return MoveValidationResult.Invalid(
                 "Toutes les lettres doivent être sur la même ligne ou la même colonne.");
 
-        // 4. Pas de trou dans le mot (les cases intermédiaires doivent être occupées ou posées)
+        // 5. Pas de trou dans le mot (les cases intermédiaires doivent être occupées ou posées)
         if (isHorizontal)
         {
             var row    = rows[0];
@@ -98,7 +119,7 @@ public sealed class MoveValidator
             }
         }
 
-        // 5. Premier coup : doit passer par H8
+        // 6. Premier coup : doit passer par H8
         if (isFirstMove)
         {
             if (!placements.ContainsKey(Center))
@@ -113,13 +134,13 @@ public sealed class MoveValidator
             return MoveValidationResult.Valid();
         }
 
-        // 6. Hors premier coup : connexion obligatoire à au moins une tuile existante
+        // 7. Hors premier coup : connexion obligatoire à au moins une tuile existante
         var isConnected = placements.Keys.Any(pos => HasAdjacentTile(pos, board, placements));
         if (!isConnected)
             return MoveValidationResult.Invalid(
                 "Le mot doit être connecté aux lettres déjà présentes sur le plateau.");
 
-        // 7. Longueur minimale du mot formé (lettres posées + lettres existantes contiguës)
+        // 8. Longueur minimale du mot formé (lettres posées + lettres existantes contiguës)
         var wordLength = CountWordLength(placements, board, isHorizontal);
         if (wordLength < 2)
             return MoveValidationResult.Invalid(
@@ -198,6 +219,13 @@ public sealed class MoveValidator
 
             return end - start + 1;
         }
+    }
+
+    private static string FormatPosition(Position pos)
+    {
+        var col = (char)('A' + pos.Column);
+        var row = pos.Row + 1;
+        return $"{col}{row}";
     }
 
     private static bool IsAllowedLetter(char letter)

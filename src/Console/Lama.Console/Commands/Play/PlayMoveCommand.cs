@@ -11,9 +11,18 @@ namespace Lama.Console.Commands.Play;
 /// — pose un mot sur le plateau.
 ///
 /// Exemples :
-///   lama play move H8 LAMA H       (horizontal depuis H8)
-///   lama play move H8 LAMA V       (vertical depuis H8)
-///   lama play move A1 ZEN H --dry-run
+///   lama play move H8 LAMA H              (horizontal depuis H8, premier mot)
+///   lama play move H8 LAMA V              (vertical depuis H8)
+///   lama play move A1 ZEN H --dry-run     (simulation sans jouer)
+///   lama play move H8 MAISON H            (croisement : 'I' existe déjà)
+///
+/// Pour indiquer un croisement (lettre déjà existante) :
+/// - Posez simplement le mot complet en incluant la lettre existante
+/// - Par exemple, si 'I' est déjà en J8, tapez : lama play move H8 MAISON H
+/// - Le système valide que la même lettre 'I' se trouve à la position calculée
+///
+/// Jokers :
+///   lama play move H8 lAMA H      (le 'l' minuscule = joker représentant 'L')
 /// </summary>
 public sealed class PlayMoveCommand : ICommand
 {
@@ -50,9 +59,27 @@ public sealed class PlayMoveCommand : ICommand
             global::System.Console.Error.WriteLine(
                 "[play move] Usage : lama play move <case> <mot> <direction>");
             global::System.Console.Error.WriteLine(
-                "  Exemple : lama play move H8 LAMA H");
+                "");
             global::System.Console.Error.WriteLine(
-                "  Joker explicite : mettez la lettre en minuscule (ex: lAMA force un joker pour L)");
+                "  Exemples :");
+            global::System.Console.Error.WriteLine(
+                "    lama play move H8 LAMA H           — placer LAMA horizontalement en H8");
+            global::System.Console.Error.WriteLine(
+                "    lama play move H8 LAMA V           — placer LAMA verticalement en H8");
+            global::System.Console.Error.WriteLine(
+                "");
+            global::System.Console.Error.WriteLine(
+                "  Croisements (mots qui partagent des lettres):");
+            global::System.Console.Error.WriteLine(
+                "    lama play move H8 MAISON H         — si 'I' existe en J8, placer le mot complet");
+            global::System.Console.Error.WriteLine(
+                "    (la lettre 'I' doit correspondre à celle déjà posée)");
+            global::System.Console.Error.WriteLine(
+                "");
+            global::System.Console.Error.WriteLine(
+                "  Jokers (lettre minuscule = joker):");
+            global::System.Console.Error.WriteLine(
+                "    lama play move H8 lAMA H           — 'l' minuscule = joker pour 'L'");
             return ExitCodes.InvalidArgument;
         }
 
