@@ -479,3 +479,41 @@ Journal unique de progression du projet LAMA.
 - `src/libs/Lama.Domain/Validation/MoveValidator.cs`
 - `src/libs/Lama.Domain/Scoring/ScoreCalculator.cs`
 
+## [2026-06-18 10:35:00 UTC] - Focus gameplay: tour interactif + E2E formats game/show
+
+### Contexte
+- Objectif de transition apres le chantier aide CLI: avancer sur le jeu.
+- Priorites selectionnees: (2) tour de jeu en mode interactif, (3) E2E supplementaires sur formats `json/csv` pour `game.*` et `show.*`.
+
+### Fait
+- **Mode interactif enrichi** (`InteractiveMode`):
+  - Ajout d'une entree de menu `Jouer un tour`.
+  - Flux de tour connecte aux commandes reelles:
+    - `play.move`
+    - `play.pass`
+    - `play.swap` (avec confirmation `--all` ou saisie lettres)
+  - Construction d'un `CommandContext` lie a la session active (GameId/PlayerId/Role/GameLevel).
+
+- **Tests E2E processus reel supplements** (`RealCliE2ETests`):
+  - Verification `game.list --output json`.
+  - Verification `game.list --output csv`.
+  - Verification `game.show --output csv`.
+  - Verification `show scores --output json`.
+
+### En cours / A faire
+- Ajouter un rendu interactif in-loop apres chaque action (`show.board` + `show.rack` + `show.scores`) pour une experience de tour plus fluide.
+- Cadrer la navigation interactive pour challenge/check dans le meme sous-menu `Jouer un tour`.
+
+### Risques / Ecarts
+- Le mode interactif reste couple a des prompts sequentiels (pas encore boucle de partie unique continue).
+- Les tests E2E via `dotnet run` restent plus lents qu'une execution binaire precompilee.
+
+### Prochaines etapes
+1. Enchaîner automatiquement sur un mini tableau de bord (`board/rack/scores`) apres chaque action interactive.
+2. Ajouter un sous-menu `challenge/check` dans `Jouer un tour`.
+3. Etendre les E2E formats a `show.history` des qu'un scenario de coups deterministe est fixe.
+
+### References
+- `src/Console/Lama.Console/Modes/InteractiveMode.cs`
+- `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
+

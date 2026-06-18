@@ -89,6 +89,33 @@ public sealed class RealCliE2ETests : IDisposable
         tournamentCreate.StdOut.Should().Contain("Tournoi créé");
     }
 
+    [Fact]
+    public async Task Cli_RealProcess_GameAndShow_JsonCsvFormats_Work()
+    {
+        var create = await RunCliAsync("game", "create", "Alice");
+        create.ExitCode.Should().Be(0);
+
+        var listJson = await RunCliAsync("game", "list", "--output", "json");
+        listJson.ExitCode.Should().Be(0);
+        listJson.StdOut.Should().Contain("GameId");
+
+        var listCsv = await RunCliAsync("game", "list", "--output", "csv");
+        listCsv.ExitCode.Should().Be(0);
+        listCsv.StdOut.Should().Contain("gameId,level,players,isGameOver,turnNumber,updatedAt");
+
+        var showCsv = await RunCliAsync("game", "show", "--output", "csv");
+        showCsv.ExitCode.Should().Be(0);
+        showCsv.StdOut.Should().Contain("gameId,language,level,isGameOver,turnNumber,currentPlayer,players,tilesOnBoard,updatedAt");
+
+        var join = await RunCliAsync("game", "join", "Bob");
+        join.ExitCode.Should().Be(0);
+
+        var scoresJson = await RunCliAsync("show", "scores", "--output", "json");
+        scoresJson.ExitCode.Should().Be(0);
+        scoresJson.StdOut.Should().Contain("\"name\"");
+        scoresJson.StdOut.Should().Contain("\"score\"");
+    }
+
     private async Task<(int ExitCode, string StdOut, string StdErr)> RunCliAsync(params string[] args)
     {
         var psi = new ProcessStartInfo("dotnet")

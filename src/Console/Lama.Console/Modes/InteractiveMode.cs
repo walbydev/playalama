@@ -46,6 +46,7 @@ public sealed class InteractiveMode : IConsoleMode
                     .AddChoices(
                         "Nouvelle partie",
                         "Rejoindre une partie",
+                        "Jouer un tour",
                         "Charger une partie",
                         "Options",
                         "Quitter"));
@@ -54,6 +55,7 @@ public sealed class InteractiveMode : IConsoleMode
             {
                 "Nouvelle partie"       => await HandleNewGame(cancellationToken),
                 "Rejoindre une partie"  => await HandleJoinGame(cancellationToken),
+                "Jouer un tour"         => await HandlePlayTurn(cancellationToken),
                 "Charger une partie"    => await HandleLoadGame(cancellationToken),
                 "Options"               => await HandleOptions(cancellationToken),
                 "Quitter"               => ExitCodes.Success,
@@ -120,6 +122,37 @@ public sealed class InteractiveMode : IConsoleMode
         return await _dispatcher.DispatchAsync(context, cancellationToken);
     }
 
+    private async Task<int> HandlePlayTurn(CancellationToken cancellationToken)
+    {
+        var session = _sessionService.LoadSession();
+        if (session?.GameId is null || session.PlayerId is null)
+        {
+            AnsiConsole.MarkupLine("[yellow]Aucune partie active. Créez ou rejoignez une partie d'abord.[/]");
+            return ExitCodes.GameNotFound;
+        }
+
+        var action = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[green]Action de tour[/]")
+                .AddChoices("Jouer un mot", "Passer", "Echanger", "Retour"));
+
+        if (action == "Retour")
+            return ExitCodes.Success;
+
+        CommandContext? context = action switch
+        {
+            "Passer" => BuildSessionBoundContext("play", "pass", "play.pass", session),
+            "Jouer un mot" => BuildMoveContext(session),
+            "Echanger" => BuildSwapContext(session),
+            _ => null
+        };
+
+        if (context is null)
+            return ExitCodes.InvalidArgument;
+
+        return await _dispatcher.DispatchAsync(context, cancellationToken);
+    }
+
     private async Task<int> HandleLoadGame(CancellationToken cancellationToken)
     {
         var gameId = AnsiConsole.Prompt(
@@ -160,5 +193,69 @@ public sealed class InteractiveMode : IConsoleMode
             AnsiConsole.MarkupLine($"- MAJ     : [grey]{session.UpdatedAt:O}[/]");
         }
         return Task.FromResult(ExitCodes.Success);
+    }
+
+    private static CommandContext BuildMoveContext(SessionContext session)
+    {
+        var position = AnsiConsole.Prompt(
+            new TextPrompt<string>("[green]Position de depart (ex: H8) :[/]")
+                .Validate(value => !string.IsNullOrWhiteSpace(value)
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error("La position est requise.")));
+
+        var word = AnsiConsole.Prompt(
+            new TextPrompt<string>("[green]Mot :[/]")
+                .Validate(value => !string.IsNullOrWhiteSpace(value)
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error("Le mot est requis.")));
+
+        var direction = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[green]Direction[/]")
+                .AddChoices("H", "V"));
+
+        return BuildSessionBoundContext("play", "move", "play.move", session, [position, word, direction]);
+    }
+
+    private static CommandContext BuildSwapContext(SessionContext session)
+    {
+        var swapAll = AnsiConsole.Confirm("[green]Echanger tout le rack ?[/]", defaultValue: false);
+        if (swapAll)
+        {
+            return BuildSessionBoundContext(
+                "play", "swap", "play.swap", session,
+                options: new Dictionary<string, string?> { ["all"] = null });
+        }
+
+        var letters = AnsiConsole.Prompt(
+            new TextPrompt<string>("[green]Lettres a echanger (ex: AEI) :[/]")
+                .Validate(value => !string.IsNullOrWhiteSpace(value)
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error("Les lettres sont requises.")));
+
+        return BuildSessionBoundContext("play", "swap", "play.swap", session, [letters]);
+    }
+
+    private static CommandContext BuildSessionBoundContext(
+        string group,
+        string action,
+        string commandId,
+        SessionContext session,
+        IReadOnlyList<string>? arguments = null,
+        IReadOnlyDictionary<string, string?>? options = null)
+    {
+        return new CommandContext
+        {
+            Group = group,
+            Action = action,
+            CommandId = commandId,
+            Arguments = arguments ?? [],
+            Options = options ?? new Dictionary<string, string?>(),
+            GameId = session.GameId,
+            PlayerId = session.PlayerId,
+            PlayerName = session.PlayerName,
+            Role = session.Role,
+            GameLevel = session.GameLevel
+        };
     }
 }
