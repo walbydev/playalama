@@ -12,6 +12,7 @@ using Lama.Contracts;
 using Lama.Core.UseCases;
 using Lama.Infrastructure.Auth;
 using Lama.Infrastructure.Persistence;
+using Lama.Infrastructure.Profile;
 using Lama.Infrastructure.Rating;
 using Lama.Infrastructure.Session;
 using Lama.Languages.fr;
@@ -53,6 +54,7 @@ try
             services.AddSingleton<IAccountService,  AccountService>();
             services.AddSingleton<IAuthService,     AuthService>();
             services.AddSingleton<IGameRepository,  JsonGameRepository>();
+            services.AddSingleton<IPlayerProfileService, JsonPlayerProfileService>();
             services.AddSingleton<PlayerRatingRepository>();
             services.AddSingleton<GameResultRepository>();
             services.AddSingleton<IPlayerRatingService, PlayerRatingService>();
@@ -161,6 +163,8 @@ try
             // ─── Commandes — Player ──────────────────────────────────────────
             services.AddSingleton<PlayerCommand>();
             services.AddSingleton<ICommand, PlayerCreateCommand>();
+            services.AddSingleton<ICommand, PlayerShowCommand>();
+            services.AddSingleton<ICommand, PlayerUpdateCommand>();
 
             // ─── Commandes — Tournament ──────────────────────────────────────
             services.AddSingleton<TournamentCommand>();

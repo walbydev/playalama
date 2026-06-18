@@ -135,6 +135,8 @@ Le parser supporte:
 - `system.status`
 - `system.restart`
 - `player.create`
+- `player.show`
+- `player.update`
 - `tournament.create`
 
 ---

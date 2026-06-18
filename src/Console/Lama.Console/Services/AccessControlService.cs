@@ -140,6 +140,7 @@ public sealed class AccessControlService : IAccessControlService
             "game.save",
             "game.end",
             "player.create",
+            "player.update",
             "player.delete",
             "player.rename",
             "player.reset-stats",

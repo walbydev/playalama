@@ -23,6 +23,8 @@ public sealed class PlayerCommand
         global::System.Console.WriteLine("Usage : lama player <action> [arguments...] [options]");
         global::System.Console.WriteLine();
         global::System.Console.WriteLine("Actions :");
-        global::System.Console.WriteLine("  create <nom>    Crée un profil joueur");
+        global::System.Console.WriteLine("  create <nom>    Cree un profil joueur");
+        global::System.Console.WriteLine("  show [id]       Affiche profil + rating + stats");
+        global::System.Console.WriteLine("  update [id]     Met a jour pseudo/pays/region/naissance");
     }
 }

@@ -14,7 +14,7 @@ public static class HelpCatalog
         new("show", "Afficher l'etat de jeu", "board, rack, scores, history"),
         new("rating", "Classement global", "show, leaderboard, stats"),
         new("dict", "Dictionnaire", "check, search, anagram"),
-        new("player", "Profil joueur local", "create"),
+        new("player", "Profil joueur local", "create, show, update"),
         new("tournament", "Tournoi", "create"),
         new("system", "Administration systeme", "setup, status, restart, clean, account.*")
     ];
@@ -379,14 +379,52 @@ public static class HelpCatalog
             CommandId: "player.create",
             Group: "player",
             ActionPath: "create",
-            Usage: "lama player create <nom>",
-            Description: "Cree un profil joueur local hors partie active.",
+            Usage: "lama player create <nom> [--pseudo <pseudo>] [--country <pays>] [--region <region>] [--birth-year <yyyy>]",
+            Description: "Cree un profil joueur local hors partie active avec metadonnees optionnelles.",
             AllowedRoles: "Host, Player, Admin, SuperAdmin",
             OutputFormats: "text",
-            Options: [],
+            Options:
+            [
+                new("--pseudo", "Pseudo public optionnel"),
+                new("--country", "Pays optionnel"),
+                new("--region", "Region optionnelle"),
+                new("--birth-year", "Annee de naissance optionnelle")
+            ],
             Examples:
             [
-                "lama player create Carla"
+                "lama player create Carla",
+                "lama player create Carla --pseudo Krl --country FR --region Bretagne --birth-year 1995"
+            ]),
+        new(
+            CommandId: "player.show",
+            Group: "player",
+            ActionPath: "show",
+            Usage: "lama player show [playerId] [--output text|json|csv]",
+            Description: "Affiche le profil complet d'un joueur (identite + rating + stats).",
+            AllowedRoles: "Tous roles",
+            OutputFormats: "text, json, csv",
+            Options: [new("--output", "Format de sortie (text|json|csv)")],
+            Examples: ["lama player show", "lama player show alice --output json"]),
+        new(
+            CommandId: "player.update",
+            Group: "player",
+            ActionPath: "update",
+            Usage: "lama player update [playerId] [--name <nom>] [--pseudo <pseudo>] [--country <pays>] [--region <region>] [--birth-year <yyyy>]",
+            Description: "Met a jour les informations de profil d'un joueur.",
+            AllowedRoles: "Host, Player, Admin, SuperAdmin",
+            OutputFormats: "text",
+            Options:
+            [
+                new("--name", "Nom principal (display name)"),
+                new("--pseudo", "Pseudo public"),
+                new("--country", "Pays"),
+                new("--region", "Region"),
+                new("--birth-year", "Annee de naissance")
+            ],
+            Examples:
+            [
+                "lama player update --pseudo LlamaKing",
+                "lama player update alice --country FR --region Occitanie"
             ]),
         new(
             CommandId: "tournament.create",
