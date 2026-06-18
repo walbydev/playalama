@@ -77,6 +77,25 @@ public sealed class OnlineGameGateway
         return payload ?? throw new InvalidOperationException("Réponse serveur invalide sur game.show.");
     }
 
+    public async Task<OnlineEndGameResponse> EndGameAsync(
+        string gameId,
+        string? playerId,
+        CancellationToken cancellationToken)
+    {
+        EnsureOnlineMode();
+
+        var request = new
+        {
+            playerId
+        };
+
+        var response = await _httpClient.PostAsJsonAsync($"/api/games/{gameId}/end", request, cancellationToken);
+        await EnsureSuccessAsync(response, "game.end", cancellationToken);
+
+        var payload = await response.Content.ReadFromJsonAsync<OnlineEndGameResponse>(JsonOptions, cancellationToken);
+        return payload ?? throw new InvalidOperationException("Réponse serveur invalide sur game.end.");
+    }
+
     private void EnsureOnlineMode()
     {
         if (!_runtimeMode.IsOnline)
@@ -149,4 +168,13 @@ public sealed record OnlineSnapshotMove(
     string Command,
     JsonElement? Payload,
     DateTimeOffset PlayedAt);
+
+public sealed record OnlineEndGameResponse(
+    string GameId,
+    bool IsGameOver,
+    string? Winner,
+    List<OnlineScoreEntry> Scores,
+    DateTimeOffset EndedAt);
+
+public sealed record OnlineScoreEntry(string PlayerName, int Score);
 

@@ -210,6 +210,45 @@ app.MapGet("/api/games/{gameId}", (string gameId, GameHubState state) =>
     });
 });
 
+app.MapPost("/api/games/{gameId}/end", (string gameId, EndGameRequest request, GameHubState state) =>
+{
+    if (!state.TryGet(gameId, out var game))
+        return Results.NotFound(new { error = "game not found" });
+
+    List<OnlineScoreEntry> scores;
+
+    lock (game)
+    {
+        if (game.IsGameOver)
+            return Results.BadRequest(new { error = "game is already over" });
+
+        game.IsGameOver = true;
+        scores = game.Players
+            .Select(p => new OnlineScoreEntry(p.PlayerName, 0))
+            .ToList();
+    }
+
+    var endedAt = DateTimeOffset.UtcNow;
+
+    state.Publish(gameId, new ServerEvent("game.ended", new
+    {
+        gameId,
+        endedAt,
+        request.PlayerId,
+        scores,
+        winner = (string?)null
+    }));
+
+    return Results.Ok(new
+    {
+        gameId,
+        isGameOver = true,
+        winner = (string?)null,
+        scores,
+        endedAt
+    });
+});
+
 app.MapGet("/api/games/{gameId}/events", async (string gameId, GameHubState state, HttpContext httpContext) =>
 {
     if (!state.Exists(gameId))
@@ -279,6 +318,8 @@ public sealed record CreateGameRequest(
 
 public sealed record JoinGameRequest(string PlayerName);
 
+public sealed record EndGameRequest(string? PlayerId);
+
 public sealed record PlayMoveRequest(string PlayerId, string Command, JsonElement? Payload = null);
 
 public sealed class OnlineGame(
@@ -319,6 +360,8 @@ public sealed record OnlineMove(
     string Command,
     JsonElement? Payload,
     DateTimeOffset PlayedAt);
+
+public sealed record OnlineScoreEntry(string PlayerName, int Score);
 
 public sealed record ServerEvent(string Type, object Payload);
 

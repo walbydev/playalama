@@ -16,6 +16,8 @@ Serveur central autoritaire pour le mode multijoueur en ligne de commande.
 - `POST /api/games/{gameId}/moves`
 - `GET /api/games/{gameId}`
 - `GET /api/games/{gameId}/events` (SSE)
+- `POST /api/games/{gameId}/end`
+- `POST /internal/shutdown` (dev/test uniquement, active avec `LAMA_SERVER_ALLOW_SHUTDOWN=true`)
 
 ## Lancer en local
 

@@ -17,16 +17,38 @@ public sealed class GameEndCommand : ICommand
 
     private readonly EndGameUseCase  _endGameUseCase;
     private readonly ISessionService _sessionService;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<GameEndCommand> _logger;
+
+    /// <summary>
+    /// Constructeur de rétrocompatibilité (mode local uniquement).
+    /// </summary>
+    public GameEndCommand(
+        EndGameUseCase endGameUseCase,
+        ISessionService sessionService,
+        ILogger<GameEndCommand> logger)
+        : this(
+            endGameUseCase,
+            sessionService,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
+    {
+    }
 
     /// <summary>Initialise la commande.</summary>
     public GameEndCommand(
         EndGameUseCase  endGameUseCase,
         ISessionService sessionService,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
         ILogger<GameEndCommand> logger)
     {
         _endGameUseCase = endGameUseCase;
         _sessionService = sessionService;
+        _runtimeMode = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger         = logger;
     }
 
@@ -42,10 +64,32 @@ public sealed class GameEndCommand : ICommand
 
         try
         {
-            var response = await _endGameUseCase.ExecuteAsync(
-                new EndGameRequest(
-                    GameId: context.GameId,
-                    GameLevel: context.GameLevel));
+            string? winner;
+            IReadOnlyList<(string PlayerName, int Score)> scores;
+
+            if (_runtimeMode.IsOnline)
+            {
+                var onlineResponse = await _onlineGameGateway.EndGameAsync(
+                    context.GameId,
+                    context.PlayerId,
+                    cancellationToken);
+
+                winner = onlineResponse.Winner;
+                scores = onlineResponse.Scores
+                    .Select(s => (s.PlayerName, s.Score))
+                    .ToList()
+                    .AsReadOnly();
+            }
+            else
+            {
+                var response = await _endGameUseCase.ExecuteAsync(
+                    new EndGameRequest(
+                        GameId: context.GameId,
+                        GameLevel: context.GameLevel));
+
+                winner = response.Winner;
+                scores = response.Scores;
+            }
 
             // Afficher le classement final
             global::System.Console.WriteLine("═══════════════════════════════════");
@@ -53,15 +97,15 @@ public sealed class GameEndCommand : ICommand
             global::System.Console.WriteLine("═══════════════════════════════════");
             global::System.Console.WriteLine();
 
-            if (response.Winner is not null)
-                global::System.Console.WriteLine($"🏆 Gagnant : {response.Winner}");
+            if (winner is not null)
+                global::System.Console.WriteLine($"🏆 Gagnant : {winner}");
             else
                 global::System.Console.WriteLine("Égalité !");
 
             global::System.Console.WriteLine();
             global::System.Console.WriteLine("Classement final :");
             var rank = 1;
-            foreach (var (name, score) in response.Scores)
+            foreach (var (name, score) in scores)
             {
                 global::System.Console.WriteLine($"  {rank++}. {name,-20} {score,5} pts");
             }
@@ -77,6 +121,11 @@ public sealed class GameEndCommand : ICommand
         catch (GameException ex)
         {
             global::System.Console.Error.WriteLine($"[game end] Erreur : {ex.Message}");
+            return ExitCodes.GeneralError;
+        }
+        catch (HttpRequestException ex)
+        {
+            global::System.Console.Error.WriteLine($"[game end] Erreur online : {ex.Message}");
             return ExitCodes.GeneralError;
         }
     }
