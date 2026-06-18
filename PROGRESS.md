@@ -987,6 +987,88 @@ Journal unique de progression du projet LAMA.
 - `README.md`
 - `Lama.slnx`
 
+## [2026-06-18 10:25:33 UTC] - Runtime local/online branche (phase MVP multijoueur)
+
+### Contexte
+- Suite au bootstrap serveur alpha, besoin de commencer le routage effectif des commandes CLI selon le mode runtime.
+- Objectif: conserver le mode local intact et activer un premier flux online sans casser les tests.
+
+### Fait
+- Ajout d'un service runtime `RuntimeModeService` dans `Lama.Console`:
+  - `LAMA_RUNTIME_MODE=local|online`
+  - `LAMA_SERVER_URL` (defaut `http://127.0.0.1:5055`)
+- Ajout d'un gateway HTTP `OnlineGameGateway` (create/join/show).
+- `game.create`, `game.join`, `game.show` supportent maintenant:
+  - mode local (code existant),
+  - mode online (appel API `Lama.Server`).
+- DI `Program.cs` mis a jour pour injecter runtime + gateway.
+- Verifications executees:
+  - `dotnet build Lama.slnx -c Debug` ✅
+  - `dotnet test tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj -c Debug` ✅
+  - smoke online reel (`create` + `show`) contre `Lama.Server` ✅
+
+### En cours
+- Le routage online couvre seulement `game.create/join/show` (MVP initial).
+
+### A faire
+- Etendre au flux online complet (`play.*`, `game.end`, `show.*`, profils/rating online).
+- Ajouter auth API (JWT) + persistance serveur PostgreSQL.
+- Introduire tests E2E CLI online dedies (avec serveur lance dans le test harness).
+
+### Risques / Ecarts
+- Le serveur reste en memoire (etat perdu au restart).
+- L'absence d'auth dans cette phase alpha limite l'usage a un environnement de dev.
+
+### Prochaines etapes
+1. Ajouter un test E2E online automatise (create/join/show) dans `Lama.Console.UnitTests`.
+2. Brancher `game.end` online + publication event SSE associee.
+3. Demarrer la couche persistance serveur (PostgreSQL + schema minimal).
+
+### References
+- `src/Console/Lama.Console/Services/RuntimeModeService.cs`
+- `src/Console/Lama.Console/Services/OnlineGameGateway.cs`
+- `src/Console/Lama.Console/Commands/Game/GameCreateCommand.cs`
+- `src/Console/Lama.Console/Commands/Game/GameJoinCommand.cs`
+- `src/Console/Lama.Console/Commands/Game/GameShowCommand.cs`
+- `src/Server/Lama.Server/Program.cs`
+
+## [2026-06-18 10:33:55 UTC] - Arret serveur propre + script e2e online dedie
+
+### Contexte
+- Besoin de fiabiliser les tests online pour eviter les faux positifs lies aux anciens processus et conflits de port.
+- Demande explicite de disposer d'un script dans `tools/scripts`.
+
+### Fait
+- Ajout d'un endpoint interne d'arret propre dans `Lama.Server`:
+  - `POST /internal/shutdown`
+  - active uniquement si `LAMA_SERVER_ALLOW_SHUTDOWN=true`.
+- Ajout du script `tools/scripts/e2e-online-smoke.sh`:
+  - demarre le serveur sur un port libre,
+  - execute un scenario online reel (`create -> join -> show`),
+  - arrete le serveur via endpoint de shutdown,
+  - nettoie sessions temporaires et logs.
+- Documentation AGENTS mise a jour pour inclure le script online.
+
+### En cours
+- Etendre ce smoke script vers `play.*` et `game.end` online quand ces routes seront branchees.
+
+### A faire
+- Ajouter un test unitaire/integration qui couvre explicitement le endpoint `/internal/shutdown` (mode allow on/off).
+- Ajouter une variante script pour mode CI non-interactif.
+
+### Risques / Ecarts
+- Endpoint shutdown reserve au dev/test (gate env), ne pas exposer tel quel en production.
+
+### Prochaines etapes
+1. Ajouter `game.end` online et l'integrer au script online smoke.
+2. Introduire persistance serveur (PostgreSQL) et rejouer le smoke online.
+3. Ajouter auth API et durcir le scenario online multi-session.
+
+### References
+- `src/Server/Lama.Server/Program.cs`
+- `tools/scripts/e2e-online-smoke.sh`
+- `docs/AGENTS.md`
+
 ## [2026-06-18 09:40:01 UTC] - Synchronisation documentaire (AGENTS / README / PROGRESS)
 
 ### Contexte

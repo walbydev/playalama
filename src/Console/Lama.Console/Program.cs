@@ -54,6 +54,20 @@ try
             services.AddSingleton<IAccountService,  AccountService>();
             services.AddSingleton<IAuthService,     AuthService>();
             services.AddSingleton<IGameRepository,  JsonGameRepository>();
+            services.AddSingleton<RuntimeModeService>();
+            services.AddSingleton<OnlineGameGateway>(provider =>
+            {
+                var runtime = provider.GetRequiredService<RuntimeModeService>();
+                var httpClient = new HttpClient
+                {
+                    BaseAddress = new Uri(runtime.ServerBaseUrl)
+                };
+
+                return new OnlineGameGateway(
+                    httpClient,
+                    runtime,
+                    provider.GetRequiredService<ILogger<OnlineGameGateway>>());
+            });
             services.AddSingleton<IPlayerProfileService, JsonPlayerProfileService>();
             services.AddSingleton<PlayerRatingRepository>();
             services.AddSingleton<GameResultRepository>();

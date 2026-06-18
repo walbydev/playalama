@@ -20,16 +20,38 @@ public sealed class GameCreateCommand : ICommand
 
     private readonly CreateGameUseCase _createGameUseCase;
     private readonly ISessionService   _sessionService;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<GameCreateCommand> _logger;
+
+    /// <summary>
+    /// Constructeur de rétrocompatibilité (mode local uniquement).
+    /// </summary>
+    public GameCreateCommand(
+        CreateGameUseCase createGameUseCase,
+        ISessionService sessionService,
+        ILogger<GameCreateCommand> logger)
+        : this(
+            createGameUseCase,
+            sessionService,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
+    {
+    }
 
     /// <summary>Initialise la commande.</summary>
     public GameCreateCommand(
         CreateGameUseCase createGameUseCase,
         ISessionService   sessionService,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
         ILogger<GameCreateCommand> logger)
     {
         _createGameUseCase = createGameUseCase;
         _sessionService    = sessionService;
+        _runtimeMode       = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger            = logger;
     }
 
@@ -55,13 +77,31 @@ public sealed class GameCreateCommand : ICommand
 
         try
         {
-            var request  = new CreateGameRequest(hostName, language: context.Lang, gameLevel: gameLevel);
-            var response = await _createGameUseCase.ExecuteAsync(request);
+            string gameId;
+            string hostPlayerId;
+
+            if (_runtimeMode.IsOnline)
+            {
+                var response = await _onlineGameGateway.CreateGameAsync(
+                    hostName,
+                    gameLevel,
+                    context.Lang,
+                    cancellationToken);
+                gameId = response.GameId;
+                hostPlayerId = response.HostPlayerId;
+            }
+            else
+            {
+                var request  = new CreateGameRequest(hostName, language: context.Lang, gameLevel: gameLevel);
+                var response = await _createGameUseCase.ExecuteAsync(request);
+                gameId = response.GameId;
+                hostPlayerId = response.HostPlayerId;
+            }
 
             // Persister la session
             var session = new SessionContext(
-                GameId:         response.GameId,
-                PlayerId:       response.HostPlayerId,
+                GameId:         gameId,
+                PlayerId:       hostPlayerId,
                 PlayerName:     hostName,
                 Role:           Role.Host,
                 GameLevel:      gameLevel,
@@ -72,7 +112,8 @@ public sealed class GameCreateCommand : ICommand
 
             _sessionService.SaveSession(session);
 
-            global::System.Console.WriteLine($"✓ Partie créée (ID : {response.GameId})");
+            global::System.Console.WriteLine($"✓ Partie créée (ID : {gameId})");
+            global::System.Console.WriteLine($"  Mode      : {(_runtimeMode.IsOnline ? "online" : "local")}");
             global::System.Console.WriteLine($"  Hôte      : {hostName}");
             global::System.Console.WriteLine($"  Niveau    : {gameLevel}");
             global::System.Console.WriteLine($"  Session   : {_sessionService.SessionFilePath}");
@@ -80,12 +121,17 @@ public sealed class GameCreateCommand : ICommand
             global::System.Console.WriteLine("Les autres joueurs peuvent rejoindre avec :");
             global::System.Console.WriteLine("  lama game join <nom>");
 
-            _logger.LogInformation("Partie créée : {GameId} par {Host}", response.GameId, hostName);
+            _logger.LogInformation("Partie créée : {GameId} par {Host}", gameId, hostName);
             return ExitCodes.Success;
         }
         catch (GameException ex)
         {
             global::System.Console.Error.WriteLine($"[game create] Erreur : {ex.Message}");
+            return ExitCodes.GeneralError;
+        }
+        catch (HttpRequestException ex)
+        {
+            global::System.Console.Error.WriteLine($"[game create] Erreur online : {ex.Message}");
             return ExitCodes.GeneralError;
         }
     }

@@ -45,6 +45,7 @@ Lama.Core            <- Use cases applicatifs
 Lama.Infrastructure  <- Persistance JSON, session, auth, comptes
        ^
 Lama.Console         <- CLI (Program, modes, parser, commandes)
+Lama.Server          <- API multijoueur centralisee (alpha)
 
 Lama.Languages.fr    <- Provider langue FR (dico + scores)
 ```
@@ -59,6 +60,15 @@ Lama.Languages.fr    <- Provider langue FR (dico + scores)
 | `src/libs/Lama.Infrastructure` | Repository JSON, session locale, auth/token, comptes |
 | `src/libs/Lama.Languages.fr` | Provider francais implemente |
 | `src/Console/Lama.Console` | Point d'entree + commandes CLI + mode interactif (partiel) |
+| `src/Server/Lama.Server` | API HTTP minimale multijoueur (create/join/show/moves + SSE) |
+
+### Modes d'execution CLI
+
+- `local` (defaut) : persistance locale JSON, hors-ligne.
+- `online` (alpha) : commandes `game.create/join/show` routees vers `Lama.Server`.
+- Variables d'environnement:
+  - `LAMA_RUNTIME_MODE=local|online`
+  - `LAMA_SERVER_URL=http://127.0.0.1:5055`
 
 ---
 
@@ -216,6 +226,9 @@ Le parser supporte:
 
 # Lancer la console
  dotnet run --project src/Console/Lama.Console
+
+# E2E online (serveur central + CLI)
+ tools/scripts/e2e-online-smoke.sh
 ```
 
 ---

@@ -9,11 +9,29 @@ builder.Services.AddSingleton<GameHubState>();
 
 var app = builder.Build();
 
+var allowShutdown = string.Equals(
+    Environment.GetEnvironmentVariable("LAMA_SERVER_ALLOW_SHUTDOWN"),
+    "true",
+    StringComparison.OrdinalIgnoreCase);
+
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "ok",
     utcNow = DateTimeOffset.UtcNow
 }));
+
+app.MapPost("/internal/shutdown", (IHostApplicationLifetime lifetime) =>
+{
+    if (!allowShutdown)
+        return Results.NotFound();
+
+    lifetime.StopApplication();
+    return Results.Ok(new
+    {
+        status = "stopping",
+        utcNow = DateTimeOffset.UtcNow
+    });
+});
 
 app.MapPost("/api/games", (CreateGameRequest request, GameHubState state) =>
 {

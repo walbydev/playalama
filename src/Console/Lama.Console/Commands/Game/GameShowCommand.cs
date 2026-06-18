@@ -16,31 +16,101 @@ public sealed class GameShowCommand : ICommand
     public string CommandId => "game.show";
 
     private readonly IGameRepository _gameRepository;
+    private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<GameShowCommand> _logger;
 
-    /// <summary>Initialise la commande.</summary>
+    /// <summary>
+    /// Constructeur de rétrocompatibilité (mode local uniquement).
+    /// </summary>
     public GameShowCommand(IGameRepository gameRepository, ILogger<GameShowCommand> logger)
+        : this(
+            gameRepository,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
+    {
+    }
+
+    /// <summary>Initialise la commande.</summary>
+    public GameShowCommand(
+        IGameRepository gameRepository,
+        RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
+        ILogger<GameShowCommand> logger)
     {
         _gameRepository = gameRepository;
+        _runtimeMode = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken = default)
+    public async Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken = default)
     {
         var gameId = context.GetArgument(0) ?? context.GameId;
         if (string.IsNullOrWhiteSpace(gameId))
         {
             global::System.Console.Error.WriteLine(
                 "[game show] Aucun gameId fourni et aucune session active.");
-            return Task.FromResult(ExitCodes.InvalidArgument);
+            return ExitCodes.InvalidArgument;
+        }
+
+        if (_runtimeMode.IsOnline)
+        {
+            try
+            {
+                var onlineGame = await _onlineGameGateway.GetGameAsync(gameId, cancellationToken);
+
+                var onlineCurrentPlayer =
+                    onlineGame.CurrentPlayerIndex >= 0 && onlineGame.CurrentPlayerIndex < onlineGame.Players.Count
+                        ? onlineGame.Players[onlineGame.CurrentPlayerIndex].PlayerName
+                        : "inconnu";
+
+                switch (context.OutputFormat.ToLowerInvariant())
+                {
+                    case "json":
+                        global::System.Console.WriteLine(JsonSerializer.Serialize(onlineGame));
+                        break;
+
+                    case "csv":
+                        global::System.Console.WriteLine("gameId,level,queue,isGameOver,currentPlayer,players,moves,createdAt");
+                        global::System.Console.WriteLine(
+                            $"{onlineGame.Id},{onlineGame.GameLevel},{onlineGame.Queue},{onlineGame.IsGameOver},{onlineCurrentPlayer},{onlineGame.Players.Count},{onlineGame.Moves.Count},{onlineGame.CreatedAt:O}");
+                        break;
+
+                    default:
+                        global::System.Console.WriteLine($"Partie online : {onlineGame.Id}");
+                        global::System.Console.WriteLine($"  Niveau        : {onlineGame.GameLevel}");
+                        global::System.Console.WriteLine($"  Queue         : {onlineGame.Queue}");
+                        global::System.Console.WriteLine($"  Statut        : {(onlineGame.IsGameOver ? "terminee" : "active")}");
+                        global::System.Console.WriteLine($"  Joueur courant: {onlineCurrentPlayer}");
+                        global::System.Console.WriteLine($"  Coups joues   : {onlineGame.Moves.Count}");
+                        global::System.Console.WriteLine("  Joueurs       :");
+
+                        foreach (var player in onlineGame.Players)
+                        {
+                            global::System.Console.WriteLine(
+                                $"    - {player.PlayerName,-15} id: {player.PlayerId}");
+                        }
+                        break;
+                }
+
+                _logger.LogInformation("{CommandId} online : details affiches pour {GameId}", CommandId, onlineGame.Id);
+                return ExitCodes.Success;
+            }
+            catch (HttpRequestException ex)
+            {
+                global::System.Console.Error.WriteLine($"[game show] Erreur online : {ex.Message}");
+                return ExitCodes.GeneralError;
+            }
         }
 
         var game = _gameRepository.Load(gameId);
         if (game is null)
         {
             global::System.Console.Error.WriteLine($"[game show] Partie introuvable : {gameId}");
-            return Task.FromResult(ExitCodes.GameNotFound);
+            return ExitCodes.GameNotFound;
         }
 
         var currentPlayer =
@@ -93,6 +163,6 @@ public sealed class GameShowCommand : ICommand
         }
 
         _logger.LogInformation("{CommandId} : details affiches pour {GameId}", CommandId, game.GameId);
-        return Task.FromResult(ExitCodes.Success);
+        return ExitCodes.Success;
     }
 }
