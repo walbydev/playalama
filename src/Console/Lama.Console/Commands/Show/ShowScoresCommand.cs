@@ -60,12 +60,23 @@ public sealed class ShowScoresCommand : ICommand
             {
                 var snapshot = await _onlineGameGateway.GetGameAsync(context.GameId, cancellationToken);
 
-                global::System.Console.WriteLine($"Partie online {snapshot.Id} — Scores :");
-                global::System.Console.WriteLine(new string('─', 42));
-
                 var sortedPlayers = snapshot.Players
                     .OrderByDescending(p => p.Score)
                     .ToList();
+
+                if (context.OutputFormat == "json")
+                {
+                    global::System.Console.WriteLine(JsonSerializer.Serialize(sortedPlayers.Select(p => new
+                    {
+                        name = p.PlayerName,
+                        score = p.Score,
+                        isCurrent = snapshot.Players.FindIndex(sp => sp.PlayerId == p.PlayerId) == snapshot.CurrentPlayerIndex
+                    })));
+                    return ExitCodes.Success;
+                }
+
+                global::System.Console.WriteLine($"Tour {snapshot.TurnNumber} — Scores :");
+                global::System.Console.WriteLine(new string('─', 42));
 
                 for (var i = 0; i < sortedPlayers.Count; i++)
                 {
@@ -76,14 +87,6 @@ public sealed class ShowScoresCommand : ICommand
 
                 global::System.Console.WriteLine(new string('─', 42));
 
-                if (context.OutputFormat == "json")
-                {
-                    global::System.Console.WriteLine(JsonSerializer.Serialize(snapshot.Players.Select(p => new
-                    {
-                        name = p.PlayerName,
-                        score = p.Score
-                    })));
-                }
 
                 return ExitCodes.Success;
             }

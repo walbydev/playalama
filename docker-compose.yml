@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  lama-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lama-server
+    networks:
+      - lama-network
+    environment:
+      ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_ENVIRONMENT: "Production"
+      LAMA_SERVER_ALLOW_SHUTDOWN: "false"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./assets/languages:/app/assets/languages:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-playalama
+    networks:
+      - lama-network
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./tools/docker/nginx-playalama.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/letsencrypt:ro
+      - ./certbot-webroot:/var/www/certbot:ro
+    depends_on:
+      - lama-server
+    restart: unless-stopped
+
+  # Optional: Certbot for SSL certificate management
+  certbot:
+    image: certbot/certbot
+    container_name: certbot-playalama
+    volumes:
+      - ./certs:/etc/letsencrypt
+      - ./certbot-webroot:/var/www/certbot
+    entrypoint: /bin/sh -c "certbot certonly --webroot -w /var/www/certbot -d playalama.online -d www.playalama.online --non-interactive --agree-tos -m admin@playalama.online || true"
+    profiles: ["certbot"]
+
+networks:
+  lama-network:
+    driver: bridge
+
+volumes:
+  lama-logs:
+  nginx-certs:
+

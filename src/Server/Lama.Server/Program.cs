@@ -167,10 +167,14 @@ app.MapPost("/api/games/{gameId}/moves", (string gameId, PlayMoveRequest request
     List<char>? newRack = null;
     int nextCurrentPlayerIndex;
     string? nextPlayerId;
+    int playedTurn = 0;
+    List<OnlineMovePlacement> placements = [];
 
     lock (game)
     {
         var currentState = game.Engine.GetGameState();
+        playedTurn = currentState.TurnNumber;
+
         if (currentState.IsGameOver)
             return Results.BadRequest(new { error = "game is over" });
 
@@ -203,8 +207,15 @@ app.MapPost("/api/games/{gameId}/moves", (string gameId, PlayMoveRequest request
                     if (!validation.IsValid)
                         return Results.BadRequest(new { error = validation.ErrorMessage });
 
-                    score = validation.Score;
                     var stateAfterMove = game.Engine.PlayMove(letters);
+                    var historyEntry = stateAfterMove.History.LastOrDefault()
+                        ?? throw new GameException("Historique moteur introuvable apres play.move.");
+
+                    playedTurn = historyEntry.TurnNumber;
+                    score = historyEntry.Score;
+                    placements = historyEntry.Placements
+                        .Select(p => new OnlineMovePlacement(p.Row, p.Column, p.Letter))
+                        .ToList();
                     newRack = stateAfterMove.Players[playerIndex].Rack.ToList();
                     break;
 
@@ -224,6 +235,8 @@ app.MapPost("/api/games/{gameId}/moves", (string gameId, PlayMoveRequest request
             Command: normalizedCommand,
             Payload: request.Payload,
             PlayedAt: DateTimeOffset.UtcNow,
+            TurnNumber: playedTurn,
+            Placements: placements,
             Score: score);
 
         game.Moves.Add(createdMove);
@@ -241,6 +254,8 @@ app.MapPost("/api/games/{gameId}/moves", (string gameId, PlayMoveRequest request
         createdMove.PlayerId,
         createdMove.PlayerName,
         createdMove.Command,
+        createdMove.TurnNumber,
+        createdMove.Placements,
         createdMove.Score,
         createdMove.Payload,
         createdMove.PlayedAt,
@@ -524,10 +539,13 @@ public sealed record OnlineMove(
     string Command,
     JsonElement? Payload,
     DateTimeOffset PlayedAt,
+    int TurnNumber,
+    IReadOnlyList<OnlineMovePlacement> Placements,
     int Score = 0);
 
 public sealed record OnlineScoreEntry(string PlayerName, int Score);
 public sealed record OnlineBoardTile(int Row, int Column, char Letter, bool IsWildcard);
+public sealed record OnlineMovePlacement(int Row, int Column, char Letter);
 
 public sealed record ServerEvent(string Type, object Payload);
 

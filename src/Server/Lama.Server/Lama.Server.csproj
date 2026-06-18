@@ -3,6 +3,16 @@
   <PropertyGroup>
     <AssemblyName>Lama.Server</AssemblyName>
     <RootNamespace>Lama.Server</RootNamespace>
+    <PublishProfile>Default</PublishProfile>
+    <ContentRoot>.</ContentRoot>
+    
+    <!-- Web App Configuration -->
+    <UseAppHost>true</UseAppHost>
+    <SelfContained>false</SelfContained>
+    
+    <!-- Documentation -->
+    <Description>LAMA Online Game Server - Central multiplayer server for LAMA word game</Description>
+    <Product>LAMA Server</Product>
   </PropertyGroup>
 
   <ItemGroup>

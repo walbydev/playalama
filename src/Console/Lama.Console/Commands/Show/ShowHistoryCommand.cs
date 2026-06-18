@@ -80,22 +80,32 @@ public sealed class ShowHistoryCommand : ICommand
                     .TakeLast(int.TryParse(onlineLastOption, out var onlineN) && onlineN > 0 ? onlineN : moves.Count)
                     .ToList();
 
+                var displayItems = onlineItems
+                    .Select((item, index) => ToDisplayItem(item, index + 1))
+                    .ToList();
+
                 switch (context.OutputFormat.ToLowerInvariant())
                 {
                     case "json":
-                        global::System.Console.WriteLine(JsonSerializer.Serialize(onlineItems));
+                        global::System.Console.WriteLine(JsonSerializer.Serialize(displayItems));
                         break;
 
                     case "csv":
-                        global::System.Console.WriteLine("moveId,playerId,playerName,command,score,playedAt");
-                        foreach (var item in onlineItems)
-                            global::System.Console.WriteLine($"{item.MoveId},{item.PlayerId},{item.PlayerName},{item.Command},{item.Score},{item.PlayedAt:O}");
+                        global::System.Console.WriteLine("turn,player,command,placements,score,playedAt");
+                        foreach (var item in displayItems)
+                            global::System.Console.WriteLine($"{item.TurnNumber},{item.PlayerName},{item.Command},\"{item.Placements}\",{item.Score},{item.PlayedAt:O}");
                         break;
 
                     default:
-                        global::System.Console.WriteLine("Historique des coups (online) :");
-                        foreach (var item in onlineItems)
-                            global::System.Console.WriteLine($"- {item.PlayedAt:HH:mm:ss} | {item.PlayerName} | {item.Command} | {item.Score} pts");
+                        global::System.Console.WriteLine("Historique des coups :");
+                        foreach (var item in displayItems)
+                        {
+                            var details = string.IsNullOrWhiteSpace(item.Placements)
+                                ? item.Command
+                                : item.Placements;
+                            global::System.Console.WriteLine(
+                                $"- Tour {item.TurnNumber} | {item.PlayerName} | {details} | {item.Score} pts");
+                        }
                         break;
                 }
 
@@ -173,4 +183,36 @@ public sealed class ShowHistoryCommand : ICommand
         move.Score,
         move.PlayedAt
     };
+
+    private static OnlineHistoryDisplayItem ToDisplayItem(OnlineSnapshotMove move, int fallbackTurn)
+    {
+        var placements = move.Placements is { Count: > 0 }
+            ? string.Join(
+                ", ",
+                move.Placements
+                    .OrderBy(p => p.Row)
+                    .ThenBy(p => p.Column)
+                    .Select(p => $"{(char)('A' + p.Column)}{p.Row + 1}:{p.Letter}"))
+            : string.Empty;
+
+        return new OnlineHistoryDisplayItem(
+            MoveId: move.MoveId,
+            PlayerId: move.PlayerId,
+            TurnNumber: move.TurnNumber > 0 ? move.TurnNumber : fallbackTurn,
+            PlayerName: move.PlayerName,
+            Command: move.Command,
+            Placements: placements,
+            Score: move.Score,
+            PlayedAt: move.PlayedAt);
+    }
+
+    private sealed record OnlineHistoryDisplayItem(
+        string MoveId,
+        string PlayerId,
+        int TurnNumber,
+        string PlayerName,
+        string Command,
+        string Placements,
+        int Score,
+        DateTimeOffset PlayedAt);
 }

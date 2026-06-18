@@ -216,7 +216,11 @@ public sealed record OnlineSnapshotMove(
     string Command,
     JsonElement? Payload,
     DateTimeOffset PlayedAt,
-    int Score);
+    int Score,
+    int TurnNumber = 0,
+    List<OnlineSnapshotMovePlacement>? Placements = null);
+
+public sealed record OnlineSnapshotMovePlacement(int Row, int Column, char Letter);
 
 public sealed record OnlinePlayCommandResponse(
     string GameId,
