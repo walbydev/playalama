@@ -841,3 +841,39 @@ Journal unique de progression du projet LAMA.
 - `tests/Lama.Domain.UnitTests/Engine/GameEngineTests.cs`
 - `docs/CLASSIC_GAME_SHORTLIST.md`
 
+## [2026-06-18 16:20:00 UTC] - CG-04 cloture
+
+### Contexte
+- Objectif: clore `CG-04` avec validation complete du scoring (croisements/jokers/bonus) au niveau Domain et E2E reel.
+
+### Fait
+- Correctif score confirme: une tuile existante marquee `IsWildcard=true` reste a 0 point lorsqu'elle est reutilisee dans un coup.
+- Couverture completee avec:
+  - tests Domain cibles (ScoreCalculator + GameEngine),
+  - test E2E reel CLI: `Cli_RealProcess_PlayMove_CrossingExistingWildcard_ReportsExpectedScore`.
+- Verification de non-regression:
+  - `Lama.Domain.UnitTests` complet ✅,
+  - `RealCliE2ETests` complet ✅.
+- `docs/CLASSIC_GAME_SHORTLIST.md` mis a jour: `CG-04` marque complete.
+
+### En cours
+- Reste du P0: `CG-02` (parcours interactif complet fiable).
+
+### A faire
+- Ouvrir execution `CG-02` (boucle de tour interactive + dashboard post-action + stabilisation session).
+
+### Risques / Ecarts
+- Aucun ecart critique identifie sur le scoring apres cloture CG-04.
+
+### Prochaines etapes
+1. Demarrer `CG-02`.
+2. Executer recette manuelle interactive complete.
+3. Verrouiller le jalon P0 une fois `CG-02` valide.
+
+### References
+- `src/libs/Lama.Domain/Scoring/ScoreCalculator.cs`
+- `tests/Lama.Domain.UnitTests/Scoring/ScoreCalculatorTests.cs`
+- `tests/Lama.Domain.UnitTests/Engine/GameEngineTests.cs`
+- `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
+- `docs/CLASSIC_GAME_SHORTLIST.md`
+

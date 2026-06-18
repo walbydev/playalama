@@ -148,6 +148,25 @@ public sealed class RealCliE2ETests : IDisposable
         move.StdErr.Should().NotContain("Coup invalide");
     }
 
+    [Fact]
+    public async Task Cli_RealProcess_PlayMove_CrossingExistingWildcard_ReportsExpectedScore()
+    {
+        var gameId = Guid.NewGuid().ToString("N");
+        var playerId = Guid.NewGuid().ToString("N");
+
+        SeedCrossingWildcardScenario(gameId, playerId);
+
+        var move = await RunCliAsync("play", "move", "I8", "LA", "V");
+        move.ExitCode.Should().Be(0);
+        move.StdOut.Should().Contain("joué en I8 V");
+        move.StdOut.Should().Contain("2 pts");
+
+        var scores = await RunCliAsync("show", "scores", "--output", "json");
+        scores.ExitCode.Should().Be(0);
+        scores.StdOut.Should().Contain("\"name\":\"Alice\"");
+        scores.StdOut.Should().Contain("\"score\":2");
+    }
+
     private async Task<(int ExitCode, string StdOut, string StdErr)> RunCliAsync(params string[] args)
     {
         var psi = new ProcessStartInfo("dotnet")
@@ -223,6 +242,53 @@ public sealed class RealCliE2ETests : IDisposable
                 // Mot existant "LA" horizontal: H8='L', I8='A'.
                 new PersistedTile(7, 7, 'L'),
                 new PersistedTile(7, 8, 'A')
+            ],
+            RemainingTiles: ['A', 'A', 'A', 'A', 'A'],
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow,
+            History: [],
+            LastMoveSnapshot: null);
+
+        File.WriteAllText(Path.Combine(_sessionDir, "session.json"),
+            JsonSerializer.Serialize(session, JsonOptions));
+
+        var gamesDir = Path.Combine(_sessionDir, "games");
+        Directory.CreateDirectory(gamesDir);
+        File.WriteAllText(Path.Combine(gamesDir, $"{gameId}.json"),
+            JsonSerializer.Serialize(persisted, JsonOptions));
+    }
+
+    private void SeedCrossingWildcardScenario(string gameId, string playerId)
+    {
+        var session = new SessionContext(
+            GameId: gameId,
+            PlayerId: playerId,
+            PlayerName: "Alice",
+            Role: Role.Host,
+            GameLevel: GameLevel.Casual,
+            AuthToken: null,
+            TokenExpiresAt: null,
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow);
+
+        var persisted = new PersistedGame(
+            GameId: gameId,
+            Language: "fr",
+            GameLevel: GameLevel.Casual,
+            IsFirstMove: false,
+            IsGameOver: false,
+            CurrentPlayerIndex: 0,
+            TurnNumber: 2,
+            Players:
+            [
+                // Rack sans 'L': la lettre croisee provient de la tuile deja sur plateau.
+                new PersistedPlayer(playerId, "Alice", 0, ['A', 'B', 'C', 'D', 'E', 'F', 'G'])
+            ],
+            Board:
+            [
+                // Mot existant "AL" horizontal: H8='A', I8='L' issu d'un joker.
+                new PersistedTile(7, 7, 'A'),
+                new PersistedTile(7, 8, 'L', IsWildcard: true)
             ],
             RemainingTiles: ['A', 'A', 'A', 'A', 'A'],
             CreatedAt: DateTimeOffset.UtcNow,
