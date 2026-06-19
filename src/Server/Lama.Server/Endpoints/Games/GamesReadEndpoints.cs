@@ -10,8 +10,8 @@ public static class GamesReadEndpoints
 {
     public static IEndpointRouteBuilder MapGamesReadEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/games", GetGamesAsync);
-        app.MapGet("/api/games/{gameId}", GetGameByIdAsync);
+        app.MapGet("/games", GetGamesAsync);
+        app.MapGet("/games/{gameId}", GetGameByIdAsync);
         return app;
     }
 

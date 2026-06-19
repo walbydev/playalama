@@ -9,11 +9,11 @@ public static class GamesCommandEndpoints
 {
     public static IEndpointRouteBuilder MapGamesCommandEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/games", CreateGame);
-        app.MapPost("/api/games/{gameId}/join", JoinGame);
-        app.MapPost("/api/games/{gameId}/moves", PlayMove);
-        app.MapPost("/api/games/{gameId}/end", EndGame);
-        app.MapGet("/api/games/{gameId}/events", StreamEventsAsync);
+        app.MapPost("/games", CreateGame);
+        app.MapPost("/games/{gameId}/join", JoinGame);
+        app.MapPost("/games/{gameId}/moves", PlayMove);
+        app.MapPost("/games/{gameId}/end", EndGame);
+        app.MapGet("/games/{gameId}/events", StreamEventsAsync);
         return app;
     }
 
