@@ -9,21 +9,51 @@ public static class GamesCommandEndpoints
 {
     public static IEndpointRouteBuilder MapGamesCommandEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/games", CreateGame);
-        app.MapPost("/games/{gameId}/join", JoinGame);
-        app.MapPost("/games/{gameId}/moves", PlayMove);
-        app.MapPost("/games/{gameId}/end", EndGame);
-        app.MapGet("/games/{gameId}/events", StreamEventsAsync);
+        app.MapPost("/games", CreateGame)
+            .WithName("CreateGame")
+            .Produces<dynamic>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status400BadRequest);
+
+        app.MapPost("/games/{gameId}/join", JoinGame)
+            .WithName("JoinGame")
+            .Produces<dynamic>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
+
+        app.MapPost("/games/{gameId}/moves", PlayMove)
+            .WithName("PlayMove")
+            .Produces<dynamic>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
+
+        app.MapPost("/games/{gameId}/end", EndGame)
+            .WithName("EndGame")
+            .Produces<dynamic>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
+        app.MapGet("/games/{gameId}/events", StreamEventsAsync)
+            .WithName("StreamEvents")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
         return app;
     }
 
-    private static IResult CreateGame(CreateGameRequest request, GameHubState state)
+    private static IResult CreateGame(HttpContext context, CreateGameRequest request, GameHubState state)
     {
+        // Vérifier l'authentification
+        if (!context.IsAuthenticated())
+            return Results.Unauthorized();
+
         if (string.IsNullOrWhiteSpace(request.HostName))
             return Results.BadRequest(new { error = "hostName is required" });
 
         var gameId = Guid.NewGuid().ToString("N");
-        var hostId = Guid.NewGuid().ToString("N");
+        var hostId = context.GetPlayerId() ?? Guid.NewGuid().ToString("N");
         var hostName = request.HostName.Trim();
         var level = request.GameLevel ?? GameLevel.Standard;
         var boardSize = request.BoardSize > 0 ? request.BoardSize : 15;
@@ -85,8 +115,12 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static IResult JoinGame(string gameId, JoinGameRequest request, GameHubState state)
+    private static IResult JoinGame(HttpContext context, string gameId, JoinGameRequest request, GameHubState state)
     {
+        // Vérifier l'authentification
+        if (!context.IsAuthenticated())
+            return Results.Unauthorized();
+
         if (string.IsNullOrWhiteSpace(request.PlayerName))
             return Results.BadRequest(new { error = "playerName is required" });
 
@@ -94,7 +128,7 @@ public static class GamesCommandEndpoints
             return Results.NotFound(new { error = "game not found" });
 
         var trimmedName = request.PlayerName.Trim();
-        var playerId = Guid.NewGuid().ToString("N");
+        var playerId = context.GetPlayerId() ?? Guid.NewGuid().ToString("N");
         List<char> rack;
 
         lock (game)
@@ -137,8 +171,12 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static IResult PlayMove(string gameId, PlayMoveRequest request, GameHubState state)
+    private static IResult PlayMove(HttpContext context, string gameId, PlayMoveRequest request, GameHubState state)
     {
+        // Vérifier l'authentification
+        if (!context.IsAuthenticated())
+            return Results.Unauthorized();
+
         if (!state.TryGet(gameId, out var game))
             return Results.NotFound(new { error = "game not found" });
 
@@ -308,8 +346,12 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static IResult EndGame(string gameId, EndGameRequest request, GameHubState state)
+    private static IResult EndGame(HttpContext context, string gameId, EndGameRequest request, GameHubState state)
     {
+        // Vérifier l'authentification
+        if (!context.IsAuthenticated())
+            return Results.Unauthorized();
+
         if (!state.TryGet(gameId, out var game))
             return Results.NotFound(new { error = "game not found" });
 

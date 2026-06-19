@@ -20,6 +20,7 @@ public sealed class OnlineGameGateway
     private readonly HttpClient _httpClient;
     private readonly RuntimeModeService _runtimeMode;
     private readonly ILogger<OnlineGameGateway> _logger;
+    private string? _authToken;
 
     public OnlineGameGateway(
         HttpClient httpClient,
@@ -31,6 +32,53 @@ public sealed class OnlineGameGateway
         _logger = logger;
     }
 
+    /// <summary>
+    /// Authentifie un joueur et stocke le token JWT.
+    /// </summary>
+    public async Task<OnlineLoginResponse> LoginAsync(
+        string playerName,
+        CancellationToken cancellationToken)
+    {
+        EnsureOnlineMode();
+
+        var request = new { playerName };
+        var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/auth/login", request, cancellationToken);
+        await EnsureSuccessAsync(response, "auth.login", cancellationToken);
+
+        var payload = await response.Content.ReadFromJsonAsync<OnlineLoginResponse>(JsonOptions, cancellationToken);
+        if (payload == null)
+            throw new InvalidOperationException("Réponse serveur invalide sur auth.login.");
+
+        _authToken = payload.Token;
+        return payload;
+    }
+
+    /// <summary>
+    /// Définit manuellement le token (utile si récupéré depuis la session).
+    /// </summary>
+    public void SetAuthToken(string? token)
+    {
+        _authToken = token;
+    }
+
+    /// <summary>
+    /// Retourne le token actuel.
+    /// </summary>
+    public string? GetAuthToken() => _authToken;
+
+    private void SetAuthorizationHeader()
+    {
+        if (!string.IsNullOrEmpty(_authToken))
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authToken);
+        }
+        else
+        {
+            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+        }
+    }
+
     public async Task<OnlineCreateGameResponse> CreateGameAsync(
         string hostName,
         GameLevel gameLevel,
@@ -38,6 +86,7 @@ public sealed class OnlineGameGateway
         CancellationToken cancellationToken)
     {
         EnsureOnlineMode();
+        SetAuthorizationHeader();
 
         var request = new
         {
@@ -59,6 +108,7 @@ public sealed class OnlineGameGateway
         CancellationToken cancellationToken)
     {
         EnsureOnlineMode();
+        SetAuthorizationHeader();
 
         var request = new { playerName };
         var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/join", request, cancellationToken);
@@ -98,6 +148,7 @@ public sealed class OnlineGameGateway
         CancellationToken cancellationToken)
     {
         EnsureOnlineMode();
+        SetAuthorizationHeader();
 
         var request = new
         {
@@ -119,6 +170,7 @@ public sealed class OnlineGameGateway
         CancellationToken cancellationToken)
     {
         EnsureOnlineMode();
+        SetAuthorizationHeader();
 
         var request = new
         {
@@ -274,4 +326,10 @@ public sealed record OnlineEndGameResponse(
     DateTimeOffset EndedAt);
 
 public sealed record OnlineScoreEntry(string PlayerName, int Score);
+
+public sealed record OnlineLoginResponse(
+    string Token,
+    string PlayerId,
+    string PlayerName,
+    DateTime ExpiresAt);
 

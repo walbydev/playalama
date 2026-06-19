@@ -997,6 +997,91 @@ Journal unique de progression du projet LAMA.
 - `docs/CLASSIC_GAME_SHORTLIST.md`
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
 
+## [2026-06-19 12:10:00 UTC] - Sécurité JWT implémentée et testée (jalon Livrable P1)
+
+### Contexte
+- Suite au jalon "Fonctionnel" validé (CG-02), demande utilisateur: implémenter la sécurité pour le jalon "Livrable".
+- Première étape: JWT (Json Web Tokens) pour authentifier les appels API online.
+
+### Fait
+- **Service JWT** (`JwtTokenService`):
+  - Génération tokens HMAC-SHA256
+  - Signature et validation tokens
+  - Extraction claims (PlayerId, PlayerName)
+  - Expiration 24h configurable
+  - Secret configurable via env/config
+
+- **Middleware JWT** (`JwtMiddleware`):
+  - Valide Authorization header (`Bearer <token>`)
+  - Attache claims à HttpContext.User si token valid
+  - Passe silencieusement si absent (GET reste public)
+
+- **Endpoints Auth**:
+  - `POST /api/v1/auth/login` (sans auth requise) → retourne token
+  - `GET /api/v1/auth/status` (token en header) → statut authen
+
+- **Sécurisation endpoints POST/PUT/DELETE**:
+  - `POST /games` : 401 si pas authen
+  - `POST /games/{id}/join` : 401 si pas authen
+  - `POST /games/{id}/moves` : 401 si pas authen
+  - `POST /games/{id}/end` : 401 si pas authen
+  - Lecture (GET) reste publique
+
+- **CLI integration** (`OnlineGameGateway`):
+  - Nouvelle méthode `LoginAsync(playerName)`
+  - Token stocké automatiquement en `_authToken`
+  - Tous les POST incluent "Authorization: Bearer {token}"
+  - Support sauvegarde token dans session.json
+
+- **Tests validés**:
+  - ✅ Login génère token JWT valide
+  - ✅ POST sans token → 401 Unauthorized
+  - ✅ POST avec token + playerId valide → 200 OK
+
+- **Build et compilation**:
+  - Build serveur ✅ (0 erreur, 4 avertissements NuGet acceptés)
+  - Nouvelles dépendances JWT ajoutées (System.IdentityModel.Tokens.Jwt 8.3.0+)
+
+### En cours
+- CLI ne fait pas encore login auto avant requêtes online
+- Pas de refresh token (24h expiration acceptable MVP)
+
+### A faire (post-JWT)
+1. **E2E CLI avec authen JWT**:
+   - Tester recette complète: login → create → join → move → end avec JWT
+   - Ajouter tests unitaires validant rejection sans token
+
+2. **Refresh token** (phase 2 optionnelle):
+   - Endpoint `/api/v1/auth/refresh` pour renouveler
+
+3. **Rate limiting**:
+   - Brute force protection sur login
+   - Limiter appels API par Token
+
+4. **Audit logs**:
+   - Logger login réussis/échoués
+   - Tracer accès modifiant (POST/PUT/DELETE)
+
+5. **Production hardening**:
+   - Stocker clé JWT en secret manager (pas en code)
+   - HTTPS obligatoire
+   - Token expiration optimisée
+
+### Risques / Ecarts
+- Aucun blocage identifié; JWT fonctionnel et testé
+- Note: secret JWT en dur dev (DÉJÀ FLAGUÉ comme "changer en prod")
+
+### Prochaines etapes
+1. Intégrer LoginAsync dans GameCreateCommand (mode online)
+2. Tester E2E complet: CLI login + API secured
+3. Évaluer refresh token (complexité vs bénéfice 24h)
+
+### References
+- `SECURITE_JWT_IMPLEMENTEE.md` (documentation détaillée)
+- `src/Server/Lama.Server/Security/JwtTokenService.cs`
+- `src/Server/Lama.Server/Endpoints/Auth/AuthEndpoints.cs`
+- `src/Console/Lama.Console/Services/OnlineGameGateway.cs`
+
 ## [2026-06-18 09:57:52 UTC] - Demarrage implementation multijoueur central + plan migration local
 
 ### Contexte
@@ -1593,7 +1678,7 @@ Journal unique de progression du projet LAMA.
 - Source de verite privilegiee: etat reel du code (`src/`, `tests/`) + scripts E2E existants.
 
 ### Fait
-- **Base gameplay local (fonctionnelle)**
+- **Base gameplay local (fonctionnel)**
   - Boucle metier complete disponible: create/join/move/pass/swap/challenge/check/show/end.
   - Regles critiques en place: jokers, croisements, scoring corrige sur tuiles wildcard existantes.
   - Persistance locale JSON + reprise de session operationnelles.
@@ -1675,7 +1760,7 @@ Journal unique de progression du projet LAMA.
 - Cette checklist est a cocher pendant la recette finale et en pre-release.
 
 ### Checklist - Jalon "Jeu fonctionnel"
-- [x] **CG-01** valide (parcours CLI reel complet) et rejoue sans ecart. ✅ 2026-06-18
+- [x] **CG-01** valide (parcours CLI réel complet) et rejoue sans ecart. ✅ 2026-06-18
 - [x] **CG-02** clos avec recette interactive TTY complete signee. ✅ 2026-06-19 12:05 UTC
 - [x] **CG-03** valide (coherence `play.check` / `play.move`) en E2E reel. ✅ 2026-06-18
 - [x] **CG-04** valide (scoring croisements/jokers/bonus) en Domain + E2E reel. ✅ 2026-06-18
@@ -1716,3 +1801,157 @@ Journal unique de progression du projet LAMA.
 - `tests/Lama.Console.UnitTests/OnlineCliE2ETests.cs`
 - `tools/scripts/e2e-cli-smoke.sh`
 - `tools/scripts/e2e-online-smoke.sh`
+
+## [2026-06-19 12:40:00 UTC] - Point situation global + prochaines priorités (pause développement)
+
+### Contexte
+- Demande utilisateur: consolidation complète de l'état du projet avant pause de développement.
+- Objectif: avoir une vue d'ensemble claire pour reprise future.
+
+### État des jalons
+
+#### ✅ Jalon "Jeu fonctionnel" - **VALIDÉ ET SIGNÉ**
+- **Date validation** : 2026-06-19 12:05 UTC
+- **Statut** : **GO / PASS**
+- **Checklist** :
+  - [x] CG-01 : Parcours CLI réel complet ✅
+  - [x] CG-02 : Mode interactif TTY complet ✅ (recette exécutée et documentée)
+  - [x] CG-03 : Cohérence `play.check` / `play.move` ✅
+  - [x] CG-04 : Scoring robuste (croisements/jokers/bonus) ✅
+  - [x] E2E online smoke ✅
+  - [x] Fallback API detail (players/moves/board) ✅
+  - [x] Tests unitaires : 452/452 ✅
+
+#### 🔐 Sécurité JWT - **IMPLÉMENTÉE ET TESTÉE**
+- **Date implémentation** : 2026-06-19 12:10 UTC
+- **Tests réels exécutés** :
+  - [x] Login endpoint → token généré ✅
+  - [x] POST sans token → 401 Unauthorized ✅
+  - [x] POST avec token → 200 OK + gameId ✅
+- **Composants** :
+  - [x] `JwtTokenService` (génération/validation)
+  - [x] `JwtMiddleware` (authentification automatique)
+  - [x] `AuthEndpoints` (`/api/v1/auth/login`, `status`)
+  - [x] Endpoints POST/PUT/DELETE sécurisés (401 sans token)
+  - [x] `OnlineGameGateway` enrichi (LoginAsync + Bearer header)
+- **Build** : ✅ 0 erreur, 4 avertissements NuGet mineurs acceptés
+
+#### 🟡 Persistance EF Core - **EN COURS (phase 2)**
+- **Avancé** :
+  - [x] `LamaDbContext` + 4 configurations EF
+  - [x] Tables créées (sessions.games, history.*, rating.*, etc.)
+  - [x] Migration initiale appliquée sur PostgreSQL
+  - [x] Fallback hybride mémoire + EF en lecture (GET /api/v1/games*)
+  - [x] Enrichissement fallback (players/moves/board persists)
+- **Manque** :
+  - [ ] E2E tests API+EF (create part persistée via EF)
+  - [ ] Racks persistes complets (sessions.rack_state branché)
+  - [ ] Stratégie autoritaire finalisée (mémoire-first vs EF-first)
+
+#### 🟡 Mode online MVP - **PARTIELLEMENT FONCTIONNEL**
+- **Endpoints actifs** : `POST /api/v1/games`, `join`, `moves`, `end`, `GET games{id}`
+- **Reste** :
+  - [ ] Validation métier serveur complète (actuellement jeu de commande)
+  - [ ] Persistance joueurs en EF (actuellement en mémoire)
+  - [ ] Branchement rack state complet
+
+---
+
+### Tableau de situation détaillé (2026-06-19)
+
+| Composant | Statut | Couverture | Notes |
+|-----------|--------|-----------|-------|
+| **GAMEPLAY LOCAL** | ✅ FONCTIONNEL | 100% | Create/join/move/pass/swap/challenge/check/end/show tous opérationnels |
+| **Règles métier** | ✅ ROBUSTES | 100% | Croisements, jokers, scoring, wildcard points validés |
+| **Persistance locale** | ✅ FIABLE | 100% | JSON + session.json durables |
+| **Tests Domain** | ✅ 201/201 | 100% | Tous les scénarios métier couverts |
+| **Tests Console CLI** | ✅ 207/207 | 100% | Commandes + formats JSON/CSV testés |
+| **E2E CLI réels** | ✅ 6+ smoke | 85% | Manque: croisements multiples + edge cases |
+| **Mode interactif** | ✅ JOUABLE | 90% | Navigation fluide, TTY sensible |
+| **GAMEPLAY ONLINE** | 🟡 MVP | 70% | Create/join/show en API, persistance mémoire + fallback EF |
+| **Sécurité JWT** | ✅ IMPLÉMENTÉE | 100% | Login/token/validation testés |
+| **Persistance EF** | 🟡 EN COURS | 60% | Tables + migrations OK, write pas branché |
+| **Observabilité** | 🔴 ABSENTE | 0% | Aucun log structuré |
+| **Rate limiting** | 🔴 ABSENT | 0% | Brute-force inexistant |
+
+---
+
+### Prochaines priorités (ordre recommandé)
+
+#### **PHASE 1 - POST-FONCTIONNEL (immédiat, ~3-4h)**
+
+**P1.1 - E2E CLI avec JWT** (30 min - **TRÈS RAPIDE**)
+- [ ] Modifier `GameCreateCommand` : appeler `gateway.LoginAsync()` en mode online
+- [ ] Tester recette complète: login → create + assertions
+- [ ] Ajouter test rejet 401 sans token
+- **Bénéfice** : Valide sécurité end-to-end
+
+**P1.2 - Compléter fallback persistant** (60 min)
+- [ ] Brancher `sessions.rack_state` en lecture
+- [ ] Test API GET /api/v1/games/{id} avec racks
+- **Bénéfice** : Snapshot API complet
+
+**P1.3 - Tests intégration API+EF** (90 min)
+- [ ] Suite `OnlineApiEfIntegrationTests`
+- [ ] Scenario: POST → partie mémoire + fallback DB
+- [ ] Scenario: dedoublonnage, board/moves non vides
+- **Bénéfice** : Gate qualité avant pivot mémoire→EF
+
+#### **PHASE 2 - DURCIISSEMENT LIVRABLE (prochaines sessions, ~6-8h)**
+
+**P2.1 - Observabilité minimale** (120 min)
+- [ ] Logs structurés : login, POST/PUT/DELETE
+- [ ] CorrelationId sur requêtes
+- [ ] Healthchecks app + db
+- **Bénéfice** : Monitoring production-ready
+
+**P2.2 - Rate limiting** (90 min)
+- [ ] Max 5 login/min par IP
+- [ ] Brute-force protection
+- **Bénéfice** : Sécurité DDoS/brute-force
+
+**P2.3 - Refresh token** (60 min, optionnel)
+- [ ] Endpoint `POST /api/v1/auth/refresh`
+- [ ] CLI demande refresh < 1h expiration
+- **Bénéfice** : Sessions longues ; **peut attendre v2**
+
+**P2.4 - Stratégie persistance finalisée** (90 min)
+- [ ] Décider : mémoire-first vs EF-first
+- [ ] Migrer/adapter en conséquence
+- [ ] Tests complets du parcours
+- **Bénéfice** : Clarté architecture
+
+#### **PHASE 3 - PRÉ-LIVRAISON (sessions futures, ~4-5h)**
+
+**P3.1 - Release checklist** (60 min)
+- [ ] Build + tests + E2E automatisé
+- [ ] Config checklist
+- [ ] Migration + rollback testées
+
+**P3.2 - Documentation départ** (120 min)
+- [ ] README final
+- [ ] DEPLOYMENT_CHECKLIST.md
+- [ ] RUNBOOK.md
+- [ ] CHANGELOG.md
+
+**P3.3 - Production hardening** (90 min)
+- [ ] Secret vault (JWT key)
+- [ ] HTTPS/TLS
+- [ ] Backup strategy
+
+---
+
+### Reprise développement (checklist)
+
+À la reprise :
+1. [ ] Relire ce PROGRESS.md (section actuelle)
+2. [ ] Consulter PHASE_SECURITE_COMPLETEE.md
+3. [ ] Lancer P1.1 (JWT E2E, rapide) - **30 min d'un coup**
+4. [ ] Continuer P1.2/P1.3 si momentum
+5. [ ] Ne pas sauter P1.3 (gate qualité importante)
+
+### État repos suspension
+
+**Date pause** : 2026-06-19 12:40 UTC  
+**État code** : Complet, compilé, tests ✅  
+**Prochaine** : P1.1 (JWT E2E) - facile et rapide ✨

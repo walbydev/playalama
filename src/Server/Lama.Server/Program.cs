@@ -1,7 +1,9 @@
 using Lama.Contracts;
 using Lama.Server.Data;
 using Lama.Server.Endpoints;
+using Lama.Server.Endpoints.Auth;
 using Lama.Server.Runtime;
+using Lama.Server.Security;
 using Lama.Languages.fr;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +22,14 @@ builder.Services.AddSingleton<IGameLanguageProvider>(_ =>
 });
 builder.Services.AddSingleton<GameHubState>();
 
+// JWT Configuration
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+    ?? Environment.GetEnvironmentVariable("LAMA_JWT_SECRET")
+    ?? "this_is_a_default_development_secret_key_change_in_production_12345";
+
+var jwtService = new JwtTokenService(jwtSecret);
+builder.Services.AddSingleton(jwtService);
+
 var app = builder.Build();
 
 var allowShutdown = string.Equals(
@@ -27,8 +37,14 @@ var allowShutdown = string.Equals(
     "true",
     StringComparison.OrdinalIgnoreCase);
 
+// Middleware
+app.UseJwtMiddleware(jwtService);
+
 app.MapHealthEndpoints();
 app.MapInternalEndpoints(allowShutdown);
+
+// Auth endpoints
+app.MapAuthEndpoints(jwtService);
 
 var api = app.MapGroup("/api/v1");
 api.MapGamesReadEndpoints();
