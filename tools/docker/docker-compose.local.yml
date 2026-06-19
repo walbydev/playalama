@@ -20,8 +20,8 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ../../../assets/languages:/app/assets/languages:ro
-      - ../../../logs:/app/logs
+      - ../../assets/languages:/app/assets/languages:ro
+      - ../../logs:/app/logs
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
