@@ -73,6 +73,26 @@
       color: var(--accent2);
     }
 
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      color: #081120;
+      font-weight: 700;
+      box-shadow: 0 16px 32px rgba(110,168,254,.18);
+    }
+
     code {
       display: block;
       margin-top: 10px;
@@ -107,7 +127,18 @@
       et laisse le reverse-proxy gérer l’API de jeu.
     </p>
 
+    <div class="cta-row">
+      <a class="button" href="/download">⬇️ Télécharger LAMA</a>
+      <a href="/health">Vérifier la santé du serveur</a>
+    </div>
+
     <div class="grid">
+      <section class="tile">
+        <h2>Téléchargements</h2>
+        <p>Accédez à une page dédiée avec sélection de version et ZIP par plateforme.</p>
+        <code>https://playalama.online/download</code>
+      </section>
+
       <section class="tile">
         <h2>API</h2>
         <p>Le serveur applicatif est exposé derrière Nginx.</p>
@@ -128,6 +159,8 @@
     </div>
 
     <div class="footer">
+      <a href="/download">Télécharger LAMA</a>
+      ·
       <a href="/health">Vérifier la santé du serveur</a>
     </div>
   </main>

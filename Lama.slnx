@@ -3,6 +3,9 @@
     <File Path="wwwroot\index.html" />
     <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
   </Folder>
+  <Folder Name="/Apps/www/">
+    <File Path="wwwroot\index.html" />
+  </Folder>
   <Folder Name="/docs/">
     <File Path="ALIAS_QUICK_SETUP.md" />
     <File Path="docs\AGENTS.md" />

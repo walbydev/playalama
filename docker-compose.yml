@@ -35,6 +35,8 @@ services:
       - "443:443"
     volumes:
       - ./tools/docker/nginx-playalama.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./wwwroot:/usr/share/nginx/html:ro
+      - ./artifacts/zip:/usr/share/nginx/html/downloads:ro
       - ./certs:/etc/letsencrypt:ro
       - ./certbot-webroot:/var/www/certbot:ro
     depends_on:
