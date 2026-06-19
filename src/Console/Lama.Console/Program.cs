@@ -44,9 +44,31 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
+    var runtimeCliOptions = RuntimeCliOptionsParser.Parse(args);
+    if (runtimeCliOptions.ErrorMessage is not null)
+    {
+        await global::System.Console.Error.WriteLineAsync(runtimeCliOptions.ErrorMessage);
+        return ExitCodes.InvalidArgument;
+    }
+
+    if (runtimeCliOptions.ServerUrl is not null)
+    {
+        if (!Uri.TryCreate(runtimeCliOptions.ServerUrl, UriKind.Absolute, out var serverUri) ||
+            (serverUri.Scheme != Uri.UriSchemeHttp && serverUri.Scheme != Uri.UriSchemeHttps))
+        {
+            await global::System.Console.Error.WriteLineAsync(
+                "URL serveur invalide. Exemple attendu: http://127.0.0.1:5055 ou https://game.playalama.online");
+            return ExitCodes.InvalidArgument;
+        }
+
+        RuntimeServerConfigStore.SaveServerUrl(serverUri.ToString().TrimEnd('/'));
+    }
+
+    var runtimeArgs = runtimeCliOptions.FilteredArgs;
+
     Log.Information("Démarrage de LAMA");
 
-    var host = Host.CreateDefaultBuilder(args)
+    var host = Host.CreateDefaultBuilder(runtimeArgs)
         .UseSerilog()
         .ConfigureServices((_, services) =>
         {
@@ -61,7 +83,7 @@ try
                 var runtime = provider.GetRequiredService<RuntimeModeService>();
                 var httpClient = new HttpClient
                 {
-                    BaseAddress = new Uri(runtime.ServerBaseUrl)
+                    BaseAddress = new Uri(runtime.ServerBaseUrl ?? "http://127.0.0.1:5055")
                 };
 
                 return new OnlineGameGateway(
@@ -120,7 +142,7 @@ try
             // ─── Modes d'exécution ───────────────────────────────────────────
             services.AddTransient<CommandLineMode>(provider =>
                 new CommandLineMode(
-                    args,
+                    runtimeArgs,
                     provider.GetRequiredService<ICommandDispatcher>(),
                     provider.GetRequiredService<AccessControlMiddleware>(),
                     provider.GetRequiredService<ISessionService>(),
@@ -194,7 +216,7 @@ try
 
     // ─── Résolution du mode et exécution ────────────────────────────────────
     var resolver = host.Services.GetRequiredService<IApplicationModeResolver>();
-    var mode     = resolver.Resolve(args);
+    var mode     = resolver.Resolve(runtimeArgs);
 
     Log.Debug("Mode résolu : {ModeType}", mode.GetType().Name);
 

@@ -8,7 +8,10 @@
     <File Path="Makefile" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/docs/" />
+  <Folder Name="/docs/">
+    <File Path="AGENTS.md" />
+    <File Path="README.md" />
+  </Folder>
   <Folder Name="/docs/architecture/">
     <File Path="docs/architecture/DOCKER_DEPLOYMENT.md" />
     <File Path="docs/architecture/HTTPS_DEPLOYMENT.md" />

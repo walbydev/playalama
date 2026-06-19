@@ -16,9 +16,16 @@ public sealed class RuntimeModeService
         get
         {
             var raw = Environment.GetEnvironmentVariable(ModeEnvVar);
-            return string.Equals(raw, "online", StringComparison.OrdinalIgnoreCase)
-                ? RuntimeExecutionMode.Online
-                : RuntimeExecutionMode.Local;
+            if (string.Equals(raw, "online", StringComparison.OrdinalIgnoreCase))
+                return RuntimeExecutionMode.Online;
+
+            if (string.Equals(raw, "local", StringComparison.OrdinalIgnoreCase))
+                return RuntimeExecutionMode.Local;
+
+            // Sans override explicite, une URL persistée active automatiquement le mode online.
+            return string.IsNullOrWhiteSpace(ServerBaseUrl)
+                ? RuntimeExecutionMode.Local
+                : RuntimeExecutionMode.Online;
         }
     }
 
@@ -30,9 +37,9 @@ public sealed class RuntimeModeService
     /// <summary>
     /// URL de base du serveur central.
     /// </summary>
-    public string ServerBaseUrl =>
+    public string? ServerBaseUrl =>
         Environment.GetEnvironmentVariable(ServerUrlEnvVar)
-        ?? "http://127.0.0.1:5055";
+        ?? RuntimeServerConfigStore.LoadServerUrl();
 }
 
 public enum RuntimeExecutionMode

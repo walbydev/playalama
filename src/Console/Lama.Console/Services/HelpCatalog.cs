@@ -29,6 +29,8 @@ public static class HelpCatalog
         new("--high-contrast", "Mode contraste eleve"),
         new("-l, --lang <code>", "Langue (fr, en, de, es, it)"),
         new("-o, --output <fmt>", "Format de sortie (text, json, csv)"),
+        new("--server-url <url>", "Active le mode online et persiste l'URL serveur"),
+        new("--server-ip <url>", "Alias de --server-url"),
         new("--game-id <id>", "Surcharge l'identifiant de partie (session)"),
         new("--player <id>", "Surcharge l'identifiant joueur (session)")
     ];
