@@ -4,6 +4,7 @@
     <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
   </Folder>
   <Folder Name="/Apps/www/">
+    <File Path="wwwroot\download\index.html" />
     <File Path="wwwroot\index.html" />
   </Folder>
   <Folder Name="/docs/">
