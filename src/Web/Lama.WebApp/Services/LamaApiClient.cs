@@ -1,158 +1,194 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Lama.Contracts;
-
 namespace Lama.WebApp.Services;
 
 public sealed class LamaApiClient(HttpClient httpClient)
 {
-    private const string ApiBase = "/api/v1";
+	private const string ApiBase = "/api/v1";
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
+	private static readonly JsonSerializerOptions JsonOptions = new()
+	{
+		PropertyNameCaseInsensitive = true
+	};
 
-    public async Task<IReadOnlyList<WebGameListItem>> ListGamesAsync(CancellationToken cancellationToken = default)
-    {
-        var response = await httpClient.GetAsync($"{ApiBase}/games", cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+	public async Task<WebAuthResponse> RegisterAsync(string username, string password, string? email, CancellationToken cancellationToken = default)
+	{
+		var response = await httpClient.PostAsJsonAsync($"{ApiBase}/auth/register", new { username, password, email }, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
 
-        var payload = await response.Content.ReadFromJsonAsync<GameListEnvelope>(JsonOptions, cancellationToken);
-        return payload?.Games
-            ?.Select(x => new WebGameListItem(
-                x.Id,
-                x.GameName,
-                x.Status,
-                x.Players,
-                x.MaxPlayers,
-                x.Queue,
-                x.IsJoinable))
-            .ToList() ?? [];
-    }
+		var payload = await response.Content.ReadFromJsonAsync<AuthEnvelope>(JsonOptions, cancellationToken)
+			?? throw new InvalidOperationException("Réponse invalide sur auth/register.");
 
-    public async Task<WebCreateGameResponse> CreateGameAsync(CreateGameForm form, CancellationToken cancellationToken = default)
-    {
-        var request = new
-        {
-            hostName = form.HostName,
-            gameLevel = GameLevel.Standard,
-            mode = string.Equals(form.Mode, "multi", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
-            gameName = form.GameName,
-            maxPlayers = form.MaxPlayers,
-            enableAi = false,
-            language = "fr"
-        };
+		return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.ExpiresAt);
+	}
 
-        var response = await httpClient.PostAsJsonAsync($"{ApiBase}/games", request, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+	public async Task<WebAuthResponse> AccountLoginAsync(string username, string password, CancellationToken cancellationToken = default)
+	{
+		var response = await httpClient.PostAsJsonAsync($"{ApiBase}/auth/login/account", new { username, password }, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
 
-        var payload = await response.Content.ReadFromJsonAsync<CreateGameEnvelope>(JsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Reponse invalide sur game.create.");
+		var payload = await response.Content.ReadFromJsonAsync<AuthEnvelope>(JsonOptions, cancellationToken)
+			?? throw new InvalidOperationException("Réponse invalide sur auth/login/account.");
 
-        return new WebCreateGameResponse(payload.GameId, payload.HostPlayerId);
-    }
+		return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.ExpiresAt);
+	}
 
-    public async Task<WebJoinGameResponse> JoinGameAsync(string gameId, string playerName, string? password, CancellationToken cancellationToken = default)
-    {
-        var response = await httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/join", new { playerName, password }, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+	public async Task<WebPlayerProfile?> GetMyProfileAsync(string token, CancellationToken cancellationToken = default)
+	{
+		using var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBase}/players/me");
+		request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var payload = await response.Content.ReadFromJsonAsync<JoinGameEnvelope>(JsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Reponse invalide sur game.join.");
+		var response = await httpClient.SendAsync(request, cancellationToken);
+		if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+			return null;
 
-        return new WebJoinGameResponse(payload.GameId, payload.PlayerId);
-    }
+		await EnsureSuccessAsync(response, cancellationToken);
 
-    public async Task<WebGameSnapshot> GetGameAsync(string gameId, CancellationToken cancellationToken = default)
-    {
-        var response = await httpClient.GetAsync($"{ApiBase}/games/{gameId}", cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+		var payload = await response.Content.ReadFromJsonAsync<PlayerProfileEnvelope>(JsonOptions, cancellationToken);
+		return payload is null ? null : new WebPlayerProfile(payload.PlayerId, payload.Username, payload.Email, payload.CreatedAt);
+	}
 
-        var payload = await response.Content.ReadFromJsonAsync<GameSnapshotEnvelope>(JsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Reponse invalide sur game.show.");
+	public async Task<WebPlayerProfile?> UpdateMyProfileAsync(string token, string? email, string? currentPassword, string? newPassword, CancellationToken cancellationToken = default)
+	{
+		using var request = new HttpRequestMessage(HttpMethod.Put, $"{ApiBase}/players/me");
+		request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+		request.Content = JsonContent.Create(new { email, currentPassword, newPassword });
 
-        return new WebGameSnapshot(
-            payload.Id,
-            payload.IsGameOver,
-            payload.CurrentPlayerIndex,
-            payload.TurnNumber,
-            payload.Players.Select(x => new WebSnapshotPlayer(x.PlayerId, x.PlayerName, x.Score)).ToList(),
-            payload.Board.Select(x => new WebBoardTile(x.Row, x.Column, x.Letter)).ToList());
-    }
+		var response = await httpClient.SendAsync(request, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
 
-    public async Task<WebPlayResponse> PlayAsync(string gameId, PlayForm form, CancellationToken cancellationToken = default)
-    {
-        object? payload = form.Command switch
-        {
-            "play.move" => new { position = form.Position, word = form.Word, direction = form.Direction },
-            "play.swap" => new { letters = form.Word },
-            _ => null
-        };
+		var payload = await response.Content.ReadFromJsonAsync<PlayerProfileEnvelope>(JsonOptions, cancellationToken);
+		return payload is null ? null : new WebPlayerProfile(payload.PlayerId, payload.Username, payload.Email, payload.CreatedAt);
+	}
 
-        var request = new
-        {
-            playerId = form.PlayerId,
-            command = form.Command,
-            payload
-        };
+	public async Task<IReadOnlyList<WebGameHistoryItem>> GetMyGamesAsync(string token, CancellationToken cancellationToken = default)
+	{
+		using var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBase}/players/me/games");
+		request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var response = await httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/moves", request, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+		var response = await httpClient.SendAsync(request, cancellationToken);
+		if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+			return [];
 
-        var result = await response.Content.ReadFromJsonAsync<PlayEnvelope>(JsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Reponse invalide sur play.command.");
+		await EnsureSuccessAsync(response, cancellationToken);
 
-        return new WebPlayResponse(result.GameId, result.MoveId, result.Score);
-    }
+		var payload = await response.Content.ReadFromJsonAsync<List<GameHistoryEnvelope>>(JsonOptions, cancellationToken);
+		return payload?.Select(x => new WebGameHistoryItem(x.GameId, x.GameLevel, x.Queue, x.Status, x.EndedAt, x.DurationSeconds, x.IsWinner)).ToList() ?? [];
+	}
 
-    private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
-    {
-        if (response.IsSuccessStatusCode)
-            return;
+	public async Task<IReadOnlyList<WebGameListItem>> ListGamesAsync(CancellationToken cancellationToken = default)
+	{
+		var response = await httpClient.GetAsync($"{ApiBase}/games", cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
 
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
-        string message;
+		var payload = await response.Content.ReadFromJsonAsync<GameListEnvelope>(JsonOptions, cancellationToken);
+		return payload?.Games?.Select(x => new WebGameListItem(x.Id, x.GameName, x.Status, x.Players, x.MaxPlayers, x.Queue, x.IsJoinable)).ToList() ?? [];
+	}
 
-        try
-        {
-            using var document = JsonDocument.Parse(body);
-            message = document.RootElement.TryGetProperty("error", out var error)
-                ? error.GetString() ?? "Erreur API"
-                : $"Erreur API HTTP {(int)response.StatusCode}";
-        }
-        catch
-        {
-            message = string.IsNullOrWhiteSpace(body) ? $"Erreur API HTTP {(int)response.StatusCode}" : body;
-        }
+	public async Task<WebCreateGameResponse> CreateGameAsync(CreateGameForm form, CancellationToken cancellationToken = default)
+	{
+		var request = new
+		{
+			hostName = form.HostName,
+			gameLevel = GameLevel.Standard,
+			mode = string.Equals(form.Mode, "multi", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
+			gameName = form.GameName,
+			maxPlayers = form.MaxPlayers,
+			enableAi = false,
+			language = "fr"
+		};
 
-        throw new HttpRequestException(message);
-    }
+		var response = await httpClient.PostAsJsonAsync($"{ApiBase}/games", request, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
 
-    private sealed record GameListEnvelope(List<GameListItemEnvelope> Games);
+		var payload = await response.Content.ReadFromJsonAsync<CreateGameEnvelope>(JsonOptions, cancellationToken)
+			?? throw new InvalidOperationException("Réponse invalide sur game.create.");
 
-    private sealed record GameListItemEnvelope(
-        string Id,
-        string? GameName,
-        string Status,
-        int Players,
-        int MaxPlayers,
-        string Queue,
-        bool IsJoinable);
+		return new WebCreateGameResponse(payload.GameId, payload.HostPlayerId);
+	}
 
-    private sealed record CreateGameEnvelope(string GameId, string HostPlayerId);
-    private sealed record JoinGameEnvelope(string GameId, string PlayerId);
+	public async Task<WebJoinGameResponse> JoinGameAsync(string gameId, string playerName, string? password, CancellationToken cancellationToken = default)
+	{
+		var response = await httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/join", new { playerName, password }, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
 
-    private sealed record GameSnapshotEnvelope(
-        string Id,
-        bool IsGameOver,
-        int CurrentPlayerIndex,
-        int TurnNumber,
-        List<GameSnapshotPlayerEnvelope> Players,
-        List<GameBoardTileEnvelope> Board);
+		var payload = await response.Content.ReadFromJsonAsync<JoinGameEnvelope>(JsonOptions, cancellationToken)
+			?? throw new InvalidOperationException("Réponse invalide sur game.join.");
 
-    private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score);
-    private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);
-    private sealed record PlayEnvelope(string GameId, string MoveId, int Score);
+		return new WebJoinGameResponse(payload.GameId, payload.PlayerId);
+	}
+
+	public async Task<WebGameSnapshot> GetGameAsync(string gameId, CancellationToken cancellationToken = default)
+	{
+		var response = await httpClient.GetAsync($"{ApiBase}/games/{gameId}", cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
+
+		var payload = await response.Content.ReadFromJsonAsync<GameSnapshotEnvelope>(JsonOptions, cancellationToken)
+			?? throw new InvalidOperationException("Réponse invalide sur game.show.");
+
+		return new WebGameSnapshot(
+			payload.Id,
+			payload.IsGameOver,
+			payload.CurrentPlayerIndex,
+			payload.TurnNumber,
+			payload.Players.Select(x => new WebSnapshotPlayer(x.PlayerId, x.PlayerName, x.Score)).ToList(),
+			payload.Board.Select(x => new WebBoardTile(x.Row, x.Column, x.Letter)).ToList());
+	}
+
+	public async Task<WebPlayResponse> PlayAsync(string gameId, PlayForm form, CancellationToken cancellationToken = default)
+	{
+		object? payload = form.Command switch
+		{
+			"play.move" => new { position = form.Position, word = form.Word, direction = form.Direction },
+			"play.swap" => new { letters = form.Word },
+			_ => null
+		};
+
+		var request = new { playerId = form.PlayerId, command = form.Command, payload };
+		var response = await httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/moves", request, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
+
+		var result = await response.Content.ReadFromJsonAsync<PlayEnvelope>(JsonOptions, cancellationToken)
+			?? throw new InvalidOperationException("Réponse invalide sur play.command.");
+
+		return new WebPlayResponse(result.GameId, result.MoveId, result.Score);
+	}
+
+	private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+	{
+		if (response.IsSuccessStatusCode)
+			return;
+
+		var body = await response.Content.ReadAsStringAsync(cancellationToken);
+		string message;
+
+		try
+		{
+			using var document = JsonDocument.Parse(body);
+			message = document.RootElement.TryGetProperty("error", out var error)
+				? error.GetString() ?? $"Erreur API HTTP {(int)response.StatusCode}"
+				: $"Erreur API HTTP {(int)response.StatusCode}";
+		}
+		catch
+		{
+			message = string.IsNullOrWhiteSpace(body)
+				? $"Erreur API HTTP {(int)response.StatusCode}"
+				: body;
+		}
+
+		throw new HttpRequestException(message);
+	}
+
+	private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, DateTime ExpiresAt);
+	private sealed record PlayerProfileEnvelope(string PlayerId, string Username, string? Email, DateTimeOffset CreatedAt);
+	private sealed record GameHistoryEnvelope(string GameId, string GameLevel, string Queue, string Status, DateTimeOffset EndedAt, int DurationSeconds, bool IsWinner);
+	private sealed record GameListEnvelope(List<GameListItemEnvelope> Games);
+	private sealed record GameListItemEnvelope(string Id, string? GameName, string Status, int Players, int MaxPlayers, string Queue, bool IsJoinable);
+	private sealed record CreateGameEnvelope(string GameId, string HostPlayerId);
+	private sealed record JoinGameEnvelope(string GameId, string PlayerId);
+	private sealed record GameSnapshotEnvelope(string Id, bool IsGameOver, int CurrentPlayerIndex, int TurnNumber, List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board);
+	private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score);
+	private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);
+	private sealed record PlayEnvelope(string GameId, string MoveId, int Score);
 }
-

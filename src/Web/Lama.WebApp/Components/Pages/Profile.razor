@@ -1,58 +1,143 @@
 @page "/profile"
 @layout MainLayout
-@inject IJSRuntime JS
+@inject AuthService Auth
+@inject LamaApiClient Api
+@inject NavigationManager Navigation
 
 <PageTitle>Playalama | Profil</PageTitle>
 
-<section class="card section">
-    <h1>Gestion du profil</h1>
-    <p>V1 stocke le profil localement dans votre navigateur. L'email est optionnel.</p>
+@if (!Auth.IsLoggedIn)
+{
+    <section class="card section">
+        <h1>Profil</h1>
+        <p>Vous devez être connecté pour accéder à cette page.</p>
+        <a class="button" href="/login">Se connecter</a>
+    </section>
+}
+else
+{
+    <section class="card section">
+        <h1>Mon profil</h1>
 
-    <EditForm Model="profile" OnValidSubmit="SaveAsync" class="stack">
-        <DataAnnotationsValidator />
-        <div class="form-grid">
-            <label>Pseudo / Username
-                <InputText class="input" @bind-Value="profile.Username" />
-            </label>
-            <label>Email (optionnel)
-                <InputText class="input" @bind-Value="profile.Email" />
-            </label>
-            <label>Mot de passe
-                <InputText class="input" @bind-Value="profile.Password" type="password" />
-            </label>
-        </div>
-        <div class="actions">
-            <button class="button" type="submit">Sauvegarder</button>
-            <button class="button-secondary" type="button" @onclick="LoadAsync">Recharger</button>
-        </div>
-    </EditForm>
+        @if (profile is not null)
+        {
+            <div class="profile-info">
+                <div class="stat-pill"><span>Pseudo</span><strong>@profile.Username</strong></div>
+                @if (!string.IsNullOrWhiteSpace(profile.Email))
+                {
+                    <div class="stat-pill"><span>Email</span><strong>@profile.Email</strong></div>
+                }
+                <div class="stat-pill"><span>Membre depuis</span><strong>@profile.CreatedAt.ToString("dd/MM/yyyy")</strong></div>
+            </div>
+        }
 
-    @if (!string.IsNullOrWhiteSpace(message))
-    {
-        <p class="success">@message</p>
-    }
-</section>
+        <h2>Modifier mon profil</h2>
+        <EditForm Model="updateForm" OnValidSubmit="SaveAsync" class="stack">
+            <DataAnnotationsValidator />
+
+            <label class="field-label">Email (optionnel)
+                <InputText class="input" type="email" @bind-Value="updateForm.Email" placeholder="vous@exemple.fr" />
+            </label>
+
+            <h3>Changer le mot de passe</h3>
+            <label class="field-label">Mot de passe actuel
+                <InputText class="input" type="password" @bind-Value="updateForm.CurrentPassword" />
+            </label>
+            <label class="field-label">Nouveau mot de passe
+                <InputText class="input" type="password" @bind-Value="updateForm.NewPassword" />
+                <ValidationMessage For="() => updateForm.NewPassword" />
+            </label>
+            <label class="field-label">Confirmer le nouveau mot de passe
+                <InputText class="input" type="password" @bind-Value="updateForm.NewPasswordConfirm" />
+                <ValidationMessage For="() => updateForm.NewPasswordConfirm" />
+            </label>
+
+            @if (!string.IsNullOrWhiteSpace(error))
+            {
+                <p class="alert-error">@error</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(success))
+            {
+                <p class="alert-ok">@success</p>
+            }
+
+            <div class="actions">
+                <button class="button" type="submit" disabled="@busy">
+                    @(busy ? "Sauvegarde…" : "Enregistrer")
+                </button>
+            </div>
+        </EditForm>
+    </section>
+}
 
 @code {
-    private ProfileForm profile = new();
-    private string? message;
+    private WebPlayerProfile? profile;
+    private readonly ProfileUpdateForm updateForm = new();
+    private bool busy;
+    private string? error;
+    private string? success;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadAsync();
+        if (!firstRender) return;
+
+        await Auth.InitializeAsync();
+
+        if (!Auth.IsLoggedIn)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        await LoadProfileAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (token is null) return;
+            profile = await Api.GetMyProfileAsync(token);
+            updateForm.Email = profile?.Email;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
     }
 
     private async Task SaveAsync()
     {
-        await JS.InvokeVoidAsync("playalamaProfile.save", profile);
-        message = "Profil sauvegarde localement.";
-    }
+        busy = true;
+        error = null;
+        success = null;
 
-    private async Task LoadAsync()
-    {
-        var loaded = await JS.InvokeAsync<ProfileForm?>("playalamaProfile.load");
-        if (loaded is not null)
-            profile = loaded;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (token is null) { error = "Session expirée."; return; }
+
+            var updated = await Api.UpdateMyProfileAsync(
+                token,
+                updateForm.Email,
+                updateForm.CurrentPassword,
+                string.IsNullOrWhiteSpace(updateForm.NewPassword) ? null : updateForm.NewPassword);
+
+            profile = updated;
+            success = "Profil mis à jour.";
+            updateForm.CurrentPassword = null;
+            updateForm.NewPassword = null;
+            updateForm.NewPasswordConfirm = null;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
     }
 }
-

@@ -2,6 +2,7 @@ using Lama.Contracts;
 using Lama.Server.Data;
 using Lama.Server.Endpoints;
 using Lama.Server.Endpoints.Auth;
+using Lama.Server.Endpoints.Players;
 using Lama.Server.Runtime;
 using Lama.Server.Security;
 using Lama.Languages.fr;
@@ -45,6 +46,9 @@ app.MapInternalEndpoints(allowShutdown);
 
 // Auth endpoints
 app.MapAuthEndpoints(jwtService);
+
+// Player profile endpoints
+app.MapPlayerEndpoints();
 
 var api = app.MapGroup("/api/v1");
 api.MapGamesReadEndpoints();

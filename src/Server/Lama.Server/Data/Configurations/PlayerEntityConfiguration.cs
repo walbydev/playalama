@@ -16,6 +16,11 @@ public sealed class PlayerEntityConfiguration : IEntityTypeConfiguration<PlayerE
         builder.Property(x => x.Username).HasColumnName("username").HasMaxLength(100).IsRequired();
         builder.HasIndex(x => x.Username).IsUnique();
 
+        builder.Property(x => x.Email).HasColumnName("email").HasMaxLength(256).IsRequired(false);
+        builder.HasIndex(x => x.Email).IsUnique().HasFilter("email IS NOT NULL");
+
+        builder.Property(x => x.PasswordHash).HasColumnName("password_hash").HasMaxLength(512).IsRequired(false);
+
         builder.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
     }
 }

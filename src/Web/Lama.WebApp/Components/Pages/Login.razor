@@ -1,0 +1,69 @@
+@page "/login"
+@layout MainLayout
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Playalama | Connexion</PageTitle>
+
+<section class="card section auth-card">
+    <div class="auth-header">
+        <span class="brand-big">🦙</span>
+        <h1>Connexion</h1>
+        <p>Retrouvez vos parties et votre classement.</p>
+    </div>
+
+    <EditForm Model="form" OnValidSubmit="SubmitAsync" class="stack">
+        <DataAnnotationsValidator />
+
+        <label class="field-label">Pseudo
+            <InputText class="input" @bind-Value="form.Username" autocomplete="username" placeholder="VotreAlias" />
+            <ValidationMessage For="() => form.Username" />
+        </label>
+
+        <label class="field-label">Mot de passe
+            <InputText class="input" type="password" @bind-Value="form.Password" autocomplete="current-password" placeholder="••••••" />
+            <ValidationMessage For="() => form.Password" />
+        </label>
+
+        @if (!string.IsNullOrWhiteSpace(error))
+        {
+            <p class="alert-error">@error</p>
+        }
+
+        <div class="actions">
+            <button class="button" type="submit" disabled="@busy">
+                @(busy ? "Connexion…" : "Se connecter")
+            </button>
+        </div>
+    </EditForm>
+
+    <p class="auth-footer">Pas encore de compte ? <a href="/register">S'inscrire</a></p>
+</section>
+
+@code {
+    private readonly LoginForm form = new();
+    private bool busy;
+    private string? error;
+
+    protected override void OnInitialized()
+    {
+        if (Auth.IsLoggedIn)
+            Navigation.NavigateTo("/games");
+    }
+
+    private async Task SubmitAsync()
+    {
+        busy = true;
+        error = null;
+
+        var (success, err) = await Auth.LoginAsync(form.Username, form.Password);
+
+        if (success)
+            Navigation.NavigateTo("/games");
+        else
+            error = err ?? "Connexion échouée.";
+
+        busy = false;
+    }
+}
+
