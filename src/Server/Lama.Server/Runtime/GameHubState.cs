@@ -2,6 +2,9 @@ using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Lama.Contracts;
 using Lama.Domain.Engine;
+using Lama.Server.Contracts.Api;
+
+namespace Lama.Server.Runtime;
 
 public sealed class GameHubState
 {

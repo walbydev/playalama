@@ -1,4 +1,6 @@
 using Lama.Server.Data;
+using Lama.Server.Contracts.Api;
+using Lama.Server.Runtime;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -13,9 +15,9 @@ public static class GamesReadEndpoints
         return app;
     }
 
-    private static async Task<IResult> GetGamesAsync(global::GameHubState state, LamaDbContext db, CancellationToken cancellationToken)
+    private static async Task<IResult> GetGamesAsync(GameHubState state, LamaDbContext db, CancellationToken cancellationToken)
     {
-        var merged = new Dictionary<string, global::OnlineGameListItem>(StringComparer.Ordinal);
+        var merged = new Dictionary<string, OnlineGameListItem>(StringComparer.Ordinal);
         var persistedPlayerCountsByGame = new Dictionary<Guid, int>();
         var persistedMoveCountsByGame = new Dictionary<Guid, int>();
 
@@ -26,7 +28,7 @@ public static class GamesReadEndpoints
                 var stateSnapshot = game.Engine.GetGameState();
                 var status = stateSnapshot.IsGameOver ? "ended" : "active";
 
-                merged[game.Id] = new global::OnlineGameListItem(
+                merged[game.Id] = new OnlineGameListItem(
                     Id: game.Id,
                     GameLevel: game.GameLevel,
                     Queue: game.Queue,
@@ -80,7 +82,7 @@ public static class GamesReadEndpoints
             var isGameOver = string.Equals(normalizedStatus, "ended", StringComparison.OrdinalIgnoreCase)
                              || string.Equals(normalizedStatus, "abandoned", StringComparison.OrdinalIgnoreCase);
 
-            merged[gameId] = new global::OnlineGameListItem(
+            merged[gameId] = new OnlineGameListItem(
                 Id: gameId,
                 GameLevel: parsedLevel,
                 Queue: parsedQueue,
@@ -108,7 +110,7 @@ public static class GamesReadEndpoints
         });
     }
 
-    private static async Task<IResult> GetGameByIdAsync(string gameId, global::GameHubState state, LamaDbContext db, CancellationToken cancellationToken)
+    private static async Task<IResult> GetGameByIdAsync(string gameId, GameHubState state, LamaDbContext db, CancellationToken cancellationToken)
     {
         if (state.TryGet(gameId, out var game))
         {
@@ -163,7 +165,7 @@ public static class GamesReadEndpoints
 
         var persistedPlayers = new List<object>();
         var persistedMoves = new List<object>();
-        IReadOnlyList<global::OnlineBoardTile> persistedBoard = [];
+        IReadOnlyList<OnlineBoardTile> persistedBoard = [];
         var lastTurnNumber = 0;
 
         try

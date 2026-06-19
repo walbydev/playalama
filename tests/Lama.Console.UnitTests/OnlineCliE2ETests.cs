@@ -149,6 +149,17 @@ public sealed class OnlineCliE2ETests : IAsyncLifetime, IDisposable
 		swap.StdOut.Should().Contain("Echange effectue (online)");
 	}
 
+	[Fact]
+	public async Task Cli_Online_Challenge_WithoutPlayableMove_ReturnsError()
+	{
+		var create = await RunCliAsync(_hostSessionDir, "game", "create", "Alice", "--level", "casual");
+		create.ExitCode.Should().Be(0);
+
+		var challenge = await RunCliAsync(_hostSessionDir, "play", "challenge");
+		challenge.ExitCode.Should().NotBe(0);
+		challenge.StdErr.Should().Contain("Aucun dernier coup contestable");
+	}
+
 	private async Task<string> GetPlayableWordFromRackAsync(string gameId)
 	{
 		var show = await RunCliAsync(_hostSessionDir, "game", "show", gameId, "--output", "json");

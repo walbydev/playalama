@@ -2,6 +2,8 @@ using System.Text.Json;
 using Lama.Contracts;
 using Lama.Domain.Engine;
 
+namespace Lama.Server.Contracts.Api;
+
 public sealed record CreateGameRequest(
     string HostName,
     GameLevel? GameLevel = null,

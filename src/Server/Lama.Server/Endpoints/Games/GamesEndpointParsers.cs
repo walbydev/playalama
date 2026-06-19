@@ -2,6 +2,7 @@ using System.Text.Json;
 using Lama.Contracts;
 using Lama.Domain.Board;
 using Lama.Domain.Engine;
+using Lama.Server.Contracts.Api;
 using Npgsql;
 
 namespace Lama.Server.Endpoints;

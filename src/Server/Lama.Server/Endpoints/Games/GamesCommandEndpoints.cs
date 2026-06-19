@@ -1,5 +1,7 @@
 using Lama.Contracts;
 using Lama.Domain.Engine;
+using Lama.Server.Contracts.Api;
+using Lama.Server.Runtime;
 
 namespace Lama.Server.Endpoints;
 
@@ -15,7 +17,7 @@ public static class GamesCommandEndpoints
         return app;
     }
 
-    private static IResult CreateGame(global::CreateGameRequest request, global::GameHubState state)
+    private static IResult CreateGame(CreateGameRequest request, GameHubState state)
     {
         if (string.IsNullOrWhiteSpace(request.HostName))
             return Results.BadRequest(new { error = "hostName is required" });
@@ -29,7 +31,7 @@ public static class GamesCommandEndpoints
         engine.InitializeGame([hostName]);
         var initialState = engine.GetGameState();
 
-        var game = new global::OnlineGame(
+        var game = new OnlineGame(
             Id: gameId,
             GameLevel: level,
             BoardSize: request.BoardSize > 0 ? request.BoardSize : 15,
@@ -38,7 +40,7 @@ public static class GamesCommandEndpoints
             Language: string.IsNullOrWhiteSpace(request.Language) ? "fr" : request.Language.Trim(),
             CreatedAt: DateTimeOffset.UtcNow,
             UpdatedAt: DateTimeOffset.UtcNow,
-            Players: [new global::OnlinePlayer(hostId, hostName, true)],
+            Players: [new OnlinePlayer(hostId, hostName, true)],
             PlayerIndexById: new Dictionary<string, int>(StringComparer.Ordinal) { [hostId] = 0 },
             Moves: [],
             TournamentId: request.TournamentId,
@@ -47,7 +49,7 @@ public static class GamesCommandEndpoints
 
         state.Create(game);
 
-        state.Publish(gameId, new global::ServerEvent("game.created", new
+        state.Publish(gameId, new ServerEvent("game.created", new
         {
             gameId,
             hostPlayerId = hostId,
@@ -72,7 +74,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static IResult JoinGame(string gameId, global::JoinGameRequest request, global::GameHubState state)
+    private static IResult JoinGame(string gameId, JoinGameRequest request, GameHubState state)
     {
         if (string.IsNullOrWhiteSpace(request.PlayerName))
             return Results.BadRequest(new { error = "playerName is required" });
@@ -97,7 +99,7 @@ public static class GamesCommandEndpoints
             allPlayerNames.Add(trimmedName);
             game.Engine.InitializeGame(allPlayerNames);
 
-            game.Players.Add(new global::OnlinePlayer(playerId, trimmedName, false));
+            game.Players.Add(new OnlinePlayer(playerId, trimmedName, false));
             game.PlayerIndexById[playerId] = game.Players.Count - 1;
             game.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -105,7 +107,7 @@ public static class GamesCommandEndpoints
             rack = newState.Players[game.PlayerIndexById[playerId]].Rack.ToList();
         }
 
-        state.Publish(gameId, new global::ServerEvent("game.joined", new
+        state.Publish(gameId, new ServerEvent("game.joined", new
         {
             gameId,
             playerId,
@@ -124,7 +126,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static IResult PlayMove(string gameId, global::PlayMoveRequest request, global::GameHubState state)
+    private static IResult PlayMove(string gameId, PlayMoveRequest request, GameHubState state)
     {
         if (!state.TryGet(gameId, out var game))
             return Results.NotFound(new { error = "game not found" });
@@ -136,13 +138,13 @@ public static class GamesCommandEndpoints
             return Results.BadRequest(new { error = "command is required" });
 
         var normalizedCommand = request.Command.Trim().ToLowerInvariant();
-        global::OnlineMove createdMove;
+        OnlineMove createdMove;
         int score = 0;
         List<char>? newRack = null;
         int nextCurrentPlayerIndex;
         string? nextPlayerId;
         int playedTurn;
-        List<global::OnlineMovePlacement> placements = [];
+        List<OnlineMovePlacement> placements = [];
         string? actionMessage = null;
         bool? challengeSucceeded = null;
 
@@ -190,7 +192,7 @@ public static class GamesCommandEndpoints
                         playedTurn = historyEntry.TurnNumber;
                         score = historyEntry.Score;
                         placements = historyEntry.Placements
-                            .Select(p => new global::OnlineMovePlacement(p.Row, p.Column, p.Letter))
+                            .Select(p => new OnlineMovePlacement(p.Row, p.Column, p.Letter))
                             .ToList();
                         newRack = stateAfterMove.Players[playerIndex].Rack.ToList();
                         break;
@@ -215,7 +217,7 @@ public static class GamesCommandEndpoints
                         }
 
                         placements = challengeResult.ChallengedMove?.Placements
-                            .Select(p => new global::OnlineMovePlacement(p.Row, p.Column, p.Letter))
+                            .Select(p => new OnlineMovePlacement(p.Row, p.Column, p.Letter))
                             .ToList() ?? [];
                         score = 0;
                         newRack = challengeResult.GameState.Players[playerIndex].Rack.ToList();
@@ -231,7 +233,7 @@ public static class GamesCommandEndpoints
                         placements = simulatedLetters
                             .OrderBy(kv => kv.Key.Row)
                             .ThenBy(kv => kv.Key.Column)
-                            .Select(kv => new global::OnlineMovePlacement(kv.Key.Row, kv.Key.Column, char.ToUpperInvariant(kv.Value)))
+                            .Select(kv => new OnlineMovePlacement(kv.Key.Row, kv.Key.Column, char.ToUpperInvariant(kv.Value)))
                             .ToList();
                         newRack = currentState.Players[playerIndex].Rack.ToList();
                         actionMessage = $"Coup valide : {score} pts";
@@ -246,7 +248,7 @@ public static class GamesCommandEndpoints
                 return Results.BadRequest(new { error = ex.Message });
             }
 
-            createdMove = new global::OnlineMove(
+            createdMove = new OnlineMove(
                 MoveId: Guid.NewGuid().ToString("N"),
                 PlayerId: request.PlayerId,
                 PlayerName: game.Players[playerIndex].PlayerName,
@@ -265,7 +267,7 @@ public static class GamesCommandEndpoints
             nextPlayerId = game.Players.ElementAtOrDefault(nextCurrentPlayerIndex)?.PlayerId;
         }
 
-        state.Publish(gameId, new global::ServerEvent("game.move.played", new
+        state.Publish(gameId, new ServerEvent("game.move.played", new
         {
             gameId,
             createdMove.MoveId,
@@ -295,13 +297,13 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static IResult EndGame(string gameId, global::EndGameRequest request, global::GameHubState state)
+    private static IResult EndGame(string gameId, EndGameRequest request, GameHubState state)
     {
         if (!state.TryGet(gameId, out var game))
             return Results.NotFound(new { error = "game not found" });
 
         string? winner;
-        List<global::OnlineScoreEntry> scores;
+        List<OnlineScoreEntry> scores;
 
         lock (game)
         {
@@ -315,7 +317,7 @@ public static class GamesCommandEndpoints
             var endedState = game.Engine.GetGameState();
             scores = endedState.Players
                 .OrderByDescending(p => p.Score)
-                .Select(p => new global::OnlineScoreEntry(p.Name, p.Score))
+                .Select(p => new OnlineScoreEntry(p.Name, p.Score))
                 .ToList();
 
             winner = scores.Count > 0 && scores.Count(s => s.Score == scores[0].Score) == 1
@@ -325,7 +327,7 @@ public static class GamesCommandEndpoints
 
         var endedAt = DateTimeOffset.UtcNow;
 
-        state.Publish(gameId, new global::ServerEvent("game.ended", new
+        state.Publish(gameId, new ServerEvent("game.ended", new
         {
             gameId,
             endedAt,
@@ -344,7 +346,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static async Task StreamEventsAsync(string gameId, global::GameHubState state, HttpContext httpContext)
+    private static async Task StreamEventsAsync(string gameId, GameHubState state, HttpContext httpContext)
     {
         if (!state.Exists(gameId))
         {
@@ -358,7 +360,7 @@ public static class GamesCommandEndpoints
 
         var subscription = state.Subscribe(gameId);
 
-        await GamesEndpointParsers.WriteEventAsync(httpContext, new global::ServerEvent("sse.connected", new
+        await GamesEndpointParsers.WriteEventAsync(httpContext, new ServerEvent("sse.connected", new
         {
             gameId,
             utcNow = DateTimeOffset.UtcNow
