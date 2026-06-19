@@ -61,29 +61,41 @@ public static class HelpCatalog
             CommandId: "game.create",
             Group: "game",
             ActionPath: "create",
-            Usage: "lama game create [<hote>] [--level casual|standard|competitive|tournament]",
+            Usage: "lama game create [<hote>] [--level casual|standard|competitive|tournament] [--mode solo|multi] [--name <nom>] [--max-players <2-4>] [--with-ai] [--private --password <secret>]",
             Description: "Cree une nouvelle partie et initialise la session locale.",
             AllowedRoles: "Public (cree une session Host)",
             OutputFormats: "text",
             Options:
             [
-                new("--level", "Niveau de partie (defaut: standard)")
+                new("--level", "Niveau de partie (defaut: standard)"),
+                new("--mode", "Mode de partie (solo|multi)"),
+                new("--name", "Nom de lobby personnalise"),
+                new("--max-players", "Capacite max (multi: 2 a 4)"),
+                new("--with-ai", "Reserve 1 slot IA (max 1 IA)"),
+                new("--private", "Rend le lobby prive (mot de passe requis)"),
+                new("--password", "Mot de passe du lobby prive")
             ],
             Examples:
             [
                 "lama game create Alice",
-                "lama game create --level tournament"
+                "lama game create --mode solo --with-ai",
+                "lama game create --mode multi --name FridayNight --max-players 4",
+                "lama game create --mode multi --private --password secret42"
             ]),
         new(
             CommandId: "game.join",
             Group: "game",
             ActionPath: "join",
-            Usage: "lama game join <nom>",
+            Usage: "lama game join <nom> [--game-id <id>] [--password <secret>]",
             Description: "Ajoute un joueur a la partie active.",
             AllowedRoles: "Public / Host / Player / Admin / SuperAdmin",
             OutputFormats: "text",
-            Options: [],
-            Examples: ["lama game join Bob"]),
+            Options:
+            [
+                new("--game-id", "Identifiant de la partie a rejoindre"),
+                new("--password", "Mot de passe si la partie est privee")
+            ],
+            Examples: ["lama game join Bob", "lama game join Bob --game-id abc123 --password secret42"]),
         new(
             CommandId: "game.list",
             Group: "game",

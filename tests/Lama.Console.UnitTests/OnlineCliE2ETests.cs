@@ -160,6 +160,53 @@ public sealed class OnlineCliE2ETests : IAsyncLifetime, IDisposable
 		challenge.StdErr.Should().Contain("Aucun dernier coup contestable");
 	}
 
+	[Fact]
+	public async Task Cli_Online_MultiLobby_PrivateStartFlow_Works()
+	{
+		var create = await RunCliAsync(
+			_hostSessionDir,
+			"game", "create", "Alice",
+			"--mode", "multi",
+			"--name", "LobbyPriv",
+			"--max-players", "4",
+			"--with-ai",
+			"--private",
+			"--password", "secret42");
+
+		create.ExitCode.Should().Be(0);
+		create.StdOut.Should().Contain("Type      : multi");
+
+		var gameId = ExtractGameId(create.StdOut);
+
+		var joinWrongPassword = await RunCliAsync(
+			_guestSessionDir,
+			"game", "join", "Bob",
+			"--game-id", gameId,
+			"--password", "bad-secret");
+		joinWrongPassword.ExitCode.Should().NotBe(0);
+		joinWrongPassword.StdErr.Should().Contain("invalid game password");
+
+		var joinOk = await RunCliAsync(
+			_guestSessionDir,
+			"game", "join", "Bob",
+			"--game-id", gameId,
+			"--password", "secret42");
+		joinOk.ExitCode.Should().Be(0);
+		joinOk.StdOut.Should().Contain("rejoint la partie online");
+
+		var passBeforeStart = await RunCliAsync(_hostSessionDir, "play", "pass");
+		passBeforeStart.ExitCode.Should().NotBe(0);
+		passBeforeStart.StdErr.Should().Contain("game has not started yet");
+
+		var start = await RunCliAsync(_hostSessionDir, "game", "start");
+		start.ExitCode.Should().Be(0);
+		start.StdOut.Should().Contain("Partie démarrée");
+
+		var passAfterStart = await RunCliAsync(_hostSessionDir, "play", "pass");
+		passAfterStart.ExitCode.Should().Be(0);
+		passAfterStart.StdOut.Should().Contain("(online)");
+	}
+
 	private async Task<string> GetPlayableWordFromRackAsync(string gameId)
 	{
 		var show = await RunCliAsync(_hostSessionDir, "game", "show", gameId, "--output", "json");

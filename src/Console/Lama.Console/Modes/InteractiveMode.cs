@@ -192,6 +192,53 @@ public sealed class InteractiveMode : IConsoleMode
     private async Task<int> HandleJoinGame(CancellationToken cancellationToken)
     {
         var session = _sessionService.LoadSession();
+
+        if (_runtimeMode.IsOnline)
+        {
+            var gameId = AnsiConsole.Prompt(
+                new TextPrompt<string>("[green]ID de la partie à rejoindre :[/]")
+                    .Validate(id => !string.IsNullOrWhiteSpace(id)
+                        ? ValidationResult.Success()
+                        : ValidationResult.Error("L'ID de partie est requis.")));
+
+            var onlineDefaultName = session?.PlayerName ?? "Joueur";
+            var onlinePlayerName = AnsiConsole.Prompt(
+                new TextPrompt<string>("[green]Nom du joueur :[/]")
+                    .DefaultValue(onlineDefaultName)
+                    .Validate(name => !string.IsNullOrWhiteSpace(name)
+                        ? ValidationResult.Success()
+                        : ValidationResult.Error("Le nom ne peut pas être vide.")));
+
+            var isPrivate = AnsiConsole.Confirm("[green]Partie privée (mot de passe) ?[/]", defaultValue: false);
+            var options = new Dictionary<string, string?> { ["game-id"] = gameId };
+            if (isPrivate)
+            {
+                var password = AnsiConsole.Prompt(
+                    new TextPrompt<string>("[green]Mot de passe :[/]")
+                        .Secret()
+                        .Validate(value => !string.IsNullOrWhiteSpace(value)
+                            ? ValidationResult.Success()
+                            : ValidationResult.Error("Le mot de passe est requis.")));
+                options["password"] = password;
+            }
+
+            var onlineContext = new CommandContext
+            {
+                Group = "game",
+                Action = "join",
+                CommandId = "game.join",
+                Arguments = [onlinePlayerName],
+                Options = options,
+                GameId = gameId,
+                PlayerId = session?.PlayerId,
+                PlayerName = session?.PlayerName,
+                Role = session?.Role ?? Role.Player,
+                GameLevel = session?.GameLevel
+            };
+
+            return await _dispatcher.DispatchAsync(onlineContext, cancellationToken);
+        }
+
         if (session?.GameId is null || session.PlayerId is null)
         {
             AnsiConsole.MarkupLine("[yellow]Aucune partie active a rejoindre dans cette session. Creez d'abord une partie.[/]");
