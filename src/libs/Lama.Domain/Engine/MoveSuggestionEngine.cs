@@ -42,6 +42,7 @@ public sealed class MoveSuggestionEngine
             return [];
         
         var rack = currentPlayer.Rack.Select(char.ToUpperInvariant).ToList();
+        var rackInventory = RackInventory.From(rack);
         var isFirstMove = !HasAnyTile(gameState.Board);
         var candidates = new Dictionary<string, MoveSuggestion>(StringComparer.Ordinal);
         var boardAnchorLetters = GetBoardAnchorLetters(gameState.Board);
@@ -59,7 +60,7 @@ public sealed class MoveSuggestionEngine
                 if (word.Length > rack.Count)
                     continue;
 
-                AddFirstMoveCandidates(candidates, gameState.Board, rack, word);
+                AddFirstMoveCandidates(candidates, gameState.Board, rackInventory, word);
                 if (candidates.Count > keepThreshold)
                     PruneCandidatesInPlace(candidates, keepThreshold, strategy);
                 continue;
@@ -68,7 +69,7 @@ public sealed class MoveSuggestionEngine
             if (!WordContainsAnyAnchorLetter(word, boardAnchorLetters))
                 continue;
 
-            AddConnectedCandidates(candidates, gameState.Board, rack, word, anchorIndex);
+            AddConnectedCandidates(candidates, gameState.Board, rackInventory, word, anchorIndex);
             if (candidates.Count > keepThreshold)
                 PruneCandidatesInPlace(candidates, keepThreshold, strategy);
         }
@@ -140,7 +141,7 @@ public sealed class MoveSuggestionEngine
     private void AddFirstMoveCandidates(
         Dictionary<string, MoveSuggestion> candidates,
         BoardState board,
-        IReadOnlyList<char> rack,
+        RackInventory rack,
         string word,
         bool isHorizontal = true)
     {
@@ -163,7 +164,7 @@ public sealed class MoveSuggestionEngine
     private void AddConnectedCandidates(
         Dictionary<string, MoveSuggestion> candidates,
         BoardState board,
-        IReadOnlyList<char> rack,
+        RackInventory rack,
         string word,
         IReadOnlyDictionary<char, List<Position>> anchorIndex)
     {
@@ -187,7 +188,7 @@ public sealed class MoveSuggestionEngine
     private void TryAddCandidate(
         Dictionary<string, MoveSuggestion> candidates,
         BoardState board,
-        IReadOnlyList<char> rack,
+        RackInventory rack,
         string word,
         int startRow,
         int startCol,
@@ -221,6 +222,9 @@ public sealed class MoveSuggestionEngine
         }
 
         if (newPlacements.Count == 0)
+            return;
+
+        if (newPlacements.Count > rack.TotalTiles)
             return;
 
         if (!TryAssignWildcards(newPlacements, rack, out var wildcardPositions))
@@ -307,22 +311,19 @@ public sealed class MoveSuggestionEngine
 
     private static bool TryAssignWildcards(
         IReadOnlyDictionary<Position, char> lettersToPlace,
-        IReadOnlyList<char> rack,
+        RackInventory rack,
         out HashSet<Position> wildcardPositions)
     {
         wildcardPositions = [];
-
-        var available = rack
-            .GroupBy(c => c)
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        available.TryGetValue('*', out var wildcards);
+        var remaining = rack.CloneCounts();
+        var wildcards = rack.Wildcards;
 
         foreach (var (pos, letter) in lettersToPlace)
         {
-            if (available.TryGetValue(letter, out var count) && count > 0)
+            var idx = LetterIndex(letter);
+            if (idx >= 0 && remaining[idx] > 0)
             {
-                available[letter] = count - 1;
+                remaining[idx]--;
                 continue;
             }
 
@@ -334,6 +335,12 @@ public sealed class MoveSuggestionEngine
         }
 
         return true;
+    }
+
+    private static int LetterIndex(char letter)
+    {
+        var upper = char.ToUpperInvariant(letter);
+        return upper is >= 'A' and <= 'Z' ? upper - 'A' : -1;
     }
 
     private static bool HasAnyTile(BoardState board)
@@ -397,6 +404,44 @@ public sealed class MoveSuggestionEngine
         BonusType.DoubleLetter => 2,
         _ => 0
     };
+
+    private sealed class RackInventory
+    {
+        private readonly int[] _letterCounts;
+
+        private RackInventory(int[] letterCounts, int wildcards)
+        {
+            _letterCounts = letterCounts;
+            Wildcards = wildcards;
+            TotalTiles = _letterCounts.Sum() + wildcards;
+        }
+
+        public int Wildcards { get; }
+        public int TotalTiles { get; }
+
+        public static RackInventory From(IEnumerable<char> rack)
+        {
+            var counts = new int[26];
+            var wildcards = 0;
+
+            foreach (var letter in rack)
+            {
+                if (letter == '*')
+                {
+                    wildcards++;
+                    continue;
+                }
+
+                var idx = LetterIndex(letter);
+                if (idx >= 0)
+                    counts[idx]++;
+            }
+
+            return new RackInventory(counts, wildcards);
+        }
+
+        public int[] CloneCounts() => (int[])_letterCounts.Clone();
+    }
 }
 
 /// <summary>
