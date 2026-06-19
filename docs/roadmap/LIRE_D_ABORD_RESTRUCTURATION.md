@@ -1,4 +1,9 @@
-# 🎯 LIRE D'ABORD - Restructuration 2026-06-19
+# Lire d'abord — restructuration
+
+**Date** : 2026-06-19
+**Statut** : Validé
+
+---
 
 **Status**: ✅ **COMPLÉTÉE - PRÊT PRODUCTION**
 
@@ -31,11 +36,11 @@ tools/docker/
 
 ### 📖 5 Docs complètes créées
 ```
-START_INFRA_README.md              👈 Points d'entrée
-INFRA_QUICK_REF.md                 👈 Cheatsheet rapide (2 min)
+docs/utils/START_INFRA_README.md              👈 Points d'entrée
+docs/utils/INFRA_QUICK_REF.md                 👈 Cheatsheet rapide (2 min)
 tools/docker/DOCKER_ARCHITECTURE.md 👈 Doc complète (10 min)
-RESTRUCTURATION_INFRA_2026-06-19.md 👈 Guide migration (15 min)
-RESTRUCTURATION_RÉSUMÉ.md          👈 Summary (5 min)
+docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md 👈 Guide migration (15 min)
+docs/roadmap/RESUME_RESTRUCTURATION_INFRA.md          👈 Summary (5 min)
 ```
 
 ### 🔧 Script `deploy-static-site.sh` v2.0
@@ -68,7 +73,7 @@ docker build -f tools/docker/Dockerfile.server .
 
 ### 1. Lire (5 min)
 ```bash
-cat START_INFRA_README.md
+cat docs/utils/START_INFRA_README.md
 ```
 
 ### 2. Tester local (2 min)
@@ -105,11 +110,11 @@ ssh debian@playalama.online "docker compose ps"
 
 | Besoin | Fichier | Durée |
 |--------|---------|-------|
-| Point d'entrée | **START_INFRA_README.md** | 5 min |
-| Emergency cheatsheet | **INFRA_QUICK_REF.md** | 2 min |
+| Point d'entrée | **docs/utils/START_INFRA_README.md** | 5 min |
+| Emergency cheatsheet | **docs/utils/INFRA_QUICK_REF.md** | 2 min |
 | Comprendre Docker | **tools/docker/DOCKER_ARCHITECTURE.md** | 10 min |
-| Migrer production | **RESTRUCTURATION_INFRA_2026-06-19.md** | 15 min |
-| Resume exécutif | **RESTRUCTURATION_RÉSUMÉ.md** | 5 min |
+| Migrer production | **docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md** | 15 min |
+| Resume exécutif | **docs/roadmap/RESUME_RESTRUCTURATION_INFRA.md** | 5 min |
 
 ---
 
@@ -138,9 +143,8 @@ ssh debian@playalama.online "docker compose ps"
 
 **Que faire maintenant ?**
 
-→ Lire `START_INFRA_README.md` (5 min max)
+→ Lire `docs/utils/START_INFRA_README.md` (5 min max)
 
 ---
 
 *Crée 2026-06-19 | Professionnel | Prêt production*
-

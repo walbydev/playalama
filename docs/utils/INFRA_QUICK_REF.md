@@ -101,8 +101,8 @@ docker build -f tools/docker/Dockerfile.server .
 | Doc | Ligne | Contenu |
 |-----|------|---------|
 | `tools/docker/DOCKER_ARCHITECTURE.md` | 350 | Tout Docker |
-| `RESTRUCTURATION_INFRA_2026-06-19.md` | 280 | Guide migration |
-| `RESTRUCTURATION_RÉSUMÉ.md` | 220 | Summary exécutif |
+| `docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md` | 280 | Guide migration |
+| `docs/roadmap/RESUME_RESTRUCTURATION_INFRA.md` | 220 | Summary exécutif |
 
 ---
 

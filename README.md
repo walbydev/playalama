@@ -364,7 +364,7 @@ LAMA conserve deux modes de fonctionnement:
 
 Le mode local reste **isole** des classements mondiaux.
 
-Voir le plan de migration detaille : [`docs/multiplayer-migration-plan.md`](docs/multiplayer-migration-plan.md).
+Voir le plan de migration detaille : [`docs/PLAN_MIGRATION_MULTIJOUEUR.md`](docs/PLAN_MIGRATION_MULTIJOUEUR.md).
 
 ### Demarrer le serveur central alpha
 

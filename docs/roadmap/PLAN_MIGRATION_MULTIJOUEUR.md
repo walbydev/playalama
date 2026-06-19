@@ -1,4 +1,9 @@
-# Plan de migration multijoueur (serveur central + mode local)
+# Plan de migration multijoueur
+
+**Date** : 2026-06-19
+**Statut** : Planifié
+
+---
 
 ## Decision produit
 
@@ -55,4 +60,3 @@
 - `LAMA_RUNTIME_MODE=local` fonctionne sans internet.
 - `LAMA_RUNTIME_MODE=online` cree/rejoint une partie via API distante.
 - Une partie locale n'apparait jamais dans le leaderboard online.
-

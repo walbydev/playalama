@@ -201,7 +201,7 @@ sudo tail -f /var/log/nginx/playalama-error.log
 ## Documentation supplémentaire
 
 - `docs/HTTPS_DEPLOYMENT.md` - Guide technique complet
-- `HTTPS_QUICK_START.md` - Guide d'action rapide
+- `docs/utils/HTTPS_QUICK_START.md` - Guide d'action rapide
 - `tools/docker/nginx-playalama.conf` - Configuration nginx annotée
 - `Dockerfile` - Déploiement en conteneur
 - `docker-compose.yml` - Orchestration multi-services

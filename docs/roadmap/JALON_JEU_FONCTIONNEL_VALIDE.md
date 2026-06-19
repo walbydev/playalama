@@ -1,4 +1,9 @@
-# ✅ JALON "JEU FONCTIONNEL" VALIDÉ
+# Jalon validé — jeu fonctionnel
+
+**Date** : 2026-06-19
+**Statut** : Validé
+
+---
 
 **Date:** 2026-06-19 12:05 UTC  
 **Responsable exécution:** GitHub Copilot (Agent IA)  
@@ -25,7 +30,7 @@ Le jeu LAMA atteint le jalon **"Jeu fonctionnel"** : parcours complet du jeu jou
   - Alice crée partie → Bob rejoint → Alice joue coup → Affichage plateau/scores/historique → Pass → Game end
   - Tous les critères acceptation PASS
   - Persistance session + fichiers jeu validée
-- **Evidence:** `RECETTE_CG02_INTERACTIVE.md` (exécution et résultats)
+- **Evidence:** `docs/roadmap/RECETTE_CG02_MODE_INTERACTIF.md` (exécution et résultats)
 
 ### CG-03 : Cohérence `play.check` / `play.move` ✅
 - **Status:** PASS 2026-06-18
@@ -145,9 +150,9 @@ Le jeu LAMA atteint le jalon **"Jeu fonctionnel"** : parcours complet du jeu jou
 
 ## References
 
-- `PROGRESS.md` : Historique complet des jalons
-- `RECETTE_CG02_INTERACTIVE.md` : Guide et résultats recette interactive
-- `docs/CLASSIC_GAME_SHORTLIST.md` : Items P0/P1/P2
+- `docs/roadmap/PROGRESSION.md` : Historique complet des jalons
+- `docs/roadmap/RECETTE_CG02_MODE_INTERACTIF.md` : Guide et résultats recette interactive
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md` : Items P0/P1/P2
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs` : E2E CLI reels
 - `tools/scripts/e2e-cli-smoke.sh` : Smoke test complet
 - `tools/scripts/e2e-online-smoke.sh` : Smoke online
@@ -155,4 +160,3 @@ Le jeu LAMA atteint le jalon **"Jeu fonctionnel"** : parcours complet du jeu jou
 ---
 
 **État du projet:** Le jeu est fonctionnel, jouable de bout en bout, avec persistance et opérations online validées. Prêt pour les phases de durciissement sécurité/observabilité en vue du jalon "Livrable".
-

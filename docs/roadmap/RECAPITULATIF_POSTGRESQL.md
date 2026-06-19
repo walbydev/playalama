@@ -1,4 +1,9 @@
-# PostgreSQL Persistance LAMA - Récapitulatif Planification
+# Récapitulatif PostgreSQL
+
+**Date** : 2026-06-18
+**Statut** : Planifié
+
+---
 
 **Date** : 2026-06-18  
 **Status** : Planification complète ✅  
@@ -56,7 +61,7 @@ Vous avez demandé une évaluation et planification de PostgreSQL pour Lama.Serv
 - Code example pour chaque phase
 - Repository Pattern + Async/Await
 
-### 7. **Mise à jour PROGRESS.md**
+### 7. **Mise à jour docs/roadmap/PROGRESSION.md**
 - Point 2026-06-18 17:00:00 UTC documentant cette planification
 
 ---
@@ -155,7 +160,7 @@ Motdepasse: `admin`
 1. **Démarrer rapidement** : `docs/POSTGRESQL_QUICKSTART.md`
 2. **Comprendre l'architecture** : `docs/POSTGRESQL_ARCHITECTURE.md`
 3. **Implémenter** : `docs/POSTGRESQL_EFCORE_PLAN.md`
-4. **Historique décisions** : `PROGRESS.md` (section 2026-06-18 17:00)
+4. **Historique décisions** : `docs/roadmap/PROGRESSION.md` (section 2026-06-18 17:00)
 
 ---
 
@@ -225,11 +230,10 @@ Consultez les documents de détail :
 - Setup Dev : `docs/POSTGRESQL_QUICKSTART.md`  
 - Implémentation : `docs/POSTGRESQL_EFCORE_PLAN.md`
 
-Ou revisiter : `PROGRESS.md` section "2026-06-18 17:00:00 UTC"
+Ou revisiter : `docs/roadmap/PROGRESSION.md` section "2026-06-18 17:00:00 UTC"
 
 ---
 
 **Status** : ✅ Planification complète, prête pour implémentation  
 **Date** : 2026-06-18  
 **Auteur** : GitHub Copilot (Planning Agent)
-

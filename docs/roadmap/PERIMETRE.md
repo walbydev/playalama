@@ -1,4 +1,9 @@
-# SCOPE
+# Périmètre du projet
+
+**Date** : 2026-06-19
+**Statut** : Référence
+
+---
 
 Cadre produit du projet LAMA: ce document decrit le perimetre actuel et les extensions envisagees.
 
@@ -234,4 +239,3 @@ Objectif produit immediat: livrer un jeu classique stable, testable, et jouable 
 - Persistance JSON stable et retrocompatible.
 - Tests unitaires + tests E2E CLI de scenario nominal et edge cases.
 - Option desactivable pour revenir au mode classique sans impact.
-

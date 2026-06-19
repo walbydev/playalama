@@ -31,9 +31,9 @@ Tous les fichiers suivants doivent être créés dans `/home/philippe/RiderProje
 - [ ] `docs/HTTPS_DEPLOYMENT.md` - Guide technique complet
 - [ ] `docs/HTTPS_MIGRATION_PLAN.md` - Plan détaillé avec timeline
 - [ ] `docs/DOCKER_DEPLOYMENT.md` - Guide déploiement Docker
-- [ ] `HTTPS_QUICK_START.md` - Guide d'action rapide
-- [ ] `FILES_INDEX.md` - Index détaillé des fichiers
-- [ ] `SOLUTION_SUMMARY.md` - Résumé des solutions et prochaines étapes (ce fichier)
+- [ ] `docs/utils/HTTPS_QUICK_START.md` - Guide d'action rapide
+- [ ] `docs/utils/FILES_INDEX.md` - Index détaillé des fichiers
+- [ ] `docs/roadmap/RESUME_SOLUTION_HTTPS.md` - Résumé des solutions et prochaines étapes (ce fichier)
 
 ### ✅ Configuration
 
@@ -81,8 +81,8 @@ bash /home/philippe/RiderProjects/Games/Lama/tools/scripts/verify-https.sh playa
 
 ## 📖 Points de départ recommandés
 
-1. **Lire d'abord** : `SOLUTION_SUMMARY.md` ← Vous êtes ici!
-2. **Puis lire** : `HTTPS_QUICK_START.md` - Guide action rapide
+1. **Lire d'abord** : `docs/roadmap/RESUME_SOLUTION_HTTPS.md` ← Vous êtes ici!
+2. **Puis lire** : `docs/utils/HTTPS_QUICK_START.md` - Guide action rapide
 3. **Puis choisir** : Option 1, 2 ou 3
 4. **Puis exécuter** : setup-https.sh ou docker-compose
 

@@ -1,4 +1,9 @@
-# 📋 RÉSUMÉ RESTRUCTURATION INFRA - 2026-06-19
+# Résumé restructuration infra
+
+**Date** : 2026-06-19
+**Statut** : Validé
+
+---
 
 **Status**: ✅ **COMPLÉTÉE ET VALIDÉE**  
 **Impact**: CRITIQUE - Corrige erreur production + prépare maintenance 2+ ans  
@@ -92,7 +97,7 @@ tools/docker/
 | Fichier | Lignes | Contenu |
 |---------|--------|---------|
 | `tools/docker/DOCKER_ARCHITECTURE.md` | 350 | Architecture complète, troubleshooting, cycles maintenance |
-| `RESTRUCTURATION_INFRA_2026-06-19.md` | 280 | Guide migration pas-à-pas + checklist |
+| `docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md` | 280 | Guide migration pas-à-pas + checklist |
 | `.deploy/.gitignore` | 20 | Exclusions secrets (`.deploy/**`, `*.pem`, `*.key`) |
 
 ### 🔐 Sécurité renforcée
@@ -209,7 +214,7 @@ curl https://playalama.online/health
 cat tools/docker/DOCKER_ARCHITECTURE.md
 
 # Guide pas-à-pas migration
-cat RESTRUCTURATION_INFRA_2026-06-19.md
+cat docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md
 
 # Conventions projet globales
 cat AGENTS.md
@@ -271,7 +276,7 @@ git checkout -- tools/docker/
 - `tools/docker/docker-compose.local.yml`
 - `tools/docker/docker-compose.prod.yml`
 - `tools/docker/DOCKER_ARCHITECTURE.md` ← **Grande importance**
-- `RESTRUCTURATION_INFRA_2026-06-19.md` ← **Guide migration**
+- `docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md` ← **Guide migration**
 - `.deploy/.gitignore` ← **Sécurité**
 
 ### 🔄 Modifiés (2 fichiers)
@@ -309,7 +314,7 @@ git checkout -- tools/docker/
 
 ### Production (quand prêt)
 
-1. Backup VPS ancien setup (voir `RESTRUCTURATION_INFRA_2026-06-19.md`)
+1. Backup VPS ancien setup (voir `docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md`)
 2. Déployer : `./tools/scripts/deploy-static-site.sh --mode prod --target ... --ssh-key ...`
 3. Valider : `curl https://playalama.online/health`
 
@@ -317,7 +322,7 @@ git checkout -- tools/docker/
 
 Garder à jour :
 - `tools/docker/DOCKER_ARCHITECTURE.md` si changements architecture
-- `RESTRUCTURATION_INFRA_2026-06-19.md` si new migration
+- `docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md` si new migration
 
 ---
 
@@ -337,4 +342,3 @@ Tu as maintenant une **infrastructure propre, robuste et documentée** :
 - ✅ Maintenance simple et prévisible
 
 **Prêt pour production** ! 🚀
-

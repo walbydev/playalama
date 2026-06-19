@@ -1,4 +1,9 @@
-# Recette CG-02 : Mode Interactif TTY Complet
+# Recette CG-02 — mode interactif TTY
+
+**Date** : 2026-06-19
+**Statut** : À exécuter
+
+---
 
 **Date de recette :** 2026-06-19  
 **Responsable :** À compléter  
@@ -338,4 +343,3 @@ dotnet run --project src/Console/Lama.Console -- show board
 dotnet run --project src/Console/Lama.Console -- show history --last 10
 dotnet run --project src/Console/Lama.Console -- game end
 ```
-

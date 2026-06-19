@@ -1,4 +1,9 @@
-🚀 # COMMENCEZ ICI
+# Commencez ici
+
+**Date** : 2026-06-19
+**Statut** : Référence
+
+---
 
 ## ❌ Votre problème
 
@@ -20,13 +25,13 @@ Choisissez l'une de ces autres documentations :
 
 ```bash
 # Pour vue d'ensemble rapide
-cat SOLUTION_SUMMARY.md
+cat docs/roadmap/RESUME_SOLUTION_HTTPS.md
 
 # Pour checklist d'action
-cat HTTPS_QUICK_START.md
+cat docs/utils/HTTPS_QUICK_START.md
 
 # Pour livrable complet
-cat DELIVERABLE_SUMMARY.md
+cat docs/roadmap/RESUME_LIVRABLE_HTTPS.md
 ```
 
 ---
@@ -186,12 +191,12 @@ curl -s https://playalama.online/health | jq .
 
 | Document | Durée | Niveau |
 |----------|-------|--------|
-| **SOLUTION_SUMMARY.md** | 15 min | ⭐ |
-| **HTTPS_QUICK_START.md** | 15 min | ⭐ |
+| **docs/roadmap/RESUME_SOLUTION_HTTPS.md** | 15 min | ⭐ |
+| **docs/utils/HTTPS_QUICK_START.md** | 15 min | ⭐ |
 | **docs/HTTPS_DEPLOYMENT.md** | 30 min | ⭐⭐ |
 | **docs/HTTPS_MIGRATION_PLAN.md** | 20 min | ⭐⭐ |
 | **docs/DOCKER_DEPLOYMENT.md** | 40 min | ⭐⭐⭐ |
-| **FILES_INDEX.md** | 10 min | ⭐ |
+| **docs/utils/FILES_INDEX.md** | 10 min | ⭐ |
 
 ---
 
@@ -206,4 +211,3 @@ Choisissez votre option et lancez! ✨
 **Besoin d'aide?** : Consultez la documentation appropriée ci-dessus.
 
 **Prêt?** : `sudo tools/scripts/setup-https.sh` (Option 1)
-

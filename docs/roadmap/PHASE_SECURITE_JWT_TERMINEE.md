@@ -1,4 +1,9 @@
-# 🎯 Phase Sécurité JWT Complétée - Session 2026-06-19
+# Phase sécurité JWT terminée
+
+**Date** : 2026-06-19
+**Statut** : Validé
+
+---
 
 ## 🚀 Livraison
 
@@ -176,12 +181,11 @@ Request:
 ## 💾 Fichiers d'archivage
 
 Session courante complète:
-- `SECURITE_JWT_IMPLEMENTEE.md` (doc détaillée phase JWT)
-- `PROGRESS.md` (entrée 2026-06-19 JWT)
+- `docs/architecture/SECURITE_JWT_IMPLEMENTEE.md` (doc détaillée phase JWT)
+- `docs/roadmap/PROGRESSION.md` (entrée 2026-06-19 JWT)
 - Tous les commits git de cette session
 
 ---
 
 **Session terminée** : 2026-06-19 12:35 UTC  
 **Prochaine étape** : Lancer tests E2E CLI avec JWT ou passer à persistance/observabilité selon priorité utilisateur.
-

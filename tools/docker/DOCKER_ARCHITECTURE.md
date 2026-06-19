@@ -297,7 +297,7 @@ docker compose -f tools/docker/docker-compose.local.yml config
 | `AGENTS.md` | Conventions projet + workflows |
 | `deploy-static-site.sh` | Script déploiement automatisé |
 | `src/Server/Lama.Server/README.md` | API endpoints serveur |
-| `HTTPS_QUICK_START.md` | Setup SSL Certbot |
+| `docs/utils/HTTPS_QUICK_START.md` | Setup SSL Certbot |
 
 ---
 

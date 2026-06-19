@@ -8,13 +8,13 @@
 
 ## 📖 Que lire selon votre besoin
 
-> **Je suis pressé** → `INFRA_QUICK_REF.md` (2 min)
+> **Je suis pressé** → `docs/utils/INFRA_QUICK_REF.md` (2 min)
 
 > **Je veux comprendre l'architecture** → `tools/docker/DOCKER_ARCHITECTURE.md` (10 min)
 
-> **Je fais une migration production** → `RESTRUCTURATION_INFRA_2026-06-19.md` (15 min)
+> **Je fais une migration production** → `docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md` (15 min)
 
-> **Je veux tout résumer rapidement** → `RESTRUCTURATION_RÉSUMÉ.md` (5 min)
+> **Je veux tout résumer rapidement** → `docs/roadmap/RESUME_RESTRUCTURATION_INFRA.md` (5 min)
 
 ---
 
@@ -88,9 +88,9 @@ docker compose -f tools/docker/docker-compose.local.yml up --build
 | `tools/docker/docker-compose.local.yml` | Dev | 🟡 Important |
 | `tools/docker/docker-compose.prod.yml` | Prod | 🔴 CRITIQUE |
 | `tools/docker/DOCKER_ARCHITECTURE.md` | Doc 350L | 🟡 Important |
-| `RESTRUCTURATION_INFRA_2026-06-19.md` | Guide migration | 🟡 Important |
-| `RESTRUCTURATION_RÉSUMÉ.md` | Summary exec | 🟢 Référence |
-| `INFRA_QUICK_REF.md` | Cheatsheet | 🟢 Référence |
+| `docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md` | Guide migration | 🟡 Important |
+| `docs/roadmap/RESUME_RESTRUCTURATION_INFRA.md` | Summary exec | 🟢 Référence |
+| `docs/utils/INFRA_QUICK_REF.md` | Cheatsheet | 🟢 Référence |
 
 ### 🔄 **MODIFIÉS** (2 fichiers)
 
@@ -136,13 +136,13 @@ git check-ignore .deploy/*.pem
 tools/docker/DOCKER_ARCHITECTURE.md     (350 lignes, complet)
 
 # Guide pas-à-pas production
-RESTRUCTURATION_INFRA_2026-06-19.md     (280 lignes, procédures)
+docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md     (280 lignes, procédures)
 
 # Résumé exécutif
-RESTRUCTURATION_RÉSUMÉ.md               (220 lignes, overview)
+docs/roadmap/RESUME_RESTRUCTURATION_INFRA.md               (220 lignes, overview)
 
 # Cheatsheet rapide
-INFRA_QUICK_REF.md                      (80 lignes, tl;dr)
+docs/utils/INFRA_QUICK_REF.md                      (80 lignes, tl;dr)
 
 # Conventions projet
 AGENTS.md                               (référence globale)
@@ -161,7 +161,7 @@ AGENTS.md                               (référence globale)
 
 ### 🟡 Court terme (avant production)
 
-5. **Préparer** VPS pour migration (voir `RESTRUCTURATION_INFRA_2026-06-19.md`)
+5. **Préparer** VPS pour migration (voir `docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md`)
 6. **Tester** dry-run : `./tools/scripts/deploy-static-site.sh ... --dry-run`
 7. **Valider** accès SSH + clés
 
@@ -220,10 +220,10 @@ cat AGENTS.md
 cat tools/docker/DOCKER_ARCHITECTURE.md
 
 # Guide déploiement production
-cat RESTRUCTURATION_INFRA_2026-06-19.md
+cat docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md
 
 # Cheatsheet rapide
-cat INFRA_QUICK_REF.md
+cat docs/utils/INFRA_QUICK_REF.md
 ```
 
 ---

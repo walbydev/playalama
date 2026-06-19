@@ -414,5 +414,5 @@ Les classes de rendu reçoivent des modèles de données (issus des cas d'usage)
 ## Références
 
 - [`README.md`](../README.md) — présentation générale du projet et commandes de base
-- [`docs/defines-CLI.md`](defines-CLI.md) — liste complète des codes de retour et définitions CLI
+- [`docs/defines-CLI.md`](docs/architecture/defines-CLI.md) — liste complète des codes de retour et définitions CLI
 - `Lama.Contracts` — interfaces `IGameEngine`, `IAccessControlService`, `IGameLanguageProvider`

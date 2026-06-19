@@ -3,28 +3,53 @@
     <File Path="site\static\index.html" />
     <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
   </Folder>
-  <Folder Name="/docs/">
-    <File Path="ALIAS_QUICK_SETUP.md" />
-    <File Path="docs\AGENTS.md" />
-    <File Path="docs\ALIAS_LAMA_CONFIG.md" />
-    <File Path="docs\CLASSIC_GAME_SHORTLIST.md" />
-    <File Path="docs\console-interface-architecture.md" />
-    <File Path="docs\crossing-rules.md" />
-    <File Path="docs\defines-CLI.md" />
-    <File Path="docs\multiplayer-migration-plan.md" />
-    <File Path="docs\RATING_INTEGRATION.md" />
-    <File Path="docs\RATING_SYSTEM.md" />
-    <File Path="docs\SCOPE.md" />
-    <File Path="docs\tools.md" />
-  </Folder>
-  <Folder Name="/docs/architecture/" />
-  <Folder Name="/docs/roadmap/" />
-  <Folder Name="/docs/root/">
+  <Folder Name="/Root/">
     <File Path="AGENTS.md" />
-    <File Path="PROGRESS.md" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/docs/utils/" />
+  <Folder Name="/docs/architecture/">
+    <File Path="docs/architecture/DOCKER_DEPLOYMENT.md" />
+    <File Path="docs/architecture/HTTPS_DEPLOYMENT.md" />
+    <File Path="docs/architecture/HTTPS_MIGRATION_PLAN.md" />
+    <File Path="docs/architecture/POSTGRESQL_ARCHITECTURE.md" />
+    <File Path="docs/architecture/POSTGRESQL_EFCORE_PLAN.md" />
+    <File Path="docs/architecture/RATING_INTEGRATION.md" />
+    <File Path="docs/architecture/RATING_SYSTEM.md" />
+    <File Path="docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md" />
+    <File Path="docs/architecture/SECURITE_JWT_IMPLEMENTEE.md" />
+    <File Path="docs/architecture/console-interface-architecture.md" />
+    <File Path="docs/architecture/crossing-rules.md" />
+    <File Path="docs/architecture/defines-CLI.md" />
+  </Folder>
+  <Folder Name="/docs/roadmap/">
+    <File Path="docs/roadmap/CG-02_CERTIFICAT_CLOTURE.md" />
+    <File Path="docs/roadmap/CG-02_RAPPORT_VALIDATION.md" />
+    <File Path="docs/roadmap/LISTE_COURTE_JEU_CLASSIQUE.md" />
+    <File Path="docs/roadmap/RESUME_LIVRABLE_HTTPS.md" />
+    <File Path="docs/roadmap/JALON_JEU_FONCTIONNEL_VALIDE.md" />
+    <File Path="docs/roadmap/PHASE_SECURITE_JWT_TERMINEE.md" />
+    <File Path="docs/roadmap/PLAN_FONCTIONNALITE_PLAY_SUGGEST.md" />
+    <File Path="docs/roadmap/RECAPITULATIF_POSTGRESQL.md" />
+    <File Path="docs/roadmap/PROGRESSION.md" />
+    <File Path="docs/roadmap/LIRE_D_ABORD_RESTRUCTURATION.md" />
+    <File Path="docs/roadmap/RECETTE_CG02_MODE_INTERACTIF.md" />
+    <File Path="docs/roadmap/RESUME_RESTRUCTURATION_INFRA.md" />
+    <File Path="docs/roadmap/PERIMETRE.md" />
+    <File Path="docs/roadmap/RESUME_SOLUTION_HTTPS.md" />
+    <File Path="docs/roadmap/COMMENCEZ_ICI.md" />
+    <File Path="docs/roadmap/PLAN_MIGRATION_MULTIJOUEUR.md" />
+  </Folder>
+  <Folder Name="/docs/utils/">
+    <File Path="docs/utils/ALIAS_LAMA_CONFIG.md" />
+    <File Path="docs/utils/ALIAS_QUICK_SETUP.md" />
+    <File Path="docs/utils/DEPLOYMENT_CHECKLIST.md" />
+    <File Path="docs/utils/FILES_INDEX.md" />
+    <File Path="docs/utils/HTTPS_QUICK_START.md" />
+    <File Path="docs/utils/INFRA_QUICK_REF.md" />
+    <File Path="docs/utils/POSTGRESQL_QUICKSTART.md" />
+    <File Path="docs/utils/START_INFRA_README.md" />
+    <File Path="docs/utils/tools.md" />
+  </Folder>
   <Folder Name="/Libraries/">
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />

@@ -1,4 +1,9 @@
-# CG-02 - Certificat de Cloture
+# CG-02 — Certificat de clôture
+
+**Date** : 2026-06-19 11:57:00 UTC
+**Statut** : Validé
+
+---
 
 ## Jalon Fermé
 **CG-02 - Parcours Interactif Complet Fiable**
@@ -36,7 +41,7 @@ Date de Cloture: **2026-06-19 11:57:00 UTC**
 ## Énumération des Changements
 
 ### Artefacts Créés
-1. **docs/CG-02_VALIDATION_REPORT.md**
+1. **docs/CG-02_RAPPORT_VALIDATION.md**
    - Rapport complet de validation
    - Résultats de chaque étape testée
    - Signature du validateur
@@ -47,12 +52,12 @@ Date de Cloture: **2026-06-19 11:57:00 UTC**
    - Points de validation clairs
 
 ### Fichiers Modifiés
-1. **PROGRESS.md**
+1. **docs/roadmap/PROGRESSION.md**
    - Ajout d'une nouvelle entrée [2026-06-19 11:56:49 UTC]
    - Documentation du parcours de validation
    - Conclusion: CG-02 VALIDE ✅
 
-2. **docs/CLASSIC_GAME_SHORTLIST.md**
+2. **docs/LISTE_COURTE_JEU_CLASSIQUE.md**
    - Mise à jour de l'état: CG-02 ✅ complete
    - Statut P0 global reflétant la cloture
 
@@ -176,8 +181,7 @@ Le jeu est maintenant **FONCTIONNELLEMENT COMPLET** pour le mode classique local
 
 ## Documents Associés
 
-- **docs/CG-02_VALIDATION_REPORT.md** - Rapport de validation détaillé
+- **docs/CG-02_RAPPORT_VALIDATION.md** - Rapport de validation détaillé
 - **tools/scripts/cg02-interactive-recipe.sh** - Script de recette
-- **docs/CLASSIC_GAME_SHORTLIST.md** - État du P0
-- **PROGRESS.md** - Historique complet
-
+- **docs/LISTE_COURTE_JEU_CLASSIQUE.md** - État du P0
+- **docs/roadmap/PROGRESSION.md** - Historique complet

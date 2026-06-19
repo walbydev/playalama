@@ -1,4 +1,9 @@
-# Classic Game Shortlist (Must-Have)
+# Liste courte — jeu classique
+
+**Date** : 2026-06-19
+**Statut** : À finaliser
+
+---
 
 Objectif: finaliser un mode classique **jouable de bout en bout** avant toute reprise des evolutions futures.
 
@@ -63,7 +68,7 @@ Objectif: finaliser un mode classique **jouable de bout en bout** avant toute re
   - Temps d'execution acceptable sur scripts E2E standards.
 
 - **CG-09 - Nettoyage docs "etat reel"**
-  - `README.md`, `docs/AGENTS.md`, `docs/defines-CLI.md` alignes sur le comportement courant.
+  - `README.md`, `AGENTS.md`, `docs/defines-CLI.md` alignes sur le comportement courant.
 
 ## Sprint court recommande (ordre)
 
@@ -81,4 +86,3 @@ Le jalon est valide si:
 - E2E CLI reel "partie complete" passe de facon deterministe,
 - une recette manuelle interactive complete est faisable sans blocage,
 - aucun bug critique ouvert sur `play.*`, `show.*`, `game.*`.
-

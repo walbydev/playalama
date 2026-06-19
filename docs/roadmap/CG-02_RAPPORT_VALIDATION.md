@@ -1,4 +1,9 @@
-# CG-02 - Rapport de Validation
+# CG-02 — Rapport de validation
+
+**Date** : 2026-06-19 11:56:49 UTC
+**Statut** : Validé
+
+---
 
 ## Date de Validation
 2026-06-19 11:56:49 UTC
@@ -111,4 +116,3 @@ Le jeu est **fonctionnel et jouable** en mode CLI/local.
 - Validateur: GitHub Copilot
 - Date: 2026-06-19 11:56:49 UTC
 - Status: ✅ CLOSED
-

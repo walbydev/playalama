@@ -2,7 +2,7 @@
 
 Ce document décrit **ce qui est réellement implémenté aujourd'hui** dans `src/Console/Lama.Console`.
 
-**MAJ du 2026-06-18** : Audit complet synchronisé avec PROGRESS.md et état réel du code. Tous les stubs obsolètes (`player.create`, `tournament.create`, `system.status`, `system.restart`) ont été marqués comme ✅ implémentés. Ajout des commandes manquantes : `rating.*`, `player.list/show/update`, `system.clean`.
+**MAJ du 2026-06-18** : Audit complet synchronisé avec docs/roadmap/PROGRESSION.md et état réel du code. Tous les stubs obsolètes (`player.create`, `tournament.create`, `system.status`, `system.restart`) ont été marqués comme ✅ implémentés. Ajout des commandes manquantes : `rating.*`, `player.list/show/update`, `system.clean`.
 
 Source de vérité:
 - `src/Console/Lama.Console/Program.cs` (30+ commandes ICommand enregistrées)
@@ -273,11 +273,11 @@ L'ancienne version de ce document (avant 2026-06-18) listait un périmètre CLI 
 
 Ce document est maintenu en synchronisation avec :
 - `src/Console/Lama.Console/Program.cs` (enregistrement commandes)
-- `PROGRESS.md` (historique d'implémentation)
-- `docs/AGENTS.md` (état composants)
+- `docs/roadmap/PROGRESSION.md` (historique d'implémentation)
+- `AGENTS.md` (état composants)
 
 **Mise à jour suivante prévue après** : ajout nouvelle commande CLI ou changement signature existante.
 
 ---
 
-**Questions / Corrections ?** Consulter `docs/AGENTS.md` section "Règles pour agents".
+**Questions / Corrections ?** Consulter `AGENTS.md` section "Règles pour agents".

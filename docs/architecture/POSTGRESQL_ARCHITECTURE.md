@@ -416,5 +416,5 @@ psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -c "\dt"
 - [Entity Framework Core PostgreSQL](https://learn.microsoft.com/en-us/ef/core/providers/postgresql)
 - [PostgreSQL Schémas](https://www.postgresql.org/docs/current/ddl-schemas.html)
 - [ELO Rating Glicko2](http://www.glicko.net/glicko/glicko2.pdf)
-- `docs/multiplayer-migration-plan.md` (existant)
+- `docs/PLAN_MIGRATION_MULTIJOUEUR.md` (existant)
 

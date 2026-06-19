@@ -223,7 +223,7 @@ Guide complet Docker & Docker Compose (⭐ POUR CONTENEURS)
 
 **Lecture estimée :** 40 minutes
 
-### HTTPS_QUICK_START.md
+### docs/utils/HTTPS_QUICK_START.md
 Guide d'action rapide (⭐ POUR COMMENCER)
 
 **Sections :**
@@ -260,7 +260,7 @@ docker-compose --env-file .env up
 
 ```
 Lama/
-├── HTTPS_QUICK_START.md              👈 LIRE D'ABORD
+├── docs/utils/HTTPS_QUICK_START.md              👈 LIRE D'ABORD
 ├── .env.example                      # Variables env
 ├── Dockerfile                        # Build image serveur
 ├── docker-compose.yml                # Orchestration multi-service
@@ -272,9 +272,9 @@ Lama/
 │   └── Lama.Server.csproj            # MODIFIÉ
 │
 ├── docs/
-│   ├── HTTPS_DEPLOYMENT.md           # 📖 Guide technique complet
-│   ├── HTTPS_MIGRATION_PLAN.md       # 📋 Plan détaillé
-│   └── DOCKER_DEPLOYMENT.md          # 🐳 Guide Docker
+│   ├── docs/architecture/HTTPS_DEPLOYMENT.md           # 📖 Guide technique complet
+│   ├── docs/architecture/HTTPS_MIGRATION_PLAN.md       # 📋 Plan détaillé
+│   └── docs/architecture/DOCKER_DEPLOYMENT.md          # 🐳 Guide Docker
 │
 └── tools/scripts/
     ├── setup-https.sh                # 🚀 Installation automatique
@@ -287,12 +287,12 @@ Lama/
 ## 🎯 Guide de lecture selon votre contexte
 
 ### 👤 Je suis développeur, je veux tester localement
-1. Lire : `HTTPS_QUICK_START.md`
+1. Lire : `docs/utils/HTTPS_QUICK_START.md`
 2. Exécuter : `tools/scripts/run-server-dev.sh`
 3. Tester : `curl http://localhost:5000/health`
 
 ### 👨‍💼 Je suis administrateur système, je veux déployer
-1. Lire : `HTTPS_QUICK_START.md`
+1. Lire : `docs/utils/HTTPS_QUICK_START.md`
 2. Vérifier : Checklist pré-déploiement
 3. Choisir : Option 1 (script) ou Option 2 (manuel)
 4. Exécuter : `sudo tools/scripts/setup-https.sh`

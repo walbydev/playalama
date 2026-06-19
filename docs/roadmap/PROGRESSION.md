@@ -1,4 +1,9 @@
-# PROGRESS
+# Progression du projet
+
+**Date** : 2026-06-19
+**Statut** : En cours
+
+---
 
 Journal unique de progression du projet LAMA.
 
@@ -41,7 +46,7 @@ Journal unique de progression du projet LAMA.
 
 ### References
 - `README.md`
-- `docs/AGENTS.md`
+- `AGENTS.md`
 - `docs/console-interface-architecture.md`
 ```
 
@@ -53,10 +58,10 @@ Journal unique de progression du projet LAMA.
 - Projet LAMA : jeu de mots type Scrabble en C# / .NET 10.
 - Architecture cible : Clean Architecture / Ports & Adapters (`Contracts` -> `Domain` -> `Core` -> `Infrastructure` -> `Console`).
 - Deux modes console vises : `commande par commande` + `interactif textuel`.
-- Source de verite fonctionnelle et architecturale : `README.md`, `docs/AGENTS.md`, `docs/console-interface-architecture.md`.
+- Source de verite fonctionnelle et architecturale : `README.md`, `AGENTS.md`, `docs/console-interface-architecture.md`.
 
 ### Resume de la situation actuelle
-- Le socle est deja plus avance que la photo de `docs/AGENTS.md` (qui mentionne encore plusieurs stubs).
+- Le socle est deja plus avance que la photo de `AGENTS.md` (qui mentionne encore plusieurs stubs).
 - Le mode commande est partiellement operationnel avec un vrai pipeline : parse contexte, controle d'acces, dispatch commande, use cases, persistance JSON.
 - Le mode interactif textuel existe (menu Spectre.Console) mais reste majoritairement un shell de navigation.
 - La couverture de tests unitaires est deja substantielle sur `Domain`, `Core`, `Infrastructure`, `Console` (parser/contexte/access control).
@@ -125,7 +130,7 @@ Journal unique de progression du projet LAMA.
   - Priorite moyenne : `play.check`, `play.challenge`, `game.pause`.
 
 - **Alignement docs <-> code**
-  - Mettre a jour `docs/AGENTS.md` (etat reel des composants, plus coherent avec le code actuel).
+  - Mettre a jour `AGENTS.md` (etat reel des composants, plus coherent avec le code actuel).
   - Harmoniser la spec CLI (`docs/defines-CLI.md`) avec ce qui est reellement supporte aujourd'hui.
 
 - **Qualite / robustesse**
@@ -161,12 +166,12 @@ Journal unique de progression du projet LAMA.
 1. Finaliser `play.swap` de bout en bout (Contracts -> Domain -> Core -> Console + tests).
 2. Implementer `game.list` / `game.show` sur la persistance existante.
 3. Introduire un historique de coups dans le coeur pour debloquer `show.history` et `challenge`.
-4. Mettre a jour `docs/AGENTS.md` et `README.md` selon l'etat reel.
+4. Mettre a jour `AGENTS.md` et `README.md` selon l'etat reel.
 5. Definir le backlog MVP du mode interactif textuel (parcours complet de jeu).
 
 ### References
 - `README.md`
-- `docs/AGENTS.md`
+- `AGENTS.md`
 - `docs/console-interface-architecture.md`
 - `docs/defines-CLI.md`
 
@@ -187,7 +192,7 @@ Journal unique de progression du projet LAMA.
 - Tests Console alignes et stabilises:
   - `Lama.Console.UnitTests` vert (149/149)
 - Documentation mise a jour:
-  - `docs/AGENTS.md`
+  - `AGENTS.md`
   - `docs/defines-CLI.md`
 
 ### En cours
@@ -217,7 +222,7 @@ Journal unique de progression du projet LAMA.
 - `src/Console/Lama.Console/Services/CommandContext.cs`
 - `src/Console/Lama.Console/Services/AccessControlService.cs`
 - `tests/Lama.Console.UnitTests/AccessControlServiceTests.cs`
-- `docs/AGENTS.md`
+- `AGENTS.md`
 - `docs/defines-CLI.md`
 
 ## [2026-06-17 23:11:09 UTC] - Swap complet + game.list/game.show operationnels
@@ -237,7 +242,7 @@ Journal unique de progression du projet LAMA.
 - `GameListCommand` implementee sur `IGameRepository` (sorties `text`, `json`, `csv`).
 - `GameShowCommand` implementee sur `IGameRepository` (session courante ou `gameId` explicite, sorties `text`, `json`, `csv`).
 - Documentation synchronisee:
-  - `docs/AGENTS.md`
+  - `AGENTS.md`
   - `docs/defines-CLI.md`
 
 ### En cours
@@ -285,7 +290,7 @@ Journal unique de progression du projet LAMA.
 - `GamePauseCommand` est maintenant implementee comme snapshot persistant immediat de la partie courante.
 - Les deux commandes mettent a jour `UpdatedAt` de la session locale.
 - Documentation harmonisee:
-  - `docs/AGENTS.md`
+  - `AGENTS.md`
   - `docs/defines-CLI.md`
 
 ### En cours
@@ -310,7 +315,7 @@ Journal unique de progression du projet LAMA.
 ### References
 - `src/Console/Lama.Console/Commands/Game/GameSaveCommand.cs`
 - `src/Console/Lama.Console/Commands/Game/GamePauseCommand.cs`
-- `docs/AGENTS.md`
+- `AGENTS.md`
 - `docs/defines-CLI.md`
 
 ## [2026-06-17 21:22:40 UTC] - Couverture de tests console completee sur les commandes manquantes
@@ -351,7 +356,7 @@ Journal unique de progression du projet LAMA.
 
 ### Contexte
 - La documentation ancienne affichait plusieurs commandes comme stubs alors qu'elles etaient deja implementees.
-- Besoin de synchroniser l'etat reel du code avec docs/AGENTS.md et docs/defines-CLI.md.
+- Besoin de synchroniser l'etat reel du code avec AGENTS.md et docs/defines-CLI.md.
 
 ### Fait
 - **Audit de l'etat reel du code** : verifie que les commandes suivantes sont **operationnelles**:
@@ -363,7 +368,7 @@ Journal unique de progression du projet LAMA.
   - `game.save` ✅ (sauvegarde explicite)
   - `game.pause` ✅ (snapshot persistant immediat)
 
-- **Synchronisation de docs/AGENTS.md** :
+- **Synchronisation de AGENTS.md** :
   - Retire `play.challenge`, `play.check`, `show.history` de la liste des stubs.
   - Ajoute ces trois commandes a la liste des commandes implementees.
   - Mise a jour de l'etat des composants : Domain, Core, Console marquent que support complet du challenge et historique.
@@ -398,7 +403,7 @@ Journal unique de progression du projet LAMA.
 4. Connecter davantage le mode interactif aux use cases reel.
 
 ### References
-- `docs/AGENTS.md` (synchronise)
+- `AGENTS.md` (synchronise)
 - `docs/defines-CLI.md` (synchronise)
 - `tests/Lama.Console.UnitTests/` (504 tests passants)
 
@@ -608,7 +613,7 @@ Journal unique de progression du projet LAMA.
 - Orientation souhaitee: variantes fun/chaotiques avec options activables par partie.
 
 ### Fait
-- `docs/SCOPE.md` renseigne avec un cadrage complet du mode futur "Crazy Lama".
+- `docs/PERIMETRE.md` renseigne avec un cadrage complet du mode futur "Crazy Lama".
 - Idees structurees en 4 axes:
   - cases bonus/malus aleatoires (visibles ou cachees),
   - cartes action (boost/protection/attaque),
@@ -635,7 +640,7 @@ Journal unique de progression du projet LAMA.
 3. Ecrire les specs de regles detaillees avant implementation.
 
 ### References
-- `docs/SCOPE.md`
+- `docs/PERIMETRE.md`
 
 ## [2026-06-18 14:40:00 UTC] - Crazy Lama passe en backlog priorise (epics/stories)
 
@@ -644,7 +649,7 @@ Journal unique de progression du projet LAMA.
 - Objectif: rendre les idees Crazy actionnables pour priorisation produit.
 
 ### Fait
-- Enrichissement de `docs/SCOPE.md` avec un backlog detaille:
+- Enrichissement de `docs/PERIMETRE.md` avec un backlog detaille:
   - epics (`CL-1` a `CL-4`),
   - stories priorisees (`P0`, `P1`, `P2`),
   - criteres d'acceptation orientés produit.
@@ -672,7 +677,7 @@ Journal unique de progression du projet LAMA.
 3. Ouvrir ensuite des tickets techniques separes par epic.
 
 ### References
-- `docs/SCOPE.md`
+- `docs/PERIMETRE.md`
 
 ## [2026-06-18 15:00:00 UTC] - Cloture backlog futur et recentrage sur jeu fonctionnel
 
@@ -680,11 +685,11 @@ Journal unique de progression du projet LAMA.
 - Demande utilisateur: clore le sujet backlog des evolutions futures et revenir aux manques du jeu fonctionnel.
 
 ### Fait
-- Le backlog "Crazy Lama" est formalise comme capture complete (epics, stories, priorites, criteres) dans `docs/SCOPE.md`.
+- Le backlog "Crazy Lama" est formalise comme capture complete (epics, stories, priorites, criteres) dans `docs/PERIMETRE.md`.
 - Ajout d'un statut explicite de cloture backlog:
   - freeze des nouvelles idees Crazy a court terme,
   - pas d'implementation Crazy prioritaire avant stabilisation du mode classique.
-- Ajout d'un cadrage de recentrage dans `docs/SCOPE.md` sur le livrable immediat: jeu classique jouable de bout en bout.
+- Ajout d'un cadrage de recentrage dans `docs/PERIMETRE.md` sur le livrable immediat: jeu classique jouable de bout en bout.
 
 ### En cours
 - Recentrage produit vers les manques bloquants du mode classique (hors Crazy).
@@ -703,7 +708,7 @@ Journal unique de progression du projet LAMA.
 3. Ne reouvrir Crazy qu'apres validation explicite du jalon "jeu fonctionnel".
 
 ### References
-- `docs/SCOPE.md`
+- `docs/PERIMETRE.md`
 
 ## [2026-06-18 15:20:00 UTC] - Shortlist must-have pour finaliser le mode classique
 
@@ -711,7 +716,7 @@ Journal unique de progression du projet LAMA.
 - Suite au recentrage, besoin d'une liste courte et priorisee des manques pour atteindre un jeu fonctionnel.
 
 ### Fait
-- Creation de `docs/CLASSIC_GAME_SHORTLIST.md` avec une shortlist priorisee:
+- Creation de `docs/LISTE_COURTE_JEU_CLASSIQUE.md` avec une shortlist priorisee:
   - P0 (bloquants): parcours CLI/interactif complet, coherence check/move, scoring robuste.
   - P1: formats JSON/CSV, historique fiable, UX d'erreur harmonisee.
   - P2: perf de base E2E, nettoyage docs etat reel.
@@ -733,7 +738,7 @@ Journal unique de progression du projet LAMA.
 3. Passer aux items P1 seulement apres validation P0.
 
 ### References
-- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md`
 
 ## [2026-06-18 15:35:00 UTC] - CG-01 renforce: parcours CLI reel fiabilise
 
@@ -768,7 +773,7 @@ Journal unique de progression du projet LAMA.
 ### References
 - `tools/scripts/e2e-cli-smoke.sh`
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
-- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md`
 
 ## [2026-06-18 15:50:00 UTC] - CG-03 valide: coherence `play.check` / `play.move` en E2E reel
 
@@ -803,7 +808,7 @@ Journal unique de progression du projet LAMA.
 
 ### References
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
-- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md`
 
 ## [2026-06-18 16:05:00 UTC] - CG-04 avance: robustesse scoring jokers/croisements renforcee
 
@@ -839,7 +844,7 @@ Journal unique de progression du projet LAMA.
 - `src/libs/Lama.Domain/Scoring/ScoreCalculator.cs`
 - `tests/Lama.Domain.UnitTests/Scoring/ScoreCalculatorTests.cs`
 - `tests/Lama.Domain.UnitTests/Engine/GameEngineTests.cs`
-- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md`
 
 ## [2026-06-18 16:20:00 UTC] - CG-04 cloture
 
@@ -854,7 +859,7 @@ Journal unique de progression du projet LAMA.
 - Verification de non-regression:
   - `Lama.Domain.UnitTests` complet ✅,
   - `RealCliE2ETests` complet ✅.
-- `docs/CLASSIC_GAME_SHORTLIST.md` mis a jour: `CG-04` marque complete.
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md` mis a jour: `CG-04` marque complete.
 
 ### En cours
 - Reste du P0: `CG-02` (parcours interactif complet fiable).
@@ -875,7 +880,7 @@ Journal unique de progression du projet LAMA.
 - `tests/Lama.Domain.UnitTests/Scoring/ScoreCalculatorTests.cs`
 - `tests/Lama.Domain.UnitTests/Engine/GameEngineTests.cs`
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
-- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md`
 
 ## [2026-06-18 17:00:00 UTC] - CG-02 en cours: mode interactif durci hors TTY
 
@@ -908,7 +913,7 @@ Journal unique de progression du projet LAMA.
 ### References
 - `src/Console/Lama.Console/Modes/InteractiveMode.cs`
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
-- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md`
 
 ## [2026-06-18 17:00:00 UTC] - CG-02 correctif UX: rejoindre une partie en interactif
 
@@ -949,7 +954,7 @@ Journal unique de progression du projet LAMA.
 
 ### Fait
 - **Recette interactive complete executee et documentee**:
-  - Creation de `RECETTE_CG02_INTERACTIVE.md` (guide complet multi-phases avec checklist).
+  - Creation de `docs/roadmap/RECETTE_CG02_MODE_INTERACTIF.md` (guide complet multi-phases avec checklist).
   - Execution du parcours complet en mode CLI non-interactif (tests les memes code paths):
     - Phase 1: Alice crée partie (Game ID: `b7151965f47a45ca8ce86e4417c5b337`)
     - Phase 2: Bob rejoint (2 joueurs confirmés)
@@ -993,8 +998,8 @@ Journal unique de progression du projet LAMA.
 - **Environnement** : Linux local, mode CLI + session persistance
 
 ### References
-- `RECETTE_CG02_INTERACTIVE.md` (documentation complete)
-- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `docs/roadmap/RECETTE_CG02_MODE_INTERACTIF.md` (documentation complete)
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md`
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
 
 ## [2026-06-19 12:10:00 UTC] - Sécurité JWT implémentée et testée (jalon Livrable P1)
@@ -1077,7 +1082,7 @@ Journal unique de progression du projet LAMA.
 3. Évaluer refresh token (complexité vs bénéfice 24h)
 
 ### References
-- `SECURITE_JWT_IMPLEMENTEE.md` (documentation détaillée)
+- `docs/architecture/SECURITE_JWT_IMPLEMENTEE.md` (documentation détaillée)
 - `src/Server/Lama.Server/Security/JwtTokenService.cs`
 - `src/Server/Lama.Server/Endpoints/Auth/AuthEndpoints.cs`
 - `src/Console/Lama.Console/Services/OnlineGameGateway.cs`
@@ -1097,7 +1102,7 @@ Journal unique de progression du projet LAMA.
   - `GET /api/v1/games/{gameId}`
   - `GET /api/v1/games/{gameId}/events` (SSE)
 - Ajout d'une doc serveur locale: `src/Server/Lama.Server/README.md`.
-- Ajout d'un plan de migration dedie: `docs/multiplayer-migration-plan.md`.
+- Ajout d'un plan de migration dedie: `docs/PLAN_MIGRATION_MULTIJOUEUR.md`.
 - Mise a jour de la solution `Lama.slnx` pour inclure le projet serveur et la doc migration.
 - Mise a jour `README.md` avec section multijoueur explicitant:
   - mode local offline isole,
@@ -1124,7 +1129,7 @@ Journal unique de progression du projet LAMA.
 ### References
 - `src/Server/Lama.Server/Program.cs`
 - `src/Server/Lama.Server/README.md`
-- `docs/multiplayer-migration-plan.md`
+- `docs/PLAN_MIGRATION_MULTIJOUEUR.md`
 - `README.md`
 - `Lama.slnx`
 
@@ -1208,7 +1213,7 @@ Journal unique de progression du projet LAMA.
 ### References
 - `src/Server/Lama.Server/Program.cs`
 - `tools/scripts/e2e-online-smoke.sh`
-- `docs/AGENTS.md`
+- `AGENTS.md`
 
 ## [2026-06-18 10:45:26 UTC] - Extension flux online: pass/history/scores/end
 
@@ -1259,7 +1264,7 @@ Journal unique de progression du projet LAMA.
 
 ### Contexte
 - Demande explicite de mise a jour documentaire pour refleter l'etat reel du code.
-- Ecart principal observe: `docs/AGENTS.md` mentionnait encore des commandes en stubs alors qu'elles etaient deja implementees.
+- Ecart principal observe: `AGENTS.md` mentionnait encore des commandes en stubs alors qu'elles etaient deja implementees.
 
 ### Fait
 - **AGENTS harmonise**:
@@ -1279,7 +1284,7 @@ Journal unique de progression du projet LAMA.
   - la liste des commandes documentees est alignee sur les enregistrements `ICommand` dans `Program.cs`.
 
 ### En cours
-- Le suivi P0/P1/P2 de `docs/CLASSIC_GAME_SHORTLIST.md` reste la reference prioritaire pour les prochains sprints.
+- Le suivi P0/P1/P2 de `docs/LISTE_COURTE_JEU_CLASSIQUE.md` reste la reference prioritaire pour les prochains sprints.
 
 ### A faire
 - Mettre a jour `docs/defines-CLI.md` au meme niveau de detail que `README.md` pour `player.*` et `rating.leaderboard --queue`.
@@ -1294,10 +1299,10 @@ Journal unique de progression du projet LAMA.
 3. Conserver la discipline "doc-sync" a chaque livraison de commande CLI.
 
 ### References
-- `docs/AGENTS.md`
+- `AGENTS.md`
 - `README.md`
 - `src/Console/Lama.Console/Program.cs`
-- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md`
 
 ## [2026-06-18 16:53:16 UTC] - Phase 1 EF Core enchainee sur Lama.Server
 
@@ -1727,7 +1732,7 @@ Journal unique de progression du projet LAMA.
    - Etablir une gate CI/CD explicite: build + unit tests + E2E local + E2E online + smoke DB.
    - Geler une checklist de release (config, migrations, compat API `/api/v1`, rollback).
 5. **Documentation de livraison**
-   - Aligner `README.md`, `docs/AGENTS.md`, docs serveur/DB sur le comportement final retenu (runtime local/online, prerequis, scripts de recette).
+   - Aligner `README.md`, `AGENTS.md`, docs serveur/DB sur le comportement final retenu (runtime local/online, prerequis, scripts de recette).
 
 ### Risques / Ecarts
 - **Risque de faux "done"**: local et online sont deja jouables, mais pas encore suffisamment durcis pour un marquage "livrable production".
@@ -1741,8 +1746,8 @@ Journal unique de progression du projet LAMA.
 4. Formaliser la gate "fonctionnel" puis "livrable" dans une checklist de release executable.
 
 ### References
-- `PROGRESS.md`
-- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `docs/roadmap/PROGRESSION.md`
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md`
 - `src/Console/Lama.Console/Modes/InteractiveMode.cs`
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
 - `tests/Lama.Console.UnitTests/OnlineCliE2ETests.cs`
@@ -1795,8 +1800,8 @@ Journal unique de progression du projet LAMA.
 - Responsable QA/recette: `................................`
 
 ### References
-- `PROGRESS.md`
-- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `docs/roadmap/PROGRESSION.md`
+- `docs/LISTE_COURTE_JEU_CLASSIQUE.md`
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
 - `tests/Lama.Console.UnitTests/OnlineCliE2ETests.cs`
 - `tools/scripts/e2e-cli-smoke.sh`
@@ -1930,7 +1935,7 @@ Journal unique de progression du projet LAMA.
 
 **P3.2 - Documentation départ** (120 min)
 - [ ] README final
-- [ ] DEPLOYMENT_CHECKLIST.md
+- [ ] docs/utils/DEPLOYMENT_CHECKLIST.md
 - [ ] RUNBOOK.md
 - [ ] CHANGELOG.md
 
@@ -1944,8 +1949,8 @@ Journal unique de progression du projet LAMA.
 ### Reprise développement (checklist)
 
 À la reprise :
-1. [ ] Relire ce PROGRESS.md (section actuelle)
-2. [ ] Consulter PHASE_SECURITE_COMPLETEE.md
+1. [ ] Relire ce docs/roadmap/PROGRESSION.md (section actuelle)
+2. [ ] Consulter docs/roadmap/PHASE_SECURITE_JWT_TERMINEE.md
 3. [ ] Lancer P1.1 (JWT E2E, rapide) - **30 min d'un coup**
 4. [ ] Continuer P1.2/P1.3 si momentum
 5. [ ] Ne pas sauter P1.3 (gate qualité importante)

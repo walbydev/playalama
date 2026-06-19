@@ -1,4 +1,9 @@
-# Plan de fonctionnalite: `play.suggest` (assistant de prochain coup)
+# Plan de fonctionnalité — play.suggest
+
+**Date** : 2026-06-19
+**Statut** : Planifié
+
+---
 
 ## 1) Objectif
 
@@ -251,4 +256,3 @@ git rebase origin/master
 - phase 3: recherche limitee (beam/minimax simplifie) en reemployant `MoveSuggestionEngine`.
 
 Ainsi, l'investissement dans cette fonctionnalite sert directement le futur joueur machine sans dupliquer la logique metier.
-
