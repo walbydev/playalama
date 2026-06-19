@@ -46,6 +46,7 @@ public sealed class MoveSuggestionEngine
         var candidates = new Dictionary<string, MoveSuggestion>(StringComparer.Ordinal);
         var boardAnchorLetters = GetBoardAnchorLetters(gameState.Board);
         var anchorIndex = BuildAnchorIndex(gameState.Board);
+        var keepThreshold = Math.Max(top * 8, top + 24);
 
         foreach (var rawWord in _dictionary)
         {
@@ -59,6 +60,8 @@ public sealed class MoveSuggestionEngine
                     continue;
 
                 AddFirstMoveCandidates(candidates, gameState.Board, rack, word);
+                if (candidates.Count > keepThreshold)
+                    PruneCandidatesInPlace(candidates, keepThreshold, strategy);
                 continue;
             }
 
@@ -66,6 +69,8 @@ public sealed class MoveSuggestionEngine
                 continue;
 
             AddConnectedCandidates(candidates, gameState.Board, rack, word, anchorIndex);
+            if (candidates.Count > keepThreshold)
+                PruneCandidatesInPlace(candidates, keepThreshold, strategy);
         }
 
         var ordered = strategy switch
@@ -87,6 +92,49 @@ public sealed class MoveSuggestionEngine
         };
 
         return ordered.Take(top).ToList();
+    }
+
+    private static void PruneCandidatesInPlace(
+        Dictionary<string, MoveSuggestion> candidates,
+        int keep,
+        MoveSuggestionStrategy strategy)
+    {
+        if (candidates.Count <= keep)
+            return;
+
+        var bestKeys = strategy switch
+        {
+            MoveSuggestionStrategy.Length => candidates
+                .OrderByDescending(kv => kv.Value.Length)
+                .ThenByDescending(kv => kv.Value.Score)
+                .ThenBy(kv => kv.Value.Word, StringComparer.Ordinal)
+                .Take(keep)
+                .Select(kv => kv.Key)
+                .ToHashSet(StringComparer.Ordinal),
+
+            MoveSuggestionStrategy.Balanced => candidates
+                .OrderByDescending(kv => kv.Value.HeuristicScore)
+                .ThenByDescending(kv => kv.Value.Score)
+                .ThenBy(kv => kv.Value.Word, StringComparer.Ordinal)
+                .Take(keep)
+                .Select(kv => kv.Key)
+                .ToHashSet(StringComparer.Ordinal),
+
+            _ => candidates
+                .OrderByDescending(kv => kv.Value.Score)
+                .ThenByDescending(kv => kv.Value.Length)
+                .ThenBy(kv => kv.Value.Word, StringComparer.Ordinal)
+                .Take(keep)
+                .Select(kv => kv.Key)
+                .ToHashSet(StringComparer.Ordinal)
+        };
+
+        var toRemove = candidates.Keys
+            .Where(k => !bestKeys.Contains(k))
+            .ToList();
+
+        foreach (var key in toRemove)
+            candidates.Remove(key);
     }
 
     private void AddFirstMoveCandidates(
