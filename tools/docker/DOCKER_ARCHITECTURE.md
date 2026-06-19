@@ -176,10 +176,10 @@ dotnet test
   --ssh-key ~/.ssh/machines/playalama.key
 
 # 3. Script va:
-#    - Copier tools/docker/Dockerfile → /opt/playalama/Dockerfile
+#    - Copier tools/docker/Dockerfile.server → /opt/playalama/Dockerfile
 #    - Copier docker-compose.prod.yml → /opt/playalama/docker-compose.yml
 #    - Copier nginx-playalama.conf → /opt/playalama/tools/docker/nginx-playalama.conf
-#    - Copier site/static/ → /opt/playalama/site/static/
+#    - Copier site/static/ (accueil + download + assets) → /opt/playalama/site/static/
 #    - Exécuter: docker compose up -d --build
 
 # 4. Valider

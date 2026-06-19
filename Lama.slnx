@@ -3,18 +3,6 @@
     <File Path="site\static\index.html" />
     <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
   </Folder>
-  <Folder Name="/Apps/www/">
-    <File Path="site\static\README.md" />
-    <File Path="site\static\download\index.html" />
-    <File Path="site\static\index.html" />
-    <File Path="site\static\assets\css\site.css" />
-    <File Path="site\static\assets\js\theme.js" />
-    <File Path="site\static\assets\js\download.js" />
-    <File Path="site\static\assets\js\status.js" />
-    <File Path="site\static\assets\data\releases.json" />
-    <File Path="site\static\assets\img\favicon.svg" />
-    <File Path="site\static\assets\img\og-card.svg" />
-  </Folder>
   <Folder Name="/docs/">
     <File Path="ALIAS_QUICK_SETUP.md" />
     <File Path="docs\AGENTS.md" />
@@ -50,6 +38,30 @@
   <Folder Name="/Tools/">
     <File Path="tools\benchmarks\Lama.MoveSuggestion.Benchmarks\README.md" />
     <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/site/" />
+  <Folder Name="/site/static/">
+    <File Path="site\static\index.html" />
+    <File Path="site\static\README.md" />
+  </Folder>
+  <Folder Name="/site/static/assets/" />
+  <Folder Name="/site/static/assets/css/">
+    <File Path="site\static\assets\css\site.css" />
+  </Folder>
+  <Folder Name="/site/static/assets/data/">
+    <File Path="site\static\assets\data\releases.json" />
+  </Folder>
+  <Folder Name="/site/static/assets/img/">
+    <File Path="site\static\assets\img\favicon.svg" />
+    <File Path="site\static\assets\img\og-card.svg" />
+  </Folder>
+  <Folder Name="/site/static/assets/js/">
+    <File Path="site\static\assets\js\download.js" />
+    <File Path="site\static\assets\js\status.js" />
+    <File Path="site\static\assets\js\theme.js" />
+  </Folder>
+  <Folder Name="/site/static/download/">
+    <File Path="site\static\download\index.html" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />

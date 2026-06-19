@@ -50,22 +50,20 @@ namespace Lama.Languages.fr.UnitTests
         {
             var tempRoot = Path.Combine(Path.GetTempPath(), "LamaTests", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempRoot);
-            var assetsDir = Path.Combine(tempRoot, "assets");
-            Directory.CreateDirectory(assetsDir);
 
             if (dictionaryContent != null)
             {
-                var dictPath = Path.Combine(assetsDir, "dictionary.txt");
+                var dictPath = Path.Combine(tempRoot, "dictionary.txt");
                 File.WriteAllText(dictPath, dictionaryContent);
             }
 
             if (scoresJsonContent != null)
             {
-                var scoresPath = Path.Combine(assetsDir, "scores.json");
+                var scoresPath = Path.Combine(tempRoot, "scores.json");
                 File.WriteAllText(scoresPath, scoresJsonContent);
             }
 
-            var distributionPath = Path.Combine(assetsDir, "tile-distribution.json");
+            var distributionPath = Path.Combine(tempRoot, "tile-distribution.json");
             File.WriteAllText(distributionPath, DefaultTileDistributionJson);
 
             return tempRoot;

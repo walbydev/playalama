@@ -13,6 +13,11 @@ tools/docker/
 ├── docker-compose.prod.yml       # Prod VPS
 ├── nginx-playalama.conf          # Reverse proxy
 └── DOCKER_ARCHITECTURE.md        # Doc complète 350L
+
+site/static/
+├── index.html                   # Accueil public https://playalama.online/
+├── download/index.html          # Téléchargements
+└── assets/                      # CSS/JS/images partagés
 ```
 
 ---

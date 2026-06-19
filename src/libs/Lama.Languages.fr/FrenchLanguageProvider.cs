@@ -36,15 +36,19 @@ public class FrenchLanguageProvider : IGameLanguageProvider
 
     /// <summary>
     /// Ouvre un stream sur un asset nommé <paramref name="assetFileName"/> (ex. "dictionary.txt").
-    /// Tente d'abord le disque (<see cref="_basePath"/>/assets/), puis la ressource embarquée.
+    /// Tente d'abord le disque (<see cref="_basePath"/>/{assetFileName}), puis l'ancien sous-dossier <see cref="_basePath"/>/assets/, puis la ressource embarquée.
     /// </summary>
     private Stream OpenAssetStream(string assetFileName)
     {
         if (!string.IsNullOrEmpty(_basePath))
         {
-            var fullPath = Path.Combine(_basePath, "assets", assetFileName);
-            if (File.Exists(fullPath))
-                return File.OpenRead(fullPath);
+            var directPath = Path.Combine(_basePath, assetFileName);
+            if (File.Exists(directPath))
+                return File.OpenRead(directPath);
+
+            var legacyPath = Path.Combine(_basePath, "assets", assetFileName);
+            if (File.Exists(legacyPath))
+                return File.OpenRead(legacyPath);
         }
 
         // Fallback : ressource embarquée (mode single-file publish ou basePath absent)

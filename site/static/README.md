@@ -4,7 +4,7 @@ Ce dossier contient la version source du site vitrine statique.
 
 ## Structure
 
-- `index.html`: page d'accueil orientee produit + section technique
+- `index.html`: page d'accueil publique du portail `https://playalama.online/`
 - `download/index.html`: page de telechargement multi-plateforme
 - `assets/css/site.css`: style partage (themes clair/sombre inclus)
 - `assets/js/theme.js`: bascule de theme accessible avec persistence locale
@@ -19,10 +19,12 @@ Ce dossier contient la version source du site vitrine statique.
 Le montage Docker recommande:
 
 - `./site/static` vers `/usr/share/nginx/html`
-- `./artifacts/zip` vers `/usr/share/nginx/html/downloads`
+- `./artifacts/zip` vers `/opt/playalama-downloads`
 
-## URL hybrides de telechargement
+Le reverse proxy expose ensuite:
 
-- `https://playalama.online/downloads/<fichier>.zip`
-- `https://downloads.playalama.online/<fichier>.zip`
+- `https://playalama.online/` pour l'accueil du portail
+- `https://playalama.online/download/` pour la page de téléchargement
+- `https://playalama.online/downloads/<fichier>.zip` et `https://downloads.playalama.online/<fichier>.zip` pour les archives ZIP
+
 

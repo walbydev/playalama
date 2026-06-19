@@ -3,16 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Playalama | Jeu de mots local et online</title>
-  <meta name="description" content="Playalama est le portail du jeu LAMA: telechargement multi-plateforme, API online et informations techniques." />
-  <meta property="og:title" content="Playalama | Jeu de mots local et online" />
-  <meta property="og:description" content="Portail officiel LAMA: telechargements, API online et details techniques." />
+  <title>Playalama | Jeu de mots en ligne et hors ligne</title>
+  <meta name="description" content="Playalama présente LAMA, le jeu de mots façon Scrabble, avec téléchargement des builds officiels et statut du serveur online." />
+  <meta property="og:title" content="Playalama" />
+  <meta property="og:description" content="Le portail officiel de LAMA : présentation, téléchargements et statut du service online." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://playalama.online/" />
   <meta property="og:image" content="https://playalama.online/assets/img/og-card.svg" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Playalama" />
-  <meta name="twitter:description" content="Lettres Arrangees en Mots Amusants." />
   <meta name="theme-color" content="#0b1020" />
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/assets/css/site.css" />
@@ -30,81 +28,77 @@
           <span data-server-status-label>Verification...</span>
         </span>
         <button class="theme-toggle" data-theme-toggle type="button">Mode clair</button>
-        <a class="button" href="/download/">Telecharger LAMA</a>
+        <a class="button-secondary" href="/download/">Telechargements</a>
       </div>
     </header>
 
     <main id="main-content" class="card hero">
-      <div class="eyebrow">Portail officiel du jeu LAMA</div>
-      <h1>Lettres Arrangees en Mots Amusants</h1>
-      <p>Jouez avec les mots, un a la fois. LAMA propose une experience locale en CLI et un mode online autoritaire cote serveur, avec une base technique solide et evolutive.</p>
-      <div class="tagline">
-        <strong>Taglines</strong><br />
-        Lettres Arrangees en Mots Amusants (Letters Arranged in Meaningful Arts)<br />
-        Jouez avec les mots, un a la fois (Play with words, one letter at a time)
-      </div>
-      <ul class="hero-list">
-        <li>Executable autonome multi-plateforme (Linux, Windows, macOS).</li>
-        <li>Meme logique metier en local et online pour garantir la coherence.</li>
-        <li>Distribution simple: ZIP avec binaire + README.</li>
-      </ul>
+      <div class="eyebrow">Portail officiel de LAMA</div>
+      <h1>Un jeu de mots tactique, jouable en local et en ligne.</h1>
+      <p>
+        Playalama rassemble la présentation du projet, les téléchargements officiels par plateforme
+        et le statut du service online. Le portail sert de point d’entrée public pour les joueurs,
+        les tests et le déploiement VPS.
+      </p>
       <div class="actions" style="margin-top:18px;">
-        <a class="button" href="/download/">Demarrer par le telechargement</a>
-        <a class="button-secondary" href="/health">Verifier la sante serveur</a>
+        <a class="button" href="/download/">Voir les téléchargements</a>
+        <a class="button-secondary" href="/health">Verifier la sante</a>
         <a class="button-secondary" href="/api/">Explorer l'API</a>
       </div>
-      <div class="kpis" aria-label="Atouts de la plateforme">
-        <span class="chip">6 builds officielles</span>
-        <span class="chip">Mode clair / sombre</span>
-        <span class="chip">Architecture .NET 10</span>
+      <div class="kpis" aria-label="Points forts du portail">
+        <span class="chip">Site statique nginx</span>
+        <span class="chip">ZIP par OS</span>
+        <span class="chip">Statut serveur en direct</span>
+        <span class="chip">Mode local + online</span>
       </div>
+      <ul class="hero-list">
+        <li><strong>Téléchargements officiels</strong> : builds Linux, Windows et macOS.</li>
+        <li><strong>Serveur online</strong> : endpoint de santé exposé via <code>/health</code>.</li>
+        <li><strong>Navigation simple</strong> : accueil, téléchargements, API et documentation technique.</li>
+      </ul>
     </main>
 
-    <section class="card section" aria-labelledby="section-technique">
-      <h2 id="section-technique">Panorama technique</h2>
-      <p>Le coeur metier vit dans les librairies .NET, avec une separation nette entre contrats, domaine, cas d'usage et infrastructure. L'interface CLI et le serveur online reutilisent les memes regles.</p>
+    <section class="card section" aria-labelledby="presentation-title" style="margin-top:24px; padding: 32px;">
+      <h2 id="presentation-title">Ce que propose LAMA</h2>
       <div class="grid">
         <article class="tile">
-          <h3>Architecture .NET</h3>
-          <p><strong>Couches principales:</strong> Lama.Contracts, Lama.Domain, Lama.Core, Lama.Infrastructure, avec adaptateurs Console et Server.</p>
-          <code>Contracts -> Domain -> Core -> Infrastructure</code>
+          <h3>Jeu local</h3>
+          <p>Le mode offline reste autonome, pour jouer sans serveur et garder des sessions simples à exécuter.</p>
         </article>
         <article class="tile">
-          <h3>Gameplay et fiabilite</h3>
-          <p><strong>Moteur centralise:</strong> regles de pose, jokers et scoring; persistance JSON locale et mode online autoritaire.</p>
-          <code>CLI local + API online + tests unitaires</code>
+          <h3>Jeu online</h3>
+          <p>Le serveur central gère les parties multijoueur, l’état des jeux et les endpoints consommés par le portail.</p>
         </article>
         <article class="tile">
-          <h3>Plateforme de diffusion</h3>
-          <p><strong>Builds single-file</strong> pour Linux, Windows et macOS en x64/arm64, distribues en ZIP avec README.</p>
-          <code>https://playalama.online/download/</code>
+          <h3>Distribution</h3>
+          <p>Les archives ZIP sont exposées à la fois sur <code>/downloads/</code> et via le sous-domaine dédié.</p>
         </article>
       </div>
     </section>
 
-    <section class="card section" aria-labelledby="section-acces">
-      <h2 id="section-acces">Acces rapides</h2>
+    <section class="card section" aria-labelledby="useful-links-title" style="margin-top:24px; padding: 32px;">
+      <h2 id="useful-links-title">Liens utiles</h2>
       <div class="grid">
         <article class="tile">
-          <h3>Telechargements</h3>
-          <p>Page de selection de version avec mode hybride: URL sous chemin ou sous-domaine dedie.</p>
-          <code>/download/</code>
+          <h3>Statut du service</h3>
+          <p>Vérifie rapidement si <code>Lama.Server</code> répond.</p>
+          <a class="button-secondary" href="/health">Ouvrir /health</a>
         </article>
         <article class="tile">
-          <h3>API</h3>
-          <p>Endpoints de jeu online, gestion des parties, actions de tour et etat de session.</p>
-          <code>/api/</code>
+          <h3>Téléchargements</h3>
+          <p>Choisis une version, une architecture et un canal de téléchargement.</p>
+          <a class="button-secondary" href="/download/">Aller à /download/</a>
         </article>
         <article class="tile">
-          <h3>Sante</h3>
-          <p>Point de controle applicatif pour supervision et operations.</p>
-          <code>/health</code>
+          <h3>API publique</h3>
+          <p>Les routes HTTP du serveur sont exposées sous <code>/api/</code>.</p>
+          <a class="button-secondary" href="/api/">Ouvrir /api/</a>
         </article>
       </div>
     </section>
 
     <footer class="footer">
-      <a href="/download/">Telechargements</a> · <a href="/health">Sante</a> · <a href="/api/">API</a>
+      <a href="/download/">Téléchargements</a> · <a href="/health">Santé</a> · <a href="/api/">API</a>
     </footer>
   </div>
 </body>

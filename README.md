@@ -137,7 +137,7 @@ Voir aussi : [`docs/console-interface-architecture.md`](docs/console-interface-a
 ## Prérequis
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- Fichiers de langue dans `assets/languages/fr/assets/` :
+- Fichiers de langue dans `assets/languages/fr/` :
   - `dictionary.txt` — un mot par ligne
   - `scores.json` — valeurs des lettres au format `{ "scores": { "A": 1, "Z": 10, ... } }`
 

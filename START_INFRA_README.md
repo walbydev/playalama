@@ -38,6 +38,11 @@ tools/docker/
 ├── docker-compose.prod.yml    # Prod VPS
 ├── nginx-playalama.conf       # Reverse proxy
 └── DOCKER_ARCHITECTURE.md     # Doc complète
+
+site/static/
+├── index.html                 # Accueil public du portail
+├── download/index.html        # Page de téléchargement
+└── assets/                    # CSS/JS/images partagés
 ```
 
 **Script déploiement v2.0** : Copie tout automatiquement ✅
