@@ -39,6 +39,10 @@
     <File Path="docs/roadmap/COMMENCEZ_ICI.md" />
     <File Path="docs/roadmap/PLAN_MIGRATION_MULTIJOUEUR.md" />
   </Folder>
+  <Folder Name="/docs/evolutions/">
+    <File Path="docs/evolutions/INDEX.md" />
+    <File Path="docs/evolutions/MULTILANGUE_JEU_BILINGUE.md" />
+  </Folder>
   <Folder Name="/docs/utils/">
     <File Path="docs/utils/ALIAS_LAMA_CONFIG.md" />
     <File Path="docs/utils/ALIAS_QUICK_SETUP.md" />

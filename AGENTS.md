@@ -13,7 +13,8 @@
 ## Organisation documentaire
 - `docs/architecture/` : infra, sécurité, DB, déploiement, règles structurantes.
 - `docs/roadmap/` : jalons, progress, récapitulatifs, validations, plans.
-- `docs/utils/` : quick-start, checklists, index, aides d’exploitation.
+- `docs/evolutions/` : propositions d'évolution futures ; `INDEX.md` liste tous les documents.
+- `docs/utils/` : quick-start, checklists, index, aides d'exploitation.
 - Racine du projet : seulement `README.md` et `AGENTS.md` doivent rester en `.md`.
 
 ## Flux critiques
