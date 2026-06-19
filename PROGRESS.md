@@ -950,11 +950,11 @@ Journal unique de progression du projet LAMA.
 ### Fait
 - Ajout d'un nouveau projet serveur `src/Server/Lama.Server` (ASP.NET Core Minimal API):
   - `GET /health`
-  - `POST /api/games`
-  - `POST /api/games/{gameId}/join`
-  - `POST /api/games/{gameId}/moves`
-  - `GET /api/games/{gameId}`
-  - `GET /api/games/{gameId}/events` (SSE)
+  - `POST /api/v1/games`
+  - `POST /api/v1/games/{gameId}/join`
+  - `POST /api/v1/games/{gameId}/moves`
+  - `GET /api/v1/games/{gameId}`
+  - `GET /api/v1/games/{gameId}/events` (SSE)
 - Ajout d'une doc serveur locale: `src/Server/Lama.Server/README.md`.
 - Ajout d'un plan de migration dedie: `docs/multiplayer-migration-plan.md`.
 - Mise a jour de la solution `Lama.slnx` pour inclure le projet serveur et la doc migration.
@@ -1076,14 +1076,14 @@ Journal unique de progression du projet LAMA.
 
 ### Fait
 - Cote serveur `Lama.Server`:
-  - endpoint `POST /api/games/{gameId}/end` ajoute,
+  - endpoint `POST /api/v1/games/{gameId}/end` ajoute,
   - emission d'evenement SSE `game.ended`.
 - Cote CLI online:
-  - `play.pass` route vers `/api/games/{gameId}/moves`.
-  - `play.move` route vers `/api/games/{gameId}/moves` (payload position/mot/direction).
+  - `play.pass` route vers `/api/v1/games/{gameId}/moves`.
+  - `play.move` route vers `/api/v1/games/{gameId}/moves` (payload position/mot/direction).
   - `show.history` online lit les `moves` du snapshot serveur.
   - `show.scores` online affiche les joueurs et le tour courant depuis le snapshot.
-  - `game.end` online route vers `/api/games/{gameId}/end`.
+  - `game.end` online route vers `/api/v1/games/{gameId}/end`.
 - Script `tools/scripts/e2e-online-smoke.sh` etendu:
   - scenario valide: `create -> join -> pass host -> pass guest -> history -> show -> end`.
 
@@ -1190,7 +1190,7 @@ Journal unique de progression du projet LAMA.
   - `GET /health/db` => `503` attendu sans PostgreSQL lancee ✅
 
 ### En cours
-- Les endpoints gameplay (`/api/games/*`) restent en `GameHubState` en memoire (design volontaire phase 1).
+- Les endpoints gameplay (`/api/v1/games/*`) restent en `GameHubState` en memoire (design volontaire phase 1).
 
 ### A faire (phase 2)
 - Creer les entites EF (schemas `sessions`, `history`, `rating`).
@@ -1275,7 +1275,7 @@ Journal unique de progression du projet LAMA.
 - Liste migrations apres apply: `InitialThreeSchemas` appliquee ✅
 
 ### En cours
-- Endpoints online (`/api/games/*`) restent sur `GameHubState` en memoire pour cette iteration.
+- Endpoints online (`/api/v1/games/*`) restent sur `GameHubState` en memoire pour cette iteration.
 
 ### A faire
 - Phase suivante: brancher un premier endpoint read-only en EF (ex: game list/history) pour valider le flux online persistant.
@@ -1287,7 +1287,7 @@ Journal unique de progression du projet LAMA.
 - Le schema EF couvre le "minimum viable" phase 2, pas encore la totalite du modele cible.
 
 ### Prochaines etapes
-1. Basculer `GET /api/games/{gameId}` vers lecture EF (feature toggle possible).
+1. Basculer `GET /api/v1/games/{gameId}` vers lecture EF (feature toggle possible).
 2. Completer la couche `sessions` (players, board/rack states, turn log).
 3. Ajouter tests integration EF contre PostgreSQL dev.
 
@@ -1346,21 +1346,21 @@ Journal unique de progression du projet LAMA.
 ````
 This is the description of what the code block changes:
 <changeDescription>
-Journaliser la bascule du endpoint GET /api/games/{gameId} en mode hybride mémoire + fallback EF read-only
+Journaliser la bascule du endpoint GET /api/v1/games/{gameId} en mode hybride mémoire + fallback EF read-only
 </changeDescription>
 
 This is the code block that represents the suggested code change:
 ```markdown
-## [2026-06-18 17:18:52 UTC] - Etape 1 livree: `GET /api/games/{gameId}` bascule hybride memoire + EF read-only
+## [2026-06-18 17:18:52 UTC] - Etape 1 livree: `GET /api/v1/games/{gameId}` bascule hybride memoire + EF read-only
 
 ### Contexte
-- Choix utilisateur: executer l'option `1` = basculer `GET /api/games/{gameId}` vers EF en lecture seule, sans casser le flow actuel.
+- Choix utilisateur: executer l'option `1` = basculer `GET /api/v1/games/{gameId}` vers EF en lecture seule, sans casser le flow actuel.
 - Contraintes:
   - Conserver compatibilite comportement actuel en memoire (`GameHubState`).
   - Permettre lecture d'une partie persistée meme si non chargee en memoire.
 
 ### Fait
-- Endpoint `GET /api/games/{gameId}` refactore en **mode hybride** dans `src/Server/Lama.Server/Program.cs`:
+- Endpoint `GET /api/v1/games/{gameId}` refactore en **mode hybride** dans `src/Server/Lama.Server/Program.cs`:
   1. Priorite au state memoire (comportement actuel conserve)
   2. Fallback EF read-only via `LamaDbContext.SessionGames` si partie absente en memoire
 - Reponse fallback EF compatible snapshot online:
@@ -1379,7 +1379,7 @@ This is the code block that represents the suggested code change:
 - Correctif de robustesse config prod:
   - `appsettings.Production.json` ne contient plus de pseudo interpolation `${...}` non supportee par .NET config
 - Doc serveur completee:
-  - `src/Server/Lama.Server/README.md` note le fonctionnement hybride de `GET /api/games/{gameId}`
+  - `src/Server/Lama.Server/README.md` note le fonctionnement hybride de `GET /api/v1/games/{gameId}`
 
 ### Verification executee
 - Build serveur: `dotnet build src/Server/Lama.Server/Lama.Server.csproj -c Debug` ✅
@@ -1387,7 +1387,7 @@ This is the code block that represents the suggested code change:
   - insertion d'une partie de test en base (`sessions.games`)
   - run serveur en `ASPNETCORE_ENVIRONMENT=Development`
   - appel HTTP:
-    - `GET /api/games/11111111111111111111111111111111`
+    - `GET /api/v1/games/11111111111111111111111111111111`
     - resultat `200 OK` + payload avec `"source":"database"` ✅
 
 ### En cours
@@ -1413,14 +1413,14 @@ This is the code block that represents the suggested code change:
 ```
 
 
-## [2026-06-18 17:22:15 UTC] - Etape 2 livree: `GET /api/games` en mode hybride memoire + EF read-only
+## [2026-06-18 17:22:15 UTC] - Etape 2 livree: `GET /api/v1/games` en mode hybride memoire + EF read-only
 
 ### Contexte
 - Suite de la bascule hybride online: ajouter un endpoint de navigation globale des parties.
 - Objectif: exposer un listing online sans casser le flux runtime actuel base sur `GameHubState`.
 
 ### Fait
-- Ajout de `GET /api/games` dans `src/Server/Lama.Server/Program.cs`.
+- Ajout de `GET /api/v1/games` dans `src/Server/Lama.Server/Program.cs`.
 - Le endpoint fusionne:
   - parties en memoire (`GameHubState`) en priorite,
   - fallback EF read-only (`sessions.games`) pour les parties absentes en memoire.
@@ -1428,19 +1428,19 @@ This is the code block that represents the suggested code change:
 - Reponse standardisee avec `total` + `games[]` et metadonnees:
   - `id`, `gameLevel`, `queue`, `boardSize`, `rackSize`, `status`, `isGameOver`, `players`, `moves`, `source`, timestamps.
 - Ajout d'un helper `NormalizeStatusToken(...)` pour durcir la normalisation des statuts persistés.
-- Documentation serveur mise a jour (`src/Server/Lama.Server/README.md`) pour inclure `GET /api/games`.
+- Documentation serveur mise a jour (`src/Server/Lama.Server/README.md`) pour inclure `GET /api/v1/games`.
 
 ### Verification executee
 - Build serveur: `dotnet build src/Server/Lama.Server/Lama.Server.csproj -c Debug` ✅
 - Smoke runtime en `Development` avec surcharge port:
   - `GET /health` ✅
-  - `GET /api/games` ✅ (retour `200` avec `total` et `games[]`)
+  - `GET /api/v1/games` ✅ (retour `200` avec `total` et `games[]`)
 
 ### En cours
 - Les champs detaillees de fallback DB (`players`, `moves`) restent metadata-level (0) tant que les tables relationnelles `sessions.*` ne sont pas branchees cote endpoint.
 
 ### A faire
-1. Ajouter tests d'integration API pour `GET /api/games` (priorite memoire + fallback DB + dedoublonnage).
+1. Ajouter tests d'integration API pour `GET /api/v1/games` (priorite memoire + fallback DB + dedoublonnage).
 2. Etendre le fallback EF avec joueurs/coups quand `players_in_game` et `turn_log` seront connectes.
 
 ### Risques / Ecarts
@@ -1455,8 +1455,8 @@ This is the code block that represents the suggested code change:
 ## [2026-06-18 17:37:04 UTC] - Etape 3 livree: fallback EF enrichi avec joueurs/coups persists
 
 ### Contexte
-- Suite de la migration hybride online: combler le manque de detail du fallback DB (`players`, `moves`) sur `GET /api/games/{gameId}`.
-- Objectif secondaire: enrichir `GET /api/games` avec des compteurs fiables quand les tables relationnelles sessions sont disponibles.
+- Suite de la migration hybride online: combler le manque de detail du fallback DB (`players`, `moves`) sur `GET /api/v1/games/{gameId}`.
+- Objectif secondaire: enrichir `GET /api/v1/games` avec des compteurs fiables quand les tables relationnelles sessions sont disponibles.
 
 ### Fait
 - Ajout de deux entites EF sessions:
@@ -1466,11 +1466,11 @@ This is the code block that represents the suggested code change:
   - `SessionPlayerInGameEntityConfiguration`
   - `SessionTurnLogEntityConfiguration`
 - `LamaDbContext` etendu avec `DbSet` + `ApplyConfiguration` pour ces deux tables.
-- `GET /api/games` enrichi:
+- `GET /api/v1/games` enrichi:
   - comptage `players` via `sessions.players_in_game`
   - comptage `moves` via `sessions.turn_log`
   - fallback silencieux a `0` si schema partiel (table/colonne absente).
-- `GET /api/games/{gameId}` enrichi:
+- `GET /api/v1/games/{gameId}` enrichi:
   - fallback DB retourne maintenant des joueurs (`nickname`, `isHost`) et coups (`action_type`, `action_payload`, `turn_number`, `executed_at`)
   - mapping action -> commande online (`move` -> `play.move`, etc.)
   - extraction best-effort de `score` et `placements` depuis `action_payload` JSON
@@ -1504,7 +1504,7 @@ This is the code block that represents the suggested code change:
 
 ### Contexte
 - Demande utilisateur: "Enchaine le board".
-- Le fallback DB de `GET /api/games/{gameId}` retournait encore `board: []` meme avec donnees persistées.
+- Le fallback DB de `GET /api/v1/games/{gameId}` retournait encore `board: []` meme avec donnees persistées.
 
 ### Fait
 - Ajout de l'entite EF `SessionBoardStateEntity` mappee sur `sessions.board_state`.
@@ -1512,7 +1512,7 @@ This is the code block that represents the suggested code change:
 - `LamaDbContext` etendu avec:
   - `DbSet<SessionBoardStateEntity> SessionBoardStates`
   - application de `SessionBoardStateEntityConfiguration`.
-- `GET /api/games/{gameId}` enrichi:
+- `GET /api/v1/games/{gameId}` enrichi:
   - lecture de `sessions.board_state.board_json`
   - parsing robuste multi-formats JSON:
     - tableau direct de tuiles
@@ -1528,7 +1528,7 @@ This is the code block that represents the suggested code change:
 - `rack_state` reste non branche: les racks fallback joueurs sont encore vides (`rackCount = 0`).
 
 ### A faire
-1. Mapper `sessions.rack_state` et brancher les racks joueurs dans `GET /api/games/{gameId}`.
+1. Mapper `sessions.rack_state` et brancher les racks joueurs dans `GET /api/v1/games/{gameId}`.
 2. Ajouter un test integration API qui valide `board` non vide depuis `board_json`.
 
 ### Risques / Ecarts

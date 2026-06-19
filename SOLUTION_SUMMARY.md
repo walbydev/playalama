@@ -143,7 +143,7 @@ bash tools/scripts/run-server-dev.sh
 
 # Dans un autre terminal, tester
 curl -s http://localhost:5000/health | jq .
-curl -s -X POST http://localhost:5000/api/games \
+curl -s -X POST http://localhost:5000/api/v1/games \
   -H "Content-Type: application/json" \
   -d '{"hostName":"Alice","gameLevel":"Standard"}' | jq .
 ```

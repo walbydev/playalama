@@ -12,20 +12,20 @@ Serveur central autoritaire pour le mode multijoueur en ligne de commande.
 
 - `GET /health`
 - `GET /health/db`
-- `POST /api/games`
-- `GET /api/games`
-- `POST /api/games/{gameId}/join`
-- `POST /api/games/{gameId}/moves`
-- `GET /api/games/{gameId}`
-- `GET /api/games/{gameId}/events` (SSE)
-- `POST /api/games/{gameId}/end`
+- `POST /api/v1/games`
+- `GET /api/v1/games`
+- `POST /api/v1/games/{gameId}/join`
+- `POST /api/v1/games/{gameId}/moves`
+- `GET /api/v1/games/{gameId}`
+- `GET /api/v1/games/{gameId}/events` (SSE)
+- `POST /api/v1/games/{gameId}/end`
 - `POST /internal/shutdown` (dev/test uniquement, active avec `LAMA_SERVER_ALLOW_SHUTDOWN=true`)
 
 Notes:
-- Les commandes de jeu online (`play.move`, `play.pass`, etc.) transitent via `POST /api/games/{gameId}/moves`.
-- L'historique online est lu depuis `GET /api/games/{gameId}` (`moves`).
-- `GET /api/games` fonctionne en mode hybride: fusion memoire + fallback EF (`sessions.games`) et, si present, comptage `sessions.players_in_game` / `sessions.turn_log`.
-- `GET /api/games/{gameId}` fonctionne en mode hybride: priorite state memoire, fallback EF metadata (`sessions.games`) + joueurs/coups/plateau (`sessions.players_in_game`, `sessions.turn_log`, `sessions.board_state`) quand disponibles.
+- Les commandes de jeu online (`play.move`, `play.pass`, etc.) transitent via `POST /api/v1/games/{gameId}/moves`.
+- L'historique online est lu depuis `GET /api/v1/games/{gameId}` (`moves`).
+- `GET /api/v1/games` fonctionne en mode hybride: fusion memoire + fallback EF (`sessions.games`) et, si present, comptage `sessions.players_in_game` / `sessions.turn_log`.
+- `GET /api/v1/games/{gameId}` fonctionne en mode hybride: priorite state memoire, fallback EF metadata (`sessions.games`) + joueurs/coups/plateau (`sessions.players_in_game`, `sessions.turn_log`, `sessions.board_state`) quand disponibles.
 
 ## Lancer en local
 
@@ -54,7 +54,7 @@ dotnet tool run dotnet-ef database update \
 ```bash
 curl -s http://localhost:5000/health
 
-curl -s -X POST http://localhost:5000/api/games \
+curl -s -X POST http://localhost:5000/api/v1/games \
   -H "Content-Type: application/json" \
   -d '{"hostName":"Alice","gameLevel":"Standard"}'
 ```

@@ -73,7 +73,7 @@ echo "  Santé  : http://localhost:5000/health"
 echo ""
 echo "Pour tester:"
 echo '  curl -s http://localhost:5000/health | jq'
-echo '  curl -s -X POST http://localhost:5000/api/games \'
+echo '  curl -s -X POST http://localhost:5000/api/v1/games \'
 echo '    -H "Content-Type: application/json" \'
 echo '    -d '"'"'{"hostName":"Alice","gameLevel":"Standard"}'"'"
 echo ""

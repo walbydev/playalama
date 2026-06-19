@@ -331,7 +331,7 @@ if (game == null) return Results.NotFound();
 All `app.MapPost`, `app.MapGet` doivent devenir `async` :
 
 ```csharp
-app.MapPost("/api/games/{gameId}/moves", async (
+app.MapPost("/api/v1/games/{gameId}/moves", async (
     string gameId,
     MoveRequest request,
     IGameRepository gameRepo,
