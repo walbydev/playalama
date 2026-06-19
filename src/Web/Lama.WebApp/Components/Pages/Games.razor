@@ -1,6 +1,7 @@
 @page "/games"
 @layout MainLayout
 @inject LamaApiClient Api
+@inject AuthService Auth
 @inject NavigationManager Navigation
 
 <PageTitle>Playalama | Jouer</PageTitle>
@@ -92,6 +93,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await Auth.InitializeAsync();
+        if (Auth.CurrentUser is not null)
+            createForm.HostName = Auth.CurrentUser.Username;
+
         await LoadGamesAsync();
     }
 
@@ -101,7 +106,15 @@
         error = null;
         try
         {
-            var created = await Api.CreateGameAsync(createForm);
+            var token = await Auth.GetTokenAsync();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                error = "Session expirée. Reconnectez-vous pour créer une partie.";
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            var created = await Api.CreateGameAsync(createForm, token);
             Navigation.NavigateTo($"/games/{created.GameId}?playerId={Uri.EscapeDataString(created.HostPlayerId)}");
         }
         catch (Exception ex)
@@ -120,8 +133,16 @@
         error = null;
         try
         {
+            var token = await Auth.GetTokenAsync();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                error = "Session expirée. Reconnectez-vous pour rejoindre une partie.";
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
             var playerName = string.IsNullOrWhiteSpace(createForm.HostName) ? "JoueurWeb" : createForm.HostName.Trim();
-            var joined = await Api.JoinGameAsync(gameId, playerName, password: null);
+            var joined = await Api.JoinGameAsync(gameId, playerName, password: null, token);
             Navigation.NavigateTo($"/games/{joined.GameId}?playerId={Uri.EscapeDataString(joined.PlayerId)}");
         }
         catch (Exception ex)

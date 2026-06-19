@@ -2,6 +2,7 @@
 @layout MainLayout
 @implements IAsyncDisposable
 @inject LamaApiClient Api
+@inject AuthService Auth
 @inject NavigationManager Navigation
 
 <PageTitle>Playalama | Partie</PageTitle>
@@ -99,6 +100,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await Auth.InitializeAsync();
+
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
         var parsed = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
         playForm.PlayerId = parsed.TryGetValue("playerId", out var playerId)
@@ -154,7 +157,15 @@
 
         try
         {
-            await Api.PlayAsync(GameId, playForm);
+            var token = await Auth.GetTokenAsync();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                error = "Session expirée. Reconnectez-vous pour jouer.";
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            await Api.PlayAsync(GameId, playForm, token);
             await LoadSnapshotAsync();
         }
         catch (Exception ex)

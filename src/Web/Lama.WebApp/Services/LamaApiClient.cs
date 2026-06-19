@@ -86,7 +86,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
 		return payload?.Games?.Select(x => new WebGameListItem(x.Id, x.GameName, x.Status, x.Players, x.MaxPlayers, x.Queue, x.IsJoinable)).ToList() ?? [];
 	}
 
-	public async Task<WebCreateGameResponse> CreateGameAsync(CreateGameForm form, CancellationToken cancellationToken = default)
+	public async Task<WebCreateGameResponse> CreateGameAsync(CreateGameForm form, string? token = null, CancellationToken cancellationToken = default)
 	{
 		var request = new
 		{
@@ -99,7 +99,9 @@ public sealed class LamaApiClient(HttpClient httpClient)
 			language = "fr"
 		};
 
-		var response = await httpClient.PostAsJsonAsync($"{ApiBase}/games", request, cancellationToken);
+		using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games", token);
+		httpRequest.Content = JsonContent.Create(request);
+		var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 		await EnsureSuccessAsync(response, cancellationToken);
 
 		var payload = await response.Content.ReadFromJsonAsync<CreateGameEnvelope>(JsonOptions, cancellationToken)
@@ -108,9 +110,11 @@ public sealed class LamaApiClient(HttpClient httpClient)
 		return new WebCreateGameResponse(payload.GameId, payload.HostPlayerId);
 	}
 
-	public async Task<WebJoinGameResponse> JoinGameAsync(string gameId, string playerName, string? password, CancellationToken cancellationToken = default)
+	public async Task<WebJoinGameResponse> JoinGameAsync(string gameId, string playerName, string? password, string? token = null, CancellationToken cancellationToken = default)
 	{
-		var response = await httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/join", new { playerName, password }, cancellationToken);
+		using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games/{gameId}/join", token);
+		httpRequest.Content = JsonContent.Create(new { playerName, password });
+		var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 		await EnsureSuccessAsync(response, cancellationToken);
 
 		var payload = await response.Content.ReadFromJsonAsync<JoinGameEnvelope>(JsonOptions, cancellationToken)
@@ -136,7 +140,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
 			payload.Board.Select(x => new WebBoardTile(x.Row, x.Column, x.Letter)).ToList());
 	}
 
-	public async Task<WebPlayResponse> PlayAsync(string gameId, PlayForm form, CancellationToken cancellationToken = default)
+	public async Task<WebPlayResponse> PlayAsync(string gameId, PlayForm form, string? token = null, CancellationToken cancellationToken = default)
 	{
 		object? payload = form.Command switch
 		{
@@ -146,7 +150,9 @@ public sealed class LamaApiClient(HttpClient httpClient)
 		};
 
 		var request = new { playerId = form.PlayerId, command = form.Command, payload };
-		var response = await httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/moves", request, cancellationToken);
+		using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games/{gameId}/moves", token);
+		httpRequest.Content = JsonContent.Create(request);
+		var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 		await EnsureSuccessAsync(response, cancellationToken);
 
 		var result = await response.Content.ReadFromJsonAsync<PlayEnvelope>(JsonOptions, cancellationToken)
@@ -178,6 +184,15 @@ public sealed class LamaApiClient(HttpClient httpClient)
 		}
 
 		throw new HttpRequestException(message);
+	}
+
+	private static HttpRequestMessage CreateAuthorizedRequest(HttpMethod method, string url, string? token)
+	{
+		var request = new HttpRequestMessage(method, url);
+		if (!string.IsNullOrWhiteSpace(token))
+			request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+		return request;
 	}
 
 	private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, DateTime ExpiresAt);
