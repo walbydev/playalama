@@ -1541,4 +1541,86 @@ This is the code block that represents the suggested code change:
 - `src/Server/Lama.Server/Data/Configurations/SessionBoardStateEntityConfiguration.cs`
 - `src/Server/Lama.Server/README.md`
 
+## [2026-06-19 12:00:00 UTC] - Point de situation global: pret fonctionnel vs pret livrable
+
+### Contexte
+- Demande de consolidation explicite: distinguer ce qui est deja fait, ce qui reste en cours, et surtout ce qui manque pour considerer le jeu **fonctionnel** puis **livrable**.
+- Source de verite privilegiee: etat reel du code (`src/`, `tests/`) + scripts E2E existants.
+
+### Fait
+- **Base gameplay local (fonctionnelle)**
+  - Boucle metier complete disponible: create/join/move/pass/swap/challenge/check/show/end.
+  - Regles critiques en place: jokers, croisements, scoring corrige sur tuiles wildcard existantes.
+  - Persistance locale JSON + reprise de session operationnelles.
+- **Qualite/validation locale**
+  - Suites unitaires multi-couches etablies (Domain/Core/Infrastructure/Console/Languages).
+  - Parcours E2E CLI reels disponibles (`tools/scripts/e2e-cli-smoke.sh`, `RealCliE2ETests`).
+  - Contrat IO CLI clarifie (`stdout` resultats / `stderr` erreurs) et formats `json/csv` couverts sur commandes majeures.
+- **Online jouable (MVP avance)**
+  - Flux online principal branche dans la CLI via `RuntimeModeService` + `OnlineGameGateway`.
+  - Endpoints online actifs sur `Lama.Server`: `game.create/join/show/list/end`, `play.move/pass/swap/challenge/check`, SSE events.
+  - Smoke online dedié disponible: `tools/scripts/e2e-online-smoke.sh`.
+- **Architecture serveur assainie**
+  - `Program.cs` reduit au role de composition root (mapping endpoints + DI).
+  - Endpoints modularises (`GamesReadEndpoints`, `GamesCommandEndpoints`) + helpers extraits (`GamesEndpointParsers`).
+  - Contrats API et runtime extraits (`Contracts/Api`, `Runtime/GameHubState`) avec namespaces explicites.
+- **Versioning API et distribution des tuiles**
+  - API online uniformisee sous `/api/v1` (serveur + client CLI + docs/scripts alignes).
+  - Distribution des tuiles deplacee vers le provider de langue; constantes FR externalisees dans `tile-distribution.json`.
+  - Algorithme de distribution contextuelle introduit (langue/plateau/rack/niveau/type) + tests dedies provider.
+
+### En cours
+- **Jalon P0 interactif (`CG-02`)**
+  - Mode interactif largement branche et durci (dont hors TTY), mais la cloture officielle repose encore sur recette manuelle TTY complete et stabilisee.
+- **Online persistant hybride memoire + EF**
+  - Lecture hybride `GET /api/v1/games` et `GET /api/v1/games/{gameId}` en place.
+  - Fallback DB enrichi (players/moves/board) mais encore partiel sur certains details de session (notamment racks persistes complets).
+- **Durcissement de la couche serveur**
+  - Structure en progression, mais des tests d'integration API+EF restent a completer pour verrouiller les regressions schema minimal/complet.
+
+### A faire (manques pour marquer "fonctionnel")
+1. **Fermer proprement `CG-02`**: recette interactive TTY de reference (create/join/play/check/challenge/pass/swap/show/end) + compte-rendu de validation.
+2. **Verrouiller la coherence online gameplay**: ajouter E2E online deterministes avec assertions de score/plateau (pas seulement smoke de parcours).
+3. **Finaliser fallback persistant session**: brancher les racks persistes (`sessions.rack_state`) et verifier snapshot complet cote API read.
+4. **Completer la couverture test des cas limites online**: challenge sans coup contestable, erreurs metier/codes retour, robustesse payload.
+
+### A faire (manques pour marquer "livrable")
+1. **Securite/API**
+   - Introduire auth API (JWT/session server-side) et appliquer ACL coherentes en mode online.
+   - Desactiver/encadrer fermement les endpoints internes dev (`/internal/shutdown`) hors environnements de test.
+2. **Persistance autoritaire et reprise**
+   - Definir la source autoritaire cible en prod (memoire+fallback vs EF-first) et completer le modele sessions (board/rack/turn log) de bout en bout.
+   - Garantir reprise apres redemarrage sans perte fonctionnelle.
+3. **Observabilite/exploitation**
+   - Ajouter logs structures, correlation minimale des requetes, healthchecks exploitables (app + db) et scripts runbook clairs.
+4. **Qualification pre-livraison**
+   - Etablir une gate CI/CD explicite: build + unit tests + E2E local + E2E online + smoke DB.
+   - Geler une checklist de release (config, migrations, compat API `/api/v1`, rollback).
+5. **Documentation de livraison**
+   - Aligner `README.md`, `docs/AGENTS.md`, docs serveur/DB sur le comportement final retenu (runtime local/online, prerequis, scripts de recette).
+
+### Risques / Ecarts
+- **Risque de faux "done"**: local et online sont deja jouables, mais pas encore suffisamment durcis pour un marquage "livrable production".
+- **Risque de derive d'architecture**: coexistence memoire + EF sans doctrine claire peut complexifier debug et reprise d'etat.
+- **Risque qualite online**: sans batterie d'integration API+EF plus large, certaines regressions schema/environnement peuvent passer en revue.
+
+### Prochaines etapes (ordre recommande)
+1. Clore `CG-02` avec recette interactive TTY signee + correction des ecarts UX restants.
+2. Ajouter tests d'integration online API+EF (games list/detail + board + racks) et stabiliser fallback session complet.
+3. Introduire auth online minimale (JWT) + politique ACL cible.
+4. Formaliser la gate "fonctionnel" puis "livrable" dans une checklist de release executable.
+
+### References
+- `PROGRESS.md`
+- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `src/Console/Lama.Console/Modes/InteractiveMode.cs`
+- `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
+- `tests/Lama.Console.UnitTests/OnlineCliE2ETests.cs`
+- `src/Server/Lama.Server/Program.cs`
+- `src/Server/Lama.Server/Endpoints/Games/GamesReadEndpoints.cs`
+- `src/Server/Lama.Server/Endpoints/Games/GamesCommandEndpoints.cs`
+- `src/Server/Lama.Server/Runtime/GameHubState.cs`
+- `src/libs/Lama.Languages.fr/FrenchLanguageProvider.cs`
+- `src/libs/Lama.Languages.fr/assets/tile-distribution.json`
+
 
