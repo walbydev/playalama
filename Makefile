@@ -17,7 +17,9 @@ SHELL := /bin/bash
 ROOT_DIR := $(shell pwd)
 CONSOLE_PROJECT := src/Console/Lama.Console/Lama.Console.csproj
 SERVER_PROJECT  := src/Server/Lama.Server/Lama.Server.csproj
+WEBAPP_PROJECT  := src/Web/Lama.WebApp/Lama.WebApp.csproj
 DOCKER_LOCAL    := tools/docker/docker-compose.local.yml
+DOCKER_OPTION_A := docker-compose.local-debug-option-a.yml
 
 # SSH_KEY peut être surchargé : make deploy-server-prod SSH_KEY=~/.ssh/machines/playalama.key
 SSH_KEY         ?= $(LAMA_DEPLOY_SSH_KEY)
@@ -135,6 +137,33 @@ deploy-server-prod-dry: ## [Cas 7 - simulation] Dry-run du déploiement serveur 
 deploy-all-prod: deploy-site-prod deploy-server-prod ## [Cas 6+7] Déploiement complet VPS (site + serveur)
 
 # =============================================================================
+# OPTION A: Debug Natif + PostgreSQL Docker (Recommandé pour développement)
+# =============================================================================
+.PHONY: option-a-start
+option-a-start: ## [OPTION A] Démarrer PostgreSQL en Docker (ports 5200/5201/5202)
+	bash tools/scripts/start-local-debug-option-a.sh
+
+.PHONY: option-a-server
+option-a-server: ## [OPTION A] Lancer Lama.Server natif sur port 5201
+	dotnet run --project $(SERVER_PROJECT)
+
+.PHONY: option-a-webapp
+option-a-webapp: ## [OPTION A] Lancer Lama.WebApp natif sur port 5202
+	dotnet run --project $(WEBAPP_PROJECT)
+
+.PHONY: option-a-stop
+option-a-stop: ## [OPTION A] Arrêter PostgreSQL Docker
+	docker compose -f $(DOCKER_OPTION_A) down
+
+.PHONY: option-a-clean
+option-a-clean: ## [OPTION A] Arrêter et supprimer les volumes (réinitialiser DB)
+	docker compose -f $(DOCKER_OPTION_A) down -v
+
+.PHONY: option-a-logs
+option-a-logs: ## [OPTION A] Suivre les logs PostgreSQL
+	docker compose -f $(DOCKER_OPTION_A) logs -f postgres-lama
+
+# =============================================================================
 # Utilitaires
 # =============================================================================
 .PHONY: build
@@ -162,6 +191,12 @@ docker-local-ps: ## État des conteneurs Docker locaux
 health-local: ## Vérifier les endpoints locaux
 	@curl -fsS http://localhost:5000/health && echo "✓ Server OK" || echo "✗ Server KO"
 	@curl -fsS http://localhost/health && echo "✓ nginx→Server OK" || echo "✗ nginx→Server KO"
+
+.PHONY: health-option-a
+health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 5201, WebApp 5202)
+	@docker exec postgres-lama-option-a pg_isready -U lama_dev -d lama_dev >/dev/null 2>&1 && echo "✓ PostgreSQL (5200) OK" || echo "✗ PostgreSQL (5200) KO"
+	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO" || true
+	@curl -fsS http://localhost:5202/ && echo "✓ WebApp (5202) OK" || echo "✗ WebApp (5202) KO" || true
 
 .PHONY: health-prod
 health-prod: ## Vérifier les endpoints de production

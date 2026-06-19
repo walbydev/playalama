@@ -1,0 +1,35 @@
+version: '3.8'
+
+name: "lama-local-debug-a"
+
+services:
+  # 5200: PostgreSQL Database
+  postgres-lama:
+    image: postgres:16-alpine
+    container_name: postgres-lama-option-a
+    environment:
+      POSTGRES_USER: lama_dev
+      POSTGRES_PASSWORD: dev_password_change_me
+      POSTGRES_DB: lama_dev
+      POSTGRES_INITDB_ARGS: "-c max_connections=100"
+    ports:
+      - "5200:5432"
+    volumes:
+      - lama-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lama_dev -d lama_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - lama-network
+    restart: unless-stopped
+
+volumes:
+  lama-postgres-data:
+    driver: local
+
+networks:
+  lama-network:
+    driver: bridge
+
