@@ -1,11 +1,15 @@
 <Solution>
   <Folder Name="/Apps/">
-    <File Path="wwwroot\index.html" />
+    <File Path="site\static\index.html" />
     <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
   </Folder>
   <Folder Name="/Apps/www/">
-    <File Path="wwwroot\download\index.html" />
-    <File Path="wwwroot\index.html" />
+    <File Path="site\static\download\index.html" />
+    <File Path="site\static\index.html" />
+    <File Path="site\static\assets\css\site.css" />
+    <File Path="site\static\assets\js\theme.js" />
+    <File Path="site\static\assets\js\download.js" />
+    <File Path="site\static\assets\data\releases.json" />
   </Folder>
   <Folder Name="/docs/">
     <File Path="ALIAS_QUICK_SETUP.md" />
