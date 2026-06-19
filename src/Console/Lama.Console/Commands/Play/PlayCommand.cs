@@ -28,5 +28,6 @@ public sealed class PlayCommand
         global::System.Console.WriteLine("  swap <lettres>                  Échange des lettres avec le sac");
         global::System.Console.WriteLine("  challenge                       Conteste le dernier mot joué");
         global::System.Console.WriteLine("  check                           Vérifie un coup avant de le jouer (Casual uniquement)");
+        global::System.Console.WriteLine("  suggest                         Propose des coups (stub, Casual uniquement)");
     }
 }

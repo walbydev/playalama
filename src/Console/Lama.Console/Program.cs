@@ -95,6 +95,7 @@ try
             });
             services.AddSingleton<JoinGameUseCase>();
             services.AddSingleton<PlayMoveUseCase>();
+            services.AddSingleton<SuggestMovesUseCase>();
             services.AddSingleton<PassTurnUseCase>();
             services.AddSingleton<SwapLettersUseCase>();
             services.AddSingleton<ChallengeWordUseCase>();
@@ -138,6 +139,7 @@ try
             services.AddSingleton<ICommand, PlaySwapCommand>();
             services.AddSingleton<ICommand, PlayChallengeCommand>();
             services.AddSingleton<ICommand, PlayCheckCommand>();
+            services.AddSingleton<ICommand, PlaySuggestCommand>();
 
             // ─── Commandes — Show ────────────────────────────────────────────
             services.AddSingleton<ShowCommand>();
