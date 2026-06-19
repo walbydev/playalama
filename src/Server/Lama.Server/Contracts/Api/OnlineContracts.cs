@@ -49,7 +49,8 @@ public sealed class OnlineGame(
     int MaxPlayers = 1,
     int ReservedAiSlots = 0,
     bool HasStarted = true,
-    bool UsesLobby = false)
+    bool UsesLobby = false,
+    bool IsClosed = false)
 {
     public string Id { get; } = Id;
     public GameLevel GameLevel { get; } = GameLevel;
@@ -73,6 +74,7 @@ public sealed class OnlineGame(
     public int ReservedAiSlots { get; } = ReservedAiSlots;
     public bool HasStarted { get; set; } = HasStarted;
     public bool UsesLobby { get; } = UsesLobby;
+    public bool IsClosed { get; set; } = IsClosed;
 }
 
 public sealed record OnlinePlayer(string PlayerId, string PlayerName, bool IsHost);
@@ -108,7 +110,8 @@ public sealed record OnlineGameListItem(
     bool IsPrivate = false,
     bool IsJoinable = true,
     int MaxPlayers = 1,
-    int ReservedAiSlots = 0);
+    int ReservedAiSlots = 0,
+    bool IsClosed = false);
 
 public enum OnlineGameMode
 {

@@ -11,6 +11,7 @@ public sealed class GameHubState
     private readonly IGameLanguageProvider _languageProvider;
     private readonly ConcurrentDictionary<string, OnlineGame> _games = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, EventSubscribers> _subscribers = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, string> _activeGameByPlayerId = new(StringComparer.Ordinal);
 
     public GameHubState(IGameLanguageProvider languageProvider)
     {
@@ -53,6 +54,65 @@ public sealed class GameHubState
     {
         if (_subscribers.TryGetValue(gameId, out var subscribers))
             subscribers.Broadcast(evt);
+    }
+
+    public bool TryReservePlayerForGame(string playerId, string gameId, out string? blockingGameId)
+    {
+        blockingGameId = null;
+
+        while (true)
+        {
+            if (_activeGameByPlayerId.TryGetValue(playerId, out var existingGameId))
+            {
+                if (string.Equals(existingGameId, gameId, StringComparison.Ordinal))
+                    return true;
+
+                if (!TryGet(existingGameId, out var existingGame))
+                {
+                    _activeGameByPlayerId.TryRemove(playerId, out _);
+                    continue;
+                }
+
+                lock (existingGame)
+                {
+                    if (existingGame.IsClosed || existingGame.Engine.GetGameState().IsGameOver)
+                    {
+                        _activeGameByPlayerId.TryRemove(playerId, out _);
+                        continue;
+                    }
+                }
+
+                blockingGameId = existingGameId;
+                return false;
+            }
+
+            if (_activeGameByPlayerId.TryAdd(playerId, gameId))
+                return true;
+        }
+    }
+
+    public void ReleasePlayerReservation(string playerId, string gameId)
+    {
+        if (_activeGameByPlayerId.TryGetValue(playerId, out var existingGameId) &&
+            string.Equals(existingGameId, gameId, StringComparison.Ordinal))
+            _activeGameByPlayerId.TryRemove(playerId, out _);
+    }
+
+    public void ReleaseAllPlayerReservations(string gameId, IReadOnlyCollection<string> playerIds)
+    {
+        foreach (var playerId in playerIds)
+            ReleasePlayerReservation(playerId, gameId);
+
+        if (TryGet(gameId, out var game))
+        {
+            lock (game)
+            {
+                var activePlayersInGame = _activeGameByPlayerId.Any(kv =>
+                    string.Equals(kv.Value, gameId, StringComparison.Ordinal));
+                if (!activePlayersInGame)
+                    game.IsClosed = true;
+            }
+        }
     }
 
     private sealed class EventSubscribers
