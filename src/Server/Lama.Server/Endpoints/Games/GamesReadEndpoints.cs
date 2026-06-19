@@ -1,0 +1,531 @@
+using System.Text.Json;
+using Lama.Contracts;
+using Lama.Server.Data;
+using Lama.Domain.Board;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+
+namespace Lama.Server.Endpoints;
+
+public static class GamesReadEndpoints
+{
+    public static IEndpointRouteBuilder MapGamesReadEndpoints(this IEndpointRouteBuilder app)
+    {
+        app.MapGet("/api/games", GetGamesAsync);
+        app.MapGet("/api/games/{gameId}", GetGameByIdAsync);
+        return app;
+    }
+
+    private static async Task<IResult> GetGamesAsync(global::GameHubState state, LamaDbContext db, CancellationToken cancellationToken)
+    {
+        var merged = new Dictionary<string, global::OnlineGameListItem>(StringComparer.Ordinal);
+        var persistedPlayerCountsByGame = new Dictionary<Guid, int>();
+        var persistedMoveCountsByGame = new Dictionary<Guid, int>();
+
+        foreach (var game in state.ListGames())
+        {
+            lock (game)
+            {
+                var stateSnapshot = game.Engine.GetGameState();
+                var status = stateSnapshot.IsGameOver ? "ended" : "active";
+
+                merged[game.Id] = new global::OnlineGameListItem(
+                    Id: game.Id,
+                    GameLevel: game.GameLevel,
+                    Queue: game.Queue,
+                    BoardSize: game.BoardSize,
+                    RackSize: game.RackSize,
+                    MinWordLength: game.MinWordLength,
+                    Language: game.Language,
+                    Status: status,
+                    IsGameOver: stateSnapshot.IsGameOver,
+                    Players: game.Players.Count,
+                    Moves: game.Moves.Count,
+                    CreatedAt: game.CreatedAt,
+                    UpdatedAt: game.UpdatedAt,
+                    Source: "memory");
+            }
+        }
+
+        var persistedGames = await db.SessionGames
+            .AsNoTracking()
+            .OrderByDescending(x => x.UpdatedAt)
+            .ToListAsync(cancellationToken);
+
+        try
+        {
+            persistedPlayerCountsByGame = await db.SessionPlayersInGame
+                .AsNoTracking()
+                .GroupBy(x => x.GameId)
+                .Select(x => new { x.Key, Count = x.Count() })
+                .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
+
+            persistedMoveCountsByGame = await db.SessionTurnLogs
+                .AsNoTracking()
+                .GroupBy(x => x.GameId)
+                .Select(x => new { x.Key, Count = x.Count() })
+                .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
+        }
+        catch (PostgresException ex) when (IsMissingDatabaseObject(ex))
+        {
+            // Backward compatibility: DB may still be at the minimal sessions.games schema.
+        }
+
+        foreach (var persistedGame in persistedGames)
+        {
+            var gameId = persistedGame.GameId.ToString("N");
+            if (merged.ContainsKey(gameId))
+                continue;
+
+            var parsedLevel = ParseGameLevelToken(persistedGame.GameLevel);
+            var parsedQueue = ParseRankingQueueToken(persistedGame.Queue);
+            var normalizedStatus = NormalizeStatusToken(persistedGame.Status);
+            var isGameOver = string.Equals(normalizedStatus, "ended", StringComparison.OrdinalIgnoreCase)
+                             || string.Equals(normalizedStatus, "abandoned", StringComparison.OrdinalIgnoreCase);
+
+            merged[gameId] = new global::OnlineGameListItem(
+                Id: gameId,
+                GameLevel: parsedLevel,
+                Queue: parsedQueue,
+                BoardSize: persistedGame.BoardSize,
+                RackSize: persistedGame.RackSize,
+                MinWordLength: persistedGame.MinWordLength,
+                Language: persistedGame.Language,
+                Status: normalizedStatus,
+                IsGameOver: isGameOver,
+                Players: persistedPlayerCountsByGame.GetValueOrDefault(persistedGame.GameId, 0),
+                Moves: persistedMoveCountsByGame.GetValueOrDefault(persistedGame.GameId, 0),
+                CreatedAt: persistedGame.CreatedAt,
+                UpdatedAt: persistedGame.UpdatedAt,
+                Source: "database");
+        }
+
+        var ordered = merged.Values
+            .OrderByDescending(x => x.UpdatedAt)
+            .ToList();
+
+        return Results.Ok(new
+        {
+            total = ordered.Count,
+            games = ordered
+        });
+    }
+
+    private static async Task<IResult> GetGameByIdAsync(string gameId, global::GameHubState state, LamaDbContext db, CancellationToken cancellationToken)
+    {
+        if (state.TryGet(gameId, out var game))
+        {
+            lock (game)
+            {
+                var stateSnapshot = game.Engine.GetGameState();
+                return Results.Ok(new
+                {
+                    game.Id,
+                    game.GameLevel,
+                    game.Queue,
+                    game.BoardSize,
+                    game.RackSize,
+                    game.MinWordLength,
+                    game.Language,
+                    game.TournamentId,
+                    game.CreatedAt,
+                    game.UpdatedAt,
+                    stateSnapshot.IsGameOver,
+                    stateSnapshot.CurrentPlayerIndex,
+                    stateSnapshot.TurnNumber,
+                    players = game.Players.Select((player, index) => new
+                    {
+                        player.PlayerId,
+                        player.PlayerName,
+                        player.IsHost,
+                        Score = stateSnapshot.Players[index].Score,
+                        Rack = stateSnapshot.Players[index].Rack,
+                        RackCount = stateSnapshot.Players[index].Rack.Count
+                    }),
+                    board = CaptureBoard(stateSnapshot.Board),
+                    moves = game.Moves,
+                    source = "memory"
+                });
+            }
+        }
+
+        if (!Guid.TryParse(gameId, out var gameGuid))
+            return Results.NotFound(new { error = "game not found" });
+
+        var persistedGame = await db.SessionGames
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.GameId == gameGuid, cancellationToken);
+
+        if (persistedGame is null)
+            return Results.NotFound(new { error = "game not found" });
+
+        var parsedLevel = ParseGameLevelToken(persistedGame.GameLevel);
+        var parsedQueue = ParseRankingQueueToken(persistedGame.Queue);
+        var isGameOver = string.Equals(persistedGame.Status, "ended", StringComparison.OrdinalIgnoreCase)
+                         || string.Equals(persistedGame.Status, "abandoned", StringComparison.OrdinalIgnoreCase);
+
+        var persistedPlayers = new List<object>();
+        var persistedMoves = new List<object>();
+        IReadOnlyList<global::OnlineBoardTile> persistedBoard = [];
+        var lastTurnNumber = 0;
+
+        try
+        {
+            var dbPlayers = await db.SessionPlayersInGame
+                .AsNoTracking()
+                .Where(x => x.GameId == gameGuid)
+                .OrderBy(x => x.PlayerIndex)
+                .ToListAsync(cancellationToken);
+
+            var playersBySessionId = dbPlayers.ToDictionary(x => x.PlayerSessionId, x => x);
+            persistedPlayers = dbPlayers
+                .Select(x => (object)new
+                {
+                    PlayerId = x.PlayerId.ToString("N"),
+                    PlayerName = x.Nickname,
+                    x.IsHost,
+                    Score = 0,
+                    Rack = Array.Empty<char>(),
+                    RackCount = 0
+                })
+                .ToList();
+
+            var dbTurns = await db.SessionTurnLogs
+                .AsNoTracking()
+                .Where(x => x.GameId == gameGuid)
+                .OrderBy(x => x.TurnNumber)
+                .ThenBy(x => x.ExecutedAt)
+                .ToListAsync(cancellationToken);
+
+            lastTurnNumber = dbTurns.Count == 0 ? 0 : dbTurns.Max(x => x.TurnNumber);
+
+            persistedMoves = dbTurns
+                .Select(x =>
+                {
+                    var payload = ParseActionPayload(x.ActionPayload);
+                    playersBySessionId.TryGetValue(x.PlayerSessionId, out var owner);
+
+                    return (object)new
+                    {
+                        MoveId = x.TurnId.ToString("N"),
+                        PlayerId = owner?.PlayerId.ToString("N") ?? x.PlayerSessionId.ToString("N"),
+                        PlayerName = owner?.Nickname ?? "unknown",
+                        Command = ToOnlineCommand(x.ActionType),
+                        Payload = payload,
+                        PlayedAt = x.ExecutedAt,
+                        Score = ExtractScoreFromPayload(payload),
+                        TurnNumber = x.TurnNumber,
+                        Placements = ExtractPlacementsFromPayload(payload)
+                    };
+                })
+                .ToList();
+
+            var dbBoardState = await db.SessionBoardStates
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.GameId == gameGuid, cancellationToken);
+
+            if (dbBoardState is not null)
+                persistedBoard = ParseBoardTilesFromJson(dbBoardState.BoardJson);
+        }
+        catch (PostgresException ex) when (IsMissingDatabaseObject(ex))
+        {
+            // Backward compatibility: DB may still be at the minimal sessions.games schema.
+        }
+
+        var currentPlayerIndex = persistedPlayers.Count == 0
+            ? 0
+            : lastTurnNumber % persistedPlayers.Count;
+
+        return Results.Ok(new
+        {
+            Id = persistedGame.GameId.ToString("N"),
+            GameLevel = parsedLevel,
+            Queue = parsedQueue,
+            persistedGame.BoardSize,
+            persistedGame.RackSize,
+            persistedGame.MinWordLength,
+            persistedGame.Language,
+            TournamentId = (string?)null,
+            persistedGame.CreatedAt,
+            persistedGame.UpdatedAt,
+            IsGameOver = isGameOver,
+            CurrentPlayerIndex = currentPlayerIndex,
+            TurnNumber = lastTurnNumber,
+            players = persistedPlayers,
+            board = persistedBoard,
+            moves = persistedMoves,
+            source = "database"
+        });
+    }
+
+    private static GameLevel ParseGameLevelToken(string token)
+    {
+        if (Enum.TryParse<GameLevel>(token, ignoreCase: true, out var parsed))
+            return parsed;
+
+        return GameLevel.Standard;
+    }
+
+    private static RankingQueue ParseRankingQueueToken(string token)
+    {
+        return token.Trim().ToLowerInvariant() switch
+        {
+            "open" => RankingQueue.OpenRanked,
+            "tournament" => RankingQueue.Tournament,
+            "global" => RankingQueue.GlobalPrestige,
+            "casual" => RankingQueue.CasualUnranked,
+            _ => RankingQueue.OpenRanked
+        };
+    }
+
+    private static string NormalizeStatusToken(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return "unknown";
+
+        return token.Trim().ToLowerInvariant();
+    }
+
+    private static string ToOnlineCommand(string? actionType)
+    {
+        if (string.IsNullOrWhiteSpace(actionType))
+            return "play.move";
+
+        return actionType.Trim().ToLowerInvariant() switch
+        {
+            "move" => "play.move",
+            "pass" => "play.pass",
+            "swap" => "play.swap",
+            "challenge" => "play.challenge",
+            "check" => "play.check",
+            var other => $"play.{other}"
+        };
+    }
+
+    private static JsonElement? ParseActionPayload(string? payload)
+    {
+        if (string.IsNullOrWhiteSpace(payload))
+            return null;
+
+        try
+        {
+            using var document = JsonDocument.Parse(payload);
+            return document.RootElement.Clone();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static int ExtractScoreFromPayload(JsonElement? payload)
+    {
+        if (payload is null || payload.Value.ValueKind != JsonValueKind.Object)
+            return 0;
+
+        if (!payload.Value.TryGetProperty("score", out var scoreElement))
+            return 0;
+
+        return scoreElement.ValueKind switch
+        {
+            JsonValueKind.Number when scoreElement.TryGetInt32(out var score) => score,
+            JsonValueKind.String when int.TryParse(scoreElement.GetString(), out var score) => score,
+            _ => 0
+        };
+    }
+
+    private static IReadOnlyList<global::OnlineMovePlacement> ExtractPlacementsFromPayload(JsonElement? payload)
+    {
+        if (payload is null || payload.Value.ValueKind != JsonValueKind.Object)
+            return [];
+
+        if (!payload.Value.TryGetProperty("placements", out var placementsElement) ||
+            placementsElement.ValueKind != JsonValueKind.Array)
+            return [];
+
+        var placements = new List<global::OnlineMovePlacement>();
+
+        foreach (var item in placementsElement.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+                continue;
+
+            if (!item.TryGetProperty("row", out var rowElement) || !rowElement.TryGetInt32(out var row))
+                continue;
+            if (!item.TryGetProperty("column", out var columnElement) || !columnElement.TryGetInt32(out var column))
+                continue;
+            if (!item.TryGetProperty("letter", out var letterElement))
+                continue;
+
+            var letterRaw = letterElement.ValueKind switch
+            {
+                JsonValueKind.String => letterElement.GetString(),
+                _ => letterElement.ToString()
+            };
+
+            if (string.IsNullOrWhiteSpace(letterRaw))
+                continue;
+
+            placements.Add(new global::OnlineMovePlacement(row, column, letterRaw[0]));
+        }
+
+        return placements;
+    }
+
+    private static IReadOnlyList<global::OnlineBoardTile> ParseBoardTilesFromJson(string? boardJson)
+    {
+        if (string.IsNullOrWhiteSpace(boardJson))
+            return [];
+
+        try
+        {
+            using var document = JsonDocument.Parse(boardJson);
+            var root = document.RootElement;
+
+            if (root.ValueKind == JsonValueKind.Array)
+                return ParseBoardTilesFromArray(root);
+
+            if (root.ValueKind != JsonValueKind.Object)
+                return [];
+
+            if (root.TryGetProperty("tiles", out var tilesElement) && tilesElement.ValueKind == JsonValueKind.Array)
+                return ParseBoardTilesFromArray(tilesElement);
+
+            if (root.TryGetProperty("grid", out var gridElement) && gridElement.ValueKind == JsonValueKind.Array)
+                return ParseBoardTilesFromGrid(gridElement);
+
+            return [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static IReadOnlyList<global::OnlineBoardTile> ParseBoardTilesFromArray(JsonElement tilesElement)
+    {
+        var tiles = new List<global::OnlineBoardTile>();
+
+        foreach (var tileElement in tilesElement.EnumerateArray())
+        {
+            if (tileElement.ValueKind != JsonValueKind.Object)
+                continue;
+
+            if (!TryGetIntProperty(tileElement, "row", out var row))
+                continue;
+            if (!TryGetIntProperty(tileElement, "column", out var column))
+                continue;
+            if (!TryGetLetterProperty(tileElement, "letter", out var letter))
+                continue;
+
+            var isWildcard = TryGetBoolProperty(tileElement, "isWildcard", out var wildcard) && wildcard;
+            tiles.Add(new global::OnlineBoardTile(row, column, letter, isWildcard));
+        }
+
+        return tiles;
+    }
+
+    private static IReadOnlyList<global::OnlineBoardTile> ParseBoardTilesFromGrid(JsonElement gridElement)
+    {
+        var tiles = new List<global::OnlineBoardTile>();
+        var rowIndex = 0;
+
+        foreach (var rowElement in gridElement.EnumerateArray())
+        {
+            if (rowElement.ValueKind != JsonValueKind.Array)
+            {
+                rowIndex++;
+                continue;
+            }
+
+            var columnIndex = 0;
+            foreach (var cellElement in rowElement.EnumerateArray())
+            {
+                if (cellElement.ValueKind == JsonValueKind.Object &&
+                    TryGetLetterProperty(cellElement, "letter", out var letter))
+                {
+                    var isWildcard = TryGetBoolProperty(cellElement, "isWildcard", out var wildcard) && wildcard;
+                    tiles.Add(new global::OnlineBoardTile(rowIndex, columnIndex, letter, isWildcard));
+                }
+
+                columnIndex++;
+            }
+
+            rowIndex++;
+        }
+
+        return tiles;
+    }
+
+    private static bool TryGetIntProperty(JsonElement element, string name, out int value)
+    {
+        value = 0;
+        if (!element.TryGetProperty(name, out var property))
+            return false;
+
+        return property.ValueKind switch
+        {
+            JsonValueKind.Number when property.TryGetInt32(out value) => true,
+            JsonValueKind.String when int.TryParse(property.GetString(), out value) => true,
+            _ => false
+        };
+    }
+
+    private static bool TryGetBoolProperty(JsonElement element, string name, out bool value)
+    {
+        value = false;
+        if (!element.TryGetProperty(name, out var property))
+            return false;
+
+        if (property.ValueKind == JsonValueKind.True)
+        {
+            value = true;
+            return true;
+        }
+
+        if (property.ValueKind == JsonValueKind.False)
+        {
+            value = false;
+            return true;
+        }
+
+        return property.ValueKind == JsonValueKind.String && bool.TryParse(property.GetString(), out value);
+    }
+
+    private static bool TryGetLetterProperty(JsonElement element, string name, out char value)
+    {
+        value = default;
+        if (!element.TryGetProperty(name, out var property))
+            return false;
+
+        var raw = property.ValueKind switch
+        {
+            JsonValueKind.String => property.GetString(),
+            _ => property.ToString()
+        };
+
+        if (string.IsNullOrWhiteSpace(raw))
+            return false;
+
+        value = raw[0];
+        return true;
+    }
+
+    private static bool IsMissingDatabaseObject(PostgresException ex) =>
+        ex.SqlState is PostgresErrorCodes.UndefinedTable or PostgresErrorCodes.UndefinedColumn;
+
+    private static IReadOnlyList<global::OnlineBoardTile> CaptureBoard(BoardState board)
+    {
+        var tiles = new List<global::OnlineBoardTile>();
+        for (var row = 0; row < 15; row++)
+            for (var col = 0; col < 15; col++)
+            {
+                var tile = board.Grid[row, col];
+                if (tile is not null)
+                    tiles.Add(new global::OnlineBoardTile(row, col, tile.Letter, tile.IsWildcard));
+            }
+
+        return tiles;
+    }
+}
+
