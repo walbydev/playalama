@@ -44,7 +44,7 @@ public static class GamesCommandEndpoints
             PlayerIndexById: new Dictionary<string, int>(StringComparer.Ordinal) { [hostId] = 0 },
             Moves: [],
             TournamentId: request.TournamentId,
-            Queue: ResolveQueue(level),
+            Queue: GamesEndpointParsers.ResolveQueue(level),
             Engine: engine);
 
         state.Create(game);
@@ -180,7 +180,7 @@ public static class GamesCommandEndpoints
                         break;
 
                     case "play.move":
-                        var letters = BuildLetterPlacementsFromPayload(request.Payload);
+                        var letters = GamesEndpointParsers.BuildLetterPlacementsFromPayload(request.Payload);
                         var validation = game.Engine.ValidateMove(letters);
                         if (!validation.IsValid)
                             return Results.BadRequest(new { error = validation.ErrorMessage });
@@ -198,7 +198,7 @@ public static class GamesCommandEndpoints
                         break;
 
                     case "play.swap":
-                        var swapLetters = BuildSwapLettersFromPayload(request.Payload, currentState.Players[playerIndex].Rack);
+                        var swapLetters = GamesEndpointParsers.BuildSwapLettersFromPayload(request.Payload, currentState.Players[playerIndex].Rack);
                         game.Engine.SwapLetters(swapLetters);
                         var stateAfterSwap = game.Engine.GetGameState();
                         newRack = stateAfterSwap.Players[playerIndex].Rack.ToList();
@@ -216,15 +216,15 @@ public static class GamesCommandEndpoints
                                 game.Moves.RemoveAt(lastPlayableMoveIndex);
                         }
 
-                        placements = challengeResult.ChallengedMove.Placements
+                        placements = challengeResult.ChallengedMove?.Placements
                             .Select(p => new global::OnlineMovePlacement(p.Row, p.Column, p.Letter))
-                            .ToList();
+                            .ToList() ?? [];
                         score = 0;
                         newRack = challengeResult.GameState.Players[playerIndex].Rack.ToList();
                         break;
 
                     case "play.check":
-                        var simulatedLetters = BuildLetterPlacementsFromPayload(request.Payload);
+                        var simulatedLetters = GamesEndpointParsers.BuildLetterPlacementsFromPayload(request.Payload);
                         var simulatedValidation = game.Engine.ValidateMove(simulatedLetters);
                         if (!simulatedValidation.IsValid)
                             return Results.BadRequest(new { error = simulatedValidation.ErrorMessage });
@@ -360,7 +360,7 @@ public static class GamesCommandEndpoints
 
         var subscription = state.Subscribe(gameId);
 
-        await WriteEventAsync(httpContext, new global::ServerEvent("sse.connected", new
+        await GamesEndpointParsers.WriteEventAsync(httpContext, new global::ServerEvent("sse.connected", new
         {
             gameId,
             utcNow = DateTimeOffset.UtcNow
@@ -371,7 +371,7 @@ public static class GamesCommandEndpoints
             while (!httpContext.RequestAborted.IsCancellationRequested)
             {
                 while (subscription.Reader.TryRead(out var evt))
-                    await WriteEventAsync(httpContext, evt);
+                    await GamesEndpointParsers.WriteEventAsync(httpContext, evt);
 
                 await Task.Delay(150, httpContext.RequestAborted);
             }
@@ -383,110 +383,6 @@ public static class GamesCommandEndpoints
         {
             state.Unsubscribe(gameId, subscription.Id);
         }
-    }
-
-    private static RankingQueue ResolveQueue(GameLevel level) => level switch
-    {
-        GameLevel.Casual => RankingQueue.CasualUnranked,
-        GameLevel.Tournament => RankingQueue.Tournament,
-        _ => RankingQueue.OpenRanked
-    };
-
-    private static async Task WriteEventAsync(HttpContext context, global::ServerEvent evt)
-    {
-        var payloadJson = JsonSerializer.Serialize(evt.Payload);
-        await context.Response.WriteAsync($"event: {evt.Type}\\n");
-        await context.Response.WriteAsync($"data: {payloadJson}\\n\\n");
-        await context.Response.Body.FlushAsync();
-    }
-
-    private static Dictionary<Position, char> BuildLetterPlacementsFromPayload(JsonElement? payload)
-    {
-        if (payload is null || payload.Value.ValueKind != JsonValueKind.Object)
-            throw new GameException("Payload play.move invalide.");
-
-        if (!payload.Value.TryGetProperty("position", out var positionProperty) ||
-            !payload.Value.TryGetProperty("word", out var wordProperty) ||
-            !payload.Value.TryGetProperty("direction", out var directionProperty))
-            throw new GameException("Payload play.move incomplet.");
-
-        var positionRaw = positionProperty.GetString();
-        var word = wordProperty.GetString();
-        var direction = directionProperty.GetString()?.Trim().ToUpperInvariant();
-
-        if (string.IsNullOrWhiteSpace(positionRaw) || string.IsNullOrWhiteSpace(word) || (direction is not "H" and not "V"))
-            throw new GameException("Payload play.move invalide.");
-
-        if (!TryParsePosition(positionRaw, out var start))
-            throw new GameException($"Position invalide: {positionRaw}");
-
-        var placements = new Dictionary<Position, char>();
-        for (var i = 0; i < word.Length; i++)
-        {
-            var pos = direction == "H"
-                ? new Position(start.Row, start.Column + i)
-                : new Position(start.Row + i, start.Column);
-            placements[pos] = word[i];
-        }
-
-        return placements;
-    }
-
-    private static IReadOnlyList<char> BuildSwapLettersFromPayload(JsonElement? payload, IReadOnlyList<char> currentRack)
-    {
-        if (payload is null || payload.Value.ValueKind != JsonValueKind.Object)
-            throw new GameException("Payload play.swap invalide.");
-
-        var swapAll = false;
-        if (payload.Value.TryGetProperty("swapAll", out var swapAllProperty))
-        {
-            swapAll = swapAllProperty.ValueKind switch
-            {
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                JsonValueKind.String when bool.TryParse(swapAllProperty.GetString(), out var parsed) => parsed,
-                _ => false
-            };
-        }
-
-        if (swapAll)
-            return currentRack.ToList();
-
-        if (!payload.Value.TryGetProperty("letters", out var lettersProperty))
-            throw new GameException("Payload play.swap incomplet (letters requis sans swapAll).");
-
-        var lettersRaw = lettersProperty.ValueKind switch
-        {
-            JsonValueKind.String => lettersProperty.GetString(),
-            _ => lettersProperty.ToString()
-        };
-
-        if (string.IsNullOrWhiteSpace(lettersRaw))
-            throw new GameException("Aucune lettre fournie pour play.swap.");
-
-        return lettersRaw
-            .Trim()
-            .ToUpperInvariant()
-            .ToCharArray();
-    }
-
-    private static bool TryParsePosition(string input, out Position position)
-    {
-        position = new Position(0, 0);
-        input = input.Trim().ToUpperInvariant();
-
-        if (input.Length < 2)
-            return false;
-
-        var colChar = input[0];
-        if (colChar < 'A' || colChar > 'O')
-            return false;
-
-        if (!int.TryParse(input[1..], out var row) || row < 1 || row > 15)
-            return false;
-
-        position = new Position(row - 1, colChar - 'A');
-        return true;
     }
 }
 
