@@ -27,14 +27,17 @@ public static class GamesReadEndpoints
             {
                 var stateSnapshot = game.Engine.GetGameState();
                 var occupiedSlots = game.Players.Count + game.ReservedAiSlots;
-                var status = stateSnapshot.IsGameOver
+                var status = game.IsClosed
+                    ? "closed"
+                    : stateSnapshot.IsGameOver
                     ? "ended"
                     : game.UsesLobby && !game.HasStarted
                         ? "waiting"
                         : game.HasStarted
                         ? "active"
                         : "active";
-                var isJoinable = !stateSnapshot.IsGameOver
+                var isJoinable = !game.IsClosed
+                                 && !stateSnapshot.IsGameOver
                                  && (!game.UsesLobby || !game.HasStarted)
                                  && game.Mode == OnlineGameMode.Multi
                                  && occupiedSlots < game.MaxPlayers;
@@ -59,7 +62,8 @@ public static class GamesReadEndpoints
                     IsPrivate: game.IsPrivate,
                     IsJoinable: isJoinable,
                     MaxPlayers: game.MaxPlayers,
-                    ReservedAiSlots: game.ReservedAiSlots);
+                    ReservedAiSlots: game.ReservedAiSlots,
+                    IsClosed: game.IsClosed);
             }
         }
 
@@ -119,7 +123,8 @@ public static class GamesReadEndpoints
                 IsPrivate: false,
                 IsJoinable: false,
                 MaxPlayers: 1,
-                ReservedAiSlots: 0);
+                ReservedAiSlots: 0,
+                IsClosed: isGameOver);
         }
 
         var ordered = merged.Values
@@ -150,6 +155,7 @@ public static class GamesReadEndpoints
                     game.ReservedAiSlots,
                     game.HasStarted,
                     game.UsesLobby,
+                    game.IsClosed,
                     game.GameLevel,
                     game.Queue,
                     game.BoardSize,
@@ -274,6 +280,7 @@ public static class GamesReadEndpoints
             MaxPlayers = 1,
             ReservedAiSlots = 0,
             HasStarted = true,
+            IsClosed = isGameOver,
             GameLevel = parsedLevel,
             Queue = parsedQueue,
             persistedGame.BoardSize,

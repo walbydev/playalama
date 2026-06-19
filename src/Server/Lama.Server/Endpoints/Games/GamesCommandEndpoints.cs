@@ -106,6 +106,9 @@ public static class GamesCommandEndpoints
         if (request.IsPrivate && string.IsNullOrWhiteSpace(request.Password))
             return Results.BadRequest(new { error = "password is required for private game" });
 
+        if (!state.TryReservePlayerForGame(hostId, gameId, out var blockingHostGameId))
+            return Results.BadRequest(new { error = $"player already active in game '{blockingHostGameId}'" });
+
         var passwordHash = request.IsPrivate
             ? ComputePasswordHash(request.Password!)
             : null;
@@ -148,7 +151,8 @@ public static class GamesCommandEndpoints
             MaxPlayers: maxPlayers,
             ReservedAiSlots: reservedAiSlots,
             HasStarted: mode == OnlineGameMode.Solo || !usesLobby,
-            UsesLobby: usesLobby);
+            UsesLobby: usesLobby,
+            IsClosed: false);
 
         state.Create(game);
 
@@ -213,6 +217,9 @@ public static class GamesCommandEndpoints
             if (currentState.IsGameOver)
                 return Results.BadRequest(new { error = "game is over" });
 
+            if (game.IsClosed)
+                return Results.BadRequest(new { error = "game is closed" });
+
             if (game.Mode == OnlineGameMode.Solo)
                 return Results.BadRequest(new { error = "solo games cannot be joined" });
 
@@ -230,19 +237,33 @@ public static class GamesCommandEndpoints
                     return Results.BadRequest(new { error = "invalid game password" });
             }
 
+            if (game.PlayerIndexById.ContainsKey(playerId))
+                return Results.BadRequest(new { error = "player already joined this game" });
+
+            if (!state.TryReservePlayerForGame(playerId, gameId, out var blockingGameId))
+                return Results.BadRequest(new { error = $"player already active in game '{blockingGameId}'" });
+
             if (currentState.History.Count > 0)
                 return Results.BadRequest(new { error = "cannot join a game that has already started" });
 
-            var allPlayerNames = game.Players.Select(p => p.PlayerName).ToList();
-            allPlayerNames.Add(trimmedName);
-            game.Engine.InitializeGame(allPlayerNames);
+            try
+            {
+                var allPlayerNames = game.Players.Select(p => p.PlayerName).ToList();
+                allPlayerNames.Add(trimmedName);
+                game.Engine.InitializeGame(allPlayerNames);
 
-            game.Players.Add(new OnlinePlayer(playerId, trimmedName, false));
-            game.PlayerIndexById[playerId] = game.Players.Count - 1;
-            game.UpdatedAt = DateTimeOffset.UtcNow;
+                game.Players.Add(new OnlinePlayer(playerId, trimmedName, false));
+                game.PlayerIndexById[playerId] = game.Players.Count - 1;
+                game.UpdatedAt = DateTimeOffset.UtcNow;
 
-            var newState = game.Engine.GetGameState();
-            rack = newState.Players[game.PlayerIndexById[playerId]].Rack.ToList();
+                var newState = game.Engine.GetGameState();
+                rack = newState.Players[game.PlayerIndexById[playerId]].Rack.ToList();
+            }
+            catch
+            {
+                state.ReleasePlayerReservation(playerId, gameId);
+                throw;
+            }
         }
 
         state.Publish(gameId, new ServerEvent("game.joined", new
@@ -290,6 +311,9 @@ public static class GamesCommandEndpoints
         {
             if (!game.UsesLobby)
                 return Results.BadRequest(new { error = "game does not require explicit start" });
+
+            if (game.IsClosed)
+                return Results.BadRequest(new { error = "game is closed" });
 
             var host = game.Players.FirstOrDefault(p => p.IsHost);
             if (host is null || !string.Equals(host.PlayerId, callerPlayerId, StringComparison.Ordinal))
@@ -363,6 +387,9 @@ public static class GamesCommandEndpoints
 
             if (currentState.IsGameOver)
                 return Results.BadRequest(new { error = "game is over" });
+
+            if (game.IsClosed)
+                return Results.BadRequest(new { error = "game is closed" });
 
             if (game.UsesLobby && !game.HasStarted)
                 return Results.BadRequest(new { error = "game has not started yet" });
@@ -528,6 +555,7 @@ public static class GamesCommandEndpoints
 
         string? winner;
         List<OnlineScoreEntry> scores;
+        List<string> releasedPlayerIds;
 
         lock (game)
         {
@@ -547,7 +575,12 @@ public static class GamesCommandEndpoints
             winner = scores.Count > 0 && scores.Count(s => s.Score == scores[0].Score) == 1
                 ? scores[0].PlayerName
                 : null;
+
+            releasedPlayerIds = game.Players.Select(p => p.PlayerId).ToList();
+            game.IsClosed = true;
         }
+
+        state.ReleaseAllPlayerReservations(gameId, releasedPlayerIds);
 
         var endedAt = DateTimeOffset.UtcNow;
 
@@ -615,7 +648,7 @@ public static class GamesCommandEndpoints
         {
             lock (game)
             {
-                if (game.Engine.GetGameState().IsGameOver)
+                if (game.IsClosed || game.Engine.GetGameState().IsGameOver)
                     continue;
 
                 if (string.Equals(game.GameName, candidate, StringComparison.OrdinalIgnoreCase))

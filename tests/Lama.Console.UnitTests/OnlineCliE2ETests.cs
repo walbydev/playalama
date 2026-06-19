@@ -207,6 +207,23 @@ public sealed class OnlineCliE2ETests : IAsyncLifetime, IDisposable
 		passAfterStart.StdOut.Should().Contain("(online)");
 	}
 
+	[Fact]
+	public async Task Cli_Online_PlayerCannotParticipateInTwoActiveGames_SameTime()
+	{
+		var create1 = await RunCliAsync(_hostSessionDir, "game", "create", "Alice", "--level", "casual");
+		create1.ExitCode.Should().Be(0);
+
+		var create2 = await RunCliAsync(_hostSessionDir, "game", "create", "Alice", "--level", "casual");
+		create2.ExitCode.Should().NotBe(0);
+		create2.StdErr.Should().Contain("player already active in game");
+
+		var end = await RunCliAsync(_hostSessionDir, "game", "end");
+		end.ExitCode.Should().Be(0);
+
+		var create3 = await RunCliAsync(_hostSessionDir, "game", "create", "Alice", "--level", "casual");
+		create3.ExitCode.Should().Be(0);
+	}
+
 	private async Task<string> GetPlayableWordFromRackAsync(string gameId)
 	{
 		var show = await RunCliAsync(_hostSessionDir, "game", "show", gameId, "--output", "json");
