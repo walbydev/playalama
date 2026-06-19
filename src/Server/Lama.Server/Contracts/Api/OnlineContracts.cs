@@ -11,11 +11,19 @@ public sealed record CreateGameRequest(
     int RackSize = 7,
     int MinWordLength = 2,
     string Language = "fr",
-    string? TournamentId = null);
+    string? TournamentId = null,
+    OnlineGameMode? Mode = null,
+    string? GameName = null,
+    bool IsPrivate = false,
+    string? Password = null,
+    int? MaxPlayers = null,
+    bool EnableAi = false);
 
-public sealed record JoinGameRequest(string PlayerName);
+public sealed record JoinGameRequest(string PlayerName, string? Password = null);
 
 public sealed record EndGameRequest(string? PlayerId);
+
+public sealed record StartGameRequest(string? PlayerId);
 
 public sealed record PlayMoveRequest(string PlayerId, string Command, JsonElement? Payload = null);
 
@@ -33,7 +41,15 @@ public sealed class OnlineGame(
     List<OnlineMove> Moves,
     string? TournamentId,
     RankingQueue Queue,
-    IGameEngine Engine)
+    IGameEngine Engine,
+    OnlineGameMode Mode = OnlineGameMode.Solo,
+    string? GameName = null,
+    bool IsPrivate = false,
+    string? PasswordHash = null,
+    int MaxPlayers = 1,
+    int ReservedAiSlots = 0,
+    bool HasStarted = true,
+    bool UsesLobby = false)
 {
     public string Id { get; } = Id;
     public GameLevel GameLevel { get; } = GameLevel;
@@ -49,6 +65,14 @@ public sealed class OnlineGame(
     public string? TournamentId { get; } = TournamentId;
     public RankingQueue Queue { get; } = Queue;
     public IGameEngine Engine { get; } = Engine;
+    public OnlineGameMode Mode { get; } = Mode;
+    public string? GameName { get; } = GameName;
+    public bool IsPrivate { get; } = IsPrivate;
+    public string? PasswordHash { get; } = PasswordHash;
+    public int MaxPlayers { get; } = MaxPlayers;
+    public int ReservedAiSlots { get; } = ReservedAiSlots;
+    public bool HasStarted { get; set; } = HasStarted;
+    public bool UsesLobby { get; } = UsesLobby;
 }
 
 public sealed record OnlinePlayer(string PlayerId, string PlayerName, bool IsHost);
@@ -78,7 +102,19 @@ public sealed record OnlineGameListItem(
     int Moves,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    string Source);
+    string Source,
+    OnlineGameMode Mode = OnlineGameMode.Solo,
+    string? GameName = null,
+    bool IsPrivate = false,
+    bool IsJoinable = true,
+    int MaxPlayers = 1,
+    int ReservedAiSlots = 0);
+
+public enum OnlineGameMode
+{
+    Solo = 0,
+    Multi = 1
+}
 
 public sealed record OnlineScoreEntry(string PlayerName, int Score);
 public sealed record OnlineBoardTile(int Row, int Column, char Letter, bool IsWildcard);

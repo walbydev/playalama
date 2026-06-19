@@ -75,6 +75,39 @@ public sealed class GameCreateCommand : ICommand
             return ExitCodes.InvalidArgument;
         }
 
+        var modeStr = context.GetOption("mode") ?? (_runtimeMode.IsOnline ? "multi" : "solo");
+        var explicitMode = context.GetOption("mode");
+        if (!modeStr.Equals("solo", StringComparison.OrdinalIgnoreCase) &&
+            !modeStr.Equals("multi", StringComparison.OrdinalIgnoreCase))
+        {
+            global::System.Console.Error.WriteLine("[game create] --mode invalide. Valeurs acceptées : solo, multi.");
+            return ExitCodes.InvalidArgument;
+        }
+
+        if (!_runtimeMode.IsOnline && modeStr.Equals("multi", StringComparison.OrdinalIgnoreCase))
+        {
+            global::System.Console.Error.WriteLine("[game create] Le mode multi est disponible uniquement en mode serveur (online).");
+            return ExitCodes.InvalidArgument;
+        }
+
+        var gameName = context.GetOption("name");
+        var isPrivate = context.HasOption("private");
+        var password = context.GetOption("password");
+        var enableAi = context.HasOption("with-ai");
+
+        int? maxPlayers = null;
+        var maxPlayersRaw = context.GetOption("max-players");
+        if (!string.IsNullOrWhiteSpace(maxPlayersRaw))
+        {
+            if (!int.TryParse(maxPlayersRaw, out var parsedMaxPlayers))
+            {
+                global::System.Console.Error.WriteLine("[game create] --max-players doit être un entier.");
+                return ExitCodes.InvalidArgument;
+            }
+
+            maxPlayers = parsedMaxPlayers;
+        }
+
         try
         {
             string gameId;
@@ -95,6 +128,12 @@ public sealed class GameCreateCommand : ICommand
                     hostName,
                     gameLevel,
                     context.Lang,
+                    explicitMode,
+                    gameName,
+                    isPrivate,
+                    password,
+                    maxPlayers,
+                    enableAi,
                     cancellationToken);
                 gameId = response.GameId;
                 hostPlayerId = response.HostPlayerId;
@@ -124,8 +163,13 @@ public sealed class GameCreateCommand : ICommand
 
             global::System.Console.WriteLine($"✓ Partie créée (ID : {gameId})");
             global::System.Console.WriteLine($"  Mode      : {(_runtimeMode.IsOnline ? "online" : "local")}");
+            global::System.Console.WriteLine($"  Type      : {modeStr}");
             global::System.Console.WriteLine($"  Hôte      : {hostName}");
             global::System.Console.WriteLine($"  Niveau    : {gameLevel}");
+            if (!string.IsNullOrWhiteSpace(gameName))
+                global::System.Console.WriteLine($"  Nom       : {gameName}");
+            if (_runtimeMode.IsOnline)
+                global::System.Console.WriteLine($"  IA        : {(enableAi ? "activée" : "désactivée")}");
             if (initialRack is not null)
                 global::System.Console.WriteLine($"  Rack      : {string.Join(" ", initialRack)}");
             global::System.Console.WriteLine($"  Session   : {_sessionService.SessionFilePath}");

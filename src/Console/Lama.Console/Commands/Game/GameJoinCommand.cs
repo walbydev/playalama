@@ -92,6 +92,7 @@ public sealed class GameJoinCommand : ICommand
                 var onlineResponse = await _onlineGameGateway.JoinGameAsync(
                     gameId,
                     playerName,
+                    context.GetOption("password"),
                     cancellationToken);
 
                 var now = DateTimeOffset.UtcNow;

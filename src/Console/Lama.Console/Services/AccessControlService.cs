@@ -86,6 +86,7 @@ public sealed class AccessControlService : IAccessControlService
         new(StringComparer.OrdinalIgnoreCase)
         {
             "game.create",
+            "game.start",
             "game.end.force",
             "game.kick"
         };

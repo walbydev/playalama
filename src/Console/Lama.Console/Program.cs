@@ -159,6 +159,7 @@ try
             services.AddSingleton<ICommand, GameJoinCommand>();
             services.AddSingleton<ICommand, GameListCommand>();
             services.AddSingleton<ICommand, GameShowCommand>();
+            services.AddSingleton<ICommand, GameStartCommand>();
             services.AddSingleton<ICommand, GamePauseCommand>();
             services.AddSingleton<ICommand, GameSaveCommand>();
             services.AddSingleton<ICommand, GameEndCommand>();

@@ -2,6 +2,8 @@ using Lama.Contracts;
 using Lama.Domain.Engine;
 using Lama.Server.Contracts.Api;
 using Lama.Server.Runtime;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Lama.Server.Endpoints;
 
@@ -35,6 +37,13 @@ public static class GamesCommandEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
+        app.MapPost("/games/{gameId}/start", StartGame)
+            .WithName("StartGame")
+            .Produces<dynamic>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
+
         app.MapGet("/games/{gameId}/events", StreamEventsAsync)
             .WithName("StreamEvents")
             .Produces(StatusCodes.Status200OK)
@@ -56,6 +65,51 @@ public static class GamesCommandEndpoints
         var hostId = context.GetPlayerId() ?? Guid.NewGuid().ToString("N");
         var hostName = request.HostName.Trim();
         var level = request.GameLevel ?? GameLevel.Standard;
+        var usesLobby = request.Mode is not null
+                        || !string.IsNullOrWhiteSpace(request.GameName)
+                        || request.IsPrivate
+                        || request.MaxPlayers is not null
+                        || request.EnableAi;
+
+        var mode = request.Mode ?? OnlineGameMode.Multi;
+        if (mode == OnlineGameMode.Multi && request.RackSize <= 0)
+            return Results.BadRequest(new { error = "invalid rackSize" });
+
+        var requestedMaxPlayers = request.MaxPlayers ?? (mode == OnlineGameMode.Multi ? 4 : 1);
+        if (requestedMaxPlayers < 1)
+            return Results.BadRequest(new { error = "maxPlayers must be >= 1" });
+
+        if (mode == OnlineGameMode.Multi && (requestedMaxPlayers < 2 || requestedMaxPlayers > 4))
+            return Results.BadRequest(new { error = "multi mode supports between 2 and 4 participants" });
+
+        if (mode == OnlineGameMode.Solo && requestedMaxPlayers > 2)
+            return Results.BadRequest(new { error = "solo mode supports at most host + 1 AI" });
+
+        if (mode == OnlineGameMode.Multi && request.EnableAi && requestedMaxPlayers < 2)
+            return Results.BadRequest(new { error = "invalid AI slot configuration" });
+
+        var reservedAiSlots = request.EnableAi ? 1 : 0;
+        var maxPlayers = mode == OnlineGameMode.Solo
+            ? Math.Min(2, Math.Max(1, requestedMaxPlayers))
+            : requestedMaxPlayers;
+
+        var gameName = string.IsNullOrWhiteSpace(request.GameName)
+            ? GenerateRandomGameName()
+            : request.GameName.Trim();
+
+        if (IsGameNameTaken(state, gameName))
+            return Results.BadRequest(new { error = "game name already in use" });
+
+        if (!request.IsPrivate && !string.IsNullOrWhiteSpace(request.Password))
+            return Results.BadRequest(new { error = "password requires private game" });
+
+        if (request.IsPrivate && string.IsNullOrWhiteSpace(request.Password))
+            return Results.BadRequest(new { error = "password is required for private game" });
+
+        var passwordHash = request.IsPrivate
+            ? ComputePasswordHash(request.Password!)
+            : null;
+
         var boardSize = request.BoardSize > 0 ? request.BoardSize : 15;
         var rackSize = request.RackSize > 0 ? request.RackSize : 7;
         var language = string.IsNullOrWhiteSpace(request.Language) ? "fr" : request.Language.Trim();
@@ -86,7 +140,15 @@ public static class GamesCommandEndpoints
             Moves: [],
             TournamentId: request.TournamentId,
             Queue: GamesEndpointParsers.ResolveQueue(level),
-            Engine: engine);
+            Engine: engine,
+            Mode: mode,
+            GameName: gameName,
+            IsPrivate: request.IsPrivate,
+            PasswordHash: passwordHash,
+            MaxPlayers: maxPlayers,
+            ReservedAiSlots: reservedAiSlots,
+            HasStarted: mode == OnlineGameMode.Solo || !usesLobby,
+            UsesLobby: usesLobby);
 
         state.Create(game);
 
@@ -94,8 +156,15 @@ public static class GamesCommandEndpoints
         {
             gameId,
             hostPlayerId = hostId,
+            gameName,
+            mode,
             level,
             queue = game.Queue,
+            isPrivate = game.IsPrivate,
+            maxPlayers = game.MaxPlayers,
+            reservedAiSlots = game.ReservedAiSlots,
+            hasStarted = game.HasStarted,
+            usesLobby = game.UsesLobby,
             rack = initialState.Players[0].Rack,
             createdAt = game.CreatedAt
         }));
@@ -104,12 +173,19 @@ public static class GamesCommandEndpoints
         {
             gameId,
             hostPlayerId = hostId,
+            gameName,
+            mode,
             game.GameLevel,
             game.Queue,
             game.BoardSize,
             game.RackSize,
             game.MinWordLength,
             game.Language,
+            game.IsPrivate,
+            game.MaxPlayers,
+            game.ReservedAiSlots,
+            game.HasStarted,
+            game.UsesLobby,
             rack = initialState.Players[0].Rack,
             game.CreatedAt
         });
@@ -137,6 +213,23 @@ public static class GamesCommandEndpoints
             if (currentState.IsGameOver)
                 return Results.BadRequest(new { error = "game is over" });
 
+            if (game.Mode == OnlineGameMode.Solo)
+                return Results.BadRequest(new { error = "solo games cannot be joined" });
+
+            if (game.UsesLobby && game.HasStarted)
+                return Results.BadRequest(new { error = "cannot join a game that has already started" });
+
+            var occupiedSlots = game.Players.Count + game.ReservedAiSlots;
+            if (occupiedSlots >= game.MaxPlayers)
+                return Results.BadRequest(new { error = "game is full" });
+
+            if (game.IsPrivate)
+            {
+                if (string.IsNullOrWhiteSpace(request.Password) ||
+                    !VerifyPassword(request.Password, game.PasswordHash))
+                    return Results.BadRequest(new { error = "invalid game password" });
+            }
+
             if (currentState.History.Count > 0)
                 return Results.BadRequest(new { error = "cannot join a game that has already started" });
 
@@ -157,7 +250,11 @@ public static class GamesCommandEndpoints
             gameId,
             playerId,
             playerName = trimmedName,
-            players = game.Players.Count
+            players = game.Players.Count,
+            maxPlayers = game.MaxPlayers,
+            reservedAiSlots = game.ReservedAiSlots,
+            hasStarted = game.HasStarted,
+            usesLobby = game.UsesLobby
         }));
 
         return Results.Ok(new
@@ -167,7 +264,68 @@ public static class GamesCommandEndpoints
             players = game.Players.Count,
             game.GameLevel,
             game.Queue,
-            rack
+            rack,
+            game.Mode,
+            game.IsPrivate,
+            game.MaxPlayers,
+            game.ReservedAiSlots,
+            game.HasStarted,
+            game.UsesLobby
+        });
+    }
+
+    private static IResult StartGame(HttpContext context, string gameId, StartGameRequest request, GameHubState state)
+    {
+        if (!context.IsAuthenticated())
+            return Results.Unauthorized();
+
+        if (!state.TryGet(gameId, out var game))
+            return Results.NotFound(new { error = "game not found" });
+
+        var callerPlayerId = context.GetPlayerId();
+        if (string.IsNullOrWhiteSpace(callerPlayerId))
+            return Results.Unauthorized();
+
+        lock (game)
+        {
+            if (!game.UsesLobby)
+                return Results.BadRequest(new { error = "game does not require explicit start" });
+
+            var host = game.Players.FirstOrDefault(p => p.IsHost);
+            if (host is null || !string.Equals(host.PlayerId, callerPlayerId, StringComparison.Ordinal))
+                return Results.BadRequest(new { error = "only host can start the game" });
+
+            if (game.HasStarted)
+                return Results.BadRequest(new { error = "game already started" });
+
+            var stateSnapshot = game.Engine.GetGameState();
+            if (stateSnapshot.IsGameOver)
+                return Results.BadRequest(new { error = "game is over" });
+
+            var occupiedSlots = game.Players.Count + game.ReservedAiSlots;
+            if (occupiedSlots < 2)
+                return Results.BadRequest(new { error = "at least two participants are required to start" });
+
+            game.HasStarted = true;
+            game.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        state.Publish(gameId, new ServerEvent("game.started", new
+        {
+            gameId,
+            startedAt = DateTimeOffset.UtcNow,
+            game.Mode,
+            game.MaxPlayers,
+            game.ReservedAiSlots
+        }));
+
+        return Results.Ok(new
+        {
+            gameId,
+            hasStarted = true,
+            game.Mode,
+            game.MaxPlayers,
+            game.ReservedAiSlots
         });
     }
 
@@ -205,6 +363,9 @@ public static class GamesCommandEndpoints
 
             if (currentState.IsGameOver)
                 return Results.BadRequest(new { error = "game is over" });
+
+            if (game.UsesLobby && !game.HasStarted)
+                return Results.BadRequest(new { error = "game has not started yet" });
 
             if (!game.PlayerIndexById.TryGetValue(request.PlayerId, out var playerIndex))
                 return Results.BadRequest(new { error = "unknown playerId" });
@@ -446,6 +607,40 @@ public static class GamesCommandEndpoints
         {
             state.Unsubscribe(gameId, subscription.Id);
         }
+    }
+
+    private static bool IsGameNameTaken(GameHubState state, string candidate)
+    {
+        foreach (var game in state.ListGames())
+        {
+            lock (game)
+            {
+                if (game.Engine.GetGameState().IsGameOver)
+                    continue;
+
+                if (string.Equals(game.GameName, candidate, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string GenerateRandomGameName() => $"lama-{Guid.NewGuid().ToString("N")[..8]}";
+
+    private static string ComputePasswordHash(string password)
+    {
+        var bytes = Encoding.UTF8.GetBytes(password);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToHexString(hash);
+    }
+
+    private static bool VerifyPassword(string password, string? expectedHash)
+    {
+        if (string.IsNullOrWhiteSpace(expectedHash))
+            return false;
+
+        return string.Equals(ComputePasswordHash(password), expectedHash, StringComparison.Ordinal);
     }
 }
 

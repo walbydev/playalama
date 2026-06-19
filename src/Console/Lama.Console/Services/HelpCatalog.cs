@@ -9,7 +9,7 @@ public static class HelpCatalog
 {
     public static IReadOnlyList<HelpGroup> Groups { get; } =
     [
-        new("game", "Gerer les parties", "create, join, list, show, pause, save, end"),
+        new("game", "Gerer les parties", "create, join, list, show, start, pause, save, end"),
         new("play", "Jouer un tour", "move, pass, swap, challenge, check, suggest"),
         new("show", "Afficher l'etat de jeu", "board, rack, scores, history"),
         new("rating", "Classement global", "show, leaderboard, stats"),
@@ -108,6 +108,16 @@ public static class HelpCatalog
                 new("--output", "Format de sortie (text|json|csv)")
             ],
             Examples: ["lama game show", "lama game show --output json"]),
+        new(
+            CommandId: "game.start",
+            Group: "game",
+            ActionPath: "start",
+            Usage: "lama game start",
+            Description: "Demarre une partie online en attente (lobby).",
+            AllowedRoles: "Host, Admin, SuperAdmin",
+            OutputFormats: "text",
+            Options: [],
+            Examples: ["lama game start"]),
         new(
             CommandId: "game.pause",
             Group: "game",

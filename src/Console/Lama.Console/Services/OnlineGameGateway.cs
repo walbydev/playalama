@@ -101,16 +101,32 @@ public sealed class OnlineGameGateway
         string hostName,
         GameLevel gameLevel,
         string language,
+        string? mode,
+        string? gameName,
+        bool isPrivate,
+        string? password,
+        int? maxPlayers,
+        bool enableAi,
         CancellationToken cancellationToken)
     {
         EnsureOnlineMode();
         SetAuthorizationHeader();
 
+        int? modeValue = null;
+        if (!string.IsNullOrWhiteSpace(mode))
+            modeValue = mode.Equals("multi", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+
         var request = new
         {
             hostName,
             gameLevel,
-            language
+            language,
+            mode = modeValue,
+            gameName,
+            isPrivate,
+            password,
+            maxPlayers,
+            enableAi
         };
 
         var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/games", request, cancellationToken);
@@ -123,12 +139,13 @@ public sealed class OnlineGameGateway
     public async Task<OnlineJoinGameResponse> JoinGameAsync(
         string gameId,
         string playerName,
+        string? password,
         CancellationToken cancellationToken)
     {
         EnsureOnlineMode();
         SetAuthorizationHeader();
 
-        var request = new { playerName };
+        var request = new { playerName, password };
         var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/join", request, cancellationToken);
         await EnsureSuccessAsync(response, "game.join", cancellationToken);
 
@@ -200,6 +217,22 @@ public sealed class OnlineGameGateway
 
         var payload = await response.Content.ReadFromJsonAsync<OnlineEndGameResponse>(JsonOptions, cancellationToken);
         return payload ?? throw new InvalidOperationException("Réponse serveur invalide sur game.end.");
+    }
+
+    public async Task<OnlineStartGameResponse> StartGameAsync(
+        string gameId,
+        string? playerId,
+        CancellationToken cancellationToken)
+    {
+        EnsureOnlineMode();
+        SetAuthorizationHeader();
+
+        var request = new { playerId };
+        var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/start", request, cancellationToken);
+        await EnsureSuccessAsync(response, "game.start", cancellationToken);
+
+        var payload = await response.Content.ReadFromJsonAsync<OnlineStartGameResponse>(JsonOptions, cancellationToken);
+        return payload ?? throw new InvalidOperationException("Réponse serveur invalide sur game.start.");
     }
 
     private void EnsureOnlineMode()
@@ -362,6 +395,12 @@ public sealed record OnlineEndGameResponse(
     string? Winner,
     List<OnlineScoreEntry> Scores,
     DateTimeOffset EndedAt);
+
+public sealed record OnlineStartGameResponse(
+    string GameId,
+    bool HasStarted,
+    int MaxPlayers,
+    int ReservedAiSlots);
 
 public sealed record OnlineScoreEntry(string PlayerName, int Score);
 

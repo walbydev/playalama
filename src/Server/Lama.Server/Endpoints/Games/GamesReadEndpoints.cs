@@ -26,7 +26,18 @@ public static class GamesReadEndpoints
             lock (game)
             {
                 var stateSnapshot = game.Engine.GetGameState();
-                var status = stateSnapshot.IsGameOver ? "ended" : "active";
+                var occupiedSlots = game.Players.Count + game.ReservedAiSlots;
+                var status = stateSnapshot.IsGameOver
+                    ? "ended"
+                    : game.UsesLobby && !game.HasStarted
+                        ? "waiting"
+                        : game.HasStarted
+                        ? "active"
+                        : "active";
+                var isJoinable = !stateSnapshot.IsGameOver
+                                 && (!game.UsesLobby || !game.HasStarted)
+                                 && game.Mode == OnlineGameMode.Multi
+                                 && occupiedSlots < game.MaxPlayers;
 
                 merged[game.Id] = new OnlineGameListItem(
                     Id: game.Id,
@@ -42,7 +53,13 @@ public static class GamesReadEndpoints
                     Moves: game.Moves.Count,
                     CreatedAt: game.CreatedAt,
                     UpdatedAt: game.UpdatedAt,
-                    Source: "memory");
+                    Source: "memory",
+                    Mode: game.Mode,
+                    GameName: game.GameName,
+                    IsPrivate: game.IsPrivate,
+                    IsJoinable: isJoinable,
+                    MaxPlayers: game.MaxPlayers,
+                    ReservedAiSlots: game.ReservedAiSlots);
             }
         }
 
@@ -96,7 +113,13 @@ public static class GamesReadEndpoints
                 Moves: persistedMoveCountsByGame.GetValueOrDefault(persistedGame.GameId, 0),
                 CreatedAt: persistedGame.CreatedAt,
                 UpdatedAt: persistedGame.UpdatedAt,
-                Source: "database");
+                Source: "database",
+                Mode: OnlineGameMode.Solo,
+                GameName: null,
+                IsPrivate: false,
+                IsJoinable: false,
+                MaxPlayers: 1,
+                ReservedAiSlots: 0);
         }
 
         var ordered = merged.Values
@@ -120,6 +143,13 @@ public static class GamesReadEndpoints
                 return Results.Ok(new
                 {
                     game.Id,
+                    game.GameName,
+                    game.Mode,
+                    game.IsPrivate,
+                    game.MaxPlayers,
+                    game.ReservedAiSlots,
+                    game.HasStarted,
+                    game.UsesLobby,
                     game.GameLevel,
                     game.Queue,
                     game.BoardSize,
@@ -238,6 +268,12 @@ public static class GamesReadEndpoints
         return Results.Ok(new
         {
             Id = persistedGame.GameId.ToString("N"),
+            GameName = (string?)null,
+            Mode = OnlineGameMode.Solo,
+            IsPrivate = false,
+            MaxPlayers = 1,
+            ReservedAiSlots = 0,
+            HasStarted = true,
             GameLevel = parsedLevel,
             Queue = parsedQueue,
             persistedGame.BoardSize,

@@ -66,6 +66,7 @@ public sealed class InteractiveMode : IConsoleMode
                     .AddChoices(
                         "Nouvelle partie",
                         "Rejoindre une partie",
+                        "Demarrer la partie",
                         "Jouer un tour",
                         "Charger une partie",
                         "Options",
@@ -77,6 +78,7 @@ public sealed class InteractiveMode : IConsoleMode
             {
                 "Nouvelle partie"       => await HandleNewGame(cancellationToken),
                 "Rejoindre une partie"  => await HandleJoinGame(cancellationToken),
+                "Demarrer la partie"    => await HandleStartGame(cancellationToken),
                 "Jouer un tour"         => await HandlePlayTurn(cancellationToken),
                 "Charger une partie"    => await HandleLoadGame(cancellationToken),
                 "Options"               => await HandleOptions(cancellationToken),
@@ -113,15 +115,77 @@ public sealed class InteractiveMode : IConsoleMode
                 .Title("[green]Niveau de partie[/]")
                 .AddChoices("casual", "standard", "competitive", "tournament"));
 
+        var mode = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[green]Mode de partie[/]")
+                .AddChoices("solo", "multi"));
+
+        if (mode == "multi" && !_runtimeMode.IsOnline)
+        {
+            AnsiConsole.MarkupLine("[yellow]Le mode multi est disponible uniquement en online (serveur).[/]");
+            return ExitCodes.InvalidArgument;
+        }
+
+        var options = new Dictionary<string, string?>
+        {
+            ["level"] = level,
+            ["mode"] = mode
+        };
+
+        var gameName = AnsiConsole.Prompt(
+            new TextPrompt<string>("[green]Nom de partie (laisser vide = auto) :[/]")
+                .AllowEmpty());
+        if (!string.IsNullOrWhiteSpace(gameName))
+            options["name"] = gameName;
+
+        var enableAi = AnsiConsole.Confirm("[green]Ajouter une IA ?[/]", defaultValue: false);
+        if (enableAi)
+            options["with-ai"] = null;
+
+        if (mode == "multi")
+        {
+            var maxPlayers = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[green]Nombre max de participants (IA incluse)[/]")
+                    .AddChoices("2", "3", "4"));
+            options["max-players"] = maxPlayers;
+
+            var isPrivate = AnsiConsole.Confirm("[green]Partie privée (mot de passe) ?[/]", defaultValue: false);
+            if (isPrivate)
+            {
+                options["private"] = null;
+                var password = AnsiConsole.Prompt(
+                    new TextPrompt<string>("[green]Mot de passe :[/]")
+                        .Secret()
+                        .Validate(value => !string.IsNullOrWhiteSpace(value)
+                            ? ValidationResult.Success()
+                            : ValidationResult.Error("Le mot de passe est requis.")));
+                options["password"] = password;
+            }
+        }
+
         var context = new CommandContext
         {
             Group = "game",
             Action = "create",
             CommandId = "game.create",
             Arguments = [hostName],
-            Options = new Dictionary<string, string?> { ["level"] = level }
+            Options = options
         };
 
+        return await _dispatcher.DispatchAsync(context, cancellationToken);
+    }
+
+    private async Task<int> HandleStartGame(CancellationToken cancellationToken)
+    {
+        var session = _sessionService.LoadSession();
+        if (session?.GameId is null || session.PlayerId is null)
+        {
+            AnsiConsole.MarkupLine("[yellow]Aucune partie active à démarrer.[/]");
+            return ExitCodes.GameNotFound;
+        }
+
+        var context = BuildSessionBoundContext("game", "start", "game.start", session);
         return await _dispatcher.DispatchAsync(context, cancellationToken);
     }
 

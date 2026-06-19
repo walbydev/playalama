@@ -69,6 +69,11 @@ public sealed class GameEndCommand : ICommand
 
             if (_runtimeMode.IsOnline)
             {
+                await _onlineGameGateway.EnsureAuthenticatedAsync(
+                    context.PlayerName ?? "Joueur",
+                    context.PlayerId,
+                    cancellationToken);
+
                 var onlineResponse = await _onlineGameGateway.EndGameAsync(
                     context.GameId,
                     context.PlayerId,
