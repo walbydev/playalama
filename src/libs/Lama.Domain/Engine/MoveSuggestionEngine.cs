@@ -1,4 +1,5 @@
 using Lama.Contracts;
+using Lama.Domain.Board;
 using Lama.Domain.Scoring;
 using Lama.Domain.Validation;
 
@@ -44,6 +45,7 @@ public sealed class MoveSuggestionEngine
         var isFirstMove = !HasAnyTile(gameState.Board);
         var candidates = new Dictionary<string, MoveSuggestion>(StringComparer.Ordinal);
         var boardAnchorLetters = GetBoardAnchorLetters(gameState.Board);
+        var anchorIndex = BuildAnchorIndex(gameState.Board);
 
         foreach (var rawWord in _dictionary)
         {
@@ -63,7 +65,7 @@ public sealed class MoveSuggestionEngine
             if (!WordContainsAnyAnchorLetter(word, boardAnchorLetters))
                 continue;
 
-            AddConnectedCandidates(candidates, gameState.Board, rack, word);
+            AddConnectedCandidates(candidates, gameState.Board, rack, word, anchorIndex);
         }
 
         var ordered = strategy switch
@@ -114,27 +116,22 @@ public sealed class MoveSuggestionEngine
         Dictionary<string, MoveSuggestion> candidates,
         BoardState board,
         IReadOnlyList<char> rack,
-        string word)
+        string word,
+        IReadOnlyDictionary<char, List<Position>> anchorIndex)
     {
-        for (var row = 0; row < 15; row++)
-        for (var col = 0; col < 15; col++)
+        for (var i = 0; i < word.Length; i++)
         {
-            var tile = board.Grid[row, col];
-            if (tile is null)
+            var letter = word[i];
+            if (!anchorIndex.TryGetValue(letter, out var anchors))
                 continue;
 
-            var anchorLetter = char.ToUpperInvariant(tile.Letter);
-
-            for (var i = 0; i < word.Length; i++)
+            foreach (var anchor in anchors)
             {
-                if (word[i] != anchorLetter)
-                    continue;
+                var startCol = anchor.Column - i;
+                TryAddCandidate(candidates, board, rack, word, anchor.Row, startCol, isHorizontal: true, isFirstMove: false);
 
-                var startCol = col - i;
-                TryAddCandidate(candidates, board, rack, word, row, startCol, isHorizontal: true, isFirstMove: false);
-
-                var startRow = row - i;
-                TryAddCandidate(candidates, board, rack, word, startRow, col, isHorizontal: false, isFirstMove: false);
+                var startRow = anchor.Row - i;
+                TryAddCandidate(candidates, board, rack, word, startRow, anchor.Column, isHorizontal: false, isFirstMove: false);
             }
         }
     }
@@ -186,12 +183,13 @@ public sealed class MoveSuggestionEngine
             return;
 
         var score = _scoreCalculator.Calculate(placements, board, wildcardPositions);
+        var heuristic = ComputeBalancedScore(board, placements, score);
         var candidate = new MoveSuggestion(
             Word: word,
             Placements: placements,
             Score: score,
             Length: word.Length,
-            HeuristicScore: score);
+            HeuristicScore: heuristic);
 
         var key = BuildCandidateKey(candidate);
         candidates.TryAdd(key, candidate);
@@ -221,6 +219,29 @@ public sealed class MoveSuggestionEngine
 
     private static bool WordContainsAnyAnchorLetter(string word, IReadOnlySet<char> anchors)
         => word.Any(anchors.Contains);
+
+    private static Dictionary<char, List<Position>> BuildAnchorIndex(BoardState board)
+    {
+        var index = new Dictionary<char, List<Position>>();
+        for (var row = 0; row < 15; row++)
+            for (var col = 0; col < 15; col++)
+            {
+                var tile = board.Grid[row, col];
+                if (tile is null)
+                    continue;
+
+                var key = char.ToUpperInvariant(tile.Letter);
+                if (!index.TryGetValue(key, out var positions))
+                {
+                    positions = [];
+                    index[key] = positions;
+                }
+
+                positions.Add(new Position(row, col));
+            }
+
+        return index;
+    }
 
     private static HashSet<char> GetBoardAnchorLetters(BoardState board)
     {
@@ -276,6 +297,58 @@ public sealed class MoveSuggestionEngine
 
         return false;
     }
+
+    private static double ComputeBalancedScore(
+        BoardState board,
+        IReadOnlyDictionary<Position, char> placements,
+        int immediateScore)
+    {
+        var consumedPremium = 0;
+        var exposureRisk = 0;
+
+        foreach (var pos in placements.Keys)
+        {
+            if (board.Grid[pos.Row, pos.Column] is null)
+            {
+                consumedPremium += PremiumWeight(BonusMap.GetBonus(pos).Type);
+            }
+
+            foreach (var neighbor in GetNeighbors(pos))
+            {
+                if (!neighbor.IsValid)
+                    continue;
+
+                if (placements.ContainsKey(neighbor))
+                    continue;
+
+                if (board.Grid[neighbor.Row, neighbor.Column] is not null)
+                    continue;
+
+                exposureRisk += PremiumWeight(BonusMap.GetBonus(neighbor).Type);
+            }
+        }
+
+        // Heuristique simple: valorise la prise de premium et penalise l'ouverture de premiums adverses.
+        return immediateScore + consumedPremium * 0.35 - exposureRisk * 0.20;
+    }
+
+    private static IEnumerable<Position> GetNeighbors(Position pos)
+    {
+        yield return new Position(pos.Row - 1, pos.Column);
+        yield return new Position(pos.Row + 1, pos.Column);
+        yield return new Position(pos.Row, pos.Column - 1);
+        yield return new Position(pos.Row, pos.Column + 1);
+    }
+
+    private static int PremiumWeight(BonusType type) => type switch
+    {
+        BonusType.TripleWord => 6,
+        BonusType.DoubleWord => 4,
+        BonusType.Start => 4,
+        BonusType.TripleLetter => 3,
+        BonusType.DoubleLetter => 2,
+        _ => 0
+    };
 }
 
 /// <summary>

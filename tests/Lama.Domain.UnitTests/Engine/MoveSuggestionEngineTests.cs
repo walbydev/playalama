@@ -64,6 +64,20 @@ public sealed class MoveSuggestionEngineTests
         suggestions.Should().OnlyContain(s => s.Placements.Keys.Contains(new Position(7, 7)));
     }
 
+    [Fact]
+    public void SuggestTopMoves_BalancedStrategy_SortsByHeuristicScore()
+    {
+        var engine = new MoveSuggestionEngine(
+            new HashSet<string> { "LA", "AL", "LAMA" },
+            Scores);
+
+        var state = CreateState(['L', 'A', 'M', 'A', 'S', 'T', 'O']);
+        var suggestions = engine.SuggestTopMoves(state, state.Players[0], top: 5, MoveSuggestionStrategy.Balanced);
+
+        suggestions.Should().NotBeEmpty();
+        suggestions.Should().BeInDescendingOrder(s => s.HeuristicScore);
+    }
+
     private static GameState CreateState(List<char> rack, BoardState? board = null)
     {
         return new GameState
