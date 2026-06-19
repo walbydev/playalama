@@ -13,6 +13,9 @@
         <None Include="assets\scores.json"
               CopyToOutputDirectory="PreserveNewest"
               Link="assets\languages\fr\assets\scores.json" />
+        <None Include="assets\tile-distribution.json"
+              CopyToOutputDirectory="PreserveNewest"
+              Link="assets\languages\fr\assets\tile-distribution.json" />
     </ItemGroup>
 
 </Project>

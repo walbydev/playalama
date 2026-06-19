@@ -1,3 +1,5 @@
+using Lama.Contracts;
+
 namespace Lama.Languages.fr.UnitTests
 {
     /// <summary>
@@ -7,6 +9,39 @@ namespace Lama.Languages.fr.UnitTests
     public class FrenchLanguageProviderTests
     {
         #region Helper Methods
+
+        private const string DefaultTileDistributionJson = """
+            {
+              "baseDistribution": {
+                "A": 9, "B": 2, "C": 2, "D": 3, "E": 15,
+                "F": 2, "G": 2, "H": 2, "I": 8, "J": 1,
+                "K": 1, "L": 5, "M": 3, "N": 6, "O": 6,
+                "P": 2, "Q": 1, "R": 6, "S": 6, "T": 6,
+                "U": 6, "V": 2, "W": 1, "X": 1, "Y": 1,
+                "Z": 1, "*": 2
+              },
+              "scaling": {
+                "minMultiplier": 0.7,
+                "maxMultiplier": 1.8,
+                "boardExponent": 1.0,
+                "boardReferenceSize": 15,
+                "rackReferenceSize": 7,
+                "rackWeight": 0.2,
+                "gameTypeMultipliers": {
+                  "classic": 1.0,
+                  "duplicate": 0.95,
+                  "blitz": 0.88,
+                  "tournament": 1.0
+                },
+                "levelMultipliers": {
+                  "Casual": 1.04,
+                  "Standard": 1.0,
+                  "Competitive": 0.97,
+                  "Tournament": 0.95
+                }
+              }
+            }
+            """;
 
         /// <summary>
         /// Crée un répertoire temporaire avec les fichiers assets nécessaires.
@@ -29,6 +64,9 @@ namespace Lama.Languages.fr.UnitTests
                 var scoresPath = Path.Combine(assetsDir, "scores.json");
                 File.WriteAllText(scoresPath, scoresJsonContent);
             }
+
+            var distributionPath = Path.Combine(assetsDir, "tile-distribution.json");
+            File.WriteAllText(distributionPath, DefaultTileDistributionJson);
 
             return tempRoot;
         }
@@ -349,6 +387,54 @@ namespace Lama.Languages.fr.UnitTests
 
                 // Assert
                 Assert.Equal(102, distribution.Values.Sum());
+            }
+            finally
+            {
+                SafeDeleteDirectory(tmp);
+            }
+        }
+
+        [Fact]
+        public void GetTileDistribution_WithLargerBoard_IncreasesTotalTiles()
+        {
+            // Arrange
+            var tmp = CreateTempBasePath(
+                "BONJOUR",
+                "{ \"scores\": { \"A\": 1 } }");
+            try
+            {
+                var provider = new FrenchLanguageProvider(tmp);
+
+                // Act
+                var classic = provider.GetTileDistribution(new TileDistributionProfile("fr", 15, 7, GameLevel.Standard, "classic"));
+                var largerBoard = provider.GetTileDistribution(new TileDistributionProfile("fr", 17, 7, GameLevel.Standard, "classic"));
+
+                // Assert
+                Assert.True(largerBoard.Values.Sum() > classic.Values.Sum());
+            }
+            finally
+            {
+                SafeDeleteDirectory(tmp);
+            }
+        }
+
+        [Fact]
+        public void GetTileDistribution_BlitzType_HasFewerTilesThanClassic()
+        {
+            // Arrange
+            var tmp = CreateTempBasePath(
+                "BONJOUR",
+                "{ \"scores\": { \"A\": 1 } }");
+            try
+            {
+                var provider = new FrenchLanguageProvider(tmp);
+
+                // Act
+                var classic = provider.GetTileDistribution(new TileDistributionProfile("fr", 15, 7, GameLevel.Standard, "classic"));
+                var blitz = provider.GetTileDistribution(new TileDistributionProfile("fr", 15, 7, GameLevel.Standard, "blitz"));
+
+                // Assert
+                Assert.True(blitz.Values.Sum() < classic.Values.Sum());
             }
             finally
             {

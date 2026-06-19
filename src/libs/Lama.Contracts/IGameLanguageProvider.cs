@@ -24,6 +24,12 @@ public interface IGameLanguageProvider
     IReadOnlyDictionary<char, int> GetTileDistribution();
 
     /// <summary>
+    /// Calcule la distribution des tuiles selon un profil de partie.
+    /// Permet d'adapter la réserve (langue, taille de plateau, type de jeu, etc.).
+    /// </summary>
+    IReadOnlyDictionary<char, int> GetTileDistribution(TileDistributionProfile profile);
+
+    /// <summary>
     /// Nom de la langue (ex: "Français", "English")
     /// </summary>
     string GetLanguageName();

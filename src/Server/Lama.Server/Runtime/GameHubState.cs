@@ -17,11 +17,13 @@ public sealed class GameHubState
         _languageProvider = languageProvider;
     }
 
-    public IGameEngine CreateEngine() =>
+    public IGameEngine CreateEngine(TileDistributionProfile? profile = null) =>
         new GameEngine(
             _languageProvider.GetDictionary(),
             _languageProvider.GetLetterScores(),
-            _languageProvider.GetTileDistribution());
+            profile is null
+                ? _languageProvider.GetTileDistribution()
+                : _languageProvider.GetTileDistribution(profile));
 
     public void Create(OnlineGame game)
     {

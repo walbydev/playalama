@@ -91,11 +91,7 @@ try
             {
                 var langProvider = provider.GetRequiredService<IGameLanguageProvider>();
                 var repository   = provider.GetRequiredService<IGameRepository>();
-                return new CreateGameUseCase(
-                    langProvider.GetDictionary(),
-                    langProvider.GetLetterScores(),
-                    langProvider.GetTileDistribution(),
-                    repository);
+                return new CreateGameUseCase(langProvider, repository);
             });
             services.AddSingleton<JoinGameUseCase>();
             services.AddSingleton<PlayMoveUseCase>();

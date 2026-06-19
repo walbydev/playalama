@@ -24,6 +24,7 @@ public sealed class CreateGameUseCase
     private readonly IReadOnlySet<string>           _dictionary;
     private readonly IReadOnlyDictionary<char, int> _letterScores;
     private readonly IReadOnlyDictionary<char, int> _tileDistribution;
+    private readonly IGameLanguageProvider?          _languageProvider;
     private readonly IGameRepository                _repository;
 
     // Cache mémoire : GameId → GameSession
@@ -42,6 +43,20 @@ public sealed class CreateGameUseCase
         _repository       = repository;
     }
 
+    /// <summary>
+    /// Initialise le cas d'usage avec un provider de langue pour une distribution adaptable.
+    /// </summary>
+    public CreateGameUseCase(
+        IGameLanguageProvider languageProvider,
+        IGameRepository repository)
+    {
+        _languageProvider = languageProvider;
+        _dictionary = languageProvider.GetDictionary();
+        _letterScores = languageProvider.GetLetterScores();
+        _tileDistribution = languageProvider.GetTileDistribution();
+        _repository = repository;
+    }
+
     /// <summary>Exécute le cas d'usage de création de partie.</summary>
     public Task<CreateGameResponse> ExecuteAsync(CreateGameRequest request)
     {
@@ -51,7 +66,8 @@ public sealed class CreateGameUseCase
         var gameId = Guid.NewGuid().ToString("N");
         var hostId = Guid.NewGuid().ToString("N");
 
-        var engine = new GameEngine(_dictionary, _letterScores, _tileDistribution);
+        var tileDistribution = ResolveTileDistribution(request);
+        var engine = new GameEngine(_dictionary, _letterScores, tileDistribution);
         engine.InitializeGame([request.HostPlayerName]);
 
         var state   = engine.GetGameState();
@@ -214,6 +230,21 @@ public sealed class CreateGameUseCase
         if (persisted.Board.Count == 0) return;
 
         engine.RestoreBoardTiles(persisted.Board);
+    }
+
+    private IReadOnlyDictionary<char, int> ResolveTileDistribution(CreateGameRequest request)
+    {
+        if (_languageProvider is null)
+            return _tileDistribution;
+
+        var profile = new TileDistributionProfile(
+            Language: string.IsNullOrWhiteSpace(request.Language) ? "fr" : request.Language,
+            BoardSize: request.BoardSize,
+            RackSize: request.RackSize,
+            GameLevel: request.GameLevel,
+            GameType: "classic");
+
+        return _languageProvider.GetTileDistribution(profile);
     }
 
     /// <summary>Construit un <see cref="PersistedGame"/> depuis l'état courant.</summary>

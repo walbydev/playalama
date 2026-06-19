@@ -26,18 +26,29 @@ public static class GamesCommandEndpoints
         var hostId = Guid.NewGuid().ToString("N");
         var hostName = request.HostName.Trim();
         var level = request.GameLevel ?? GameLevel.Standard;
+        var boardSize = request.BoardSize > 0 ? request.BoardSize : 15;
+        var rackSize = request.RackSize > 0 ? request.RackSize : 7;
+        var language = string.IsNullOrWhiteSpace(request.Language) ? "fr" : request.Language.Trim();
+        var gameType = string.IsNullOrWhiteSpace(request.TournamentId) ? "classic" : "tournament";
 
-        var engine = state.CreateEngine();
+        var profile = new TileDistributionProfile(
+            Language: language,
+            BoardSize: boardSize,
+            RackSize: rackSize,
+            GameLevel: level,
+            GameType: gameType);
+
+        var engine = state.CreateEngine(profile);
         engine.InitializeGame([hostName]);
         var initialState = engine.GetGameState();
 
         var game = new OnlineGame(
             Id: gameId,
             GameLevel: level,
-            BoardSize: request.BoardSize > 0 ? request.BoardSize : 15,
-            RackSize: request.RackSize > 0 ? request.RackSize : 7,
+            BoardSize: boardSize,
+            RackSize: rackSize,
             MinWordLength: request.MinWordLength > 0 ? request.MinWordLength : 2,
-            Language: string.IsNullOrWhiteSpace(request.Language) ? "fr" : request.Language.Trim(),
+            Language: language,
             CreatedAt: DateTimeOffset.UtcNow,
             UpdatedAt: DateTimeOffset.UtcNow,
             Players: [new OnlinePlayer(hostId, hostName, true)],
