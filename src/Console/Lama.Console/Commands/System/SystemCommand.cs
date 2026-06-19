@@ -6,7 +6,8 @@ namespace Lama.Console.Commands.System;
 /// Router pour le groupe de commandes <c>lama system</c>.
 /// Affiche l'aide du groupe si aucune sous-commande n'est reconnue.
 /// Ce n'est pas une commande feuille — elle n'implémente pas <see cref="Services.ICommand"/>.
-/// Toutes les commandes system sont réservées aux administrateurs.
+/// La plupart des commandes system sont réservées aux administrateurs,
+/// avec exception pour la configuration runtime serveur (show/clear).
 /// </summary>
 public sealed class SystemCommand
 {
@@ -23,9 +24,11 @@ public sealed class SystemCommand
     {
         global::System.Console.WriteLine("Usage : lama system <action> [options]");
         global::System.Console.WriteLine();
-        global::System.Console.WriteLine("Actions (réservées aux administrateurs) :");
+        global::System.Console.WriteLine("Actions :");
         global::System.Console.WriteLine("  status     Affiche l'état du système");
         global::System.Console.WriteLine("  restart    Redémarre le service");
         global::System.Console.WriteLine("  clean      Nettoie toutes les parties actives");
+        global::System.Console.WriteLine("  server show   Affiche la cible runtime (local/online)");
+        global::System.Console.WriteLine("  server clear  Efface l'URL serveur persistée");
     }
 }

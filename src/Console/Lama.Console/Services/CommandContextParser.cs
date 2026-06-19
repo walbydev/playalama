@@ -43,15 +43,16 @@ public static class CommandContextParser
             commandId     = action;
             argsStartIndex = 1;
         }
-        // Commandes tri-niveaux : lama system account <action>
+        // Commandes tri-niveaux : lama system account <action> / lama system server <action>
         else if (args.Length >= 3 &&
                  args[0].Equals("system", StringComparison.OrdinalIgnoreCase) &&
-                 args[1].Equals("account", StringComparison.OrdinalIgnoreCase))
+                 (args[1].Equals("account", StringComparison.OrdinalIgnoreCase) ||
+                  args[1].Equals("server", StringComparison.OrdinalIgnoreCase)))
         {
             group         = "system";
-            action        = "account";
+            action        = args[1].ToLowerInvariant();
             var subAction = args[2].ToLowerInvariant();
-            commandId     = $"system.account.{subAction}";
+            commandId     = $"system.{action}.{subAction}";
             argsStartIndex = 3;
         }
         // Format historique : lama <groupe> <action>

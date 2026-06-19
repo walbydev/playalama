@@ -51,6 +51,8 @@ public sealed class AccessControlService : IAccessControlService
         new(StringComparer.OrdinalIgnoreCase)
         {
             "system.setup",
+            "system.server.show",
+            "system.server.clear",
             "game.create",
             "game.join",
             "game.list",

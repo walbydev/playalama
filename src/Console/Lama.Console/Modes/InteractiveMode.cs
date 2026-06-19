@@ -14,6 +14,7 @@ public sealed class InteractiveMode : IConsoleMode
 {
     private readonly ICommandDispatcher _dispatcher;
     private readonly ISessionService _sessionService;
+    private readonly RuntimeModeService _runtimeMode;
     private readonly ILogger<InteractiveMode> _logger;
 
     /// <summary>
@@ -22,10 +23,12 @@ public sealed class InteractiveMode : IConsoleMode
     public InteractiveMode(
         ICommandDispatcher dispatcher,
         ISessionService sessionService,
+        RuntimeModeService runtimeMode,
         ILogger<InteractiveMode> logger)
     {
         _dispatcher     = dispatcher;
         _sessionService = sessionService;
+        _runtimeMode    = runtimeMode;
         _logger         = logger;
     }
 
@@ -50,9 +53,12 @@ public sealed class InteractiveMode : IConsoleMode
         while (!cancellationToken.IsCancellationRequested)
         {
             var active = _sessionService.LoadSession();
+            var runtimeTarget = _runtimeMode.IsOnline
+                ? $"online ({_runtimeMode.ServerBaseUrl})"
+                : "local";
             var subtitle = active?.GameId is null
-                ? "[grey]Aucune partie active[/]"
-                : $"[grey]Partie: {active.GameId[..Math.Min(8, active.GameId.Length)]} | Joueur: {active.PlayerName ?? "?"} | Role: {active.Role}[/]";
+                ? $"[grey]Mode: {runtimeTarget} | Aucune partie active[/]"
+                : $"[grey]Mode: {runtimeTarget} | Partie: {active.GameId[..Math.Min(8, active.GameId.Length)]} | Joueur: {active.PlayerName ?? "?"} | Role: {active.Role}[/]";
 
             var choice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
@@ -283,6 +289,7 @@ public sealed class InteractiveMode : IConsoleMode
                 case "Afficher la session locale":
                     AnsiConsole.MarkupLine("[green]Session locale[/]");
                     AnsiConsole.MarkupLine($"- Fichier : [grey]{_sessionService.SessionFilePath}[/]");
+                    AnsiConsole.MarkupLine($"- Runtime : [white]{(_runtimeMode.IsOnline ? $"online ({_runtimeMode.ServerBaseUrl})" : "local")}[/]");
                     if (session is null)
                     {
                         AnsiConsole.MarkupLine("- Etat    : [yellow]aucune session active[/]");

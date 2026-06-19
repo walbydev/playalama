@@ -208,6 +208,8 @@ try
             services.AddSingleton<ICommand, SystemCmds.SystemRestartCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemSetupCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemCleanCommand>();
+            services.AddSingleton<ICommand, SystemCmds.SystemServerShowCommand>();
+            services.AddSingleton<ICommand, SystemCmds.SystemServerClearCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemAccountCreateCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemAccountListCommand>();
             services.AddSingleton<ICommand, SystemCmds.SystemAccountRevokeCommand>();

@@ -56,5 +56,17 @@ public sealed class RuntimeModeServiceTests : IDisposable
 
         service.Mode.Should().Be(RuntimeExecutionMode.Local);
     }
+
+    [Fact]
+    public void ClearServerUrl_RestoresLocalMode_WhenNoEnvOverrides()
+    {
+        RuntimeServerConfigStore.SaveServerUrl("http://127.0.0.1:5055");
+        RuntimeServerConfigStore.ClearServerUrl().Should().BeTrue();
+
+        var service = new RuntimeModeService();
+
+        service.Mode.Should().Be(RuntimeExecutionMode.Local);
+        service.ServerBaseUrl.Should().BeNull();
+    }
 }
 

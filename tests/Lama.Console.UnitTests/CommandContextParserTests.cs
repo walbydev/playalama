@@ -260,6 +260,17 @@ public class CommandContextParserTests : IDisposable
     }
 
     [Fact]
+    public void Parse_SupportsSystemServerThreeLevelCommand()
+    {
+        var result = CommandContextParser.Parse(["system", "server", "show"], _sessionService);
+
+        result.Should().NotBeNull();
+        result!.CommandId.Should().Be("system.server.show");
+        result.Group.Should().Be("system");
+        result.Action.Should().Be("server");
+    }
+
+    [Fact]
     public void Parse_CommandId_IsLowercaseGroupDotAction()
     {
         var result = CommandContextParser.Parse(["GAME", "CREATE"], _sessionService);

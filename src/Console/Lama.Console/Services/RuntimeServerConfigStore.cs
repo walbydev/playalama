@@ -46,6 +46,23 @@ public static class RuntimeServerConfigStore
         File.WriteAllText(path, json);
     }
 
+    public static bool ClearServerUrl()
+    {
+        var path = ResolveConfigFilePath();
+        if (!File.Exists(path))
+            return false;
+
+        try
+        {
+            File.Delete(path);
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+    }
+
     private static string ResolveConfigFilePath()
     {
         var envDir = Environment.GetEnvironmentVariable(SessionDirEnvVar);

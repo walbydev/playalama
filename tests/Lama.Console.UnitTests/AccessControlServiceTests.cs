@@ -281,6 +281,19 @@ public class AccessControlServiceTests
         }
     }
 
+    [Theory]
+    [InlineData("system.server.show")]
+    [InlineData("system.server.clear")]
+    public void RuntimeServerCommands_AreAccessible_RegardlessOfRole(string command)
+    {
+        foreach (var role in Enum.GetValues<Role>())
+        {
+            var result = _sut.CheckAccess(command, role);
+            result.IsAllowed.Should().BeTrue(
+                because: $"{command} doit être accessible quel que soit le rôle ({role})");
+        }
+    }
+
     #endregion
 
     #region GetAllowedCommands

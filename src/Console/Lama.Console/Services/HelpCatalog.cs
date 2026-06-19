@@ -16,7 +16,7 @@ public static class HelpCatalog
         new("dict", "Dictionnaire", "check, search, anagram"),
         new("player", "Profil joueur local", "create, list, show, update"),
         new("tournament", "Tournoi", "create"),
-        new("system", "Administration systeme", "setup, status, restart, clean, account.*")
+        new("system", "Administration systeme", "setup, status, restart, clean, server.*, account.*")
     ];
 
     public static IReadOnlyList<HelpOption> GlobalOptions { get; } =
@@ -397,6 +397,26 @@ public static class HelpCatalog
             OutputFormats: "text",
             Options: [],
             Examples: ["lama system setup"]),
+        new(
+            CommandId: "system.server.show",
+            Group: "system",
+            ActionPath: "server show",
+            Usage: "lama system server show",
+            Description: "Affiche la cible runtime actuelle (local ou URL serveur online).",
+            AllowedRoles: "Public",
+            OutputFormats: "text",
+            Options: [],
+            Examples: ["lama system server show"]),
+        new(
+            CommandId: "system.server.clear",
+            Group: "system",
+            ActionPath: "server clear",
+            Usage: "lama system server clear",
+            Description: "Efface l'URL serveur persistée et repasse en mode local par défaut.",
+            AllowedRoles: "Public",
+            OutputFormats: "text",
+            Options: [],
+            Examples: ["lama system server clear"]),
         new(
             CommandId: "player.create",
             Group: "player",
