@@ -10,6 +10,7 @@
     <File Path="site\static\assets\css\site.css" />
     <File Path="site\static\assets\js\theme.js" />
     <File Path="site\static\assets\js\download.js" />
+    <File Path="site\static\assets\js\status.js" />
     <File Path="site\static\assets\data\releases.json" />
     <File Path="site\static\assets\img\favicon.svg" />
     <File Path="site\static\assets\img\og-card.svg" />

@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM mcr.microsoft.com/dotnet/sdk:10 AS builder
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
 
 WORKDIR /build
 
@@ -18,9 +18,14 @@ RUN dotnet restore src/Server/Lama.Server/Lama.Server.csproj
 RUN dotnet publish -c Release -o /publish src/Server/Lama.Server/Lama.Server.csproj
 
 # Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
 WORKDIR /app
+
+# Outil requis par les healthchecks Docker/Compose
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copier les fichiers publiés depuis le builder
 COPY --from=builder /publish .

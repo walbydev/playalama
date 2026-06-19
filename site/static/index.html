@@ -17,6 +17,7 @@
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/assets/css/site.css" />
   <script src="/assets/js/theme.js" defer></script>
+  <script src="/assets/js/status.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Aller au contenu principal</a>
@@ -24,6 +25,10 @@
     <header class="topbar">
       <a class="brand" href="/">Playalama</a>
       <div class="actions">
+        <span class="server-status" data-server-status role="status" aria-live="polite" aria-label="Etat du serveur" data-state="checking">
+          <span class="server-dot" aria-hidden="true"></span>
+          <span data-server-status-label>Verification...</span>
+        </span>
         <button class="theme-toggle" data-theme-toggle type="button">Mode clair</button>
         <a class="button" href="/download/">Telecharger LAMA</a>
       </div>

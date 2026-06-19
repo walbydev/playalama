@@ -102,6 +102,38 @@ a {
   flex-wrap: wrap;
 }
 
+.server-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.server-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #9aa7bf;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #9aa7bf 22%, transparent);
+}
+
+.server-status[data-state="online"] .server-dot {
+  background: #26c281;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #26c281 26%, transparent);
+}
+
+.server-status[data-state="offline"] .server-dot {
+  background: #eb5757;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #eb5757 26%, transparent);
+}
+
 .button,
 .button-secondary,
 .theme-toggle {
