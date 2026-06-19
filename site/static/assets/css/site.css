@@ -11,6 +11,7 @@
   --accent-2: #7ee0c3;
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
   --button-text: #081120;
+  --ok: #84e5be;
 }
 
 body[data-theme="light"] {
@@ -26,6 +27,7 @@ body[data-theme="light"] {
   --accent-2: #0bb08b;
   --shadow: 0 20px 56px rgba(25, 37, 64, 0.15);
   --button-text: #ffffff;
+  --ok: #138564;
 }
 
 * {
@@ -44,6 +46,21 @@ body {
     radial-gradient(circle at top, rgba(110, 168, 254, 0.14), transparent 35%),
     linear-gradient(180deg, var(--bg-2), var(--bg));
   color: var(--text);
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 1000;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.skip-link:focus {
+  top: 12px;
 }
 
 a {
@@ -127,6 +144,20 @@ select:focus-visible {
 
 .hero {
   padding: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  right: -90px;
+  top: -90px;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 32%, transparent), transparent 70%);
+  pointer-events: none;
 }
 
 .eyebrow {
@@ -167,6 +198,35 @@ p {
   background: var(--surface-soft);
 }
 
+.hero-list {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.hero-list li {
+  margin: 6px 0;
+}
+
+.kpis {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 11px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .grid {
   margin-top: 24px;
   display: grid;
@@ -179,6 +239,10 @@ p {
   border-radius: 16px;
   padding: 16px;
   background: var(--surface-soft);
+}
+
+.tile p strong {
+  color: var(--text);
 }
 
 .tile h3 {
@@ -239,6 +303,11 @@ body[data-theme="light"] .pre {
   color: var(--muted);
 }
 
+.badge.ok {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--border));
+}
+
 .download-link {
   display: inline-flex;
   margin-top: 12px;
@@ -257,6 +326,23 @@ body[data-theme="light"] .pre {
   gap: 6px;
   font-size: 0.92rem;
   color: var(--muted);
+}
+
+.release-notes {
+  margin-top: 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.release-item {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--surface-soft);
+}
+
+.release-item strong {
+  color: var(--text);
 }
 
 .footer {

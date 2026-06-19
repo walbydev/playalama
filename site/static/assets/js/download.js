@@ -38,14 +38,10 @@
   async function loadReleases() {
     try {
       const response = await fetch("/assets/data/releases.json", { cache: "no-cache" });
-      if (!response.ok) {
-        throw new Error(`Failed to load releases JSON: ${response.status}`);
-      }
+      if (!response.ok) return fallbackReleases;
 
       const payload = await response.json();
-      if (!payload || typeof payload !== "object" || !payload.releases || typeof payload.releases !== "object") {
-        throw new Error("Invalid releases JSON format");
-      }
+      if (!payload || typeof payload !== "object" || !payload.releases || typeof payload.releases !== "object") return fallbackReleases;
 
       return payload.releases;
     } catch {
@@ -64,6 +60,8 @@
       return;
     }
 
+    const releases = await loadReleases();
+
     const releaseVersions = Object.keys(releases);
     if (releaseVersions.length > 0) {
       versionSelect.innerHTML = "";
@@ -80,8 +78,6 @@
         ? "https://downloads.playalama.online"
         : "https://playalama.online/downloads";
     }
-
-    const releases = await loadReleases();
 
     function updateCards() {
       const version = versionSelect.value;
@@ -105,11 +101,10 @@
       });
 
       const selected = release.platforms[recommendedRid] || release.platforms["linux-x64"];
-      const href = `${baseUrl()}/${selected.file}`;
-      primaryDownload.href = href;
+      primaryDownload.href = `${baseUrl()}/${selected.file}`;
       primaryDownload.setAttribute("download", selected.file);
       primaryDownload.textContent = `Telecharger ${selected.name}`;
-      recommendation.textContent = `Version recommandee: ${selected.name} (${release.label})`;
+      recommendation.textContent = `Version recommandee pour votre machine: ${selected.name} (${release.label}).`;
     }
 
     versionSelect.addEventListener("change", updateCards);

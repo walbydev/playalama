@@ -4,12 +4,15 @@
     <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
   </Folder>
   <Folder Name="/Apps/www/">
+    <File Path="site\static\README.md" />
     <File Path="site\static\download\index.html" />
     <File Path="site\static\index.html" />
     <File Path="site\static\assets\css\site.css" />
     <File Path="site\static\assets\js\theme.js" />
     <File Path="site\static\assets\js\download.js" />
     <File Path="site\static\assets\data\releases.json" />
+    <File Path="site\static\assets\img\favicon.svg" />
+    <File Path="site\static\assets\img\og-card.svg" />
   </Folder>
   <Folder Name="/docs/">
     <File Path="ALIAS_QUICK_SETUP.md" />

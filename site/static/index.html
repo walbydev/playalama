@@ -5,10 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Playalama | Jeu de mots local et online</title>
   <meta name="description" content="Playalama est le portail du jeu LAMA: telechargement multi-plateforme, API online et informations techniques." />
+  <meta property="og:title" content="Playalama | Jeu de mots local et online" />
+  <meta property="og:description" content="Portail officiel LAMA: telechargements, API online et details techniques." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://playalama.online/" />
+  <meta property="og:image" content="https://playalama.online/assets/img/og-card.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Playalama" />
+  <meta name="twitter:description" content="Lettres Arrangees en Mots Amusants." />
+  <meta name="theme-color" content="#0b1020" />
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/assets/css/site.css" />
   <script src="/assets/js/theme.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Aller au contenu principal</a>
   <div class="shell">
     <header class="topbar">
       <a class="brand" href="/">Playalama</a>
@@ -18,19 +29,29 @@
       </div>
     </header>
 
-    <main class="card hero">
+    <main id="main-content" class="card hero">
       <div class="eyebrow">Portail officiel du jeu LAMA</div>
-      <h1>Lettres Arrangees en Mots Amusants.</h1>
-      <p>Jouez avec les mots, un a la fois. LAMA propose une experience locale en CLI et un mode online autoritaire cote serveur.</p>
+      <h1>Lettres Arrangees en Mots Amusants</h1>
+      <p>Jouez avec les mots, un a la fois. LAMA propose une experience locale en CLI et un mode online autoritaire cote serveur, avec une base technique solide et evolutive.</p>
       <div class="tagline">
         <strong>Taglines</strong><br />
         Lettres Arrangees en Mots Amusants (Letters Arranged in Meaningful Arts)<br />
         Jouez avec les mots, un a la fois (Play with words, one letter at a time)
       </div>
+      <ul class="hero-list">
+        <li>Executable autonome multi-plateforme (Linux, Windows, macOS).</li>
+        <li>Meme logique metier en local et online pour garantir la coherence.</li>
+        <li>Distribution simple: ZIP avec binaire + README.</li>
+      </ul>
       <div class="actions" style="margin-top:18px;">
         <a class="button" href="/download/">Demarrer par le telechargement</a>
         <a class="button-secondary" href="/health">Verifier la sante serveur</a>
         <a class="button-secondary" href="/api/">Explorer l'API</a>
+      </div>
+      <div class="kpis" aria-label="Atouts de la plateforme">
+        <span class="chip">6 builds officielles</span>
+        <span class="chip">Mode clair / sombre</span>
+        <span class="chip">Architecture .NET 10</span>
       </div>
     </main>
 
@@ -40,17 +61,17 @@
       <div class="grid">
         <article class="tile">
           <h3>Architecture .NET</h3>
-          <p>Couches principales: Lama.Contracts, Lama.Domain, Lama.Core, Lama.Infrastructure, avec adaptateurs Console et Server.</p>
+          <p><strong>Couches principales:</strong> Lama.Contracts, Lama.Domain, Lama.Core, Lama.Infrastructure, avec adaptateurs Console et Server.</p>
           <code>Contracts -> Domain -> Core -> Infrastructure</code>
         </article>
         <article class="tile">
           <h3>Gameplay et fiabilite</h3>
-          <p>Moteur de jeu centralise, regles de pose, jokers et scoring; persistance JSON locale et mode online autoritaire.</p>
+          <p><strong>Moteur centralise:</strong> regles de pose, jokers et scoring; persistance JSON locale et mode online autoritaire.</p>
           <code>CLI local + API online + tests unitaires</code>
         </article>
         <article class="tile">
           <h3>Plateforme de diffusion</h3>
-          <p>Builds single-file pour Linux, Windows et macOS en x64/arm64, distribues en ZIP avec README.</p>
+          <p><strong>Builds single-file</strong> pour Linux, Windows et macOS en x64/arm64, distribues en ZIP avec README.</p>
           <code>https://playalama.online/download/</code>
         </article>
       </div>

@@ -9,6 +9,9 @@ Ce dossier contient la version source du site vitrine statique.
 - `assets/css/site.css`: style partage (themes clair/sombre inclus)
 - `assets/js/theme.js`: bascule de theme accessible avec persistence locale
 - `assets/js/download.js`: logique de selection version/canal/plateforme
+- `assets/data/releases.json`: source de verite des versions telechargeables
+- `assets/img/favicon.svg`: favicon du portail
+- `assets/img/og-card.svg`: image de partage social (Open Graph)
 
 ## Exposition nginx
 
