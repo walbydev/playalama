@@ -8,16 +8,6 @@ namespace Lama.Server.Runtime;
 
 public sealed class GameHubState
 {
-    private static readonly IReadOnlyDictionary<char, int> FrenchDistribution = new Dictionary<char, int>
-    {
-        ['A'] = 9,  ['B'] = 2,  ['C'] = 2,  ['D'] = 3,  ['E'] = 15,
-        ['F'] = 2,  ['G'] = 2,  ['H'] = 2,  ['I'] = 8,  ['J'] = 1,
-        ['K'] = 1,  ['L'] = 5,  ['M'] = 3,  ['N'] = 6,  ['O'] = 6,
-        ['P'] = 2,  ['Q'] = 1,  ['R'] = 6,  ['S'] = 6,  ['T'] = 6,
-        ['U'] = 6,  ['V'] = 2,  ['W'] = 1,  ['X'] = 1,  ['Y'] = 1,
-        ['Z'] = 1,  ['*'] = 2
-    };
-
     private readonly IGameLanguageProvider _languageProvider;
     private readonly ConcurrentDictionary<string, OnlineGame> _games = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, EventSubscribers> _subscribers = new(StringComparer.Ordinal);
@@ -31,7 +21,7 @@ public sealed class GameHubState
         new GameEngine(
             _languageProvider.GetDictionary(),
             _languageProvider.GetLetterScores(),
-            FrenchDistribution);
+            _languageProvider.GetTileDistribution());
 
     public void Create(OnlineGame game)
     {

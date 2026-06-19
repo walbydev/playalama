@@ -309,6 +309,54 @@ namespace Lama.Languages.fr.UnitTests
         #region Letter Scores Tests
 
         [Fact]
+        public void GetTileDistribution_ReturnsExpectedFrenchValues()
+        {
+            // Arrange
+            var tmp = CreateTempBasePath(
+                "BONJOUR",
+                "{ \"scores\": { \"A\": 1 } }");
+            try
+            {
+                var provider = new FrenchLanguageProvider(tmp);
+
+                // Act
+                var distribution = provider.GetTileDistribution();
+
+                // Assert
+                Assert.Equal(15, distribution['E']);
+                Assert.Equal(2, distribution['*']);
+                Assert.Equal(1, distribution['Z']);
+            }
+            finally
+            {
+                SafeDeleteDirectory(tmp);
+            }
+        }
+
+        [Fact]
+        public void GetTileDistribution_HasExpectedTotalTileCount()
+        {
+            // Arrange
+            var tmp = CreateTempBasePath(
+                "BONJOUR",
+                "{ \"scores\": { \"A\": 1 } }");
+            try
+            {
+                var provider = new FrenchLanguageProvider(tmp);
+
+                // Act
+                var distribution = provider.GetTileDistribution();
+
+                // Assert
+                Assert.Equal(102, distribution.Values.Sum());
+            }
+            finally
+            {
+                SafeDeleteDirectory(tmp);
+            }
+        }
+
+        [Fact]
         public void GetLetterScores_ReturnsImmutableDictionary()
         {
             // Arrange

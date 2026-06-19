@@ -18,6 +18,12 @@ public interface IGameLanguageProvider
     IReadOnlyDictionary<char, int> GetLetterScores();
 
     /// <summary>
+    /// Obtient la distribution des tuiles pour la langue.
+    /// Exemple: 'E' -> 15 tuiles, '*' -> 2 jokers
+    /// </summary>
+    IReadOnlyDictionary<char, int> GetTileDistribution();
+
+    /// <summary>
     /// Nom de la langue (ex: "Français", "English")
     /// </summary>
     string GetLanguageName();
