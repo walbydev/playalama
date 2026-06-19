@@ -1623,4 +1623,53 @@ This is the code block that represents the suggested code change:
 - `src/libs/Lama.Languages.fr/FrenchLanguageProvider.cs`
 - `src/libs/Lama.Languages.fr/assets/tile-distribution.json`
 
+## [2026-06-19 12:10:00 UTC] - Checklist Go/No-Go a cocher (fonctionnel puis livrable)
+
+### Contexte
+- Besoin d'un format binaire et actionnable pour trancher rapidement un jalon: **GO** ou **NO-GO**.
+- Cette checklist est a cocher pendant la recette finale et en pre-release.
+
+### Checklist - Jalon "Jeu fonctionnel"
+- [ ] **CG-01** valide (parcours CLI reel complet) et rejoue sans ecart.
+- [ ] **CG-02** clos avec recette interactive TTY complete signee.
+- [ ] **CG-03** valide (coherence `play.check` / `play.move`) en E2E reel.
+- [ ] **CG-04** valide (scoring croisements/jokers/bonus) en Domain + E2E reel.
+- [ ] E2E online cibles verts (`OnlineCliE2ETests` + smoke online).
+- [ ] Fallback API online detail conforme (`games`, `game/{id}`, board + racks persistes).
+- [ ] Aucun bug bloquant ouvert sur gameplay local/online.
+
+**Decision Jalon Fonctionnel**
+- [ ] **GO Fonctionnel**
+- [ ] **NO-GO Fonctionnel**
+- Motif (obligatoire si NO-GO): `........................................................`
+
+### Checklist - Jalon "Jeu livrable"
+- [ ] Auth online activee (JWT/session), ACL verifiees sur endpoints sensibles.
+- [ ] Endpoint interne `/internal/shutdown` neutralise hors env dev/test.
+- [ ] Strategie de persistance cible validee (memoire+fallback ou EF-first) et documentee.
+- [ ] Reprise apres restart validee sans perte d'etat critique.
+- [ ] Pipeline qualite execute et vert: build + unit tests + E2E local + E2E online + smoke DB.
+- [ ] Migrations DB appliquees + rollback procedure teste sur environnement de recette.
+- [ ] Documentation de livraison alignee (`README.md`, docs serveur/DB, scripts runbook).
+- [ ] Aucune anomalie P0/P1 ouverte pour le perimetre livre.
+
+**Decision Jalon Livrable**
+- [ ] **GO Livrable**
+- [ ] **NO-GO Livrable**
+- Motif (obligatoire si NO-GO): `........................................................`
+
+### Validation et signatures
+- Date UTC de decision: `YYYY-MM-DD HH:mm:ss UTC`
+- Responsable produit: `................................`
+- Responsable technique: `................................`
+- Responsable QA/recette: `................................`
+
+### References
+- `PROGRESS.md`
+- `docs/CLASSIC_GAME_SHORTLIST.md`
+- `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
+- `tests/Lama.Console.UnitTests/OnlineCliE2ETests.cs`
+- `tools/scripts/e2e-cli-smoke.sh`
+- `tools/scripts/e2e-online-smoke.sh`
+
 
