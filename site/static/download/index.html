@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Telechargements LAMA | Playalama</title>
+  <meta name="description" content="Selectionnez la version et la plateforme de LAMA, avec distribution hybride via chemin ou sous-domaine." />
+  <link rel="stylesheet" href="/assets/css/site.css" />
+  <script src="/assets/js/theme.js" defer></script>
+  <script src="/assets/js/download.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/">Playalama</a>
+      <div class="actions">
+        <button class="theme-toggle" data-theme-toggle type="button">Mode clair</button>
+        <a class="button-secondary" href="/">Accueil</a>
+      </div>
+    </header>
+
+    <main class="card hero">
+      <div class="eyebrow">Distribution officielle LAMA</div>
+      <h1>Telechargements multi-plateforme.</h1>
+      <p>Choisissez une version, une architecture et un canal de telechargement. Chaque ZIP contient l'executable autonome et le README.</p>
+      <div class="actions" style="margin-top:18px;">
+        <a id="primary-download" class="button" href="https://playalama.online/downloads/lama-1.0.0-linux-x64.zip" download>Telecharger Linux x64</a>
+      </div>
+      <p id="recommendation" aria-live="polite" style="margin-top:12px;">Version recommandee: detection en cours...</p>
+    </main>
+
+    <section class="card section" aria-labelledby="choix-release">
+      <h2 id="choix-release">Choisir la release</h2>
+      <div class="grid">
+        <article class="tile">
+          <h3>Version</h3>
+          <label class="sr-only" for="version-select">Version LAMA</label>
+          <select id="version-select">
+            <option value="1.0.0">1.0.0</option>
+          </select>
+        </article>
+        <article class="tile">
+          <h3>Canal de telechargement</h3>
+          <label class="sr-only" for="channel-select">Canal de telechargement</label>
+          <select id="channel-select">
+            <option value="path">playalama.online/downloads</option>
+            <option value="subdomain">downloads.playalama.online</option>
+          </select>
+          <p>Mode hybride: meme fichier, deux URL possibles selon votre contexte reseau.</p>
+        </article>
+        <article class="tile">
+          <h3>Contenu du ZIP</h3>
+          <code>lama ou lama.exe
+README.txt</code>
+        </article>
+      </div>
+    </section>
+
+    <section class="card section" aria-labelledby="downloads-grid-title">
+      <h2 id="downloads-grid-title">Fichiers disponibles</h2>
+      <div class="download-grid">
+        <article class="download-card" data-rid="linux-x64">
+          <span class="badge">Linux x64</span>
+          <div class="meta">
+            <span>Version: <strong class="version-label">1.0.0</strong></span>
+            <span>Taille: <strong class="size-label">33 Mo</strong></span>
+            <span>Fichier: <strong class="filename-label">lama-1.0.0-linux-x64.zip</strong></span>
+          </div>
+          <a class="download-link" data-link href="https://playalama.online/downloads/lama-1.0.0-linux-x64.zip" download>Telecharger</a>
+        </article>
+
+        <article class="download-card" data-rid="linux-arm64">
+          <span class="badge">Linux arm64</span>
+          <div class="meta">
+            <span>Version: <strong class="version-label">1.0.0</strong></span>
+            <span>Taille: <strong class="size-label">31 Mo</strong></span>
+            <span>Fichier: <strong class="filename-label">lama-1.0.0-linux-arm64.zip</strong></span>
+          </div>
+          <a class="download-link" data-link href="https://playalama.online/downloads/lama-1.0.0-linux-arm64.zip" download>Telecharger</a>
+        </article>
+
+        <article class="download-card" data-rid="win-x64">
+          <span class="badge">Windows x64</span>
+          <div class="meta">
+            <span>Version: <strong class="version-label">1.0.0</strong></span>
+            <span>Taille: <strong class="size-label">33 Mo</strong></span>
+            <span>Fichier: <strong class="filename-label">lama-1.0.0-win-x64.zip</strong></span>
+          </div>
+          <a class="download-link" data-link href="https://playalama.online/downloads/lama-1.0.0-win-x64.zip" download>Telecharger</a>
+        </article>
+
+        <article class="download-card" data-rid="win-arm64">
+          <span class="badge">Windows arm64</span>
+          <div class="meta">
+            <span>Version: <strong class="version-label">1.0.0</strong></span>
+            <span>Taille: <strong class="size-label">32 Mo</strong></span>
+            <span>Fichier: <strong class="filename-label">lama-1.0.0-win-arm64.zip</strong></span>
+          </div>
+          <a class="download-link" data-link href="https://playalama.online/downloads/lama-1.0.0-win-arm64.zip" download>Telecharger</a>
+        </article>
+
+        <article class="download-card" data-rid="osx-x64">
+          <span class="badge">macOS x64</span>
+          <div class="meta">
+            <span>Version: <strong class="version-label">1.0.0</strong></span>
+            <span>Taille: <strong class="size-label">33 Mo</strong></span>
+            <span>Fichier: <strong class="filename-label">lama-1.0.0-osx-x64.zip</strong></span>
+          </div>
+          <a class="download-link" data-link href="https://playalama.online/downloads/lama-1.0.0-osx-x64.zip" download>Telecharger</a>
+        </article>
+
+        <article class="download-card" data-rid="osx-arm64">
+          <span class="badge">macOS arm64</span>
+          <div class="meta">
+            <span>Version: <strong class="version-label">1.0.0</strong></span>
+            <span>Taille: <strong class="size-label">31 Mo</strong></span>
+            <span>Fichier: <strong class="filename-label">lama-1.0.0-osx-arm64.zip</strong></span>
+          </div>
+          <a class="download-link" data-link href="https://playalama.online/downloads/lama-1.0.0-osx-arm64.zip" download>Telecharger</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="card section" aria-labelledby="lancement-title">
+      <h2 id="lancement-title">Lancement rapide</h2>
+      <div class="grid">
+        <article class="tile">
+          <h3>Linux / macOS</h3>
+          <code>chmod +x ./lama
+./lama</code>
+        </article>
+        <article class="tile">
+          <h3>Windows</h3>
+          <code>lama.exe</code>
+        </article>
+        <article class="tile">
+          <h3>Besoin d'aide</h3>
+          <p>Consultez la page d'accueil pour les liens d'API, de sante et les informations techniques du projet.</p>
+          <a class="button-secondary" href="/">Retour accueil</a>
+        </article>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <a href="/">Accueil</a> · <a href="/health">Sante</a> · <a href="/api/">API</a>
+    </footer>
+  </div>
+</body>
+</html>
+

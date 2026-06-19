@@ -1,0 +1,16 @@
+{
+  "releases": {
+    "1.0.0": {
+      "label": "1.0.0",
+      "platforms": {
+        "linux-x64": { "file": "lama-1.0.0-linux-x64.zip", "size": "33 Mo", "name": "Linux x64" },
+        "linux-arm64": { "file": "lama-1.0.0-linux-arm64.zip", "size": "31 Mo", "name": "Linux arm64" },
+        "win-x64": { "file": "lama-1.0.0-win-x64.zip", "size": "33 Mo", "name": "Windows x64" },
+        "win-arm64": { "file": "lama-1.0.0-win-arm64.zip", "size": "32 Mo", "name": "Windows arm64" },
+        "osx-x64": { "file": "lama-1.0.0-osx-x64.zip", "size": "33 Mo", "name": "macOS x64" },
+        "osx-arm64": { "file": "lama-1.0.0-osx-arm64.zip", "size": "31 Mo", "name": "macOS arm64" }
+      }
+    }
+  }
+}
+
