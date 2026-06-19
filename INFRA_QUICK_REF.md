@@ -111,6 +111,7 @@ docker build -f tools/docker/Dockerfile.server .
 **Volume manquant** → Check `tools/docker/docker-compose.*.yml`  
 **502 Gateway** → `docker compose logs lama-server`  
 **Dockerfile missing prod** → Script copie auto maintenant ✅  
+**VPS déjà désordonné** → `./tools/scripts/organize-vps-playalama.sh --base-dir /opt/playalama --apply`
 **Secrets leakés** → Check `.gitignore` + `.deploy/.gitignore`
 
 ---
