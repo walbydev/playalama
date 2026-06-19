@@ -1,0 +1,37 @@
+# Dockerfile.webapp - Lama WebApp (Blazor Server)
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
+
+WORKDIR /build
+
+COPY *.slnx ./
+COPY Directory.Build.props ./
+COPY Directory.Packages.props ./
+COPY NuGet.config ./
+
+COPY src/libs ./src/libs
+COPY src/Web/Lama.WebApp ./src/Web/Lama.WebApp
+
+RUN dotnet restore src/Web/Lama.WebApp/Lama.WebApp.csproj
+RUN dotnet publish -c Release -o /publish --no-restore src/Web/Lama.WebApp/Lama.WebApp.csproj
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /publish .
+
+EXPOSE 5050
+
+ENV ASPNETCORE_URLS="http://+:5050" \
+    ASPNETCORE_ENVIRONMENT="Production"
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5050/ || exit 1
+
+ENTRYPOINT ["dotnet", "Lama.WebApp.dll"]
+

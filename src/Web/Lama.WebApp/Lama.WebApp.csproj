@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <AssemblyName>Lama.WebApp</AssemblyName>
+    <RootNamespace>Lama.WebApp</RootNamespace>
+    <PublishProfile>Default</PublishProfile>
+    <Description>LAMA WebApp 1.1.0 - Vitrine et jeu en ligne</Description>
+    <Product>LAMA WebApp</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\libs\Lama.Contracts\Lama.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
+

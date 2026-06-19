@@ -2,7 +2,7 @@
 
 **Dernière mise à jour**: 2026-06-19  
 **Responable**: Restructuration complète - Nettoyage infra  
-**Version CLI**: Lama 1.0.0
+**Version cible**: Lama WebApp 1.1.0
 
 ---
 
@@ -15,7 +15,8 @@ Le projet **Lama** utilise Docker pour :
 ### Structure actuelle
 ```
 tools/docker/
-├── Dockerfile.server              # Build serveur ASP.NET 10
+├── Dockerfile.server              # Build API serveur ASP.NET 10
+├── Dockerfile.webapp              # Build WebApp Blazor ASP.NET 10
 ├── docker-compose.local.yml      # Dev: ports 80/443, debug actif
 ├── docker-compose.prod.yml       # Prod: volume-mounted sur VPS
 ├── nginx-playalama.conf          # Config reverse proxy nginx
@@ -111,7 +112,8 @@ healthcheck:
 
 | Service | Port | Map | Note |
 |---------|------|-----|------|
-| **lama-server** | 5000 | Interne au network | Pas d'accès direct |
+| **lama-webapp** | 5050 | Interne au network | UI Blazor publique via nginx |
+| **lama-server** | 5000 | Interne au network | API gameplay / auth |
 | **nginx** | 80, 443 | 0.0.0.0:80/443 | Reverse proxy public |
 
 ### Variables d'environnement

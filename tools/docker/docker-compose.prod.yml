@@ -7,6 +7,28 @@
 version: '3.8'
 
 services:
+  lama-webapp:
+    build:
+      context: .
+      dockerfile: tools/docker/Dockerfile.webapp
+    container_name: lama-webapp
+    networks:
+      - lama-network
+    environment:
+      ASPNETCORE_URLS: "http://+:5050"
+      ASPNETCORE_ENVIRONMENT: "Production"
+      LamaApi__BaseUrl: "http://lama-server:5000"
+      LAMA_SERVER_URL: "http://lama-server:5000"
+    expose:
+      - "5050"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5050/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
   lama-server:
     build:
       context: .
@@ -18,8 +40,9 @@ services:
       ASPNETCORE_URLS: "http://+:5000"
       ASPNETCORE_ENVIRONMENT: "Production"
       LAMA_SERVER_ALLOW_SHUTDOWN: "false"
-    ports:
-      - "5000:5000"
+      LAMA_RUNTIME_MODE: "online"
+    expose:
+      - "5000"
     volumes:
       - ./assets/languages:/app/assets/languages:ro
       - ./logs:/app/logs
@@ -46,6 +69,7 @@ services:
       - ./.deploy/certs:/etc/letsencrypt:ro
       - ./.deploy/certbot-webroot:/var/www/certbot:ro
     depends_on:
+      - lama-webapp
       - lama-server
     restart: unless-stopped
 

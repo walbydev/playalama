@@ -6,6 +6,28 @@
 version: '3.8'
 
 services:
+  lama-webapp:
+    build:
+      context: ../..
+      dockerfile: tools/docker/Dockerfile.webapp
+    container_name: lama-webapp-dev
+    networks:
+      - lama-network
+    environment:
+      ASPNETCORE_URLS: "http://+:5050"
+      ASPNETCORE_ENVIRONMENT: "Development"
+      LamaApi__BaseUrl: "http://lama-server:5000"
+      LAMA_SERVER_URL: "http://lama-server:5000"
+    ports:
+      - "5050:5050"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5050/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
   lama-server:
     build:
       context: ../..
@@ -46,6 +68,7 @@ services:
       # Pour dev local: certificats autosignés
       - ../../../.deploy/certs:/etc/letsencrypt:ro
     depends_on:
+      - lama-webapp
       - lama-server
     restart: unless-stopped
 
