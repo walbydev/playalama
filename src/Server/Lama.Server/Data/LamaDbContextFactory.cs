@@ -11,7 +11,7 @@ public sealed class LamaDbContextFactory : IDesignTimeDbContextFactory<LamaDbCon
 
         var connectionString =
             Environment.GetEnvironmentVariable("LAMA_SERVER_DB")
-            ?? "Host=localhost;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me";
+            ?? "Host=localhost;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;Ssl Mode=Disable;";
 
         optionsBuilder.UseNpgsql(connectionString);
 

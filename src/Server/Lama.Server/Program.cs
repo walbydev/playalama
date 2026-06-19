@@ -33,6 +33,14 @@ builder.Services.AddSingleton(jwtService);
 
 var app = builder.Build();
 
+var autoMigrate = builder.Configuration.GetValue<bool?>("Database:AutoMigrate") ?? false;
+if (autoMigrate)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<LamaDbContext>();
+    db.Database.Migrate();
+}
+
 var allowShutdown = string.Equals(
     Environment.GetEnvironmentVariable("LAMA_SERVER_ALLOW_SHUTDOWN"),
     "true",

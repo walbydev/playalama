@@ -28,11 +28,6 @@
         </nav>
     </header>
 
-    @if (!string.IsNullOrWhiteSpace(_toast))
-    {
-        <div class="toast @(_toastType)">@_toast</div>
-    }
-
     <main>
         @Body
     </main>
@@ -47,9 +42,6 @@
 @code {
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    private string? _toast;
-    private string _toastType = "toast-ok";
-    private System.Threading.Timer? _toastTimer;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
