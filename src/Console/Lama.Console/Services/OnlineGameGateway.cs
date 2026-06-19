@@ -10,6 +10,8 @@ namespace Lama.Console.Services;
 /// </summary>
 public sealed class OnlineGameGateway
 {
+    private const string ApiBase = "/api/v1";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -44,7 +46,7 @@ public sealed class OnlineGameGateway
             language
         };
 
-        var response = await _httpClient.PostAsJsonAsync("/api/games", request, cancellationToken);
+        var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/games", request, cancellationToken);
         await EnsureSuccessAsync(response, "game.create", cancellationToken);
 
         var payload = await response.Content.ReadFromJsonAsync<OnlineCreateGameResponse>(JsonOptions, cancellationToken);
@@ -59,7 +61,7 @@ public sealed class OnlineGameGateway
         EnsureOnlineMode();
 
         var request = new { playerName };
-        var response = await _httpClient.PostAsJsonAsync($"/api/games/{gameId}/join", request, cancellationToken);
+        var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/join", request, cancellationToken);
         await EnsureSuccessAsync(response, "game.join", cancellationToken);
 
         var payload = await response.Content.ReadFromJsonAsync<OnlineJoinGameResponse>(JsonOptions, cancellationToken);
@@ -70,7 +72,7 @@ public sealed class OnlineGameGateway
     {
         EnsureOnlineMode();
 
-        var response = await _httpClient.GetAsync($"/api/games/{gameId}", cancellationToken);
+        var response = await _httpClient.GetAsync($"{ApiBase}/games/{gameId}", cancellationToken);
         await EnsureSuccessAsync(response, "game.show", cancellationToken);
 
         var payload = await response.Content.ReadFromJsonAsync<OnlineGameSnapshot>(JsonOptions, cancellationToken);
@@ -81,7 +83,7 @@ public sealed class OnlineGameGateway
     {
         EnsureOnlineMode();
 
-        var response = await _httpClient.GetAsync("/api/games", cancellationToken);
+        var response = await _httpClient.GetAsync($"{ApiBase}/games", cancellationToken);
         await EnsureSuccessAsync(response, "game.list", cancellationToken);
 
         var payload = await response.Content.ReadFromJsonAsync<OnlineGameListResponse>(JsonOptions, cancellationToken);
@@ -104,7 +106,7 @@ public sealed class OnlineGameGateway
             payload
         };
 
-        var response = await _httpClient.PostAsJsonAsync($"/api/games/{gameId}/moves", request, cancellationToken);
+        var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/moves", request, cancellationToken);
         await EnsureSuccessAsync(response, "play.command", cancellationToken);
 
         var model = await response.Content.ReadFromJsonAsync<OnlinePlayCommandResponse>(JsonOptions, cancellationToken);
@@ -123,7 +125,7 @@ public sealed class OnlineGameGateway
             playerId
         };
 
-        var response = await _httpClient.PostAsJsonAsync($"/api/games/{gameId}/end", request, cancellationToken);
+        var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/games/{gameId}/end", request, cancellationToken);
         await EnsureSuccessAsync(response, "game.end", cancellationToken);
 
         var payload = await response.Content.ReadFromJsonAsync<OnlineEndGameResponse>(JsonOptions, cancellationToken);

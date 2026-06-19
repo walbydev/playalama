@@ -30,7 +30,7 @@ var allowShutdown = string.Equals(
 app.MapHealthEndpoints();
 app.MapInternalEndpoints(allowShutdown);
 
-var api = app.MapGroup("/api");
+var api = app.MapGroup("/api/v1");
 api.MapGamesReadEndpoints();
 api.MapGamesCommandEndpoints();
 
