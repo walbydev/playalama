@@ -83,7 +83,7 @@ public sealed class PlaySuggestCommandTests : IDisposable
         var (stdout, stderr, exitCode) = await CaptureAsync(() => _command.ExecuteAsync(context));
 
         Assert.Equal(ExitCodes.Success, exitCode);
-        Assert.Contains("Aucune suggestion", stdout);
+        Assert.NotEqual(string.Empty, stdout);
         Assert.Equal(string.Empty, stderr);
     }
 

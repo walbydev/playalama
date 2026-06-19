@@ -54,14 +54,41 @@ public sealed class SuggestMovesUseCase
 
     private SuggestedMoveCandidate MapSuggestion(MoveSuggestion suggestion)
     {
-        // Le mapping position/direction sera derive des placements dans l'implementation finale.
+        var ordered = suggestion.Placements.Keys
+            .OrderBy(p => p.Row)
+            .ThenBy(p => p.Column)
+            .ToList();
+
+        if (ordered.Count == 0)
+        {
+            return new SuggestedMoveCandidate(
+                Word: suggestion.Word,
+                Position: "H8",
+                Direction: "H",
+                Score: suggestion.Score,
+                Length: suggestion.Length,
+                BalancedScore: suggestion.HeuristicScore);
+        }
+
+        var isHorizontal = ordered.Select(p => p.Row).Distinct().Count() == 1;
+        var start = isHorizontal
+            ? ordered.OrderBy(p => p.Column).First()
+            : ordered.OrderBy(p => p.Row).First();
+
         return new SuggestedMoveCandidate(
             Word: suggestion.Word,
-            Position: "H8",
-            Direction: "H",
+            Position: ToDisplayPosition(start),
+            Direction: isHorizontal ? "H" : "V",
             Score: suggestion.Score,
             Length: suggestion.Length,
             BalancedScore: suggestion.HeuristicScore);
+    }
+
+    private static string ToDisplayPosition(Position pos)
+    {
+        var col = (char)('A' + pos.Column);
+        var row = pos.Row + 1;
+        return $"{col}{row}";
     }
 
     private void EnsureCurrentPlayer(GameState state, string gameId, string playerId)

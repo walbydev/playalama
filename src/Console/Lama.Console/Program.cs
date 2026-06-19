@@ -10,6 +10,7 @@ using Lama.Console.Modes;
 using Lama.Console.Services;
 using Lama.Contracts;
 using Lama.Core.UseCases;
+using Lama.Domain.Engine;
 using Lama.Infrastructure.Auth;
 using Lama.Infrastructure.Persistence;
 using Lama.Infrastructure.Profile;
@@ -95,7 +96,15 @@ try
             });
             services.AddSingleton<JoinGameUseCase>();
             services.AddSingleton<PlayMoveUseCase>();
-            services.AddSingleton<SuggestMovesUseCase>();
+            services.AddSingleton<SuggestMovesUseCase>(provider =>
+            {
+                var createUseCase = provider.GetRequiredService<CreateGameUseCase>();
+                var langProvider = provider.GetRequiredService<IGameLanguageProvider>();
+                var suggestionEngine = new MoveSuggestionEngine(
+                    langProvider.GetDictionary(),
+                    langProvider.GetLetterScores());
+                return new SuggestMovesUseCase(createUseCase, suggestionEngine);
+            });
             services.AddSingleton<PassTurnUseCase>();
             services.AddSingleton<SwapLettersUseCase>();
             services.AddSingleton<ChallengeWordUseCase>();
