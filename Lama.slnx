@@ -8,7 +8,6 @@
     <File Path="docs\AGENTS.md" />
     <File Path="docs\ALIAS_LAMA_CONFIG.md" />
     <File Path="docs\CLASSIC_GAME_SHORTLIST.md" />
-    <File Path="docs\CLI-instructions.md" />
     <File Path="docs\console-interface-architecture.md" />
     <File Path="docs\crossing-rules.md" />
     <File Path="docs\defines-CLI.md" />
@@ -18,11 +17,14 @@
     <File Path="docs\SCOPE.md" />
     <File Path="docs\tools.md" />
   </Folder>
+  <Folder Name="/docs/architecture/" />
+  <Folder Name="/docs/roadmap/" />
   <Folder Name="/docs/root/">
     <File Path="AGENTS.md" />
     <File Path="PROGRESS.md" />
     <File Path="README.md" />
   </Folder>
+  <Folder Name="/docs/utils/" />
   <Folder Name="/Libraries/">
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
