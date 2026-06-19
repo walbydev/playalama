@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <!-- Compound : Cas 2 complet — Server + Console online simultanément -->
+  <configuration default="false" name="🔗 COMPOUND - Server + Console online" type="CompoundRunConfigurationType">
+    <toRun name="🖥️ Server - dev (local)" type="DotNetProjectRunConfiguration" />
+    <toRun name="🌐 Console - online (serveur local)" type="DotNetProjectRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>
+

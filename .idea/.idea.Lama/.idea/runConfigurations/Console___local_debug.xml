@@ -1,0 +1,19 @@
+<component name="ProjectRunConfigurationManager">
+  <!-- Cas 1 : Debug CLI en local (même PC) -->
+  <configuration default="false" name="🎮 Console - local debug" type="DotNetProjectRunConfiguration" factoryName=".NET Project" singleton="false">
+    <option name="PROJECT_PATH" value="$PROJECT_DIR$/src/Console/Lama.Console/Lama.Console.csproj" />
+    <option name="TARGET_FRAMEWORK" value="" />
+    <option name="EXE_PATH" value="" />
+    <option name="PROGRAM_PARAMETERS" value="game create Alice" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="PASS_PARENT_ENVS" value="true" />
+    <option name="USE_EXTERNAL_CONSOLE" value="false" />
+    <option name="NO_BUILD" value="false" />
+    <envs>
+      <env name="LAMA_RUNTIME_MODE" value="local" />
+      <env name="LAMA_SESSION_DIR" value="$PROJECT_DIR$/.dev-session/local" />
+    </envs>
+    <method v="2" />
+  </configuration>
+</component>
+

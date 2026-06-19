@@ -1,0 +1,20 @@
+<component name="ProjectRunConfigurationManager">
+  <!-- Cas 2 (bis) : Console en mode online pointant sur le serveur local -->
+  <configuration default="false" name="🌐 Console - online (serveur local)" type="DotNetProjectRunConfiguration" factoryName=".NET Project" singleton="false">
+    <option name="PROJECT_PATH" value="$PROJECT_DIR$/src/Console/Lama.Console/Lama.Console.csproj" />
+    <option name="TARGET_FRAMEWORK" value="" />
+    <option name="EXE_PATH" value="" />
+    <option name="PROGRAM_PARAMETERS" value="game create Alice --level casual" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="PASS_PARENT_ENVS" value="true" />
+    <option name="USE_EXTERNAL_CONSOLE" value="false" />
+    <option name="NO_BUILD" value="false" />
+    <envs>
+      <env name="LAMA_RUNTIME_MODE" value="online" />
+      <env name="LAMA_SERVER_URL" value="http://127.0.0.1:5000" />
+      <env name="LAMA_SESSION_DIR" value="$PROJECT_DIR$/.dev-session/online-host" />
+    </envs>
+    <method v="2" />
+  </configuration>
+</component>
+

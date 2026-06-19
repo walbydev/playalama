@@ -22,7 +22,12 @@ bld/
 *.sln.docstates
 
 # Rider files
+# Rider — ignorer tout sauf les run configurations partagées
 .idea/
+!.idea/.idea.Lama/
+!.idea/.idea.Lama/.idea/
+!.idea/.idea.Lama/.idea/runConfigurations/
+!.idea/.idea.Lama/.idea/runConfigurations/**
 *.sln.iml
 
 # NuGet
