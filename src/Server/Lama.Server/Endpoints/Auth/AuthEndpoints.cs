@@ -40,36 +40,7 @@ public static class AuthEndpoints
             .WithTags("Authentication");
 
         // CLI legacy — rétrocompatible
-        group.MapPost("/login", Login(tokenService))
-            .WithName("Login")
-            .WithDescription("Login CLI: PlayerName + PlayerId optionnel, retourne JWT.")
-            .Produces<LoginResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest);
-
-        // Compte Web — inscription
-        group.MapPost("/register", Register(tokenService))
-            .WithName("Register")
-            .WithDescription("Inscription compte Web.")
-            .Produces<LoginResponse>(StatusCodes.Status201Created)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status409Conflict);
-
-        // Compte Web — connexion avec mot de passe
-        group.MapPost("/login/account", AccountLogin(tokenService))
-            .WithName("AccountLogin")
-            .WithDescription("Connexion compte Web: username + mot de passe.")
-            .Produces<LoginResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
-
-        group.MapGet("/status", Status())
-            .WithName("AuthStatus")
-            .Produces<AuthStatusResponse>(StatusCodes.Status200OK);
-    }
-
-    private static Func<HttpContext, LoginRequest, Task<IResult>> Login(JwtTokenService tokenService)
-    {
-        return async (_, request) =>
+        group.MapPost("/login", async (LoginRequest request) =>
         {
             if (string.IsNullOrWhiteSpace(request.PlayerName))
                 return Results.BadRequest(new { error = "PlayerName is required" });
@@ -83,12 +54,14 @@ public static class AuthEndpoints
                 PlayerName: request.PlayerName,
                 Email: null,
                 ExpiresAt: DateTime.UtcNow.AddHours(24)));
-        };
-    }
+        })
+            .WithName("Login")
+            .WithDescription("Login CLI: PlayerName + PlayerId optionnel, retourne JWT.")
+            .Produces<LoginResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest);
 
-    private static Func<HttpContext, RegisterRequest, LamaDbContext, Task<IResult>> Register(JwtTokenService tokenService)
-    {
-        return async (_, request, db) =>
+        // Compte Web — inscription
+        group.MapPost("/register", async (RegisterRequest request, LamaDbContext db) =>
         {
             if (string.IsNullOrWhiteSpace(request.Username) || request.Username.Trim().Length < 2)
                 return Results.BadRequest(new { error = "Le pseudo doit contenir au moins 2 caractères." });
@@ -119,12 +92,15 @@ public static class AuthEndpoints
                 PlayerName: player.Username,
                 Email: player.Email,
                 ExpiresAt: DateTime.UtcNow.AddHours(24)));
-        };
-    }
+        })
+            .WithName("Register")
+            .WithDescription("Inscription compte Web.")
+            .Produces<LoginResponse>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status409Conflict);
 
-    private static Func<HttpContext, AccountLoginRequest, LamaDbContext, Task<IResult>> AccountLogin(JwtTokenService tokenService)
-    {
-        return async (_, request, db) =>
+        // Compte Web — connexion avec mot de passe
+        group.MapPost("/login/account", async (AccountLoginRequest request, LamaDbContext db) =>
         {
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
                 return Results.BadRequest(new { error = "Username et mot de passe requis." });
@@ -141,12 +117,14 @@ public static class AuthEndpoints
                 PlayerName: player.Username,
                 Email: player.Email,
                 ExpiresAt: DateTime.UtcNow.AddHours(24)));
-        };
-    }
+        })
+            .WithName("AccountLogin")
+            .WithDescription("Connexion compte Web: username + mot de passe.")
+            .Produces<LoginResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
 
-    private static Func<HttpContext, Task<IResult>> Status()
-    {
-        return async context =>
+        group.MapGet("/status", (HttpContext context) =>
         {
             var playerId = context.User?.FindFirst("playerId")?.Value;
             var playerName = context.User?.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
@@ -154,6 +132,10 @@ public static class AuthEndpoints
                 IsAuthenticated: !string.IsNullOrEmpty(playerId),
                 PlayerId: playerId,
                 PlayerName: playerName));
-        };
+        })
+            .WithName("AuthStatus")
+            .Produces<AuthStatusResponse>(StatusCodes.Status200OK);
     }
 }
+
+
