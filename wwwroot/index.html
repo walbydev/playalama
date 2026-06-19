@@ -46,6 +46,54 @@
       line-height: 1.05;
     }
 
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(110,168,254,.22);
+      background: rgba(110,168,254,.08);
+      color: #d7e6ff;
+      font-size: .92rem;
+    }
+
+    .lead {
+      margin-bottom: 18px;
+      font-size: 1.08rem;
+    }
+
+    .taglines {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .tagline {
+      padding: 16px 18px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255,255,255,.035);
+    }
+
+    .tagline-title {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent2);
+      font-size: .92rem;
+      font-weight: 700;
+      letter-spacing: .01em;
+      text-transform: uppercase;
+    }
+
+    .tagline-text {
+      margin: 0;
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
     p {
       margin: 0 0 16px;
       color: var(--muted);
@@ -93,6 +141,19 @@
       box-shadow: 0 16px 32px rgba(110,168,254,.18);
     }
 
+    .button-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-weight: 600;
+    }
+
     code {
       display: block;
       margin-top: 10px;
@@ -119,17 +180,33 @@
 </head>
 <body>
   <main class="card">
+    <div class="eyebrow">🎮 Portail officiel du jeu LAMA</div>
     <h1>Playalama</h1>
-    <h2>Lettres Arrangées en Mots Amusants (Letters Arranged in Meaningful Arts)</h2>
-    <h2>Tagline: Jouez avec les mots, un à la fois (Play with words, one letter at a time)</h2>
+    <p class="lead">
+      Téléchargez LAMA, lancez une partie locale et retrouvez l’univers du jeu de mots
+      sur le portail officiel de <strong>playalama.online</strong>.
+    </p>
+
+    <div class="taglines">
+      <section class="tagline">
+        <span class="tagline-title">Signature</span>
+        <p class="tagline-text">Lettres Arrangées en Mots Amusants <span aria-hidden="true">—</span> <em>Letters Arranged in Meaningful Arts</em></p>
+      </section>
+
+      <section class="tagline">
+        <span class="tagline-title">Tagline</span>
+        <p class="tagline-text">Jouez avec les mots, un à la fois <span aria-hidden="true">—</span> <em>Play with words, one letter at a time</em></p>
+      </section>
+    </div>
+
     <p>
-      Serveur de production du projet LAMA. Cette page statique sert de landing page
-      et laisse le reverse-proxy gérer l’API de jeu.
+      Cette page d’accueil présente les accès essentiels du site, tandis que la page de téléchargement
+      regroupe les builds Linux, Windows et macOS prêtes à l’emploi.
     </p>
 
     <div class="cta-row">
       <a class="button" href="/download">⬇️ Télécharger LAMA</a>
-      <a href="/health">Vérifier la santé du serveur</a>
+      <a class="button-secondary" href="/health">Vérifier la santé du serveur</a>
     </div>
 
     <div class="grid">
