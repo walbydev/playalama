@@ -131,22 +131,35 @@ public static class PlayerEndpoints
                 return Results.Unauthorized();
 
             // Historique depuis CompletedGames via SessionPlayerInGame
-            var games = await db.SessionPlayersInGame
+            var rows = await db.SessionPlayersInGame
                 .Where(p => p.PlayerId == playerId.Value)
                 .Join(db.CompletedGames,
                     p => p.GameId,
                     g => g.GameId,
-                    (p, g) => new PlayerGameHistoryItem(
-                        g.GameId.ToString(),
+                    (p, g) => new
+                    {
+                        g.GameId,
                         g.GameLevel,
                         g.Queue,
                         g.Status,
                         g.EndedAt,
                         g.DurationSeconds,
-                        g.WinningPlayerId.HasValue && g.WinningPlayerId.Value == p.PlayerId))
-                .OrderByDescending(g => g.EndedAt)
+                        IsWinner = g.WinningPlayerId.HasValue && g.WinningPlayerId.Value == p.PlayerId
+                    })
+                .OrderByDescending(x => x.EndedAt)
                 .Take(50)
                 .ToListAsync();
+
+            var games = rows
+                .Select(x => new PlayerGameHistoryItem(
+                    x.GameId.ToString("N"),
+                    x.GameLevel,
+                    x.Queue,
+                    x.Status,
+                    x.EndedAt,
+                    x.DurationSeconds,
+                    x.IsWinner))
+                .ToList();
 
             return Results.Ok(games);
         };

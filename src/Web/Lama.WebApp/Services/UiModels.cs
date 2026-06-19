@@ -6,7 +6,6 @@ namespace Lama.WebApp.Services;
 
 public sealed class CreateGameForm
 {
-    [Required] public string HostName { get; set; } = "JoueurWeb";
     public string Mode { get; set; } = "multi";
     public string? GameName { get; set; }
     public int MaxPlayers { get; set; } = 4;
@@ -74,12 +73,14 @@ public sealed record WebGameListItem(
 public sealed record WebGameSnapshot(
     string Id,
     bool IsGameOver,
+    bool HasStarted,
+    bool UsesLobby,
     int CurrentPlayerIndex,
     int TurnNumber,
     IReadOnlyList<WebSnapshotPlayer> Players,
     IReadOnlyList<WebBoardTile> Board);
 
-public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int Score);
+public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int Score, bool IsHost);
 public sealed record WebBoardTile(int Row, int Column, char Letter);
 public sealed record WebPlayResponse(string GameId, string MoveId, int Score);
 

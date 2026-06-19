@@ -13,9 +13,6 @@
     <EditForm Model="createForm" OnValidSubmit="CreateGameAsync" class="stack">
         <DataAnnotationsValidator />
         <div class="form-grid">
-            <label>Pseudo hote
-                <InputText class="input" @bind-Value="createForm.HostName" />
-            </label>
             <label>Mode
                 <InputSelect class="input" @bind-Value="createForm.Mode">
                     <option value="multi">Multi</option>
@@ -94,9 +91,6 @@
     protected override async Task OnInitializedAsync()
     {
         await Auth.InitializeAsync();
-        if (Auth.CurrentUser is not null)
-            createForm.HostName = Auth.CurrentUser.Username;
-
         await LoadGamesAsync();
     }
 
@@ -114,7 +108,15 @@
                 return;
             }
 
-            var created = await Api.CreateGameAsync(createForm, token);
+            var currentUser = Auth.CurrentUser;
+            if (currentUser is null)
+            {
+                error = "Aucun utilisateur connecté. Reconnectez-vous.";
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            var created = await Api.CreateGameAsync(createForm, currentUser.Username, token);
             Navigation.NavigateTo($"/games/{created.GameId}?playerId={Uri.EscapeDataString(created.HostPlayerId)}");
         }
         catch (Exception ex)
@@ -141,7 +143,14 @@
                 return;
             }
 
-            var playerName = string.IsNullOrWhiteSpace(createForm.HostName) ? "JoueurWeb" : createForm.HostName.Trim();
+            var playerName = Auth.CurrentUser?.Username;
+            if (string.IsNullOrWhiteSpace(playerName))
+            {
+                error = "Aucun utilisateur connecté. Reconnectez-vous.";
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
             var joined = await Api.JoinGameAsync(gameId, playerName, password: null, token);
             Navigation.NavigateTo($"/games/{joined.GameId}?playerId={Uri.EscapeDataString(joined.PlayerId)}");
         }

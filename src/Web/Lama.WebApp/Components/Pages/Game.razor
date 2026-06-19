@@ -44,6 +44,18 @@
 
             <article class="tile">
                 <h3>Mon action</h3>
+                @if (snapshot.UsesLobby && !snapshot.HasStarted)
+                {
+                    <p>Partie en attente de démarrage.</p>
+                    @if (CanCurrentUserStartGame)
+                    {
+                        <button class="button" @onclick="StartGameAsync" disabled="@busy">Démarrer la partie (hôte)</button>
+                    }
+                    else
+                    {
+                        <p>Seul l'hôte peut démarrer la partie.</p>
+                    }
+                }
                 <EditForm Model="playForm" OnValidSubmit="PlayAsync" class="stack">
                     <DataAnnotationsValidator />
                     <label>PlayerId
@@ -106,7 +118,7 @@
         var parsed = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
         playForm.PlayerId = parsed.TryGetValue("playerId", out var playerId)
             ? playerId.ToString()
-            : string.Empty;
+            : Auth.CurrentUser?.PlayerId ?? string.Empty;
 
         await LoadSnapshotAsync();
         StartPolling();
@@ -177,6 +189,40 @@
             busy = false;
         }
     }
+
+    private async Task StartGameAsync()
+    {
+        busy = true;
+        error = null;
+
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                error = "Session expirée. Reconnectez-vous pour démarrer la partie.";
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            await Api.StartGameAsync(GameId, token);
+            await LoadSnapshotAsync();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private bool CanCurrentUserStartGame =>
+        snapshot is not null
+        && snapshot.UsesLobby
+        && !snapshot.HasStarted
+        && snapshot.Players.Any(p => p.IsHost && string.Equals(p.PlayerId, Auth.CurrentUser?.PlayerId, StringComparison.Ordinal));
 
     private string? ResolveLetter(int row, int col)
     {

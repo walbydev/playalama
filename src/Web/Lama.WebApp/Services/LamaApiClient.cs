@@ -83,14 +83,14 @@ public sealed class LamaApiClient(HttpClient httpClient)
 		await EnsureSuccessAsync(response, cancellationToken);
 
 		var payload = await response.Content.ReadFromJsonAsync<GameListEnvelope>(JsonOptions, cancellationToken);
-		return payload?.Games?.Select(x => new WebGameListItem(x.Id, x.GameName, x.Status, x.Players, x.MaxPlayers, x.Queue, x.IsJoinable)).ToList() ?? [];
+		return payload?.Games?.Select(x => new WebGameListItem(x.Id, x.GameName, x.Status, x.Players, x.MaxPlayers, NormalizeQueue(x.Queue), x.IsJoinable)).ToList() ?? [];
 	}
 
-	public async Task<WebCreateGameResponse> CreateGameAsync(CreateGameForm form, string? token = null, CancellationToken cancellationToken = default)
+	public async Task<WebCreateGameResponse> CreateGameAsync(CreateGameForm form, string hostName, string? token = null, CancellationToken cancellationToken = default)
 	{
 		var request = new
 		{
-			hostName = form.HostName,
+			hostName,
 			gameLevel = GameLevel.Standard,
 			mode = string.Equals(form.Mode, "multi", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
 			gameName = form.GameName,
@@ -123,6 +123,14 @@ public sealed class LamaApiClient(HttpClient httpClient)
 		return new WebJoinGameResponse(payload.GameId, payload.PlayerId);
 	}
 
+	public async Task StartGameAsync(string gameId, string? token = null, CancellationToken cancellationToken = default)
+	{
+		using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games/{gameId}/start", token);
+		httpRequest.Content = JsonContent.Create(new { playerId = (string?)null });
+		var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
+
 	public async Task<WebGameSnapshot> GetGameAsync(string gameId, CancellationToken cancellationToken = default)
 	{
 		var response = await httpClient.GetAsync($"{ApiBase}/games/{gameId}", cancellationToken);
@@ -134,9 +142,11 @@ public sealed class LamaApiClient(HttpClient httpClient)
 		return new WebGameSnapshot(
 			payload.Id,
 			payload.IsGameOver,
+			payload.HasStarted,
+			payload.UsesLobby,
 			payload.CurrentPlayerIndex,
 			payload.TurnNumber,
-			payload.Players.Select(x => new WebSnapshotPlayer(x.PlayerId, x.PlayerName, x.Score)).ToList(),
+			payload.Players.Select(x => new WebSnapshotPlayer(x.PlayerId, x.PlayerName, x.Score, x.IsHost)).ToList(),
 			payload.Board.Select(x => new WebBoardTile(x.Row, x.Column, x.Letter)).ToList());
 	}
 
@@ -195,15 +205,30 @@ public sealed class LamaApiClient(HttpClient httpClient)
 		return request;
 	}
 
+	private static string NormalizeQueue(JsonElement queue)
+	{
+		return queue.ValueKind switch
+		{
+			JsonValueKind.String => queue.GetString() ?? "unknown",
+			JsonValueKind.Number when queue.TryGetInt32(out var value) => value switch
+			{
+				0 => "Casual",
+				1 => "Ranked",
+				_ => value.ToString()
+			},
+			_ => queue.ToString()
+		};
+	}
+
 	private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, DateTime ExpiresAt);
 	private sealed record PlayerProfileEnvelope(string PlayerId, string Username, string? Email, DateTimeOffset CreatedAt);
 	private sealed record GameHistoryEnvelope(string GameId, string GameLevel, string Queue, string Status, DateTimeOffset EndedAt, int DurationSeconds, bool IsWinner);
 	private sealed record GameListEnvelope(List<GameListItemEnvelope> Games);
-	private sealed record GameListItemEnvelope(string Id, string? GameName, string Status, int Players, int MaxPlayers, string Queue, bool IsJoinable);
+	private sealed record GameListItemEnvelope(string Id, string? GameName, string Status, int Players, int MaxPlayers, JsonElement Queue, bool IsJoinable);
 	private sealed record CreateGameEnvelope(string GameId, string HostPlayerId);
 	private sealed record JoinGameEnvelope(string GameId, string PlayerId);
-	private sealed record GameSnapshotEnvelope(string Id, bool IsGameOver, int CurrentPlayerIndex, int TurnNumber, List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board);
-	private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score);
+	private sealed record GameSnapshotEnvelope(string Id, bool IsGameOver, bool HasStarted, bool UsesLobby, int CurrentPlayerIndex, int TurnNumber, List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board);
+	private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost);
 	private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);
 	private sealed record PlayEnvelope(string GameId, string MoveId, int Score);
 }
