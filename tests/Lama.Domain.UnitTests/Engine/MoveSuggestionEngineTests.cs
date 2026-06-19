@@ -47,19 +47,21 @@ public sealed class MoveSuggestionEngineTests
     }
 
     [Fact]
-    public void SuggestTopMoves_NonFirstMove_ReturnsEmptyForV1()
+    public void SuggestTopMoves_NonFirstMove_ReturnsConnectedSuggestions()
     {
         var engine = new MoveSuggestionEngine(
-            new HashSet<string> { "LA", "LAMA" },
+            new HashSet<string> { "LA", "AL" },
             Scores);
 
         var grid = new Tile?[15, 15];
+        grid[6, 7] = new Tile('A');
         grid[7, 7] = new Tile('L');
-        var state = CreateState(['L', 'A', 'M', 'A', 'S', 'T', 'O'], new BoardState(grid));
+        var state = CreateState(['A', 'M', 'S', 'T', 'O', 'N', 'R'], new BoardState(grid));
 
         var suggestions = engine.SuggestTopMoves(state, state.Players[0], top: 5, MoveSuggestionStrategy.Score);
 
-        suggestions.Should().BeEmpty();
+        suggestions.Should().NotBeEmpty();
+        suggestions.Should().OnlyContain(s => s.Placements.Keys.Contains(new Position(7, 7)));
     }
 
     private static GameState CreateState(List<char> rack, BoardState? board = null)
