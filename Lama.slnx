@@ -8,6 +8,7 @@
     <File Path="Makefile" />
     <File Path="README.md" />
   </Folder>
+  <Folder Name="/docs/" />
   <Folder Name="/docs/architecture/">
     <File Path="docs/architecture/DOCKER_DEPLOYMENT.md" />
     <File Path="docs/architecture/HTTPS_DEPLOYMENT.md" />
@@ -68,10 +69,6 @@
   <Folder Name="/Server/">
     <Project Path="src/Server/Lama.Server/Lama.Server.csproj" />
   </Folder>
-  <Folder Name="/Tools/">
-    <File Path="tools\benchmarks\Lama.MoveSuggestion.Benchmarks\README.md" />
-    <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
-  </Folder>
   <Folder Name="/site/" />
   <Folder Name="/site/static/">
     <File Path="site\static\index.html" />
@@ -96,11 +93,12 @@
   <Folder Name="/site/static/download/">
     <File Path="site\static\download\index.html" />
   </Folder>
-  <Folder Name="/Tests/">
+  <Folder Name="/tests/">
     <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />
     <Project Path="tests/Lama.Core.UnitTests/Lama.Core.UnitTests.csproj" />
     <Project Path="tests/Lama.Domain.UnitTests/Lama.Domain.UnitTests.csproj" />
     <Project Path="tests/Lama.Infrastructure.UnitTests/Lama.Infrastructure.UnitTests.csproj" />
     <Project Path="tests/Lama.Languages.fr.UnitTests/Lama.Languages.fr.UnitTests.csproj" />
+    <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
   </Folder>
 </Solution>
