@@ -18,6 +18,7 @@ namespace Lama.Console.Services;
 ///   play.move / pass / swap     |    ✗       |  ✗    |  ✅   |      ✅       |           ✅            |    ✗
 ///   play.challenge              |    ✗       |  ✗    |  ✅   |      ✅       |           ✅            |    ✗
 ///   play.check / simulate       |    ✅      |  ✅   |  ✅   |      ✅       |           ✗             |    ✗
+///   play.suggest                |    ✅      |  ✅   |  ✅   |      ✅       |           ✗             |    ✗
 ///   show.board / scores / hist  |    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✅
 ///   show.rack                   |    ✗       |  ✗    |  ✅   |      ✅       |           ✅            |    ✗
 ///   show.hints                  |    ✅      |  ✅   |  ✅   |      ✅       |           ✗             |    ✗
@@ -93,6 +94,7 @@ public sealed class AccessControlService : IAccessControlService
         {
             "play.check",
             "play.simulate",
+            "play.suggest",
             "show.hints",
             "dict.check",
             "dict.search",

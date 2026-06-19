@@ -194,6 +194,7 @@ public static class GamesCommandEndpoints
         string? nextPlayerId;
         int playedTurn;
         List<OnlineMovePlacement> placements = [];
+        List<object> suggestions = [];
         string? actionMessage = null;
         bool? challengeSucceeded = null;
 
@@ -288,6 +289,14 @@ public static class GamesCommandEndpoints
                         actionMessage = $"Coup valide : {score} pts";
                         break;
 
+                    case "play.suggest":
+                        // Stub online: aucune mutation de partie, suggestions vides pour l'instant.
+                        score = 0;
+                        newRack = currentState.Players[playerIndex].Rack.ToList();
+                        suggestions = [];
+                        actionMessage = "Aucune suggestion disponible (stub).";
+                        break;
+
                     default:
                         return Results.BadRequest(new { error = $"unsupported command: {normalizedCommand}" });
                 }
@@ -339,6 +348,7 @@ public static class GamesCommandEndpoints
             createdMove.PlayedAt,
             score,
             newRack,
+            suggestions,
             currentPlayerIndex = nextCurrentPlayerIndex,
             nextPlayerId,
             message = actionMessage,

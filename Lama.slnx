@@ -35,6 +35,10 @@
   <Folder Name="/Server/">
     <Project Path="src/Server/Lama.Server/Lama.Server.csproj" />
   </Folder>
+  <Folder Name="/Tools/">
+    <File Path="tools\benchmarks\Lama.MoveSuggestion.Benchmarks\README.md" />
+    <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />
     <Project Path="tests/Lama.Core.UnitTests/Lama.Core.UnitTests.csproj" />

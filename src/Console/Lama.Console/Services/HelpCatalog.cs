@@ -10,7 +10,7 @@ public static class HelpCatalog
     public static IReadOnlyList<HelpGroup> Groups { get; } =
     [
         new("game", "Gerer les parties", "create, join, list, show, pause, save, end"),
-        new("play", "Jouer un tour", "move, pass, swap, challenge, check"),
+        new("play", "Jouer un tour", "move, pass, swap, challenge, check, suggest"),
         new("show", "Afficher l'etat de jeu", "board, rack, scores, history"),
         new("rating", "Classement global", "show, leaderboard, stats"),
         new("dict", "Dictionnaire", "check, search, anagram"),
@@ -197,6 +197,25 @@ public static class HelpCatalog
             OutputFormats: "text",
             Options: [],
             Examples: ["lama play check H8 LAMA H"]),
+        new(
+            CommandId: "play.suggest",
+            Group: "play",
+            ActionPath: "suggest",
+            Usage: "lama play suggest [--top <n>] [--sort score|length|balanced] [--output text|json|csv]",
+            Description: "Propose les prochains coups (stub local/online).",
+            AllowedRoles: "Host, Player, Admin, SuperAdmin (Casual)",
+            OutputFormats: "text, json, csv",
+            Options:
+            [
+                new("--top", "Nombre maximal de suggestions (defaut: 2)"),
+                new("--sort", "Strategie de tri (score|length|balanced)"),
+                new("--output", "Format de sortie (text|json|csv)")
+            ],
+            Examples:
+            [
+                "lama play suggest",
+                "lama play suggest --top 5 --sort balanced --output json"
+            ]),
         new(
             CommandId: "show.board",
             Group: "show",
