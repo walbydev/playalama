@@ -5,7 +5,7 @@ Objectif: finaliser un mode classique **jouable de bout en bout** avant toute re
 ## Etat d'execution P0
 
 - `CG-01` ✅ complete
-- `CG-02` 🔄 en cours
+- `CG-02` ✅ complete
 - `CG-03` ✅ complete
 - `CG-04` ✅ complete
 

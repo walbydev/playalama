@@ -1343,21 +1343,13 @@ Journal unique de progression du projet LAMA.
 - `docs/POSTGRESQL_QUICKSTART.md`
 - `docker-compose.postgresdev.yml`
 
-````
-This is the description of what the code block changes:
-<changeDescription>
-Journaliser la bascule du endpoint GET /api/v1/games/{gameId} en mode hybride mémoire + fallback EF read-only
-</changeDescription>
-
-This is the code block that represents the suggested code change:
-```markdown
 ## [2026-06-18 17:18:52 UTC] - Etape 1 livree: `GET /api/v1/games/{gameId}` bascule hybride memoire + EF read-only
 
 ### Contexte
 - Choix utilisateur: executer l'option `1` = basculer `GET /api/v1/games/{gameId}` vers EF en lecture seule, sans casser le flow actuel.
 - Contraintes:
   - Conserver compatibilite comportement actuel en memoire (`GameHubState`).
-  - Permettre lecture d'une partie persistée meme si non chargee en memoire.
+  - Permettre lecture d'une partie persistee meme si non chargee en memoire.
 
 ### Fait
 - Endpoint `GET /api/v1/games/{gameId}` refactore en **mode hybride** dans `src/Server/Lama.Server/Program.cs`:
@@ -1410,8 +1402,6 @@ This is the code block that represents the suggested code change:
 - `src/Server/Lama.Server/Data/Configurations/PlayerRatingEntityConfiguration.cs`
 - `src/Server/Lama.Server/appsettings.Production.json`
 - `src/Server/Lama.Server/README.md`
-```
-
 
 ## [2026-06-18 17:22:15 UTC] - Etape 2 livree: `GET /api/v1/games` en mode hybride memoire + EF read-only
 
@@ -1450,7 +1440,6 @@ This is the code block that represents the suggested code change:
 - `src/Server/Lama.Server/Program.cs`
 - `src/Server/Lama.Server/README.md`
 - `src/Server/Lama.Server/Data/Models/Sessions/SessionGameEntity.cs`
-
 
 ## [2026-06-18 17:37:04 UTC] - Etape 3 livree: fallback EF enrichi avec joueurs/coups persists
 
@@ -1504,7 +1493,7 @@ This is the code block that represents the suggested code change:
 
 ### Contexte
 - Demande utilisateur: "Enchaine le board".
-- Le fallback DB de `GET /api/v1/games/{gameId}` retournait encore `board: []` meme avec donnees persistées.
+- Le fallback DB de `GET /api/v1/games/{gameId}` retournait encore `board: []` meme avec donnees persistees.
 
 ### Fait
 - Ajout de l'entite EF `SessionBoardStateEntity` mappee sur `sessions.board_state`.
@@ -1522,7 +1511,7 @@ This is the code block that represents the suggested code change:
 - Documentation serveur alignee (`src/Server/Lama.Server/README.md`) pour inclure la source `sessions.board_state`.
 
 ### Verification executee
-- A executer avec donnees de board persistées (cf. etape suivante smoke API).
+- A executer avec donnees de board persistees (cf. etape suivante smoke API).
 
 ### En cours
 - `rack_state` reste non branche: les racks fallback joueurs sont encore vides (`rackCount = 0`).
@@ -1671,5 +1660,3 @@ This is the code block that represents the suggested code change:
 - `tests/Lama.Console.UnitTests/OnlineCliE2ETests.cs`
 - `tools/scripts/e2e-cli-smoke.sh`
 - `tools/scripts/e2e-online-smoke.sh`
-
-
