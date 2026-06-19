@@ -296,7 +296,16 @@ public sealed record OnlinePlayCommandResponse(
     int CurrentPlayerIndex,
     string? NextPlayerId,
     string? Message = null,
-    bool? ChallengeSucceeded = null);
+    bool? ChallengeSucceeded = null,
+    List<OnlineSuggestedMove>? Suggestions = null);
+
+public sealed record OnlineSuggestedMove(
+    string Word,
+    string Position,
+    string Direction,
+    int Score,
+    int Length,
+    double BalancedScore = 0);
 
 public sealed record OnlineGameListResponse(
     int Total,

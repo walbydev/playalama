@@ -56,6 +56,7 @@ internal static class GamesEndpointParsers
             "swap" => "play.swap",
             "challenge" => "play.challenge",
             "check" => "play.check",
+            "suggest" => "play.suggest",
             var other => $"play.{other}"
         };
     }

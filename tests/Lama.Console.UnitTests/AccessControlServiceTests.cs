@@ -339,6 +339,7 @@ public class AccessControlServiceTests
         allowed.Should().Contain("show.hints",      because: "aide activée en Casual");
         allowed.Should().Contain("dict.check",      because: "aide activée en Casual");
         allowed.Should().Contain("play.simulate",   because: "aide activée en Casual");
+        allowed.Should().Contain("play.suggest",    because: "aide activée en Casual");
         allowed.Should().Contain("play.move",       because: "Player peut toujours jouer");
         allowed.Should().Contain("game.create",     because: "commande publique");
 
@@ -353,6 +354,7 @@ public class AccessControlServiceTests
         allowed.Should().NotContain("show.hints",       because: "aides désactivées en Competitive");
         allowed.Should().NotContain("dict.check",       because: "aides désactivées en Competitive");
         allowed.Should().NotContain("play.simulate",    because: "aides désactivées en Competitive");
+        allowed.Should().NotContain("play.suggest",     because: "aides désactivées en Competitive");
 
         allowed.Should().Contain("play.move",           because: "Player joue toujours");
         allowed.Should().Contain("play.challenge",      because: "challenge toujours disponible");

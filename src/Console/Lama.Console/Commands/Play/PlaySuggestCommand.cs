@@ -17,6 +17,7 @@ public sealed class PlaySuggestCommand : ICommand
 
     private readonly SuggestMovesUseCase _suggestMovesUseCase;
     private readonly RuntimeModeService _runtimeMode;
+    private readonly OnlineGameGateway _onlineGameGateway;
     private readonly ILogger<PlaySuggestCommand> _logger;
 
     /// <summary>
@@ -25,7 +26,11 @@ public sealed class PlaySuggestCommand : ICommand
     public PlaySuggestCommand(
         SuggestMovesUseCase suggestMovesUseCase,
         ILogger<PlaySuggestCommand> logger)
-        : this(suggestMovesUseCase, new RuntimeModeService(), logger)
+        : this(
+            suggestMovesUseCase,
+            new RuntimeModeService(),
+            new OnlineGameGateway(new HttpClient(), new RuntimeModeService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<OnlineGameGateway>.Instance),
+            logger)
     {
     }
 
@@ -35,10 +40,12 @@ public sealed class PlaySuggestCommand : ICommand
     public PlaySuggestCommand(
         SuggestMovesUseCase suggestMovesUseCase,
         RuntimeModeService runtimeMode,
+        OnlineGameGateway onlineGameGateway,
         ILogger<PlaySuggestCommand> logger)
     {
         _suggestMovesUseCase = suggestMovesUseCase;
         _runtimeMode = runtimeMode;
+        _onlineGameGateway = onlineGameGateway;
         _logger = logger;
     }
 
@@ -51,12 +58,6 @@ public sealed class PlaySuggestCommand : ICommand
         {
             global::System.Console.Error.WriteLine("[play suggest] Aucune partie active.");
             return ExitCodes.GameNotFound;
-        }
-
-        if (_runtimeMode.IsOnline)
-        {
-            global::System.Console.Error.WriteLine("[play suggest] Cette commande est disponible en mode local uniquement (stub).");
-            return ExitCodes.GeneralError;
         }
 
         if (!TryParseTop(context.GetOption("top"), out var top))
@@ -73,10 +74,44 @@ public sealed class PlaySuggestCommand : ICommand
 
         try
         {
-            var response = await _suggestMovesUseCase.ExecuteAsync(
+            if (_runtimeMode.IsOnline)
+            {
+                var payload = new
+                {
+                    top,
+                    sort = sort.ToString().ToLowerInvariant()
+                };
+
+                var onlineResponse = await _onlineGameGateway.PlayCommandAsync(
+                    context.GameId,
+                    context.PlayerId,
+                    "play.suggest",
+                    payload,
+                    cancellationToken);
+
+                var suggestions = onlineResponse.Suggestions?
+                    .Select(s => new SuggestedMoveCandidate(
+                        Word: s.Word,
+                        Position: s.Position,
+                        Direction: s.Direction,
+                        Score: s.Score,
+                        Length: s.Length,
+                        BalancedScore: s.BalancedScore))
+                    .ToList() ?? [];
+
+                return WriteOutput(context.OutputFormat, suggestions);
+            }
+
+            var localResponse = await _suggestMovesUseCase.ExecuteAsync(
                 new SuggestMovesRequest(context.GameId, context.PlayerId, top, sort));
 
-            return WriteOutput(context.OutputFormat, response.Suggestions);
+            return WriteOutput(context.OutputFormat, localResponse.Suggestions);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "play.suggest online indisponible");
+            global::System.Console.Error.WriteLine($"[play suggest] Erreur online : {ex.Message}");
+            return ExitCodes.GeneralError;
         }
         catch (Exception ex)
         {

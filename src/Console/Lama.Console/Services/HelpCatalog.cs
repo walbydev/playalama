@@ -202,7 +202,7 @@ public static class HelpCatalog
             Group: "play",
             ActionPath: "suggest",
             Usage: "lama play suggest [--top <n>] [--sort score|length|balanced] [--output text|json|csv]",
-            Description: "Propose les prochains coups (stub local).",
+            Description: "Propose les prochains coups (stub local/online).",
             AllowedRoles: "Host, Player, Admin, SuperAdmin (Casual)",
             OutputFormats: "text, json, csv",
             Options:
