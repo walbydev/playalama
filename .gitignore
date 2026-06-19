@@ -68,3 +68,22 @@ desktop.ini
 # Misc
 *.orig
 publish/
+
+# ==== DEPLOYMENT & SECRETS ====
+# Secrets et certificats - JAMAIS versionner en production
+# .deploy/ contient: certs/ certbot-webroot/ et config sensibles
+.deploy/certs/
+.deploy/certbot-webroot/
+.env
+.env.*.local
+*.key
+*.pem
+
+# ==== DOCKER & INFRA ====
+# Logs détaillés
+logs/
+*.log
+
+# ==== MACOS ====
+.DS_Store
+

@@ -1,0 +1,27 @@
+# .deploy/.gitignore
+# Secrets, certs et configuration sensibles - JAMAIS versioner
+
+# Certificats SSL (Let's Encrypt)
+certs/
+*.pem
+*.key
+
+# Webroot de validation Certbot ACME
+certbot-webroot/
+
+# Configuration d'environnement sensible
+.env*
+
+# Logs déploiement sensibles
+*.log
+logs/
+
+# Autres secrets
+*secret*
+*password*
+*.priv
+
+# Tous les fichiers sauf ce gitignore lui-même
+*
+!.gitignore
+

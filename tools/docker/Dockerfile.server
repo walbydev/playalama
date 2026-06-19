@@ -1,0 +1,61 @@
+# Dockerfile.server - Lama Server (ASP.NET 10)
+# Production build optimisé pour déploiement container
+# Maintenu dans: tools/docker/Dockerfile.server
+# Référence: DOCKER_ARCHITECTURE.md
+
+# Stage 1: Builder - Compilation du code .NET
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
+
+WORKDIR /build
+
+# Copier la solution et fichiers de configuration
+COPY *.slnx ./
+COPY Directory.Build.props ./
+COPY Directory.Packages.props ./
+COPY NuGet.config ./
+COPY dotnet-tools.json ./
+
+# Copier les projets
+COPY src/libs ./src/libs
+COPY src/Server/Lama.Server ./src/Server/Lama.Server
+
+# Restaurer dépendances
+RUN dotnet restore src/Server/Lama.Server/Lama.Server.csproj
+
+# Publier en release
+RUN dotnet publish \
+    -c Release \
+    -o /publish \
+    --no-restore \
+    src/Server/Lama.Server/Lama.Server.csproj
+
+# Stage 2: Runtime - Image minimale pour exécution
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+
+WORKDIR /app
+
+# Installer curl (nécessaire pour healthchecks Docker)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copier les fichiers publiés du builder
+COPY --from=builder /publish .
+
+# Copier les assets de langues (IMPORTANT: verifier que ce volume existe)
+COPY assets/languages ./assets/languages
+
+# Déclarer ports
+EXPOSE 5000 5001
+
+# Variables d'environnement par défaut
+ENV ASPNETCORE_URLS="http://+:5000;https://+:5001" \
+    ASPNETCORE_ENVIRONMENT="Production"
+
+# Health check Docker
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+# Point d'entrée
+ENTRYPOINT ["dotnet", "Lama.Server.dll"]
+
