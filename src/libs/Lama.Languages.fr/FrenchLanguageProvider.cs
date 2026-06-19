@@ -2,12 +2,17 @@
 
 namespace Lama.Languages.fr;
 
+using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
 /// <summary>
 /// Implémentation FrenchLanguageProvider pour Scrabble français.
 /// Charge dictionnaire et scoring depuis assets linguistiques.
+///
+/// Stratégie de chargement (ordre de priorité) :
+///   1. Fichier disque depuis le basePath fourni au constructeur — utilisé en mode dev/serveur.
+///   2. Ressource embarquée dans l'assembly — fallback automatique en mode single-file publish.
 /// </summary>
 public class FrenchLanguageProvider : IGameLanguageProvider
 {
@@ -15,14 +20,41 @@ public class FrenchLanguageProvider : IGameLanguageProvider
     private readonly IReadOnlyDictionary<char, int> _letterScores;
     private readonly IReadOnlyDictionary<char, int> _baseTileDistribution;
     private readonly DistributionScalingRules _scalingRules;
-    private readonly string _basePath;
+    private readonly string? _basePath;
 
-    public FrenchLanguageProvider(string basePath = "assets/languages/fr")
+    /// <param name="basePath">
+    /// Chemin vers le dossier racine des assets (ex. AppContext.BaseDirectory/assets/languages/fr).
+    /// Si null ou absent sur disque, les ressources embarquées sont utilisées automatiquement.
+    /// </param>
+    public FrenchLanguageProvider(string? basePath = null)
     {
         _basePath = basePath;
         _dictionary = LoadDictionary();
         _letterScores = LoadLetterScores();
         (_baseTileDistribution, _scalingRules) = LoadTileDistributionSettings();
+    }
+
+    /// <summary>
+    /// Ouvre un stream sur un asset nommé <paramref name="assetFileName"/> (ex. "dictionary.txt").
+    /// Tente d'abord le disque (<see cref="_basePath"/>/assets/), puis la ressource embarquée.
+    /// </summary>
+    private Stream OpenAssetStream(string assetFileName)
+    {
+        if (!string.IsNullOrEmpty(_basePath))
+        {
+            var fullPath = Path.Combine(_basePath, "assets", assetFileName);
+            if (File.Exists(fullPath))
+                return File.OpenRead(fullPath);
+        }
+
+        // Fallback : ressource embarquée (mode single-file publish ou basePath absent)
+        var resourceName = $"Lama.Languages.fr.assets.{assetFileName}";
+        var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+        if (stream is null)
+            throw new FileNotFoundException(
+                $"Asset '{assetFileName}' introuvable : " +
+                $"chemin disque='{_basePath ?? "(null)"}', ressource='{resourceName}'.");
+        return stream;
     }
 
     public IReadOnlySet<string> GetDictionary() => _dictionary;
@@ -72,52 +104,37 @@ public class FrenchLanguageProvider : IGameLanguageProvider
 
     private IReadOnlySet<string> LoadDictionary()
     {
-        var dictionaryPath = Path.Combine(_basePath, "assets/dictionary.txt");
-        if (!File.Exists(dictionaryPath))
+        using var stream = OpenAssetStream("dictionary.txt");
+        using var reader = new StreamReader(stream);
+        var words = new HashSet<string>();
+        while (reader.ReadLine() is { } line)
         {
-            throw new FileNotFoundException($"Dictionnaire non trouvé: {dictionaryPath}");
+            var word = line.Trim().ToUpper();
+            if (!string.IsNullOrWhiteSpace(word) && Regex.IsMatch(word, "^[A-Z]+$"))
+                words.Add(word);
         }
-
-        var words = File.ReadAllLines(dictionaryPath)
-            .Select(line => line.Trim().ToUpper())
-            .Where(line => !string.IsNullOrWhiteSpace(line) && Regex.IsMatch(line, "^[A-Z]+$"))
-            .ToHashSet();
-
         return words;
     }
 
     private IReadOnlyDictionary<char, int> LoadLetterScores()
     {
-        var scoresPath = Path.Combine(_basePath, "assets/scores.json");
-        if (!File.Exists(scoresPath))
-        {
-            throw new FileNotFoundException($"Fichier scoring non trouvé: {scoresPath}");
-        }
-
-        var json = File.ReadAllText(scoresPath);
-        using var jsonDoc = JsonDocument.Parse(json);
+        using var stream = OpenAssetStream("scores.json");
+        using var jsonDoc = JsonDocument.Parse(stream);
         var scoresElement = jsonDoc.RootElement.GetProperty("scores");
 
         var scores = new Dictionary<char, int>();
         foreach (var property in scoresElement.EnumerateObject())
         {
             if (char.TryParse(property.Name, out var letter))
-            {
                 scores[letter] = property.Value.GetInt32();
-            }
         }
-
         return scores;
     }
 
     private (IReadOnlyDictionary<char, int> Distribution, DistributionScalingRules Rules) LoadTileDistributionSettings()
     {
-        var distributionPath = Path.Combine(_basePath, "assets/tile-distribution.json");
-        if (!File.Exists(distributionPath))
-            throw new FileNotFoundException($"Fichier distribution non trouvé: {distributionPath}");
-
-        var json = File.ReadAllText(distributionPath);
-        using var jsonDoc = JsonDocument.Parse(json);
+        using var stream = OpenAssetStream("tile-distribution.json");
+        using var jsonDoc = JsonDocument.Parse(stream);
         var root = jsonDoc.RootElement;
 
         var baseDistribution = new Dictionary<char, int>();

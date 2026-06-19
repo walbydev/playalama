@@ -2,6 +2,9 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
+        <!-- Nom de l'executable final : 'lama' (Linux/macOS) ou 'lama.exe' (Windows) -->
+        <AssemblyName>lama</AssemblyName>
+        <RootNamespace>Lama.Console</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

@@ -678,16 +678,18 @@ namespace Lama.Languages.fr.UnitTests
         #region Error Handling Tests
 
         [Fact]
-        public void Constructor_ThrowsFileNotFoundExceptionWhenDictionaryMissing()
+        public void Constructor_FallsBackToEmbeddedResourcesWhenDictionaryMissingOnDisk()
         {
-            // Arrange
+            // Arrange : basePath valide mais sans dictionary.txt → fallback embedded attendu
             var tmp = CreateTempBasePath(null, "{ \"scores\": { \"A\": 1 } }");
 
             try
             {
-                // Act & Assert
-                var exception = Assert.Throws<FileNotFoundException>(() => new FrenchLanguageProvider(tmp));
-                Assert.Contains("dictionary", exception.Message, StringComparison.OrdinalIgnoreCase);
+                // Act : ne doit plus lever d'exception grâce aux ressources embarquées
+                var provider = new FrenchLanguageProvider(tmp);
+
+                // Assert : le dictionnaire est chargé depuis l'embedded resource
+                Assert.NotEmpty(provider.GetDictionary());
             }
             finally
             {
@@ -696,16 +698,18 @@ namespace Lama.Languages.fr.UnitTests
         }
 
         [Fact]
-        public void Constructor_ThrowsFileNotFoundExceptionWhenScoresMissing()
+        public void Constructor_FallsBackToEmbeddedResourcesWhenScoresMissingOnDisk()
         {
-            // Arrange
+            // Arrange : basePath valide mais sans scores.json → fallback embedded attendu
             var tmp = CreateTempBasePath("BONJOUR\nSALUT", null);
 
             try
             {
-                // Act & Assert
-                var exception = Assert.Throws<FileNotFoundException>(() => new FrenchLanguageProvider(tmp));
-                Assert.Contains("scores", exception.Message, StringComparison.OrdinalIgnoreCase);
+                // Act : ne doit plus lever d'exception grâce aux ressources embarquées
+                var provider = new FrenchLanguageProvider(tmp);
+
+                // Assert : les scores sont chargés depuis l'embedded resource
+                Assert.NotEmpty(provider.GetLetterScores());
             }
             finally
             {

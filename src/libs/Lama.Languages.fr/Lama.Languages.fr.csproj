@@ -18,4 +18,18 @@
               Link="assets\languages\fr\assets\tile-distribution.json" />
     </ItemGroup>
 
+    <!-- Ressources embarquées : utilisées en mode single-file publish (aucun fichier disque dispo) -->
+    <!-- Le LogicalName est explicite pour éviter toute ambiguïté selon la plateforme de build -->
+    <ItemGroup>
+        <EmbeddedResource Include="assets\dictionary.txt">
+            <LogicalName>Lama.Languages.fr.assets.dictionary.txt</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="assets\scores.json">
+            <LogicalName>Lama.Languages.fr.assets.scores.json</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="assets\tile-distribution.json">
+            <LogicalName>Lama.Languages.fr.assets.tile-distribution.json</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
 </Project>
