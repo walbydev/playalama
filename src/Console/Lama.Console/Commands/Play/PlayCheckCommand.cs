@@ -76,6 +76,11 @@ public sealed class PlayCheckCommand : ICommand
 
             try
             {
+                await _onlineGameGateway.EnsureAuthenticatedAsync(
+                    context.PlayerName ?? "Joueur",
+                    context.PlayerId,
+                    cancellationToken);
+
                 var payload = new
                 {
                     position,

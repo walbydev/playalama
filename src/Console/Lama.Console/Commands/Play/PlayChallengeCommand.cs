@@ -71,6 +71,11 @@ public sealed class PlayChallengeCommand : ICommand
         {
             if (_runtimeMode.IsOnline)
             {
+                await _onlineGameGateway.EnsureAuthenticatedAsync(
+                    context.PlayerName ?? "Joueur",
+                    context.PlayerId,
+                    cancellationToken);
+
                 var response = await _onlineGameGateway.PlayCommandAsync(
                     context.GameId,
                     context.PlayerId,

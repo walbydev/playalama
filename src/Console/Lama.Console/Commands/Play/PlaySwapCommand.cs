@@ -77,6 +77,11 @@ public sealed class PlaySwapCommand : ICommand
         {
             if (_runtimeMode.IsOnline)
             {
+                await _onlineGameGateway.EnsureAuthenticatedAsync(
+                    context.PlayerName ?? "Joueur",
+                    context.PlayerId,
+                    cancellationToken);
+
                 object payload = swapAll
                     ? new { swapAll = true }
                     : new { letters = letters!.ToUpperInvariant(), swapAll = false };

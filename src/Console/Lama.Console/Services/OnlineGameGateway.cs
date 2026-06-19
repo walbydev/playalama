@@ -37,15 +37,33 @@ public sealed class OnlineGameGateway
     /// </summary>
     public async Task<OnlineLoginResponse> LoginAsync(
         string playerName,
+        string? playerId,
         CancellationToken cancellationToken)
     {
         EnsureOnlineMode();
 
-        var request = new { playerName };
-        var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/auth/login", request, cancellationToken);
-        await EnsureSuccessAsync(response, "auth.login", cancellationToken);
+        var payload = await LoginInternalAsync(playerName, playerId, cancellationToken);
+        if (payload == null)
+            throw new InvalidOperationException("Réponse serveur invalide sur auth.login.");
 
-        var payload = await response.Content.ReadFromJsonAsync<OnlineLoginResponse>(JsonOptions, cancellationToken);
+        _authToken = payload.Token;
+        return payload;
+    }
+
+    /// <summary>
+    /// Garantit qu'un token est disponible pour les endpoints protégés.
+    /// </summary>
+    public async Task<OnlineLoginResponse?> EnsureAuthenticatedAsync(
+        string playerName,
+        string? playerId,
+        CancellationToken cancellationToken)
+    {
+        EnsureOnlineMode();
+
+        if (!string.IsNullOrWhiteSpace(_authToken))
+            return null;
+
+        var payload = await LoginInternalAsync(playerName, playerId, cancellationToken);
         if (payload == null)
             throw new InvalidOperationException("Réponse serveur invalide sur auth.login.");
 
@@ -223,6 +241,17 @@ public sealed class OnlineGameGateway
             string.IsNullOrWhiteSpace(errorMessage)
                 ? $"Echec API online {op}: {(int)response.StatusCode}"
                 : $"{errorMessage} (API online {op}, {(int)response.StatusCode})");
+    }
+
+    private async Task<OnlineLoginResponse?> LoginInternalAsync(
+        string playerName,
+        string? playerId,
+        CancellationToken cancellationToken)
+    {
+        var request = new { playerName, playerId };
+        var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/auth/login", request, cancellationToken);
+        await EnsureSuccessAsync(response, "auth.login", cancellationToken);
+        return await response.Content.ReadFromJsonAsync<OnlineLoginResponse>(JsonOptions, cancellationToken);
     }
 }
 

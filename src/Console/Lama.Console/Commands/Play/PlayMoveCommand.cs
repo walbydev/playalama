@@ -144,6 +144,11 @@ public sealed class PlayMoveCommand : ICommand
         {
             if (_runtimeMode.IsOnline)
             {
+                await _onlineGameGateway.EnsureAuthenticatedAsync(
+                    context.PlayerName ?? "Joueur",
+                    context.PlayerId,
+                    cancellationToken);
+
                 var payload = new
                 {
                     position = posStr,

@@ -79,23 +79,30 @@ public sealed class GameJoinCommand : ICommand
 
         try
         {
+            var existingSession = _sessionService.LoadSession();
+
             if (_runtimeMode.IsOnline)
             {
+                _onlineGameGateway.SetAuthToken(existingSession?.AuthToken);
+                var loginResponse = await _onlineGameGateway.EnsureAuthenticatedAsync(
+                    playerName,
+                    existingSession?.PlayerId,
+                    cancellationToken);
+
                 var onlineResponse = await _onlineGameGateway.JoinGameAsync(
                     gameId,
                     playerName,
                     cancellationToken);
 
                 var now = DateTimeOffset.UtcNow;
-                var existingSession = _sessionService.LoadSession();
                 var session = new SessionContext(
                     GameId:         onlineResponse.GameId,
                     PlayerId:       onlineResponse.PlayerId,
                     PlayerName:     playerName,
                     Role:           Role.Player,
                     GameLevel:      onlineResponse.GameLevel,
-                    AuthToken:      existingSession?.AuthToken,
-                    TokenExpiresAt: existingSession?.TokenExpiresAt,
+                    AuthToken:      _onlineGameGateway.GetAuthToken(),
+                    TokenExpiresAt: loginResponse?.ExpiresAt,
                     CreatedAt:      existingSession?.CreatedAt ?? now,
                     UpdatedAt:      now);
 

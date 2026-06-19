@@ -80,9 +80,17 @@ public sealed class GameCreateCommand : ICommand
             string gameId;
             string hostPlayerId;
             List<char>? initialRack = null;
+            OnlineLoginResponse? loginResponse = null;
+            var existingSession = _sessionService.LoadSession();
 
             if (_runtimeMode.IsOnline)
             {
+                _onlineGameGateway.SetAuthToken(existingSession?.AuthToken);
+                loginResponse = await _onlineGameGateway.EnsureAuthenticatedAsync(
+                    hostName,
+                    existingSession?.PlayerId,
+                    cancellationToken);
+
                 var response = await _onlineGameGateway.CreateGameAsync(
                     hostName,
                     gameLevel,
@@ -107,9 +115,9 @@ public sealed class GameCreateCommand : ICommand
                 PlayerName:     hostName,
                 Role:           Role.Host,
                 GameLevel:      gameLevel,
-                AuthToken:      null,
-                TokenExpiresAt: null,
-                CreatedAt:      DateTimeOffset.UtcNow,
+                AuthToken:      _runtimeMode.IsOnline ? _onlineGameGateway.GetAuthToken() : existingSession?.AuthToken,
+                TokenExpiresAt: _runtimeMode.IsOnline ? loginResponse?.ExpiresAt : existingSession?.TokenExpiresAt,
+                CreatedAt:      existingSession?.CreatedAt ?? DateTimeOffset.UtcNow,
                 UpdatedAt:      DateTimeOffset.UtcNow);
 
             _sessionService.SaveSession(session);
