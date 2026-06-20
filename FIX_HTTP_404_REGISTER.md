@@ -9,7 +9,7 @@
 ## 🔧 Problèmes Identifiés
 
 ### Problème 1: URL du Serveur Incorrecte
-**Localisation**: `src/Web/Lama.WebApp/appsettings.json`  
+**Localisation**: `src/Web/Lama.GameWebApp/appsettings.json`
 **Issue**: Le port du serveur était hardcodé à 5000, mais Option A utilise le port **5201**
 
 ```json
@@ -57,7 +57,7 @@ group.MapPost("/register", async (RegisterRequest request, LamaDbContext db) =>
 
 ## 📝 Fichiers Modifiés
 
-### 1. NEW: `src/Web/Lama.WebApp/appsettings.Development.json`
+### 1. NEW: `src/Web/Lama.GameWebApp/appsettings.Development.json`
 ```json
 {
   "Logging": {

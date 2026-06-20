@@ -32,7 +32,7 @@ src/Server/Lama.Server/Properties/launchSettings.json
 ├─ MODIFIED: 5055 → 5201
 └─ ASPNETCORE_ENVIRONMENT=Development
 
-src/Web/Lama.WebApp/Properties/launchSettings.json
+src/Web/Lama.GameWebApp/Properties/launchSettings.json
 ├─ MODIFIED: 5100 → 5202
 ├─ LAMA_SERVER_URL=http://127.0.0.1:5201
 └─ ASPNETCORE_ENVIRONMENT=Development

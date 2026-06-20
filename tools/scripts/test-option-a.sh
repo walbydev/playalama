@@ -74,7 +74,7 @@ echo -e "${BLUE}═════════════════════�
 echo ""
 echo -e "${YELLOW}Prochaines étapes:${NC}"
 echo "  1️⃣  Terminal 1: cd $PROJECT_ROOT && dotnet run --project src/Server/Lama.Server"
-echo "  2️⃣  Terminal 2: cd $PROJECT_ROOT && dotnet run --project src/Web/Lama.WebApp"
+echo "  2️⃣  Terminal 2: cd $PROJECT_ROOT && dotnet run --project src/Web/Lama.GameWebApp"
 echo "  3️⃣  Navigateur: http://localhost:5202"
 echo ""
 echo -e "${YELLOW}Commandes utiles:${NC}"

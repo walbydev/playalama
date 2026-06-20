@@ -62,7 +62,7 @@ Volume     : lama-postgres-data (persistent)
 ### Configuration (5 files)
 - ✅ `docker-compose.local-debug-option-a.yml` 
 - ✅ `src/Server/Lama.Server/Properties/launchSettings.json` (modified)
-- ✅ `src/Web/Lama.WebApp/Properties/launchSettings.json` (modified)
+- ✅ `src/Web/Lama.GameWebApp/Properties/launchSettings.json` (modified)
 - ✅ `src/Server/Lama.Server/appsettings.Development.json` (modified)
 - ✅ `src/Server/Lama.Server/Data/LamaDbContextFactory.cs` (modified)
 

@@ -70,7 +70,7 @@ echo "────────────────────────�
 
 check_file "docker-compose.local-debug-option-a.yml" "Docker Compose (Option A)" || true
 check_file "src/Server/Lama.Server/Properties/launchSettings.json" "Server launchSettings"
-check_file "src/Web/Lama.WebApp/Properties/launchSettings.json" "WebApp launchSettings"
+check_file "src/Web/Lama.GameWebApp/Properties/launchSettings.json" "WebApp launchSettings"
 check_file ".env.example" "Environment variables template"
 
 # ═══════════════════════════════════════════════════════════
@@ -97,7 +97,7 @@ echo -e "${YELLOW}⚙️  Port Configuration${NC}"
 echo "─────────────────────────────────────────────────"
 
 check_contains "src/Server/Lama.Server/Properties/launchSettings.json" "5201" "Server port 5201"
-check_contains "src/Web/Lama.WebApp/Properties/launchSettings.json" "5202" "WebApp port 5202"
+check_contains "src/Web/Lama.GameWebApp/Properties/launchSettings.json" "5202" "WebApp port 5202"
 check_contains "docker-compose.local-debug-option-a.yml" "5200:5432" "PostgreSQL port 5200"
 
 # ═══════════════════════════════════════════════════════════
@@ -114,7 +114,7 @@ echo ""
 echo -e "${YELLOW}🔗 Service Integration${NC}"
 echo "─────────────────────────────────────────────────"
 
-check_contains "src/Web/Lama.WebApp/Properties/launchSettings.json" "5201" "WebApp → Server URL"
+check_contains "src/Web/Lama.GameWebApp/Properties/launchSettings.json" "5201" "WebApp → Server URL"
 check_docker_compose "docker-compose.local-debug-option-a.yml" "Option A Docker Compose"
 
 # ═══════════════════════════════════════════════════════════
@@ -130,7 +130,7 @@ else
     ((FAIL_COUNT++))
 fi
 
-if cd "$PROJECT_ROOT" && dotnet build src/Web/Lama.WebApp -c Debug -q 2>/dev/null; then
+if cd "$PROJECT_ROOT" && dotnet build src/Web/Lama.GameWebApp -c Debug -q 2>/dev/null; then
     echo -e "${GREEN}✓${NC} Lama.WebApp builds successfully"
     ((PASS_COUNT++))
 else

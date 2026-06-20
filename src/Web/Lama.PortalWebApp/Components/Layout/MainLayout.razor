@@ -1,0 +1,33 @@
+@inherits LayoutComponentBase
+
+<div class="shell">
+    <header class="topbar">
+        <a class="brand" href="/">Playalama</a>
+        <nav class="actions">
+            <a class="nav-link" href="/">Accueil</a>
+            <a class="nav-link" href="/rules">Regles</a>
+            <a class="nav-link" href="/downloads">Telechargements</a>
+            <a class="button" href="https://live.playalama.online">Jouer en live</a>
+            <button class="theme-toggle" type="button" @onclick="ToggleTheme" title="Changer le thème">☾</button>
+            <button class="theme-toggle" type="button" @onclick="ToggleDensity" title="Densité">⊡</button>
+        </nav>
+    </header>
+
+    <main>
+        @Body
+    </main>
+
+    <footer class="footer">
+        <span>© LAMA 1.1.0</span>
+        <a href="/rules">Regles</a>
+        <a href="/downloads">Console CLI</a>
+    </footer>
+</div>
+
+@code {
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+
+    private async Task ToggleTheme() => await JS.InvokeVoidAsync("playalamaTheme.toggleTheme");
+    private async Task ToggleDensity() => await JS.InvokeVoidAsync("playalamaTheme.toggleDensity");
+}

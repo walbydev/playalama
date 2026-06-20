@@ -10,7 +10,7 @@ L'erreur HTTP 404 lors de la création de compte était due à **deux problèmes
 ## ✅ Ce qui a été Corrigé
 
 ### 1. URL du Serveur (WebApp)
-- ✅ Créé `src/Web/Lama.WebApp/appsettings.Development.json`
+- ✅ Créé `src/Web/Lama.GameWebApp/appsettings.Development.json`
 - ✅ Configuration: `"BaseUrl": "http://127.0.0.1:5201"`
 
 ### 2. Endpoints Auth (Server)
@@ -102,7 +102,7 @@ curl -X POST http://localhost:5201/api/v1/auth/register \
 
 | Fichier | Change | Raison |
 |---------|--------|--------|
-| `src/Web/Lama.WebApp/appsettings.Development.json` | NEW | Pointer vers port 5201 (Option A) |
+| `src/Web/Lama.GameWebApp/appsettings.Development.json` | NEW | Pointer vers port 5201 (Option A) |
 | `src/Server/Lama.Server/Endpoints/Auth/AuthEndpoints.cs` | MODIFIED | Inliner handlers pour DI correct |
 
 ---

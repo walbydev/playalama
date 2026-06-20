@@ -27,8 +27,8 @@ Passer d'une priorite CLI (1.0.0) a une WebApp (1.1.0) avec:
 
 ## Livrables techniques
 
-- nouveau projet `src/Web/Lama.WebApp` (Blazor Server),
-- tests `tests/Lama.WebApp.UnitTests`,
+- nouveaux projets `src/Web/Lama.GameWebApp` et `src/Web/Lama.PortalWebApp` (Blazor Server),
+- tests `tests/Lama.GameWebApp.UnitTests`,
 - docker `tools/docker/Dockerfile.webapp`,
 - compose et nginx mis a jour pour separation des services.
 

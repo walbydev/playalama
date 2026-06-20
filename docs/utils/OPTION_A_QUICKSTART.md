@@ -5,7 +5,7 @@
 ```
 5200  ← PostgreSQL (Docker)
 5201  ← Lama.Server (.NET natif local)
-5202  ← Lama.WebApp (.NET natif local)
+5202  ← Lama.GameWebApp (.NET natif local)
 ```
 
 ## Démarrage rapide ⚡
@@ -32,7 +32,7 @@ Ou :
 dotnet run --project src/Server/Lama.Server
 ```
 
-### 3️⃣ Terminal 2 → Lama.WebApp sur 5202
+### 3️⃣ Terminal 2 → Lama.GameWebApp sur 5202
 
 ```bash
 make option-a-webapp
@@ -40,7 +40,7 @@ make option-a-webapp
 
 Ou :
 ```bash
-dotnet run --project src/Web/Lama.WebApp
+dotnet run --project src/Web/Lama.GameWebApp
 ```
 
 ### 4️⃣ Accès

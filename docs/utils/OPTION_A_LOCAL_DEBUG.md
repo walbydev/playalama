@@ -47,7 +47,7 @@ Les fichiers suivants ont été mis à jour pour utiliser la séquence 5200/5201
 #### `src/Server/Lama.Server/Data/LamaDbContextFactory.cs`
 - **Connection string de design-time**: `localhost:5200`
 
-#### `src/Web/Lama.WebApp/Properties/launchSettings.json`
+#### `src/Web/Lama.GameWebApp/Properties/launchSettings.json`
 - **Port d'écoute**: `5202`
 - **URL du serveur**: `http://127.0.0.1:5201`
 
@@ -104,7 +104,7 @@ dotnet run --project src/Server/Lama.Server
 **Terminal 3 - Lama.WebApp (port 5202)**:
 ```bash
 cd /home/philippe/RiderProjects/Games/Lama
-dotnet run --project src/Web/Lama.WebApp
+dotnet run --project src/Web/Lama.GameWebApp
 ```
 
 ## Accès à l'application

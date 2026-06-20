@@ -69,8 +69,10 @@
     <Project Path="src/Server/Lama.Server/Lama.Server.csproj" />
   </Folder>
   <Folder Name="/Web/">
-    <Project Path="src/Web/Lama.WebApp/Lama.WebApp.csproj" />
-    <File Path="src\Web\Lama.WebApp\README.md" />
+    <Project Path="src/Web/Lama.PortalWebApp/Lama.PortalWebApp.csproj" />
+    <File Path="src\Web\Lama.PortalWebApp\README.md" />
+    <Project Path="src/Web/Lama.GameWebApp/Lama.GameWebApp.csproj" />
+    <File Path="src\Web\Lama.GameWebApp\README.md" />
   </Folder>
   <Folder Name="/site/" />
   <Folder Name="/site/static/">
@@ -102,7 +104,7 @@
     <Project Path="tests/Lama.Domain.UnitTests/Lama.Domain.UnitTests.csproj" />
     <Project Path="tests/Lama.Infrastructure.UnitTests/Lama.Infrastructure.UnitTests.csproj" />
     <Project Path="tests/Lama.Languages.fr.UnitTests/Lama.Languages.fr.UnitTests.csproj" />
-    <Project Path="tests/Lama.WebApp.UnitTests/Lama.WebApp.UnitTests.csproj" />
+    <Project Path="tests/Lama.GameWebApp.UnitTests/Lama.GameWebApp.UnitTests.csproj" />
     <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
   </Folder>
 </Solution>

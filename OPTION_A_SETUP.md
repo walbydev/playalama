@@ -48,7 +48,7 @@
 ### Configuration Files
 - `docker-compose.local-debug-option-a.yml` (NEW)
 - `src/Server/Lama.Server/Properties/launchSettings.json` (MODIFIED: 5055 → 5201)
-- `src/Web/Lama.WebApp/Properties/launchSettings.json` (MODIFIED: 5100 → 5202, URL updated)
+- `src/Web/Lama.GameWebApp/Properties/launchSettings.json` (MODIFIED: 5100 → 5202, URL updated)
 - `src/Server/Lama.Server/appsettings.Development.json` (MODIFIED: port 5432 → 5200)
 - `src/Server/Lama.Server/Data/LamaDbContextFactory.cs` (MODIFIED: port 5432 → 5200)
 

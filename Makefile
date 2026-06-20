@@ -17,7 +17,7 @@ SHELL := /bin/bash
 ROOT_DIR := $(shell pwd)
 CONSOLE_PROJECT := src/Console/Lama.Console/Lama.Console.csproj
 SERVER_PROJECT  := src/Server/Lama.Server/Lama.Server.csproj
-WEBAPP_PROJECT  := src/Web/Lama.WebApp/Lama.WebApp.csproj
+WEBAPP_PROJECT  := src/Web/Lama.GameWebApp/Lama.GameWebApp.csproj
 DOCKER_LOCAL    := tools/docker/docker-compose.local.yml
 DOCKER_OPTION_A := docker-compose.local-debug-option-a.yml
 
@@ -148,7 +148,7 @@ option-a-server: ## [OPTION A] Lancer Lama.Server natif sur port 5201
 	dotnet run --project $(SERVER_PROJECT)
 
 .PHONY: option-a-webapp
-option-a-webapp: ## [OPTION A] Lancer Lama.WebApp natif sur port 5202
+option-a-webapp: ## [OPTION A] Lancer Lama.GameWebApp natif sur port 5202
 	dotnet run --project $(WEBAPP_PROJECT)
 
 .PHONY: option-a-stop

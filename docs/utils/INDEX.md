@@ -66,7 +66,7 @@ make option-a-clean            # Réinitialiser DB
 - **Env**: Development (auto-migrate activé)
 
 ### Lama.WebApp
-- **Port**: 5202 (défini dans `src/Web/Lama.WebApp/Properties/launchSettings.json`)
+- **Port**: 5202 (défini dans `src/Web/Lama.GameWebApp/Properties/launchSettings.json`)
 - **Server URL**: http://127.0.0.1:5201 (variable `LAMA_SERVER_URL`)
 - **Env**: Development
 

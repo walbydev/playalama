@@ -1,4 +1,4 @@
-# Dockerfile.webapp - Lama GameWebApp (Blazor Server)
+# Dockerfile.portalwebapp - Lama PortalWebApp (Blazor Server)
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
 
@@ -9,11 +9,10 @@ COPY Directory.Build.props ./
 COPY Directory.Packages.props ./
 COPY NuGet.config ./
 
-COPY src/libs ./src/libs
-COPY src/Web/Lama.GameWebApp ./src/Web/Lama.GameWebApp
+COPY src/Web/Lama.PortalWebApp ./src/Web/Lama.PortalWebApp
 
-RUN dotnet restore src/Web/Lama.GameWebApp/Lama.GameWebApp.csproj
-RUN dotnet publish -c Release -o /publish --no-restore src/Web/Lama.GameWebApp/Lama.GameWebApp.csproj
+RUN dotnet restore src/Web/Lama.PortalWebApp/Lama.PortalWebApp.csproj
+RUN dotnet publish -c Release -o /publish --no-restore src/Web/Lama.PortalWebApp/Lama.PortalWebApp.csproj
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
@@ -25,13 +24,13 @@ RUN apt-get update \
 
 COPY --from=builder /publish .
 
-EXPOSE 5050
+EXPOSE 5060
 
-ENV ASPNETCORE_URLS="http://+:5050" \
+ENV ASPNETCORE_URLS="http://+:5060" \
     ASPNETCORE_ENVIRONMENT="Production"
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5050/ || exit 1
+    CMD curl -f http://localhost:5060/ || exit 1
 
-ENTRYPOINT ["dotnet", "Lama.GameWebApp.dll"]
+ENTRYPOINT ["dotnet", "Lama.PortalWebApp.dll"]
 
