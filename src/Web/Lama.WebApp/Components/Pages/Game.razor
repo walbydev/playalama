@@ -77,7 +77,7 @@
                     <label>Direction (H/V)
                         <InputText class="input" @bind-Value="playForm.Direction" />
                     </label>
-                    <button class="button" type="submit" disabled="@busy">Jouer</button>
+                    <button class="button" type="submit" disabled="@(busy || (snapshot.UsesLobby && !snapshot.HasStarted))">Jouer</button>
                 </EditForm>
             </article>
         </div>

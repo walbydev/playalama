@@ -198,6 +198,10 @@ health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 
 	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO" || true
 	@curl -fsS http://localhost:5202/ && echo "✓ WebApp (5202) OK" || echo "✗ WebApp (5202) KO" || true
 
+.PHONY: web-lobby-smoke
+web-lobby-smoke: ## [OPTION A] Smoke test Web lobby (register/create/start/my-games)
+	bash tools/scripts/e2e-web-lobby-smoke.sh
+
 .PHONY: health-prod
 health-prod: ## Vérifier les endpoints de production
 	@curl -fsS https://playalama.online/health && echo "✓ Prod OK" || echo "✗ Prod KO"
