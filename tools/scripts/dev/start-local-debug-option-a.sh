@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-COMPOSE_FILE="$PROJECT_ROOT/docker-compose.local-debug-option-a.yml"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+COMPOSE_FILE="$PROJECT_ROOT/tools/docker/docker-compose.local-debug.yml"
 
 # Couleurs pour l'output
 GREEN='\033[0;32m'

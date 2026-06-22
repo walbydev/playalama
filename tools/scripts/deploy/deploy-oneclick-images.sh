@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
 REMOTE_TARGET="${LAMA_DEPLOY_TARGET:-debian@playalama.online}"
 REMOTE_BASE_DIR="${LAMA_DEPLOY_REMOTE_BASE:-/opt/playalama}"

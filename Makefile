@@ -25,7 +25,7 @@ CONSOLE_PROJECT := src/apps/Lama.Console/Lama.Console.csproj
 SERVER_PROJECT  := src/apps/Lama.Server/Lama.Server.csproj
 WEBAPP_PROJECT  := src/apps/Lama.GameWebApp/Lama.GameWebApp.csproj
 DOCKER_LOCAL    := tools/docker/docker-compose.local.yml
-DOCKER_OPTION_A := tools/docker/docker-compose.local-debug-option-a.yml
+DOCKER_OPTION_A := tools/docker/docker-compose.local-debug.yml
 
 # SSH_KEY peut être surchargé : make deploy-server-prod SSH_KEY=~/.ssh/machines/playalama.key
 SSH_KEY         ?= $(LAMA_DEPLOY_SSH_KEY)
@@ -98,7 +98,7 @@ deploy-site-prod: ## [Cas 6] Déployer site statique sur VPS  →  make deploy-s
 	  echo "⚠  SSH_KEY non définie. Usage : make deploy-site-prod SSH_KEY=~/.ssh/machines/playalama.key"; \
 	  exit 1; \
 	fi
-	bash tools/deployments/deploy-static-site.sh \
+	bash tools/scripts/deploy/deploy-static-site.sh \
 	  --mode prod \
 	  --target debian@playalama.online \
 	  --ssh-key $(SSH_KEY)
@@ -109,7 +109,7 @@ deploy-site-prod-dry: ## [Cas 6 - simulation] Dry-run du déploiement site VPS
 	  echo "⚠  SSH_KEY non définie. Usage : make deploy-site-prod-dry SSH_KEY=~/.ssh/machines/playalama.key"; \
 	  exit 1; \
 	fi
-	bash tools/deployments/deploy-static-site.sh \
+	bash tools/scripts/deploy/deploy-static-site.sh \
 	  --mode prod \
 	  --target debian@playalama.online \
 	  --ssh-key $(SSH_KEY) \
@@ -124,7 +124,7 @@ deploy-server-prod: ## [Cas 7] Build + publish + déployer Lama.Server sur VPS
 	  echo "⚠  SSH_KEY non définie. Usage : make deploy-server-prod SSH_KEY=~/.ssh/machines/playalama.key"; \
 	  exit 1; \
 	fi
-	bash tools/deployments/deploy-vps.sh \
+	bash tools/scripts/deploy/deploy-vps.sh \
 	  --target debian@playalama.online \
 	  --ssh-key $(SSH_KEY)
 
@@ -134,7 +134,7 @@ deploy-server-prod-dry: ## [Cas 7 - simulation] Dry-run du déploiement serveur 
 	  echo "⚠  SSH_KEY non définie."; \
 	  exit 1; \
 	fi
-	bash tools/deployments/deploy-vps.sh \
+	bash tools/scripts/deploy/deploy-vps.sh \
 	  --target debian@playalama.online \
 	  --ssh-key $(SSH_KEY) \
 	  --dry-run
@@ -153,7 +153,7 @@ setup-vps: ## [VPS] Initialisation du VPS (1 seule fois) — installe Docker, cr
 	  echo "⚠  SSH_KEY non définie. Usage : make setup-vps SSH_KEY=~/.ssh/playalama.key"; \
 	  exit 1; \
 	fi
-	bash tools/deployments/setup-vps.sh \
+	bash tools/scripts/deploy/setup-vps.sh \
 	  --target $(DEPLOY_TARGET) \
 	  --ssh-key $(SSH_KEY)
 
@@ -163,7 +163,7 @@ setup-vps-dry: ## [VPS] Simulation du setup VPS (dry-run)
 	  echo "⚠  SSH_KEY non définie."; \
 	  exit 1; \
 	fi
-	bash tools/deployments/setup-vps.sh \
+	bash tools/scripts/deploy/setup-vps.sh \
 	  --target $(DEPLOY_TARGET) \
 	  --ssh-key $(SSH_KEY) \
 	  --dry-run
@@ -185,14 +185,14 @@ deploy-prod: ## [VPS] Déployer PROD → https://playalama.online
 	  echo "⚠  SSH_KEY non définie. Usage : make deploy-prod SSH_KEY=~/.ssh/playalama.key"; \
 	  exit 1; \
 	fi
-	bash tools/deployments/deploy-env.sh \
+	bash tools/scripts/deploy/deploy-env.sh \
 	  --env prod \
 	  --target $(DEPLOY_TARGET) \
 	  --ssh-key $(SSH_KEY)
 
 .PHONY: deploy-prod-dry
 deploy-prod-dry: ## [VPS] Simulation déploiement PROD (dry-run)
-	bash tools/deployments/deploy-env.sh \
+	bash tools/scripts/deploy/deploy-env.sh \
 	  --env prod \
 	  --target $(DEPLOY_TARGET) \
 	  --ssh-key $(SSH_KEY) \
@@ -204,14 +204,14 @@ deploy-staging: ## [VPS] Déployer STAGING → https://staging.playalama.online
 	  echo "⚠  SSH_KEY non définie. Usage : make deploy-staging SSH_KEY=~/.ssh/playalama.key"; \
 	  exit 1; \
 	fi
-	bash tools/deployments/deploy-env.sh \
+	bash tools/scripts/deploy/deploy-env.sh \
 	  --env staging \
 	  --target $(DEPLOY_TARGET) \
 	  --ssh-key $(SSH_KEY)
 
 .PHONY: deploy-staging-dry
 deploy-staging-dry: ## [VPS] Simulation déploiement STAGING (dry-run)
-	bash tools/deployments/deploy-env.sh \
+	bash tools/scripts/deploy/deploy-env.sh \
 	  --env staging \
 	  --target $(DEPLOY_TARGET) \
 	  --ssh-key $(SSH_KEY) \
@@ -242,7 +242,7 @@ logs-staging: ## Afficher les logs STAGING en temps réel (lama-server-staging)
 # =============================================================================
 .PHONY: option-a-start
 option-a-start: ## [OPTION A] Démarrer PostgreSQL en Docker (ports 5200/5201/5202)
-	bash tools/scripts/start-local-debug-option-a.sh
+	bash tools/scripts/dev/start-local-debug-option-a.sh
 
 .PHONY: option-a-server
 option-a-server: ## [OPTION A] Lancer Lama.Server natif sur port 5201
@@ -301,7 +301,7 @@ health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 
 
 .PHONY: web-lobby-smoke
 web-lobby-smoke: ## [OPTION A] Smoke test Web lobby (register/create/start/my-games)
-	bash tools/scripts/e2e-web-lobby-smoke.sh
+	bash tools/scripts/e2e/e2e-web-lobby-smoke.sh
 
 # =============================================================================
 # Aide

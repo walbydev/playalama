@@ -12,7 +12,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+PROJECT_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 echo "═══════════════════════════════════════════"
 echo "CG-02 Recette Interactive Manuelle"
@@ -33,27 +33,27 @@ trap cleanup EXIT
 
 echo "[1/5] Créer une partie (hôte Alice)"
 echo "Nouvelle partie" | \
-(timeout 5 dotnet run --project "$PROJECT_ROOT/src/Console/Lama.Console" -- 2>&1 || true) | head -20
+(timeout 5 dotnet run --project "$PROJECT_ROOT/src/apps/Lama.Console" -- 2>&1 || true) | head -20
 
 echo ""
 echo "[2/5] Rejoindre la partie (invité Bob)"
 echo "Note: Cette étape est effectuée manuellement"
-echo "  Commande: dotnet run --project src/Console/Lama.Console -- game join <game-id> Bob"
+echo "  Commande: dotnet run --project src/apps/Lama.Console -- game join <game-id> Bob"
 
 echo ""
 echo "[3/5] Jouer un coup (move)"
 echo "Note: Cette étape est effectuée manuellement"
-echo "  Commande: dotnet run --project src/Console/Lama.Console -- play move H8 LAMA H"
+echo "  Commande: dotnet run --project src/apps/Lama.Console -- play move H8 LAMA H"
 
 echo ""
 echo "[4/5] Afficher le plateau"
 echo "Note: Cette étape est effectuée manuellement"
-echo "  Commande: dotnet run --project src/Console/Lama.Console -- show board"
+echo "  Commande: dotnet run --project src/apps/Lama.Console -- show board"
 
 echo ""
 echo "[5/5] Terminer la partie"
 echo "Note: Cette étape est effectuée manuellement"
-echo "  Commande: dotnet run --project src/Console/Lama.Console -- game end"
+echo "  Commande: dotnet run --project src/apps/Lama.Console -- game end"
 
 echo ""
 echo "═══════════════════════════════════════════"
@@ -64,7 +64,7 @@ echo "1. Lancer le mode interactif:"
 echo "   \$ cd $PROJECT_ROOT"
 echo "   \$ export LAMA_SESSION_DIR=/tmp/lama_cg02_test"
 echo "   \$ mkdir -p \$LAMA_SESSION_DIR"
-echo "   \$ dotnet run --project src/Console/Lama.Console"
+echo "   \$ dotnet run --project src/apps/Lama.Console"
 echo ""
 echo "2. Menu principal: Sélectionner 'Nouvelle partie'"
 echo "   → Entrer le nom d'hôte: Alice"

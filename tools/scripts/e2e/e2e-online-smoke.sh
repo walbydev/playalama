@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SERVER_PROJECT="$ROOT_DIR/src/Server/Lama.Server/Lama.Server.csproj"
-CONSOLE_PROJECT="$ROOT_DIR/src/Console/Lama.Console/Lama.Console.csproj"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+SERVER_PROJECT="$ROOT_DIR/src/apps/Lama.Server/Lama.Server.csproj"
+CONSOLE_PROJECT="$ROOT_DIR/src/apps/Lama.Console/Lama.Console.csproj"
 
 SESSION_DIR_HOST="$(mktemp -d)"
 SESSION_DIR_GUEST="$(mktemp -d)"

@@ -17,7 +17,7 @@ set -euo pipefail
 # ── Chemins ────────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-CONSOLE_PROJ="${ROOT_DIR}/src/Console/Lama.Console/Lama.Console.csproj"
+CONSOLE_PROJ="${ROOT_DIR}/src/apps/Lama.Console/Lama.Console.csproj"
 README_SRC="${ROOT_DIR}/tools/distribution/README.txt"
 ARTIFACTS_DIR="${ROOT_DIR}/artifacts"
 PUBLISH_BASE="${ARTIFACTS_DIR}/publish"

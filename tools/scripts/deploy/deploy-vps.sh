@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 SOLUTION_FILE="$ROOT_DIR/Lama.slnx"
-SERVER_PROJECT="$ROOT_DIR/src/Server/Lama.Server/Lama.Server.csproj"
+SERVER_PROJECT="$ROOT_DIR/src/apps/Lama.Server/Lama.Server.csproj"
 STAGE_DIR="$ROOT_DIR/.deploy/stage"
 
 REMOTE_TARGET="${LAMA_DEPLOY_TARGET:-debian@playalama.online}"

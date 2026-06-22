@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 SESSION_DIR="$(mktemp -d)"
 
 cleanup() {
@@ -12,7 +12,7 @@ trap cleanup EXIT
 export LAMA_SESSION_DIR="$SESSION_DIR"
 
 run_lama() {
-  dotnet run --project "$ROOT_DIR/src/Console/Lama.Console/Lama.Console.csproj" -- "$@"
+  dotnet run --project "$ROOT_DIR/src/apps/Lama.Console/Lama.Console.csproj" -- "$@"
 }
 
 assert_contains() {

@@ -157,7 +157,7 @@ run_remote "
 # ─────────────────────────────────────────────────────────
 log "[4/6] Déploiement de Traefik..."
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
 # Copier la config Traefik
 copy_file "$ROOT_DIR/tools/docker/traefik.yml"              "/opt/playalama/traefik/traefik.yml"

@@ -8,7 +8,7 @@ set -euo pipefail
 # Déterminer le répertoire racine du projet
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CONSOLE_PROJECT="$PROJECT_ROOT/src/Console/Lama.Console/Lama.Console.csproj"
+CONSOLE_PROJECT="$PROJECT_ROOT/src/apps/Lama.Console/Lama.Console.csproj"
 
 # Créer l'alias lama
 # Cet alias :

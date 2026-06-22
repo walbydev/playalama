@@ -33,7 +33,7 @@
 - `dotnet build` puis `dotnet test`
 - CLI locale : `dotnet run --project src/apps/Lama.Console -- game create Alice`
 - Serveur : `dotnet run --project src/apps/Lama.Server --urls http://127.0.0.1:5055`
-- Smoke online : `tools/scripts/e2e-online-smoke.sh`
+- Smoke online : `tools/scripts/e2e/e2e-online-smoke.sh`
 
 ## Points d’attention
 - `LAMA_RUNTIME_MODE=online|local` et `LAMA_SERVER_URL` pilotent le routage CLI.
@@ -48,5 +48,5 @@
 - `src/libs/Lama.Core/UseCases/CreateGameUseCase.cs`
 - `src/libs/Lama.Domain/Engine/GameEngine.cs`
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
-- `tools/scripts/e2e-online-smoke.sh`
+- `tools/scripts/e2e/e2e-online-smoke.sh`
 

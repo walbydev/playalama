@@ -6,7 +6,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 echo "========================================"
 echo "🎮 LAMA Server - Mode Développement"
@@ -52,7 +52,7 @@ if [ "$RELEASE_MODE" = true ]; then
 fi
 
 echo "📦 Compilation du projet..."
-dotnet build -c "$CONFIG" "$PROJECT_ROOT/src/Server/Lama.Server/Lama.Server.csproj"
+dotnet build -c "$CONFIG" "$PROJECT_ROOT/src/apps/Lama.Server/Lama.Server.csproj"
 
 if [ "$BUILD_ONLY" = true ]; then
     echo ""

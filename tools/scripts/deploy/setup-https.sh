@@ -7,9 +7,9 @@ set -e
 
 DOMAIN="playalama.online"
 LAMA_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$(dirname "$LAMA_SCRIPT_DIR")")"
+PROJECT_ROOT="$(dirname "$(dirname "$(dirname "$LAMA_SCRIPT_DIR")")")"
 NGINX_CONF="/etc/nginx/sites-available/playalama.online"
-NGINX_CONF_SRC="$LAMA_SCRIPT_DIR/../docker/nginx-playalama.conf"
+NGINX_CONF_SRC="$LAMA_SCRIPT_DIR/../../docker/nginx-playalama.conf"
 
 # Vérifier les droits root
 if [[ $EUID -ne 0 ]]; then
@@ -80,7 +80,7 @@ echo "========================================"
 echo ""
 echo "Étapes suivantes :"
 echo "1. Démarrer le serveur Lama :"
-echo "   dotnet run --project $PROJECT_ROOT/src/Server/Lama.Server"
+echo "   dotnet run --project $PROJECT_ROOT/src/apps/Lama.Server"
 echo ""
 echo "2. Vérifier la configuration :"
 echo "   curl -s https://$DOMAIN/health | jq"
