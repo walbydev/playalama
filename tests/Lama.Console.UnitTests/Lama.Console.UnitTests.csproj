@@ -22,7 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Console\Lama.Console\Lama.Console.csproj" />
+        <ProjectReference Include="..\..\src\apps\Lama.Console\Lama.Console.csproj" />
     </ItemGroup>
 
 </Project>

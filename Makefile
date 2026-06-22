@@ -21,11 +21,11 @@
 
 SHELL := /bin/bash
 ROOT_DIR := $(shell pwd)
-CONSOLE_PROJECT := src/Console/Lama.Console/Lama.Console.csproj
-SERVER_PROJECT  := src/Server/Lama.Server/Lama.Server.csproj
-WEBAPP_PROJECT  := src/Web/Lama.GameWebApp/Lama.GameWebApp.csproj
+CONSOLE_PROJECT := src/apps/Lama.Console/Lama.Console.csproj
+SERVER_PROJECT  := src/apps/Lama.Server/Lama.Server.csproj
+WEBAPP_PROJECT  := src/apps/Lama.GameWebApp/Lama.GameWebApp.csproj
 DOCKER_LOCAL    := tools/docker/docker-compose.local.yml
-DOCKER_OPTION_A := docker-compose.local-debug-option-a.yml
+DOCKER_OPTION_A := tools/docker/docker-compose.local-debug-option-a.yml
 
 # SSH_KEY peut être surchargé : make deploy-server-prod SSH_KEY=~/.ssh/machines/playalama.key
 SSH_KEY         ?= $(LAMA_DEPLOY_SSH_KEY)

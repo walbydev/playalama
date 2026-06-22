@@ -1,13 +1,47 @@
 <Solution>
   <Folder Name="/Apps/">
-    <File Path="site\static\index.html" />
-    <Project Path="src/Console/Lama.Console/Lama.Console.csproj" />
+    <Project Path="src/apps/Lama.Console/Lama.Console.csproj" />
+    <Project Path="src/apps/Lama.Server/Lama.Server.csproj" />
+    <Project Path="src/apps/Lama.GameWebApp/Lama.GameWebApp.csproj" />
+    <Project Path="src/apps/Lama.PortalWebApp/Lama.PortalWebApp.csproj" />
   </Folder>
-  <Folder Name="/docs/">
+  <Folder Name="/Libraries/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <Project Path="src/libs/Lama.Contracts/Lama.Contracts.csproj" />
+    <Project Path="src/libs/Lama.Domain/Lama.Domain.csproj" />
+    <Project Path="src/libs/Lama.Core/Lama.Core.csproj" />
+    <Project Path="src/libs/Lama.Infrastructure/Lama.Infrastructure.csproj" />
+    <Project Path="src/libs/Lama.Languages.fr/Lama.Languages.fr.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />
+    <Project Path="tests/Lama.Core.UnitTests/Lama.Core.UnitTests.csproj" />
+    <Project Path="tests/Lama.Domain.UnitTests/Lama.Domain.UnitTests.csproj" />
+    <Project Path="tests/Lama.Infrastructure.UnitTests/Lama.Infrastructure.UnitTests.csproj" />
+    <Project Path="tests/Lama.Languages.fr.UnitTests/Lama.Languages.fr.UnitTests.csproj" />
+    <Project Path="tests/Lama.GameWebApp.UnitTests/Lama.GameWebApp.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/Site/">
+    <File Path="site/static/index.html" />
+    <File Path="site/static/README.md" />
+    <File Path="site/static/assets/css/site.css" />
+    <File Path="site/static/assets/data/releases.json" />
+    <File Path="site/static/assets/img/favicon.svg" />
+    <File Path="site/static/assets/img/og-card.svg" />
+    <File Path="site/static/assets/js/download.js" />
+    <File Path="site/static/assets/js/status.js" />
+    <File Path="site/static/assets/js/theme.js" />
+    <File Path="site/static/download/index.html" />
+  </Folder>
+  <Folder Name="/Docs/">
     <File Path="AGENTS.md" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/docs/architecture/">
+  <Folder Name="/Docs/architecture/">
     <File Path="docs/architecture/DOCKER_DEPLOYMENT.md" />
     <File Path="docs/architecture/HTTPS_DEPLOYMENT.md" />
     <File Path="docs/architecture/HTTPS_MIGRATION_PLAN.md" />
@@ -21,7 +55,7 @@
     <File Path="docs/architecture/crossing-rules.md" />
     <File Path="docs/architecture/defines-CLI.md" />
   </Folder>
-  <Folder Name="/docs/roadmap/">
+  <Folder Name="/Docs/roadmap/">
     <File Path="docs/roadmap/CG-02_CERTIFICAT_CLOTURE.md" />
     <File Path="docs/roadmap/CG-02_RAPPORT_VALIDATION.md" />
     <File Path="docs/roadmap/LISTE_COURTE_JEU_CLASSIQUE.md" />
@@ -39,12 +73,17 @@
     <File Path="docs/roadmap/RESUME_SOLUTION_HTTPS.md" />
     <File Path="docs/roadmap/COMMENCEZ_ICI.md" />
     <File Path="docs/roadmap/PLAN_MIGRATION_MULTIJOUEUR.md" />
+    <File Path="docs/roadmap/ACTION_HTTP_404_FIX.md" />
+    <File Path="docs/roadmap/FIX_HTTP_404_REGISTER.md" />
+    <File Path="docs/roadmap/OPTION_A_DELIVERY.md" />
+    <File Path="docs/roadmap/OPTION_A_SETUP.md" />
+    <File Path="docs/roadmap/STATUS_OPTION_A.md" />
   </Folder>
-  <Folder Name="/docs/evolutions/">
+  <Folder Name="/Docs/evolutions/">
     <File Path="docs/evolutions/INDEX.md" />
     <File Path="docs/evolutions/MULTILANGUE_JEU_BILINGUE.md" />
   </Folder>
-  <Folder Name="/docs/utils/">
+  <Folder Name="/Docs/utils/">
     <File Path="docs/utils/GUIDE_DEMARRAGE_DEV.md" />
     <File Path="docs/utils/ALIAS_LAMA_CONFIG.md" />
     <File Path="docs/utils/ALIAS_QUICK_SETUP.md" />
@@ -55,56 +94,5 @@
     <File Path="docs/utils/POSTGRESQL_QUICKSTART.md" />
     <File Path="docs/utils/START_INFRA_README.md" />
     <File Path="docs/utils/tools.md" />
-  </Folder>
-  <Folder Name="/Libraries/">
-    <File Path="Directory.Build.props" />
-    <File Path="Directory.Packages.props" />
-    <Project Path="src/libs/Lama.Contracts/Lama.Contracts.csproj" />
-    <Project Path="src/libs/Lama.Core/Lama.Core.csproj" />
-    <Project Path="src/libs/Lama.Domain/Lama.Domain.csproj" />
-    <Project Path="src/libs/Lama.Infrastructure/Lama.Infrastructure.csproj" />
-    <Project Path="src/libs/Lama.Languages.fr/Lama.Languages.fr.csproj" />
-  </Folder>
-  <Folder Name="/Server/">
-    <Project Path="src/Server/Lama.Server/Lama.Server.csproj" />
-  </Folder>
-  <Folder Name="/Web/">
-    <Project Path="src/Web/Lama.PortalWebApp/Lama.PortalWebApp.csproj" />
-    <File Path="src\Web\Lama.PortalWebApp\README.md" />
-    <Project Path="src/Web/Lama.GameWebApp/Lama.GameWebApp.csproj" />
-    <File Path="src\Web\Lama.GameWebApp\README.md" />
-  </Folder>
-  <Folder Name="/site/" />
-  <Folder Name="/site/static/">
-    <File Path="site\static\index.html" />
-    <File Path="site\static\README.md" />
-  </Folder>
-  <Folder Name="/site/static/assets/" />
-  <Folder Name="/site/static/assets/css/">
-    <File Path="site\static\assets\css\site.css" />
-  </Folder>
-  <Folder Name="/site/static/assets/data/">
-    <File Path="site\static\assets\data\releases.json" />
-  </Folder>
-  <Folder Name="/site/static/assets/img/">
-    <File Path="site\static\assets\img\favicon.svg" />
-    <File Path="site\static\assets\img\og-card.svg" />
-  </Folder>
-  <Folder Name="/site/static/assets/js/">
-    <File Path="site\static\assets\js\download.js" />
-    <File Path="site\static\assets\js\status.js" />
-    <File Path="site\static\assets\js\theme.js" />
-  </Folder>
-  <Folder Name="/site/static/download/">
-    <File Path="site\static\download\index.html" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />
-    <Project Path="tests/Lama.Core.UnitTests/Lama.Core.UnitTests.csproj" />
-    <Project Path="tests/Lama.Domain.UnitTests/Lama.Domain.UnitTests.csproj" />
-    <Project Path="tests/Lama.Infrastructure.UnitTests/Lama.Infrastructure.UnitTests.csproj" />
-    <Project Path="tests/Lama.Languages.fr.UnitTests/Lama.Languages.fr.UnitTests.csproj" />
-    <Project Path="tests/Lama.GameWebApp.UnitTests/Lama.GameWebApp.UnitTests.csproj" />
-    <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
   </Folder>
 </Solution>

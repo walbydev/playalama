@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Web\Lama.GameWebApp\Lama.GameWebApp.csproj" />
+    <ProjectReference Include="..\..\src\apps\Lama.GameWebApp\Lama.GameWebApp.csproj" />
   </ItemGroup>
 
 </Project>

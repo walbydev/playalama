@@ -8,7 +8,7 @@
 - Chaîne logique : `Lama.Contracts` -> `Lama.Domain` -> `Lama.Core` -> `Lama.Infrastructure` -> `Lama.Console` / `Lama.Server`.
 - Pas de logique métier dans la console ; les règles vivent dans `Lama.Domain` puis sont exposées par les use cases `Lama.Core`.
 - `CreateGameUseCase` gère un cache mémoire + restauration JSON inter-process.
-- `Lama.Server` est autoritaire en mémoire (`GameHubState`) avec fallback EF Core lecture dans `src/Server/Lama.Server/Program.cs`.
+- `Lama.Server` est autoritaire en mémoire (`GameHubState`) avec fallback EF Core lecture dans `src/apps/Lama.Server/Program.cs`.
 
 ## Organisation documentaire
 - `docs/architecture/` : infra, sécurité, DB, déploiement, règles structurantes.
@@ -31,20 +31,20 @@
 ## Workflow minimal
 - `dotnet tool restore`
 - `dotnet build` puis `dotnet test`
-- CLI locale : `dotnet run --project src/Console/Lama.Console -- game create Alice`
-- Serveur : `dotnet run --project src/Server/Lama.Server --urls http://127.0.0.1:5055`
+- CLI locale : `dotnet run --project src/apps/Lama.Console -- game create Alice`
+- Serveur : `dotnet run --project src/apps/Lama.Server --urls http://127.0.0.1:5055`
 - Smoke online : `tools/scripts/e2e-online-smoke.sh`
 
 ## Points d’attention
 - `LAMA_RUNTIME_MODE=online|local` et `LAMA_SERVER_URL` pilotent le routage CLI.
 - `LAMA_SESSION_DIR` est clé pour l’isolation des tests.
 - `FrenchLanguageProvider` charge les assets depuis `assets/languages/fr`.
-- `src/Server/Lama.Server/Program.cs` est monolithique : changements minimaux, couverts par tests.
+- `src/apps/Lama.Server/Program.cs` est monolithique : changements minimaux, couverts par tests.
 
 ## Fichiers d’entrée prioritaires
-- `src/Console/Lama.Console/Program.cs`
-- `src/Console/Lama.Console/Services/CommandContextParser.cs`
-- `src/Console/Lama.Console/Services/CommandDispatcher.cs`
+- `src/apps/Lama.Console/Program.cs`
+- `src/apps/Lama.Console/Services/CommandContextParser.cs`
+- `src/apps/Lama.Console/Services/CommandDispatcher.cs`
 - `src/libs/Lama.Core/UseCases/CreateGameUseCase.cs`
 - `src/libs/Lama.Domain/Engine/GameEngine.cs`
 - `tests/Lama.Console.UnitTests/RealCliE2ETests.cs`
