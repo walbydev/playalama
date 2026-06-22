@@ -1,0 +1,40 @@
+# Traefik v3 — Configuration statique
+# Déployé sur le VPS à : /opt/playalama/traefik/traefik.yml
+# Gère le SSL Let's Encrypt + routing pour playalama.online et staging.playalama.online
+
+api:
+  dashboard: true
+  insecure: true   # Dashboard sur 127.0.0.1:8080 uniquement (non exposé au public)
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@playalama.online
+      storage: /acme.json
+      httpChallenge:
+        entryPoint: web
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: traefik-net
+
+log:
+  level: INFO
+  filePath: /logs/traefik.log
+
+accessLog:
+  filePath: /logs/access.log

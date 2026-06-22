@@ -3,14 +3,20 @@
 # =============================================================================
 # Usage : make <cible> [ARGS="..."] [SSH_KEY="~/.ssh/..."]
 #
-# 7 scénarios de démarrage / déploiement :
+# Déploiement VPS (PROD + STAGING avec Traefik) :
+#   setup-vps        Initialisation VPS (1 seule fois)
+#   deploy-traefik   (Re)déployer Traefik sur le VPS
+#   deploy-prod      Déployer l'environnement PROD  (playalama.online)
+#   deploy-staging   Déployer l'environnement STAGING (staging.playalama.online)
+#
+# 7 scénarios de démarrage local / CI :
 #   1. dev-local         Debug CLI en local (même PC, sans serveur)
 #   2. dev-server        Serveur ASP.NET en mode développement (Rider ou terminal)
 #   3. run-local         Exécution CLI locale simple (sans Rider)
 #   4. docker-site-local Déploiement site web en local via Docker
 #   5. docker-local      Déploiement + exécution stack complète en local (Docker)
-#   6. deploy-site-prod  Déploiement site web sur VPS production
-#   7. deploy-server-prod Déploiement serveur de jeu sur VPS production
+#   6. deploy-site-prod  Déploiement site web sur VPS production (legacy)
+#   7. deploy-server-prod Déploiement serveur de jeu sur VPS production (legacy)
 # =============================================================================
 
 SHELL := /bin/bash
@@ -134,7 +140,102 @@ deploy-server-prod-dry: ## [Cas 7 - simulation] Dry-run du déploiement serveur 
 	  --dry-run
 
 .PHONY: deploy-all-prod
-deploy-all-prod: deploy-site-prod deploy-server-prod ## [Cas 6+7] Déploiement complet VPS (site + serveur)
+deploy-all-prod: deploy-site-prod deploy-server-prod ## [Cas 6+7] Déploiement complet VPS (site + serveur) — LEGACY
+
+# =============================================================================
+# VPS PROD + STAGING — Déploiement Dockerisé avec Traefik
+# =============================================================================
+DEPLOY_TARGET ?= debian@playalama.online
+
+.PHONY: setup-vps
+setup-vps: ## [VPS] Initialisation du VPS (1 seule fois) — installe Docker, crée la structure, clone le repo, lance Traefik
+	@if [ -z "$(SSH_KEY)" ]; then \
+	  echo "⚠  SSH_KEY non définie. Usage : make setup-vps SSH_KEY=~/.ssh/playalama.key"; \
+	  exit 1; \
+	fi
+	bash tools/deployments/setup-vps.sh \
+	  --target $(DEPLOY_TARGET) \
+	  --ssh-key $(SSH_KEY)
+
+.PHONY: setup-vps-dry
+setup-vps-dry: ## [VPS] Simulation du setup VPS (dry-run)
+	@if [ -z "$(SSH_KEY)" ]; then \
+	  echo "⚠  SSH_KEY non définie."; \
+	  exit 1; \
+	fi
+	bash tools/deployments/setup-vps.sh \
+	  --target $(DEPLOY_TARGET) \
+	  --ssh-key $(SSH_KEY) \
+	  --dry-run
+
+.PHONY: deploy-traefik
+deploy-traefik: ## [VPS] (Re)déployer Traefik sur le VPS
+	@if [ -z "$(SSH_KEY)" ]; then \
+	  echo "⚠  SSH_KEY non définie. Usage : make deploy-traefik SSH_KEY=~/.ssh/playalama.key"; \
+	  exit 1; \
+	fi
+	scp -i $(SSH_KEY) tools/docker/traefik.yml               $(DEPLOY_TARGET):/opt/playalama/traefik/traefik.yml
+	scp -i $(SSH_KEY) tools/docker/docker-compose.traefik.yml $(DEPLOY_TARGET):/opt/playalama/traefik/docker-compose.yml
+	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
+	  "cd /opt/playalama/traefik && docker compose pull && docker compose up -d"
+
+.PHONY: deploy-prod
+deploy-prod: ## [VPS] Déployer PROD → https://playalama.online
+	@if [ -z "$(SSH_KEY)" ]; then \
+	  echo "⚠  SSH_KEY non définie. Usage : make deploy-prod SSH_KEY=~/.ssh/playalama.key"; \
+	  exit 1; \
+	fi
+	bash tools/deployments/deploy-env.sh \
+	  --env prod \
+	  --target $(DEPLOY_TARGET) \
+	  --ssh-key $(SSH_KEY)
+
+.PHONY: deploy-prod-dry
+deploy-prod-dry: ## [VPS] Simulation déploiement PROD (dry-run)
+	bash tools/deployments/deploy-env.sh \
+	  --env prod \
+	  --target $(DEPLOY_TARGET) \
+	  --ssh-key $(SSH_KEY) \
+	  --dry-run
+
+.PHONY: deploy-staging
+deploy-staging: ## [VPS] Déployer STAGING → https://staging.playalama.online
+	@if [ -z "$(SSH_KEY)" ]; then \
+	  echo "⚠  SSH_KEY non définie. Usage : make deploy-staging SSH_KEY=~/.ssh/playalama.key"; \
+	  exit 1; \
+	fi
+	bash tools/deployments/deploy-env.sh \
+	  --env staging \
+	  --target $(DEPLOY_TARGET) \
+	  --ssh-key $(SSH_KEY)
+
+.PHONY: deploy-staging-dry
+deploy-staging-dry: ## [VPS] Simulation déploiement STAGING (dry-run)
+	bash tools/deployments/deploy-env.sh \
+	  --env staging \
+	  --target $(DEPLOY_TARGET) \
+	  --ssh-key $(SSH_KEY) \
+	  --dry-run
+
+.PHONY: health-prod
+health-prod: ## Vérifier l'état de PROD (https://playalama.online/health)
+	@curl -fsS https://playalama.online/health && echo "✓ Prod OK" || echo "✗ Prod KO"
+
+.PHONY: health-staging
+health-staging: ## Vérifier l'état de STAGING (https://staging.playalama.online/health)
+	@curl -fsS https://staging.playalama.online/health && echo "✓ Staging OK" || echo "✗ Staging KO"
+
+.PHONY: logs-prod
+logs-prod: ## Afficher les logs PROD en temps réel (lama-server-prod)
+	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
+	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
+	  "cd /srv/playalama/prod && docker compose -f tools/docker/docker-compose.prod.yml logs -f --tail=100"
+
+.PHONY: logs-staging
+logs-staging: ## Afficher les logs STAGING en temps réel (lama-server-staging)
+	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
+	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
+	  "cd /srv/playalama/staging && docker compose -f tools/docker/docker-compose.staging.yml logs -f --tail=100"
 
 # =============================================================================
 # OPTION A: Debug Natif + PostgreSQL Docker (Recommandé pour développement)
@@ -201,10 +302,6 @@ health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 
 .PHONY: web-lobby-smoke
 web-lobby-smoke: ## [OPTION A] Smoke test Web lobby (register/create/start/my-games)
 	bash tools/scripts/e2e-web-lobby-smoke.sh
-
-.PHONY: health-prod
-health-prod: ## Vérifier les endpoints de production
-	@curl -fsS https://playalama.online/health && echo "✓ Prod OK" || echo "✗ Prod KO"
 
 # =============================================================================
 # Aide

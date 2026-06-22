@@ -22,9 +22,6 @@ Script principal: `tools/deployments/deploy-oneclick-images.sh`
 - VPS: `docker`, `docker compose`
 - DNS configure pour:
   - `playalama.online`
-  - `www.playalama.online`
-  - `live.playalama.online`
-  - `downloads.playalama.online`
 
 ## Exemple standard
 
@@ -51,7 +48,7 @@ cd /home/philippe/RiderProjects/Games/Lama
 Le mode `--ultra-safe` ajoute un preflight ACME:
 
 1. creation temporaire d'un fichier sous `/.well-known/acme-challenge/`
-2. verification HTTP depuis l'exterieur pour chaque domaine resolu
+2. verification HTTP depuis l'exterieur sur `playalama.online`
 3. si le test echoue, `certbot` est saute pour ce deploy
 
 ```bash
@@ -67,5 +64,5 @@ cd /home/philippe/RiderProjects/Games/Lama
 - Donnees persistantes par defaut dans `/srv/playalama`.
 - Application/compose par defaut dans `/opt/playalama`.
 - Les checks utilisent des requetes GET (`curl`), pas HEAD (`curl -I`).
-- `--ultra-safe` est recommande tant que les DNS `www/live/downloads` ne sont pas tous en place.
+- `--ultra-safe` est recommande jusqu'a ce que le port 80 public reponde correctement sur le VPS.
 

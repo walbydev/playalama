@@ -8,7 +8,7 @@ REMOTE_BASE_DIR="${LAMA_DEPLOY_REMOTE_BASE:-/opt/playalama}"
 REMOTE_DATA_DIR="${LAMA_DEPLOY_REMOTE_DATA:-/srv/playalama}"
 SSH_KEY_FILE="${LAMA_DEPLOY_SSH_KEY:-}"
 LETSENCRYPT_EMAIL="${LAMA_DEPLOY_LE_EMAIL:-admin@playalama.online}"
-CERTBOT_DOMAINS_RAW="${LAMA_DEPLOY_CERTBOT_DOMAINS:-playalama.online,www.playalama.online,live.playalama.online,downloads.playalama.online}"
+CERTBOT_DOMAINS_RAW="${LAMA_DEPLOY_CERTBOT_DOMAINS:-playalama.online}"
 DEPLOY_TAG="${LAMA_DEPLOY_TAG:-$(date +%Y%m%d-%H%M%S)}"
 SKIP_CERTBOT="false"
 SKIP_HEALTHCHECK="false"
@@ -30,7 +30,7 @@ Options:
   --ssh-key <file>               SSH private key file
   --tag <value>                  Image tag suffix (default: timestamp)
   --email <addr>                 Let's Encrypt email (default: admin@playalama.online)
-  --certbot-domains <csv>        Domains for certbot (default: playalama.online,www.playalama.online,live.playalama.online,downloads.playalama.online)
+  --certbot-domains <csv>        Domains for certbot (default: playalama.online)
   --skip-certbot                 Skip certbot run
   --skip-healthcheck             Skip final HTTP checks
   --ultra-safe                   Enable ACME challenge preflight before certbot
@@ -38,8 +38,8 @@ Options:
   --verbose                      Verbose command logs
   -h, --help                     Show help
 
-Domains expected by nginx/certbot:
-  playalama.online, www.playalama.online, live.playalama.online, downloads.playalama.online
+Domain expected by nginx/certbot:
+  playalama.online
 EOF
 }
 
@@ -369,8 +369,8 @@ if [[ "$SKIP_HEALTHCHECK" != "true" ]]; then
   # Externes: HTTPS uniquement si certbot actif et potentiellement valide.
   if [[ "$SKIP_CERTBOT" != "true" ]]; then
     run_cmd "curl -fsS --max-time 15 https://playalama.online/ >/dev/null"
-    run_cmd "curl -fsS --max-time 15 https://live.playalama.online/ >/dev/null"
-    run_cmd "curl -fsS --max-time 15 https://playalama.online/health >/dev/null"
+    run_cmd "curl -fsS --max-time 15 https://playalama.online/live/ >/dev/null"
+    run_cmd "curl -fsS --max-time 15 https://playalama.online/downloads >/dev/null"
   else
     run_cmd "curl -fsS --max-time 15 http://playalama.online/ >/dev/null"
   fi

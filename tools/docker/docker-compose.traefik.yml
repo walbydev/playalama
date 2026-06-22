@@ -1,0 +1,32 @@
+# docker-compose.traefik.yml
+# Stack Traefik — reverse proxy central pour PROD + STAGING
+#
+# Déploiement VPS (une seule fois) :
+#   make deploy-traefik SSH_KEY=~/.ssh/playalama.key
+#
+# Répertoire de déploiement sur le VPS : /opt/playalama/traefik/
+# Le réseau traefik-net est créé ici puis utilisé par les stacks prod et staging.
+
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:8080:8080"   # Dashboard Traefik — local VPS uniquement
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/traefik.yml:ro
+      - ./acme.json:/acme.json
+      - ./logs:/logs
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=false"   # Ne pas router Traefik lui-même
+
+networks:
+  traefik-net:
+    name: traefik-net
+    driver: bridge

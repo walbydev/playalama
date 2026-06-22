@@ -1,11 +1,11 @@
 # Lama.PortalWebApp
 
-WebApp Blazor (serveur) dediee au portail playalama.online.
+WebApp Blazor (serveur) dediee au portail `playalama.online`.
 
 ## Perimetre
 
 - Vitrine: accueil, regles, telechargements.
-- Redirection fonctionnelle vers l'espace jeu sur `live.playalama.online`.
+- Acces fonctionnel vers l'espace jeu sur `/live`.
 - Theme clair/sombre et densite confortable/compacte.
 
 ## Execution locale

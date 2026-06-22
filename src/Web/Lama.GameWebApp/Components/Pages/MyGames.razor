@@ -11,7 +11,7 @@
     <section class="card section">
         <h1>Mes parties</h1>
         <p>Vous devez être connecté pour voir votre historique.</p>
-        <a class="button" href="/login">Se connecter</a>
+        <a class="button" href="login">Se connecter</a>
     </section>
 }
 else
@@ -38,7 +38,7 @@ else
             <div class="empty-state">
                 <span class="empty-icon">🎮</span>
                 <p>Aucune partie terminée pour le moment.</p>
-                <a class="button" href="/games">Rejoindre une partie</a>
+                <a class="button" href="games">Rejoindre une partie</a>
             </div>
         }
         else
@@ -87,7 +87,7 @@ else
                                     <span class="chip chip-muted">@g.Status</span>
                                 }
                             </td>
-                            <td><a class="button-ghost" href="/games/@g.GameId">Voir</a></td>
+                            <td><a class="button-ghost" href="games/@g.GameId">Voir</a></td>
                         </tr>
                     }
                 </tbody>

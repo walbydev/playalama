@@ -25,6 +25,6 @@ Le reverse proxy expose ensuite:
 
 - `https://playalama.online/` pour l'accueil du portail
 - `https://playalama.online/download/` pour la page de téléchargement
-- `https://playalama.online/downloads/<fichier>.zip` et `https://downloads.playalama.online/<fichier>.zip` pour les archives ZIP
+- `https://playalama.online/downloads/<fichier>.zip` pour les archives ZIP
 
 
