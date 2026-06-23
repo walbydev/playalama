@@ -233,8 +233,9 @@ log "[4/6] Déploiement de Traefik..."
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
 # Copier la config Traefik
-copy_file "$ROOT_DIR/tools/docker/traefik.yml"              "/opt/playalama/traefik/traefik.yml"
-copy_file "$ROOT_DIR/tools/docker/docker-compose.traefik.yml" "/opt/playalama/traefik/docker-compose.yml"
+copy_file "$ROOT_DIR/tools/docker/traefik.yml"                   "/opt/playalama/traefik/traefik.yml"
+copy_file "$ROOT_DIR/tools/docker/docker-compose.traefik.yml"    "/opt/playalama/traefik/docker-compose.yml"
+copy_file "$ROOT_DIR/tools/docker/nginx-docker-api-proxy.conf"   "/opt/playalama/traefik/nginx-docker-api-proxy.conf"
 
 # Créer acme.json avec les bons droits
 run_remote "

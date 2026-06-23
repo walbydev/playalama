@@ -205,8 +205,9 @@ deploy-traefik: ## [VPS] (Re)déployer Traefik sur le VPS
 	  echo "⚠  SSH_KEY non définie. Usage : make deploy-traefik SSH_KEY=~/.ssh/playalama.key"; \
 	  exit 1; \
 	fi
-	scp -i $(SSH_KEY) tools/docker/traefik.yml               $(DEPLOY_TARGET):/opt/playalama/traefik/traefik.yml
-	scp -i $(SSH_KEY) tools/docker/docker-compose.traefik.yml $(DEPLOY_TARGET):/opt/playalama/traefik/docker-compose.yml
+	scp -i $(SSH_KEY) tools/docker/traefik.yml                $(DEPLOY_TARGET):/opt/playalama/traefik/traefik.yml
+	scp -i $(SSH_KEY) tools/docker/docker-compose.traefik.yml  $(DEPLOY_TARGET):/opt/playalama/traefik/docker-compose.yml
+	scp -i $(SSH_KEY) tools/docker/nginx-docker-api-proxy.conf $(DEPLOY_TARGET):/opt/playalama/traefik/nginx-docker-api-proxy.conf
 	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
 	  "cd /opt/playalama/traefik && docker compose pull && docker compose up -d"
 
