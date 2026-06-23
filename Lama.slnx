@@ -37,6 +37,7 @@
     <File Path="site/static/assets/js/status.js" />
     <File Path="site/static/assets/js/theme.js" />
     <File Path="site/static/download/index.html" />
+    <File Path="site\static\new_home_page_design.html" />
   </Folder>
   <Folder Name="/Docs/">
     <File Path="AGENTS.md" />
