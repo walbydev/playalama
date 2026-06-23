@@ -20,8 +20,9 @@ services:
     image: nginx:1-alpine
     container_name: docker-api-proxy
     restart: unless-stopped
+    user: root
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock
       - ./nginx-docker-api-proxy.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - traefik-internal
