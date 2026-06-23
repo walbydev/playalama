@@ -3,13 +3,13 @@
 # deploy-env.sh — Déploiement d'un environnement sur le VPS
 # =============================================================================
 # Usage:
-#   bash tools/deployments/deploy-env.sh --env prod   --ssh-key ~/.ssh/playalama.key
-#   bash tools/deployments/deploy-env.sh --env staging --ssh-key ~/.ssh/playalama.key
+#   bash tools/scripts/deploy/deploy-env.sh --env prod   --ssh-key ~/.ssh/playalama.key
+#   bash tools/scripts/deploy/deploy-env.sh --env staging --ssh-key ~/.ssh/playalama.key
 #
 # Options:
 #   --env <prod|staging>    Environnement cible (obligatoire)
 #   --ssh-key <file>        Clé SSH (ou via LAMA_DEPLOY_SSH_KEY)
-#   --branch <name>         Branche git à déployer (défaut: main pour prod, staging pour staging)
+#   --branch <name>         Branche git à déployer (défaut: master pour prod et staging)
 #   --target <user@host>    Cible SSH (défaut: debian@playalama.online)
 #   --skip-healthcheck      Ne pas vérifier l'état après déploiement
 #   --dry-run               Afficher les commandes sans les exécuter
@@ -70,13 +70,13 @@ case "$DEPLOY_ENV" in
     REMOTE_DIR="/srv/playalama/prod"
     COMPOSE_FILE="tools/docker/docker-compose.prod.yml"
     HEALTH_URL="https://playalama.online/health"
-    DEFAULT_BRANCH="main"
+    DEFAULT_BRANCH="master"
     ;;
   staging)
     REMOTE_DIR="/srv/playalama/staging"
     COMPOSE_FILE="tools/docker/docker-compose.staging.yml"
     HEALTH_URL="https://staging.playalama.online/health"
-    DEFAULT_BRANCH="staging"
+    DEFAULT_BRANCH="master"
     ;;
 esac
 
@@ -101,7 +101,7 @@ log "Vérification du répertoire distant..."
 run_remote "test -d '$REMOTE_DIR' || (echo 'Répertoire $REMOTE_DIR inexistant — lancer make setup-vps d''abord' >&2 && exit 1)"
 
 # 2. Vérifier que le .env existe
-run_remote "test -f '$REMOTE_DIR/.env' || (echo 'Fichier .env manquant dans $REMOTE_DIR — voir tools/environments/.env.$DEPLOY_ENV.example' >&2 && exit 1)"
+run_remote "test -f '$REMOTE_DIR/.env' || (echo 'Fichier .env manquant dans $REMOTE_DIR — voir tools/docker/.env.$DEPLOY_ENV.example' >&2 && exit 1)"
 
 # 3. Git pull (cert auto-signé Gitea)
 log "Git pull (branche $BRANCH)..."

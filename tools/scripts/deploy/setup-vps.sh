@@ -5,8 +5,8 @@
 # Ce script prépare le VPS pour accueillir les environnements PROD et STAGING.
 #
 # Usage:
-#   bash tools/deployments/setup-vps.sh --ssh-key ~/.ssh/playalama.key
-#   bash tools/deployments/setup-vps.sh --ssh-key ~/.ssh/playalama.key --dry-run
+#   bash tools/scripts/deploy/setup-vps.sh --ssh-key ~/.ssh/playalama.key
+#   bash tools/scripts/deploy/setup-vps.sh --ssh-key ~/.ssh/playalama.key --dry-run
 #
 # Options:
 #   --ssh-key <file>        Clé SSH (ou via LAMA_DEPLOY_SSH_KEY)
@@ -18,7 +18,7 @@
 # Ce script :
 #   1. Installe Docker + Docker Compose (si absents)
 #   2. Crée la structure de répertoires /opt/playalama/traefik/ et /srv/playalama/{prod,staging}/
-#   3. Clone le dépôt git dans prod (branche main) et staging (branche staging)
+#   3. Clone le dépôt git dans prod (branche master) et staging (branche master)
 #   4. Crée le réseau Docker "traefik-net"
 #   5. Déploie Traefik depuis /opt/playalama/traefik/
 #   6. Affiche les instructions pour créer les fichiers .env
@@ -131,24 +131,22 @@ run_remote "
   # Désactiver la vérification SSL pour le cert auto-signé de Gitea (une seule fois)
   git config --global http.sslVerify false
 
-  # PROD (branche main)
+  # PROD (branche master)
   if [ -d '/srv/playalama/prod/.git' ]; then
     echo '→ prod: dépôt déjà présent, git pull...'
-    cd /srv/playalama/prod && git fetch origin && git pull origin main
+    cd /srv/playalama/prod && git fetch origin && git pull origin master
   else
-    echo '→ prod: clonage branche main...'
-    git clone --branch main '$REPO_URL' /srv/playalama/prod
+    echo '→ prod: clonage branche master...'
+    git clone --branch master '$REPO_URL' /srv/playalama/prod
   fi
 
-  # STAGING (branche staging, fallback sur main si inexistante)
+  # STAGING (branche master)
   if [ -d '/srv/playalama/staging/.git' ]; then
     echo '→ staging: dépôt déjà présent, git pull...'
-    cd /srv/playalama/staging && git fetch origin && \
-      (git pull origin staging 2>/dev/null || git pull origin main)
+    cd /srv/playalama/staging && git fetch origin && git pull origin master
   else
-    echo '→ staging: clonage (branche staging ou main)...'
-    git clone --branch staging '$REPO_URL' /srv/playalama/staging 2>/dev/null || \
-    git clone --branch main '$REPO_URL' /srv/playalama/staging
+    echo '→ staging: clonage branche master...'
+    git clone --branch master '$REPO_URL' /srv/playalama/staging
   fi
 "
 
@@ -209,11 +207,11 @@ echo ""
 warn "ÉTAPES MANUELLES REQUISES :"
 echo ""
 echo "  1. Créer le fichier .env PROD sur le VPS :"
-echo "     scp tools/environments/.env.prod.example ${REMOTE_TARGET}:/srv/playalama/prod/.env"
+echo "     scp tools/docker/.env.prod.example ${REMOTE_TARGET}:/srv/playalama/prod/.env"
 echo "     # Puis éditer : ssh ${REMOTE_TARGET} 'nano /srv/playalama/prod/.env'"
 echo ""
 echo "  2. Créer le fichier .env STAGING sur le VPS :"
-echo "     scp tools/environments/.env.staging.example ${REMOTE_TARGET}:/srv/playalama/staging/.env"
+echo "     scp tools/docker/.env.staging.example ${REMOTE_TARGET}:/srv/playalama/staging/.env"
 echo "     # Puis éditer : ssh ${REMOTE_TARGET} 'nano /srv/playalama/staging/.env'"
 echo ""
 echo "  3. Premier déploiement :"
