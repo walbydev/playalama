@@ -23,6 +23,7 @@
     <Project Path="tests/Lama.GameWebApp.UnitTests/Lama.GameWebApp.UnitTests.csproj" />
   </Folder>
   <Folder Name="/Tools/">
+    <File Path="tools\distribution\README.txt" />
     <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
   </Folder>
   <Folder Name="/Site/">

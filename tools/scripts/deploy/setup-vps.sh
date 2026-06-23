@@ -31,7 +31,7 @@ REPO_URL=""
 DRY_RUN=false
 
 # URL Gitea par défaut (cert auto-signé : git http.sslVerify désactivé sur le VPS)
-GITEA_DEFAULT_URL="https://gitea.home.lan/WalbyGaming/playalama.git"
+GITEA_DEFAULT_URL="http://192.168.30.20:3000/WalbyGaming/playalama.git"
 
 usage() {
   grep '^#' "$0" | grep -v '^#!/' | sed 's/^# \?//'

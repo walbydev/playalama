@@ -21,7 +21,7 @@ entryPoints:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: admin@playalama.online
+      email: philippe@walby.dev
       storage: /acme.json
       httpChallenge:
         entryPoint: web
