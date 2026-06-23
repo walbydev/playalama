@@ -168,6 +168,37 @@ setup-vps-dry: ## [VPS] Simulation du setup VPS (dry-run)
 	  --ssh-key $(SSH_KEY) \
 	  --dry-run
 
+# BUNDLE_FILE peut être surchargé : make push-bundle BUNDLE_FILE=/tmp/mabranch.bundle
+BUNDLE_FILE ?= /tmp/playalama-$(shell date +%Y%m%d%H%M%S).bundle
+VPS_BARE_REPO ?= /opt/playalama/git/playalama.git
+
+.PHONY: push-bundle
+push-bundle: ## [VPS] Envoyer les commits locaux vers le bare repo du VPS (remplace git push)
+	@if [ -z "$(SSH_KEY)" ]; then \
+	  echo "⚠  SSH_KEY non définie. Usage : make push-bundle SSH_KEY=~/.ssh/playalama.key"; \
+	  exit 1; \
+	fi
+	@echo "→ Création du bundle git..."
+	git bundle create $(BUNDLE_FILE) --branches --tags
+	@echo "→ Copie vers le VPS..."
+	scp -i $(SSH_KEY) $(BUNDLE_FILE) $(DEPLOY_TARGET):/tmp/playalama.bundle
+	@echo "→ Mise à jour du bare repo VPS..."
+	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
+	  "git --git-dir=$(VPS_BARE_REPO) fetch /tmp/playalama.bundle 'refs/heads/*:refs/heads/*' && rm /tmp/playalama.bundle"
+	rm -f $(BUNDLE_FILE)
+	@echo "✓ Bundle poussé — lancer make deploy-prod / make deploy-staging"
+
+.PHONY: setup-vps-bundle
+setup-vps-bundle: ## [VPS] Setup VPS complet via bundle SSH (quand Gitea LAN est inaccessible depuis le VPS)
+	@if [ -z "$(SSH_KEY)" ]; then \
+	  echo "⚠  SSH_KEY non définie. Usage : make setup-vps-bundle SSH_KEY=~/.ssh/playalama.key"; \
+	  exit 1; \
+	fi
+	bash tools/scripts/deploy/setup-vps.sh \
+	  --target $(DEPLOY_TARGET) \
+	  --ssh-key $(SSH_KEY) \
+	  --bundle $(ROOT_DIR)
+
 .PHONY: deploy-traefik
 deploy-traefik: ## [VPS] (Re)déployer Traefik sur le VPS
 	@if [ -z "$(SSH_KEY)" ]; then \

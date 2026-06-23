@@ -7,18 +7,30 @@
 # Usage:
 #   bash tools/scripts/deploy/setup-vps.sh --ssh-key ~/.ssh/playalama.key
 #   bash tools/scripts/deploy/setup-vps.sh --ssh-key ~/.ssh/playalama.key --dry-run
+#   bash tools/scripts/deploy/setup-vps.sh --ssh-key ~/.ssh/playalama.key --bundle /chemin/local/repo
 #
 # Options:
 #   --ssh-key <file>        Clé SSH (ou via LAMA_DEPLOY_SSH_KEY)
 #   --target <user@host>    Cible SSH (défaut: debian@playalama.online)
-#   --repo-url <url>        URL du dépôt git (défaut: depuis git remote origin)
+#   --repo-url <url>        URL du dépôt git (défaut: URL Gitea LAN)
+#   --bundle <dir>          Répertoire git local à bundler et pousser via SSH
+#                           (utiliser quand le VPS ne peut pas atteindre Gitea)
 #   --dry-run               Afficher les commandes sans les exécuter
 #   -h, --help              Afficher cette aide
+#
+# IMPORTANT — Accès au dépôt git depuis le VPS :
+#   Par défaut, le script clone depuis l'URL Gitea (192.168.30.20:3000).
+#   Cette adresse est une IP LAN PRIVÉE : le VPS sur internet ne peut PAS
+#   l'atteindre directement. Dans ce cas, utiliser --bundle <dir> pour
+#   packager le repo local et l'envoyer sur le VPS via SSH.
+#   Le bare repo est créé dans /opt/playalama/git/playalama.git sur le VPS.
+#   Pour les déploiements futurs : make push-bundle SSH_KEY=...
 #
 # Ce script :
 #   1. Installe Docker + Docker Compose (si absents)
 #   2. Crée la structure de répertoires /opt/playalama/traefik/ et /srv/playalama/{prod,staging}/
 #   3. Clone le dépôt git dans prod (branche master) et staging (branche master)
+#      → via git clone (si --repo-url accessible) ou via --bundle (git bundle SSH)
 #   4. Crée le réseau Docker "traefik-net"
 #   5. Déploie Traefik depuis /opt/playalama/traefik/
 #   6. Affiche les instructions pour créer les fichiers .env
@@ -28,9 +40,10 @@ set -euo pipefail
 SSH_KEY_FILE="${LAMA_DEPLOY_SSH_KEY:-}"
 REMOTE_TARGET="${LAMA_DEPLOY_TARGET:-debian@playalama.online}"
 REPO_URL=""
+BUNDLE_SOURCE_DIR=""   # chemin local du dépôt à bundler
 DRY_RUN=false
 
-# URL Gitea par défaut (cert auto-signé : git http.sslVerify désactivé sur le VPS)
+# URL Gitea LAN (accessible uniquement depuis le réseau local — PAS depuis le VPS internet)
 GITEA_DEFAULT_URL="http://192.168.30.20:3000/WalbyGaming/playalama.git"
 
 usage() {
@@ -68,6 +81,7 @@ while [[ $# -gt 0 ]]; do
     --ssh-key)  SSH_KEY_FILE="$2"; shift 2 ;;
     --target)   REMOTE_TARGET="$2"; shift 2 ;;
     --repo-url) REPO_URL="$2"; shift 2 ;;
+    --bundle)   BUNDLE_SOURCE_DIR="$2"; shift 2 ;;
     --dry-run)  DRY_RUN=true; shift ;;
     -h|--help)  usage ;;
     *) err "Option inconnue: $1" ;;
@@ -75,7 +89,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Détection de l'URL du dépôt git si non fournie
-# Priorité : --repo-url > LAMA_DEPLOY_REPO_URL > URL Gitea par défaut
+# Priorité : --repo-url > LAMA_DEPLOY_REPO_URL > URL Gitea LAN par défaut
 if [[ -z "$REPO_URL" ]]; then
   REPO_URL="${LAMA_DEPLOY_REPO_URL:-$GITEA_DEFAULT_URL}"
 fi
@@ -87,7 +101,11 @@ SSH_ARGS=(-o StrictHostKeyChecking=accept-new -o ConnectTimeout=15)
 log "════════════════════════════════════════════════════"
 log " Setup VPS playlama — $(date '+%Y-%m-%d %H:%M')"
 log " Cible SSH  : $REMOTE_TARGET"
-log " Dépôt git  : $REPO_URL"
+if [[ -n "$BUNDLE_SOURCE_DIR" ]]; then
+  log " Mode git   : bundle SSH depuis $BUNDLE_SOURCE_DIR"
+else
+  log " Dépôt git  : $REPO_URL"
+fi
 [[ "$DRY_RUN" == "true" ]] && warn " MODE DRY-RUN activé — aucune modification réelle"
 log "════════════════════════════════════════════════════"
 
@@ -123,32 +141,89 @@ run_remote "
 "
 
 # ─────────────────────────────────────────────────────────
-# 3. Clone du dépôt git (Gitea — cert auto-signé)
+# 3. Clone du dépôt git
 # ─────────────────────────────────────────────────────────
-log "[3/6] Clonage du dépôt git depuis Gitea ($REPO_URL)..."
-run_remote "
-  set -e
-  # Désactiver la vérification SSL pour le cert auto-signé de Gitea (une seule fois)
-  git config --global http.sslVerify false
+if [[ -n "$BUNDLE_SOURCE_DIR" ]]; then
+  # ── Mode bundle : le VPS ne peut pas atteindre Gitea (IP LAN) ──────────────
+  log "[3/6] Clonage via bundle SSH depuis $BUNDLE_SOURCE_DIR..."
 
-  # PROD (branche master)
-  if [ -d '/srv/playalama/prod/.git' ]; then
-    echo '→ prod: dépôt déjà présent, git pull...'
-    cd /srv/playalama/prod && git fetch origin && git pull origin master
+  BUNDLE_TMP="/tmp/playalama-setup-$$.bundle"
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    printf '\033[0;33m[DRY-RUN]\033[0m git bundle create %s --branches --tags (dans %s)\n' "$BUNDLE_TMP" "$BUNDLE_SOURCE_DIR"
+    printf '\033[0;33m[DRY-RUN]\033[0m scp %s → %s:/tmp/playalama.bundle\n' "$BUNDLE_TMP" "$REMOTE_TARGET"
   else
-    echo '→ prod: clonage branche master...'
-    git clone --branch master '$REPO_URL' /srv/playalama/prod
+    log "  → Création du bundle git..."
+    git -C "$BUNDLE_SOURCE_DIR" bundle create "$BUNDLE_TMP" --branches --tags
+    log "  → Copie vers le VPS..."
+    scp "${SSH_ARGS[@]}" "$BUNDLE_TMP" "$REMOTE_TARGET:/tmp/playalama.bundle"
+    rm -f "$BUNDLE_TMP"
   fi
 
-  # STAGING (branche master)
-  if [ -d '/srv/playalama/staging/.git' ]; then
-    echo '→ staging: dépôt déjà présent, git pull...'
-    cd /srv/playalama/staging && git fetch origin && git pull origin master
-  else
-    echo '→ staging: clonage branche master...'
-    git clone --branch master '$REPO_URL' /srv/playalama/staging
-  fi
-"
+  run_remote "
+    set -e
+    BARE=/opt/playalama/git/playalama.git
+    BUNDLE=/tmp/playalama.bundle
+
+    if [ -d \"\$BARE\" ]; then
+      echo '→ bare repo déjà présent, mise à jour...'
+      git --git-dir=\"\$BARE\" fetch \$BUNDLE 'refs/heads/*:refs/heads/*'
+    else
+      echo '→ Création du bare repo depuis le bundle...'
+      git clone --bare \$BUNDLE \$BARE
+    fi
+
+    # PROD
+    if [ -d '/srv/playalama/prod/.git' ]; then
+      echo '→ prod: dépôt déjà présent, git pull...'
+      cd /srv/playalama/prod && git pull origin master
+    else
+      echo '→ prod: clonage depuis bare repo local...'
+      git clone \$BARE /srv/playalama/prod
+      cd /srv/playalama/prod && git checkout master
+    fi
+
+    # STAGING
+    if [ -d '/srv/playalama/staging/.git' ]; then
+      echo '→ staging: dépôt déjà présent, git pull...'
+      cd /srv/playalama/staging && git pull origin master
+    else
+      echo '→ staging: clonage depuis bare repo local...'
+      git clone \$BARE /srv/playalama/staging
+      cd /srv/playalama/staging && git checkout master
+    fi
+
+    rm -f \$BUNDLE
+    echo '→ Dépôts prod et staging prêts (origin = bare repo local VPS)'
+  "
+
+else
+  # ── Mode URL : clone direct depuis Gitea (accès réseau requis) ─────────────
+  log "[3/6] Clonage du dépôt git depuis $REPO_URL..."
+  run_remote "
+    set -e
+    # Désactiver la vérification SSL pour le cert auto-signé de Gitea (une seule fois)
+    git config --global http.sslVerify false
+
+    # PROD (branche master)
+    if [ -d '/srv/playalama/prod/.git' ]; then
+      echo '→ prod: dépôt déjà présent, git pull...'
+      cd /srv/playalama/prod && git fetch origin && git pull origin master
+    else
+      echo '→ prod: clonage branche master...'
+      git clone --branch master '$REPO_URL' /srv/playalama/prod
+    fi
+
+    # STAGING (branche master)
+    if [ -d '/srv/playalama/staging/.git' ]; then
+      echo '→ staging: dépôt déjà présent, git pull...'
+      cd /srv/playalama/staging && git fetch origin && git pull origin master
+    else
+      echo '→ staging: clonage branche master...'
+      git clone --branch master '$REPO_URL' /srv/playalama/staging
+    fi
+  "
+fi
 
 # ─────────────────────────────────────────────────────────
 # 4. Déploiement Traefik
