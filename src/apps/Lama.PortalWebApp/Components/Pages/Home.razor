@@ -1,36 +1,392 @@
 @page "/"
-@layout MainLayout
+@layout HomeLayout
+@inject IJSRuntime JS
 
-<PageTitle>Playalama | Accueil</PageTitle>
+<PageTitle>Playalama — Le jeu de mots tactique</PageTitle>
 
-<section class="card hero">
-    <div class="eyebrow">LAMA Portal</div>
-    <h1>Le portail officiel de Playalama.</h1>
-    <p>
-        Retrouvez les regles, les telechargements CLI et l'acces direct
-        a l'espace de jeu live.
-    </p>
-    <div class="actions" style="margin-top:18px;">
-        <a class="button" href="/live/">Entrer dans l'espace jeu</a>
-        <a class="button-secondary" href="/downloads">Telechargements console</a>
+<div class="home-page">
+
+<!-- ══ NAVBAR ══ -->
+<nav id="navbar" class="hp-nav">
+    <div class="hp-nav-logo">PLAYALAMA</div>
+    <ul id="nav-links" class="hp-nav-links @(_menuOpen ? "open" : "")">
+        <li><a href="#modes"       @onclick="() => _menuOpen = false">Modes</a></li>
+        <li><a href="#leaderboard" @onclick="() => _menuOpen = false">Classements</a></li>
+        <li><a href="#download"    @onclick="() => _menuOpen = false">Télécharger</a></li>
+        <li><a href="#community"   @onclick="() => _menuOpen = false">Communauté</a></li>
+    </ul>
+    <div class="hp-nav-cta">
+        <button class="hp-theme-btn" @onclick="ToggleTheme" title="Basculer le thème">
+            <span class="icon-dark">☾</span>
+            <span class="icon-light">☀</span>
+        </button>
+        <a href="/live/" class="hp-btn hp-btn-ghost" style="padding:.55rem 1.1rem;font-size:.85rem">Connexion</a>
+        <a href="/live/" class="hp-btn hp-btn-primary" style="padding:.55rem 1.1rem;font-size:.85rem">Jouer →</a>
+        <button id="burger" class="hp-burger" @onclick="() => _menuOpen = !_menuOpen">@(_menuOpen ? "✕" : "☰")</button>
+    </div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+    <div class="hp-floating-letters"></div>
+    <div class="hp-hero-inner">
+        <div class="hp-hero-text">
+            <div class="hp-hero-eyebrow"><span></span>Jeu de mots tactique<span></span></div>
+            <h1 class="hp-hero-title">
+                Joue.<br>
+                Combine.<br>
+                <span class="hp-grad">Domine.</span>
+            </h1>
+            <p class="hp-hero-sub">
+                Playalama réinvente le jeu de mots : plateau modulable, tuiles bonus/malus,
+                multijoueur en ligne et même en ligne de commande. Web, Windows, Linux, Mac.
+            </p>
+            <div class="hp-hero-btns">
+                <a href="/live/" class="hp-btn hp-btn-primary">🎮 Jouer maintenant</a>
+                <a href="#download" class="hp-btn hp-btn-outline">⬇ Télécharger</a>
+            </div>
+            <div class="hp-hero-stats">
+                <div>
+                    <div class="hp-stat-val" data-count="12480">12 480</div>
+                    <div class="hp-stat-lab">Joueurs actifs</div>
+                </div>
+                <div>
+                    <div class="hp-stat-val" data-count="348" data-suffix=" K">348 K</div>
+                    <div class="hp-stat-lab">Parties jouées</div>
+                </div>
+                <div>
+                    <div class="hp-stat-val">6</div>
+                    <div class="hp-stat-lab">Langues</div>
+                </div>
+            </div>
+        </div>
+        <div class="hp-board-demo">
+            <div class="hp-board-label">Plateau en direct</div>
+            <div class="board" id="board-grid"></div>
+            <div class="hp-board-legend">
+                <span><span class="leg-dw">■</span> ×2/×3 mot</span>
+                <span><span class="leg-dl">■</span> ×2/×3 lettre</span>
+            </div>
+        </div>
     </div>
 </section>
 
-<section class="card section">
-    <h2>Ce que propose le portail</h2>
-    <div class="grid">
-        <article class="tile">
-            <h3>Vitrine</h3>
-            <p>Presentation du jeu, regles, et liens de telechargement.</p>
-        </article>
-        <article class="tile">
-            <h3>Live</h3>
-            <p>Le jeu en ligne est accessible via le chemin dedie /live.</p>
-        </article>
-        <article class="tile">
-            <h3>CLI</h3>
-            <p>Archives Linux/Windows/macOS pour jouer en mode console local ou online.</p>
-        </article>
+<!-- ══ MODES ══ -->
+<section id="modes" class="hp-bg2">
+    <div class="hp-inner">
+        <div class="hp-section-header">
+            <div class="hp-label">Modes de jeu</div>
+            <h2>Un jeu, mille façons de jouer</h2>
+            <p>Du classique épuré aux variantes les plus folles — chaque partie est unique.</p>
+        </div>
+        <div class="hp-modes-grid">
+            @foreach (var mode in _modes)
+            {
+                <div class="hp-mode-card" style="--card-color: @mode.Color">
+                    <span class="hp-mode-icon">@mode.Icon</span>
+                    <div class="hp-mode-head">
+                        <h3>@mode.Name</h3>
+                        <span class="hp-mode-badge">@mode.Badge</span>
+                    </div>
+                    <p>@mode.Desc</p>
+                    <a href="/live/" class="hp-btn hp-btn-ghost hp-btn-sm">Jouer →</a>
+                </div>
+            }
+        </div>
     </div>
 </section>
+
+<!-- ══ ARGUMENTS ══ -->
+<section id="arguments">
+    <div class="hp-inner">
+        <div class="hp-section-header">
+            <div class="hp-label">Pourquoi Playalama ?</div>
+            <h2>Pensé pour les vrais joueurs</h2>
+        </div>
+        <div class="hp-args-grid">
+            @foreach (var arg in _args)
+            {
+                <div class="hp-arg-card">
+                    <span class="hp-arg-icon">@arg.Icon</span>
+                    <h3>@arg.Title</h3>
+                    <p>@arg.Text</p>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ══ LEADERBOARD ══ -->
+<section id="leaderboard">
+    <div class="hp-inner">
+        <div class="hp-section-header">
+            <div class="hp-label">Classements</div>
+            <h2>Les meilleurs du monde</h2>
+            <p>Classements mis à jour en temps réel. Tournois et parties libres séparés.</p>
+        </div>
+        <div class="hp-lb-tabs">
+            <button class="hp-lb-tab @(_currentTab == "tournament" ? "active" : "")" @onclick='() => SwitchTab("tournament")'>🏆 Tournois</button>
+            <button class="hp-lb-tab @(_currentTab == "free"       ? "active" : "")" @onclick='() => SwitchTab("free")'>⚔️ Parties libres</button>
+            <button class="hp-lb-tab @(_currentTab == "blitz"      ? "active" : "")" @onclick='() => SwitchTab("blitz")'>⚡ Blitz</button>
+        </div>
+        <div class="hp-lb-table">
+            <div class="hp-lb-header">
+                <div>#</div>
+                <div>Joueur</div>
+                <div style="text-align:center">Elo</div>
+                <div style="text-align:center" class="hp-lb-elo">Victoires</div>
+                <div style="text-align:center" class="hp-lb-games">Parties</div>
+            </div>
+            @foreach (var p in _leaderboard)
+            {
+                <div class="hp-lb-row @(p.IsMe ? "hp-lb-me" : "")">
+                    <div class="hp-lb-rank @(p.Rank == 1 ? "gold" : p.Rank == 2 ? "silver" : p.Rank == 3 ? "bronze" : "")">
+                        @(p.Rank == 1 ? "🥇" : p.Rank == 2 ? "🥈" : p.Rank == 3 ? "🥉" : p.Rank.ToString())
+                    </div>
+                    <div class="hp-lb-player">
+                        <div class="hp-lb-avatar">@p.Name[0]</div>
+                        <div>
+                            <div class="hp-lb-name">
+                                @p.Name
+                                @if (p.IsMe) { <span style="font-size:.7rem;color:var(--h-accent2);margin-left:.3rem">(vous)</span> }
+                            </div>
+                            <div class="hp-lb-level">Niveau @(p.Elo / 100)</div>
+                        </div>
+                    </div>
+                    <div class="hp-lb-elo">@p.Elo</div>
+                    <div class="hp-lb-wins hp-lb-elo">@p.Wins</div>
+                    <div class="hp-lb-games">@p.Games</div>
+                </div>
+            }
+        </div>
+        <div class="hp-lb-footer">
+            <div class="hp-live-indicator">
+                <div class="hp-live-dot"></div>
+                Mis à jour en direct
+            </div>
+            <a href="#" class="hp-btn hp-btn-outline hp-btn-sm">Classement complet →</a>
+        </div>
+    </div>
+</section>
+
+<!-- ══ CLI ══ -->
+<section id="download">
+    <div class="hp-inner">
+        <div class="hp-section-header">
+            <div class="hp-label">CLI — Ligne de commande</div>
+            <h2>Joue partout, même sans souris</h2>
+            <p>Un client natif ultra-léger pour Windows, Linux et macOS.</p>
+        </div>
+        <div class="hp-dl-grid">
+            <div class="hp-terminal-window">
+                <div class="hp-term-bar">
+                    <span class="hp-term-dot red"></span>
+                    <span class="hp-term-dot yellow"></span>
+                    <span class="hp-term-dot green"></span>
+                    <span class="hp-term-title">playalama — bash</span>
+                </div>
+                <div id="hp-terminal"></div>
+            </div>
+            <div>
+                <h3 class="hp-dl-title">Installation en 30 secondes</h3>
+                <div class="hp-dl-cards">
+                    @for (int i = 0; i < _downloads.Length; i++)
+                    {
+                        var dl = _downloads[i];
+                        var idx = i;
+                        <div class="hp-dl-card">
+                            <div class="hp-dl-card-head">
+                                <span class="hp-dl-os">@dl.Os</span>
+                                <span class="hp-dl-arch">@dl.Badge</span>
+                            </div>
+                            <div class="hp-dl-cmd-wrap">
+                                <code class="hp-dl-cmd">@dl.Cmd</code>
+                                <button class="hp-dl-copy" @onclick="() => CopyToClipboard(idx, dl.Cmd)" title="Copier">
+                                    @(_copiedIdx.Contains(idx) ? "✓" : "📋")
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══ COMMUNAUTÉ ══ -->
+<section id="community" class="hp-bg2">
+    <div class="hp-inner">
+        <div class="hp-section-header">
+            <div class="hp-label">Communauté</div>
+            <h2>Rejoins 12 000+ joueurs</h2>
+        </div>
+        <div class="hp-community-grid">
+            @foreach (var c in _community)
+            {
+                <a href="@c.Link" class="hp-comm-card">
+                    <div class="hp-comm-icon">@c.Icon</div>
+                    <h3>@c.Name</h3>
+                    <p>@c.Desc</p>
+                </a>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section id="cta">
+    <div class="hp-inner">
+        <h2>Prêt à poser ta première tuile ?</h2>
+        <p>Gratuit, sans inscription obligatoire. Lance une partie en moins de 10 secondes.</p>
+        <div class="hp-cta-btns">
+            <a href="/live/" class="hp-btn hp-btn-primary" style="font-size:1.1rem;padding:1rem 2.5rem">🎮 Jouer maintenant — c'est gratuit</a>
+            <a href="#download" class="hp-btn hp-btn-outline" style="font-size:1.1rem;padding:1rem 2.5rem">⬇ Télécharger le client</a>
+        </div>
+        <p class="hp-cta-note">✓ Gratuit &nbsp;·&nbsp; ✓ Sans pub &nbsp;·&nbsp; ✓ Open source &nbsp;·&nbsp; ✓ Multiplateforme</p>
+    </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer class="hp-footer">
+    <div class="hp-footer-grid">
+        <div class="hp-footer-brand">
+            <div class="hp-nav-logo" style="font-size:1.8rem">PLAYALAMA</div>
+            <p>Le jeu de mots tactique libre et multiplateforme. Joue sur le Web ou en ligne de commande.</p>
+        </div>
+        <div class="hp-footer-col">
+            <h4>Jeu</h4>
+            <ul>
+                <li><a href="/live/">Jouer en ligne</a></li>
+                <li><a href="/downloads">Télécharger</a></li>
+                <li><a href="#modes">Modes de jeu</a></li>
+                <li><a href="#leaderboard">Classements</a></li>
+            </ul>
+        </div>
+        <div class="hp-footer-col">
+            <h4>Communauté</h4>
+            <ul>
+                <li><a href="#">Discord</a></li>
+                <li><a href="#">Forum</a></li>
+                <li><a href="#">Reddit</a></li>
+                <li><a href="#">Twitch</a></li>
+            </ul>
+        </div>
+        <div class="hp-footer-col">
+            <h4>Projet</h4>
+            <ul>
+                <li><a href="#">GitHub</a></li>
+                <li><a href="/rules">Règles</a></li>
+                <li><a href="#">Documentation</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="hp-footer-bottom">
+        <span>© 2026 Playalama — Open Source MIT</span>
+        <div class="hp-footer-socials">
+            <a href="#" title="Discord">💬</a>
+            <a href="#" title="GitHub">🐙</a>
+            <a href="#" title="Twitter">🐦</a>
+            <a href="#" title="YouTube">▶</a>
+        </div>
+    </div>
+</footer>
+
+</div>
+
+@code {
+    private bool   _menuOpen   = false;
+    private string _currentTab = "tournament";
+    private readonly HashSet<int> _copiedIdx = new();
+
+    // ── Données modes ──
+    private record ModeCard(string Icon, string Name, string Desc, string Badge, string Color);
+    private static readonly ModeCard[] _modes =
+    [
+        new("🎯", "Classique",     "Le scrabble revisité. 15×15, 7 tuiles, dictionnaire FR/EN/ES/DE/IT/PT.", "Populaire",    "#7c5cfc"),
+        new("⚡", "Blitz",         "3 minutes chrono. Pose le plus de points avant le buzzer.",               "Rapide",       "#f59e0b"),
+        new("🤖", "Solo vs IA",    "Affronte une IA adaptative avec 5 niveaux de difficulté.",               "Solo",         "#22c55e"),
+        new("👥", "2 vs 2",        "Coopère avec un partenaire contre une autre équipe en temps réel.",       "Équipe",       "#f472b6"),
+        new("🗺️", "Grand Plateau", "Plateau 21×21 avec zones spéciales et évènements aléatoires.",           "Épique",       "#fb923c"),
+        new("💣", "Chaos",         "Tuiles malus, lettres piégées, bombes de plateau. Survie pure.",          "Expérimental", "#ef4444"),
+    ];
+
+    // ── Données arguments ──
+    private record ArgCard(string Icon, string Title, string Text);
+    private static readonly ArgCard[] _args =
+    [
+        new("🌐", "100% Web & CLI",  "Joue depuis ton navigateur ou ton terminal sans rien installer."),
+        new("⚙️", "Open Source",     "Code source disponible sur GitHub. Contribue, fork, adapte."),
+        new("🔒", "Sans tracking",   "Aucune publicité, aucun cookie tiers. Ta vie privée est sacrée."),
+        new("🌍", "6 langues",       "Français, Anglais, Espagnol, Allemand, Italien, Portugais."),
+        new("📱", "Responsive",      "Optimisé mobile, tablette et desktop avec thème sombre et clair."),
+        new("🏆", "Classements ELO", "Système ELO par mode de jeu. Grimpe et deviens légende."),
+    ];
+
+    // ── Données téléchargement ──
+    private record DlCard(string Os, string Cmd, string Badge);
+    private static readonly DlCard[] _downloads =
+    [
+        new("🐧 Linux",   "curl -fsSL https://get.playalama.io/linux | bash", "x64 / ARM"),
+        new("🪟 Windows", "winget install Playalama.CLI",                      "x64"),
+        new("🍎 macOS",   "brew install playalama",                            "Intel / Apple Silicon"),
+    ];
+
+    // ── Données communauté ──
+    private record CommCard(string Icon, string Name, string Desc, string Link);
+    private static readonly CommCard[] _community =
+    [
+        new("💬", "Discord", "15 000 membres",  "#"),
+        new("🐙", "GitHub",  "Open source MIT", "#"),
+        new("📺", "Twitch",  "Streams live",    "#"),
+        new("🗨️", "Forum",   "Guides & astuces","#"),
+    ];
+
+    // ── Leaderboard ──
+    private record Player(int Rank, string Name, int Elo, int Wins, int Games, bool IsMe);
+    private Player[] _leaderboard = [];
+
+    private static readonly string[] _playerNames =
+        ["SylvainDu34","MotZard","LexiPro","TuileKing","AlphaMot","ZéroFaute","PolyGlotte","WordNinja","ScrabFan","Vocabulix"];
+
+    private void SwitchTab(string tab)
+    {
+        _currentTab = tab;
+        var seed = tab switch { "tournament" => 42, "free" => 123, "blitz" => 456, _ => 42 };
+        var rng  = new Random(seed);
+        _leaderboard = _playerNames
+            .Select((name, i) => new Player(
+                Rank:  i + 1,
+                Name:  name,
+                Elo:   2400 - i * 87 + rng.Next(30),
+                Wins:  320  - i * 28 + rng.Next(15),
+                Games: 500  - i * 40 + rng.Next(20),
+                IsMe:  i == 2))
+            .ToArray();
+    }
+
+    // ── Lifecycle ──
+    protected override void OnInitialized() => SwitchTab("tournament");
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JS.InvokeVoidAsync("homeAnimations.init");
+    }
+
+    // ── Actions ──
+    private async Task ToggleTheme()
+        => await JS.InvokeVoidAsync("playalamaTheme.toggleTheme");
+
+    private async Task CopyToClipboard(int idx, string text)
+    {
+        await JS.InvokeVoidAsync("homeAnimations.copyText", text);
+        _copiedIdx.Add(idx);
+        StateHasChanged();
+        await Task.Delay(1500);
+        _copiedIdx.Remove(idx);
+        StateHasChanged();
+    }
+}
+
 
