@@ -109,7 +109,7 @@ run_remote "cd '$REMOTE_DIR' && GIT_SSL_NO_VERIFY=true git fetch origin && git c
 
 # 4. Docker compose up --build
 log "Build et démarrage des containers..."
-run_remote "cd '$REMOTE_DIR' && docker compose -f '$COMPOSE_FILE' up -d --build --remove-orphans"
+run_remote "cd '$REMOTE_DIR' && docker compose -p '$DEPLOY_ENV' -f '$COMPOSE_FILE' up -d --build --remove-orphans"
 
 # 5. Healthcheck
 if [[ "$SKIP_HEALTHCHECK" == "true" ]]; then

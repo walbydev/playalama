@@ -261,13 +261,13 @@ health-staging: ## Vérifier l'état de STAGING (https://staging.playalama.onlin
 logs-prod: ## Afficher les logs PROD en temps réel (lama-server-prod)
 	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
 	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
-	  "cd /srv/playalama/prod && docker compose -f tools/docker/docker-compose.prod.yml logs -f --tail=100"
+	  "cd /srv/playalama/prod && docker compose -p prod -f tools/docker/docker-compose.prod.yml logs -f --tail=100"
 
 .PHONY: logs-staging
 logs-staging: ## Afficher les logs STAGING en temps réel (lama-server-staging)
 	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
 	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
-	  "cd /srv/playalama/staging && docker compose -f tools/docker/docker-compose.staging.yml logs -f --tail=100"
+	  "cd /srv/playalama/staging && docker compose -p staging -f tools/docker/docker-compose.staging.yml logs -f --tail=100"
 
 # =============================================================================
 # OPTION A: Debug Natif + PostgreSQL Docker (Recommandé pour développement)
