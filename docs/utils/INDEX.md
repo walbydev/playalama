@@ -18,6 +18,14 @@ Index des guides pratiques pour développement et exploitation.
   - Dépannage et scripts d'exploitation
   - Points clés et évolutivité
 
+## Git Workflow
+
+- **[GIT_WORKFLOW.md](./GIT_WORKFLOW.md)**
+  - Créer une branche `feature/`
+  - Committer et pousser
+  - Fusionner dans `master` (merge, squash, rebase)
+  - Nettoyer les branches
+
 ## Autres Resources
 
 - `../../AGENTS.md` — Memo IA principal (architecture, conventions, fichiers prioritaires)

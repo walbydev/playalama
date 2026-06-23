@@ -95,5 +95,6 @@
     <File Path="docs/utils/POSTGRESQL_QUICKSTART.md" />
     <File Path="docs/utils/START_INFRA_README.md" />
     <File Path="docs/utils/tools.md" />
+    <File Path="docs\utils\GIT_WORKFLOW.md" />
   </Folder>
 </Solution>
