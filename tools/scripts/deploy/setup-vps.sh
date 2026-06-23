@@ -249,19 +249,24 @@ run_remote "
 "
 
 # ─────────────────────────────────────────────────────────
-# 5. Réseau Docker traefik-net
+# 5. Démarrage de Traefik (le réseau traefik-net est créé par Compose)
 # ─────────────────────────────────────────────────────────
-log "[5/6] Création du réseau Docker traefik-net..."
+log "[5/6] Démarrage de Traefik..."
+
+# Si le réseau existe sans labels Compose (créé manuellement par erreur), le supprimer
 run_remote "
   if docker network inspect traefik-net >/dev/null 2>&1; then
-    echo '→ Réseau traefik-net déjà existant'
-  else
-    docker network create traefik-net
-    echo '→ Réseau traefik-net créé'
+    LABELS=\$(docker network inspect traefik-net --format '{{index .Labels \"com.docker.compose.network\"}}')
+    if [ -z \"\$LABELS\" ]; then
+      echo '→ Réseau traefik-net sans labels Compose — suppression avant redéploiement...'
+      docker network rm traefik-net
+    else
+      echo '→ Réseau traefik-net déjà géré par Compose'
+    fi
   fi
 "
 
-# Démarrer Traefik
+# Démarrer Traefik (docker compose crée le réseau traefik-net avec les bons labels)
 run_remote "
   set -e
   cd /opt/playalama/traefik

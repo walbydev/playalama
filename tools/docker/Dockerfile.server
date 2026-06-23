@@ -17,17 +17,17 @@ COPY dotnet-tools.json ./
 
 # Copier les projets
 COPY src/libs ./src/libs
-COPY src/Server/Lama.Server ./src/Server/Lama.Server
+COPY src/apps/Lama.Server ./src/apps/Lama.Server
 
 # Restaurer dépendances
-RUN dotnet restore src/Server/Lama.Server/Lama.Server.csproj
+RUN dotnet restore src/apps/Lama.Server/Lama.Server.csproj
 
 # Publier en release
 RUN dotnet publish \
     -c Release \
     -o /publish \
     --no-restore \
-    src/Server/Lama.Server/Lama.Server.csproj
+    src/apps/Lama.Server/Lama.Server.csproj
 
 # Stage 2: Runtime - Image minimale pour exécution
 FROM mcr.microsoft.com/dotnet/aspnet:10.0

@@ -10,10 +10,10 @@ COPY Directory.Packages.props ./
 COPY NuGet.config ./
 
 COPY src/libs ./src/libs
-COPY src/Web/Lama.GameWebApp ./src/Web/Lama.GameWebApp
+COPY src/apps/Lama.GameWebApp ./src/apps/Lama.GameWebApp
 
-RUN dotnet restore src/Web/Lama.GameWebApp/Lama.GameWebApp.csproj
-RUN dotnet publish -c Release -o /publish --no-restore src/Web/Lama.GameWebApp/Lama.GameWebApp.csproj
+RUN dotnet restore src/apps/Lama.GameWebApp/Lama.GameWebApp.csproj
+RUN dotnet publish -c Release -o /publish --no-restore src/apps/Lama.GameWebApp/Lama.GameWebApp.csproj
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 

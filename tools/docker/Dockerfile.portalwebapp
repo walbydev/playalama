@@ -9,10 +9,10 @@ COPY Directory.Build.props ./
 COPY Directory.Packages.props ./
 COPY NuGet.config ./
 
-COPY src/Web/Lama.PortalWebApp ./src/Web/Lama.PortalWebApp
+COPY src/apps/Lama.PortalWebApp ./src/apps/Lama.PortalWebApp
 
-RUN dotnet restore src/Web/Lama.PortalWebApp/Lama.PortalWebApp.csproj
-RUN dotnet publish -c Release -o /publish --no-restore src/Web/Lama.PortalWebApp/Lama.PortalWebApp.csproj
+RUN dotnet restore src/apps/Lama.PortalWebApp/Lama.PortalWebApp.csproj
+RUN dotnet publish -c Release -o /publish --no-restore src/apps/Lama.PortalWebApp/Lama.PortalWebApp.csproj
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
