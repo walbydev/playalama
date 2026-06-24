@@ -18,7 +18,12 @@ public sealed class PlayForm
     public string Position { get; set; } = "H8";
     public string Word { get; set; } = string.Empty;
     public string Direction { get; set; } = "H";
+    /// <summary>Placements visuels (drag-and-drop). Prioritaire sur Position/Word/Direction.</summary>
+    public List<PlacementDto>? Placements { get; set; }
 }
+
+/// <summary>Placement d'une tuile : ligne/colonne/lettre (minuscule = joker).</summary>
+public sealed record PlacementDto(int Row, int Col, char Letter);
 
 public sealed class LoginForm
 {

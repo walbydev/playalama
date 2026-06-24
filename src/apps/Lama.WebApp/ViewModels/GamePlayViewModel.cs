@@ -2,6 +2,9 @@ using Lama.WebApp.Services;
 
 namespace Lama.WebApp.ViewModels;
 
+/// <summary>Représente une tuile posée provisoirement sur le plateau (avant soumission).</summary>
+public sealed record PendingPlacement(int Row, int Col, char Letter, bool IsJoker);
+
 /// <summary>
 /// Encapsule l'état d'une partie en cours (plateau, rack, scores, actions).
 /// Instancié directement dans Game.razor — pas via DI.
@@ -45,13 +48,17 @@ public sealed class GamePlayViewModel
     // ── État ─────────────────────────────────────────────────────────────────
 
     private string? _myPlayerId;
+    private readonly List<int> _usedRackIndices = [];
 
     public string GameId { get; private set; } = string.Empty;
     public WebGameSnapshot? Snapshot { get; private set; }
     public bool IsLoading { get; private set; }
     public string? Error { get; private set; }
 
-    // Formulaire action
+    // Placements provisoires (drag-and-drop)
+    public List<PendingPlacement> PendingPlacements { get; } = [];
+
+    // Formulaire action (mode texte)
     public string Command { get; set; } = "play.pass";
     public string Position { get; set; } = "H8";
     public string Word { get; set; } = string.Empty;
@@ -78,6 +85,78 @@ public sealed class GamePlayViewModel
         }
     }
 
+    /// <summary>Tuiles du rack disponibles (hors celles déjà posées provisoirement).</summary>
+    public IReadOnlyList<(int Index, char Letter)> AvailableRackTiles
+    {
+        get
+        {
+            var rack = MyRack;
+            return Enumerable.Range(0, rack.Count)
+                .Where(i => !_usedRackIndices.Contains(i))
+                .Select(i => (i, rack[i]))
+                .ToList();
+        }
+    }
+
+    /// <summary>Vérifie si un index de rack est déjà utilisé dans un placement provisoire.</summary>
+    public bool IsRackIndexUsed(int idx) => _usedRackIndices.Contains(idx);
+
+    /// <summary>Retourne le placement provisoire à (row, col) ou null.</summary>
+    public PendingPlacement? GetPending(int row, int col) =>
+        PendingPlacements.FirstOrDefault(p => p.Row == row && p.Col == col);
+
+    // ── Drag-and-drop ────────────────────────────────────────────────────────
+
+    /// <summary>Pose une tuile provisoirement sur le plateau. Retourne false si la case est occupée.</summary>
+    public bool PlaceTile(int rackIndex, char letter, int row, int col)
+    {
+        // Case déjà occupée par une tuile confirmée
+        if (Snapshot?.Board.Any(t => t.Row == row && t.Column == col) == true)
+            return false;
+        // Case déjà occupée par un placement provisoire
+        if (PendingPlacements.Any(p => p.Row == row && p.Col == col))
+            return false;
+
+        var isJoker = letter == '*';
+        PendingPlacements.Add(new PendingPlacement(row, col, letter, isJoker));
+        _usedRackIndices.Add(rackIndex);
+        return true;
+    }
+
+    /// <summary>Rappelle une tuile provisoire du plateau vers le rack.</summary>
+    public bool RecallTile(int row, int col)
+    {
+        var idx = PendingPlacements.FindIndex(p => p.Row == row && p.Col == col);
+        if (idx < 0) return false;
+
+        // Retrouve l'index rack correspondant (dernier ajouté pour cette position)
+        // Les indices _usedRackIndices et PendingPlacements sont ajoutés en parallèle
+        _usedRackIndices.RemoveAt(idx);
+        PendingPlacements.RemoveAt(idx);
+        return true;
+    }
+
+    /// <summary>Rappelle toutes les tuiles provisoires.</summary>
+    public void RecallAll()
+    {
+        PendingPlacements.Clear();
+        _usedRackIndices.Clear();
+    }
+
+    /// <summary>Remplace la lettre d'un placement joker (après saisie du joueur).</summary>
+    public void AssignJokerLetter(int row, int col, char chosenLetter)
+    {
+        var idx = PendingPlacements.FindIndex(p => p.Row == row && p.Col == col);
+        if (idx < 0) return;
+        var old = PendingPlacements[idx];
+        // Convention : lettre minuscule = joker
+        PendingPlacements[idx] = old with { Letter = char.ToLowerInvariant(chosenLetter) };
+    }
+
+    /// <summary>Retourne l'index rack d'un placement provisoire (par son ordre d'ajout).</summary>
+    public int GetUsedRackIndex(int pendingIdx) =>
+        pendingIdx < _usedRackIndices.Count ? _usedRackIndices[pendingIdx] : -1;
+
     // ── Init ─────────────────────────────────────────────────────────────────
 
     public void Initialize(string gameId, string? myPlayerId)
@@ -92,7 +171,11 @@ public sealed class GamePlayViewModel
     {
         IsLoading = true;
         Error = null;
-        try { Snapshot = await api.GetGameAsync(GameId); }
+        try
+        {
+            Snapshot = await api.GetGameAsync(GameId);
+            RecallAll(); // réinitialise les placements provisoires après chaque refresh
+        }
         catch (Exception ex) { Error = ex.Message; }
         finally { IsLoading = false; }
     }
@@ -109,7 +192,11 @@ public sealed class GamePlayViewModel
                 Command = Command,
                 Position = Position,
                 Word = Word,
-                Direction = Direction
+                Direction = Direction,
+                // Priorité aux placements visuels si présents
+                Placements = PendingPlacements.Count > 0
+                    ? PendingPlacements.Select(p => new PlacementDto(p.Row, p.Col, p.Letter)).ToList()
+                    : null
             };
             await api.PlayAsync(GameId, form, token);
             await LoadAsync(api);

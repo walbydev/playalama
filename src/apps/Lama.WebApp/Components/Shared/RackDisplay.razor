@@ -1,6 +1,7 @@
 @using Lama.WebApp.ViewModels
 
-@* Rack du joueur courant : tuiles avec lettre + valeur, joker en blanc. *@
+@* Rack du joueur courant : tuiles avec lettre + valeur, joker en blanc.
+   Quand IsMyTurn, les tuiles sont draggables vers le plateau. *@
 
 <div class="rack-container" role="list" aria-label="Vos tuiles @(IsMyTurn ? "(c'est votre tour)" : "")">
     @if (Rack.Count == 0)
@@ -9,12 +10,23 @@
     }
     else
     {
-        @foreach (var letter in Rack)
+        @for (var i = 0; i < Rack.Count; i++)
         {
+            var idx = i;
+            var letter = Rack[idx];
             var upper = char.ToUpperInvariant(letter);
             var val = GamePlayViewModel.GetTileValue(letter);
             var isJoker = letter == '*';
-            <div class="rack-tile @(isJoker ? "rack-tile--joker" : "")" role="listitem" aria-label="@(isJoker ? "Joker" : $"Lettre {upper} valant {val} point{(val > 1 ? "s" : "")}")">
+            var used = UsedIndices.Contains(idx);
+            var draggable = IsMyTurn && !used;
+
+            <div class="rack-tile @(isJoker ? "rack-tile--joker" : "") @(used ? "rack-tile--used" : "")"
+                 role="listitem"
+                 aria-label="@(isJoker ? "Joker" : $"Lettre {upper} valant {val} point{(val > 1 ? "s" : "")}")"
+                 aria-disabled="@(used ? "true" : null)"
+                 draggable="@(draggable ? "true" : "false")"
+                 @ondragstart="@(() => { if (draggable) OnDragStart.InvokeAsync((idx, letter)); })"
+                 @ondragstart:stopPropagation>
                 <span aria-hidden="true">@(isJoker ? "★" : upper.ToString())</span>
                 @if (!isJoker)
                 {
@@ -28,4 +40,6 @@
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<char> Rack { get; set; } = [];
     [Parameter] public bool IsMyTurn { get; set; }
+    [Parameter] public IReadOnlyCollection<int> UsedIndices { get; set; } = [];
+    [Parameter] public EventCallback<(int Index, char Letter)> OnDragStart { get; set; }
 }

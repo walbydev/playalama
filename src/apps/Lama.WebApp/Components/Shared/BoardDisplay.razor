@@ -1,7 +1,7 @@
 @using Lama.WebApp.Services
 @using Lama.WebApp.ViewModels
 
-@* Plateau de jeu 15×15 avec cases bonus colorées et tuiles posées. *@
+@* Plateau de jeu 15×15 avec cases bonus colorées, tuiles posées et placements provisoires. *@
 
 <div class="board-container" role="region" aria-label="Plateau de jeu">
     <div class="board-grid" role="grid">
@@ -22,20 +22,52 @@
             {
                 var c = col; // capture
                 var tile = GetTile(r, c);
+                var pending = GetPendingTile(r, c);
                 var bonus = GetBonus(r, c);
-                var cssClass = tile.HasValue
-                    ? "board-cell board-cell--tile"
-                    : $"board-cell{(string.IsNullOrEmpty(bonus) ? "" : $" board-cell--{bonus}")}";
-                var ariaLabel = tile.HasValue
-                    ? $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}: {char.ToUpperInvariant(tile.Value)}"
-                    : $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}{GetBonusAriaLabel(bonus)}";
+                var isDropTarget = CanDrop && tile is null && pending is null;
 
-                <div class="@cssClass" role="gridcell" aria-label="@ariaLabel">
+                string cssClass;
+                string ariaLabel;
+
+                if (tile.HasValue)
+                {
+                    cssClass = "board-cell board-cell--tile";
+                    ariaLabel = $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}: {char.ToUpperInvariant(tile.Value)}";
+                }
+                else if (pending is not null)
+                {
+                    cssClass = "board-cell board-cell--pending";
+                    ariaLabel = $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}: {char.ToUpperInvariant(pending.Letter)} (provisoire, clic pour rappeler)";
+                }
+                else
+                {
+                    cssClass = $"board-cell{(string.IsNullOrEmpty(bonus) ? "" : $" board-cell--{bonus}")}";
+                    ariaLabel = $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}{GetBonusAriaLabel(bonus)}";
+                }
+
+                <div class="@cssClass"
+                     role="gridcell"
+                     aria-label="@ariaLabel"
+                     @ondragover:preventDefault="@isDropTarget"
+                     @ondrop="@(isDropTarget ? () => OnDrop.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : () => Task.CompletedTask)">
                     @if (tile.HasValue)
                     {
                         var upper = char.ToUpperInvariant(tile.Value);
                         var val = GamePlayViewModel.GetTileValue(tile.Value);
                         <span class="tile-letter" aria-hidden="true">@upper</span>
+                        @if (val > 0)
+                        {
+                            <span class="tile-val" aria-hidden="true">@val</span>
+                        }
+                    }
+                    else if (pending is not null)
+                    {
+                        var dispLetter = pending.IsJoker
+                            ? (pending.Letter == '*' ? "?" : char.ToUpperInvariant(pending.Letter).ToString())
+                            : char.ToUpperInvariant(pending.Letter).ToString();
+                        var val = pending.IsJoker ? 0 : GamePlayViewModel.GetTileValue(pending.Letter);
+                        <span class="tile-letter" aria-hidden="true">@dispLetter</span>
                         @if (val > 0)
                         {
                             <span class="tile-val" aria-hidden="true">@val</span>
@@ -58,12 +90,19 @@
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<WebBoardTile> Board { get; set; } = [];
     [Parameter, EditorRequired] public Func<int, int, string> GetBonus { get; set; } = (_, _) => string.Empty;
+    [Parameter] public IReadOnlyList<PendingPlacement> Pending { get; set; } = [];
+    [Parameter] public bool CanDrop { get; set; }
+    [Parameter] public EventCallback<(int Row, int Col)> OnDrop { get; set; }
+    [Parameter] public EventCallback<(int Row, int Col)> OnRecall { get; set; }
 
     private char? GetTile(int row, int col)
     {
         var tile = Board.FirstOrDefault(x => x.Row == row && x.Column == col);
         return tile?.Letter;
     }
+
+    private PendingPlacement? GetPendingTile(int row, int col) =>
+        Pending.FirstOrDefault(p => p.Row == row && p.Col == col);
 
     private static string GetBonusLabel(string bonus) => bonus switch
     {

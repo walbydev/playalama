@@ -210,6 +210,14 @@ public sealed class LamaApiClient(HttpClient httpClient)
     {
         object? payload = form.Command switch
         {
+            "play.move" when form.Placements is { Count: > 0 }
+                => new
+                {
+                    placements = form.Placements.Select(p => new
+                    {
+                        row = p.Row, column = p.Col, letter = p.Letter.ToString()
+                    }).ToArray()
+                },
             "play.move" => new { position = form.Position, word = form.Word, direction = form.Direction },
             "play.swap" => new { letters = form.Word },
             _ => null

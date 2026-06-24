@@ -57,7 +57,12 @@ else
                     @* ── Colonne gauche : plateau ── *@
                     <div>
                         <h3 class="mb-2">Plateau</h3>
-                        <BoardDisplay Board="_vm.Snapshot.Board" GetBonus="_vm.GetCellBonus" />
+                        <BoardDisplay Board="_vm.Snapshot.Board"
+                                      GetBonus="_vm.GetCellBonus"
+                                      Pending="_vm.PendingPlacements"
+                                      CanDrop="@(_vm.IsMyTurn && _draggingRackIndex >= 0)"
+                                      OnDrop="HandleDrop"
+                                      OnRecall="HandleRecall" />
                     </div>
 
                     @* ── Colonne droite : sidebar ── *@
@@ -75,22 +80,43 @@ else
                         @if (_vm.MyRack.Count > 0)
                         {
                             <div class="card">
-                                <h3 class="mb-2">Mes tuiles @(_vm.IsMyTurn ? "— À vous de jouer !" : "")</h3>
-                                <RackDisplay Rack="_vm.MyRack" IsMyTurn="_vm.IsMyTurn" />
+                                <h3 class="mb-2">Mes tuiles @(_vm.IsMyTurn ? "— Faites glisser sur le plateau" : "")</h3>
+                                <RackDisplay Rack="_vm.MyRack"
+                                             IsMyTurn="_vm.IsMyTurn"
+                                             UsedIndices="@(_vm.PendingPlacements.Count > 0 ? GetUsedIndices() : [])"
+                                             OnDragStart="HandleDragStart" />
+
+                                @* Bouton rappel tuiles provisoires *@
+                                @if (_vm.PendingPlacements.Count > 0)
+                                {
+                                    <div class="flex gap-2 mt-2 flex-wrap">
+                                        <button class="btn btn-ghost btn-sm" @onclick="() => { _vm.RecallAll(); StateHasChanged(); }">
+                                            ↩ Rappeler toutes les tuiles
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" @onclick="PlayDragMoveAsync"
+                                                disabled="@(_vm.IsLoading || _vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))">
+                                            ✔ Valider le placement (@_vm.PendingPlacements.Count tuile@(_vm.PendingPlacements.Count > 1 ? "s" : ""))
+                                        </button>
+                                    </div>
+                                    @if (_vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))
+                                    {
+                                        <p class="form-error mt-1" style="font-size:.8rem">Assignez une lettre à chaque joker (★ → clic)</p>
+                                    }
+                                }
                             </div>
                         }
 
-                        @* Panneau d'action *@
+                        @* Panneau d'action (passer / swap / saisie manuelle) *@
                         @if (!_vm.Snapshot.IsGameOver && _vm.IsMyTurn)
                         {
                             <div class="card action-panel">
-                                <h3 class="mb-2">Mon action</h3>
+                                <h3 class="mb-2">Autres actions</h3>
                                 <EditForm Model="_vm" OnValidSubmit="PlayAsync">
                                     <div class="form-field">
                                         <label for="play-cmd">Commande</label>
                                         <InputSelect id="play-cmd" @bind-Value="_vm.Command">
                                             <option value="play.pass">Passer</option>
-                                            <option value="play.move">Poser un mot</option>
+                                            <option value="play.move">Poser un mot (saisie)</option>
                                             <option value="play.swap">Échanger des lettres</option>
                                         </InputSelect>
                                     </div>
@@ -158,6 +184,24 @@ else
     </div>
 }
 
+@* ── Modal joker : assignation de la lettre ── *@
+@if (_jokerRow >= 0)
+{
+    <div class="joker-overlay" role="dialog" aria-modal="true" aria-label="Choisir la lettre du joker">
+        <div class="joker-picker">
+            <h4 class="mb-2">★ Quel lettre pour ce joker ?</h4>
+            <div class="joker-grid">
+                @foreach (var ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                {
+                    var letter = ch;
+                    <button class="joker-btn" @onclick="() => AssignJoker(letter)" aria-label="@letter">@letter</button>
+                }
+            </div>
+            <button class="btn btn-ghost btn-sm mt-2" @onclick="CancelJoker">Annuler</button>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter] public string GameId { get; set; } = string.Empty;
 
@@ -165,6 +209,14 @@ else
     private string? _myPlayerId;
     private PeriodicTimer? _timer;
     private CancellationTokenSource? _pollingCts;
+
+    // Drag state
+    private int _draggingRackIndex = -1;
+    private char _draggingLetter = '\0';
+
+    // Joker picker state
+    private int _jokerRow = -1;
+    private int _jokerCol = -1;
 
     protected override async Task OnInitializedAsync()
     {
@@ -210,8 +262,83 @@ else
         await _vm.LoadAsync(Api);
     }
 
+    // ── Drag-and-drop ────────────────────────────────────────────────────────
+
+    private void HandleDragStart((int Index, char Letter) args)
+    {
+        _draggingRackIndex = args.Index;
+        _draggingLetter = args.Letter;
+    }
+
+    private void HandleDrop((int Row, int Col) cell)
+    {
+        if (_draggingRackIndex < 0) return;
+
+        if (_draggingLetter == '*')
+        {
+            // Joker : placement provisoire avec '*', puis ouvre le picker
+            _vm.PlaceTile(_draggingRackIndex, '*', cell.Row, cell.Col);
+            _jokerRow = cell.Row;
+            _jokerCol = cell.Col;
+        }
+        else
+        {
+            _vm.PlaceTile(_draggingRackIndex, _draggingLetter, cell.Row, cell.Col);
+        }
+
+        _draggingRackIndex = -1;
+        _draggingLetter = '\0';
+        StateHasChanged();
+    }
+
+    private void HandleRecall((int Row, int Col) cell)
+    {
+        _vm.RecallTile(cell.Row, cell.Col);
+        StateHasChanged();
+    }
+
+    private void AssignJoker(char letter)
+    {
+        if (_jokerRow >= 0)
+            _vm.AssignJokerLetter(_jokerRow, _jokerCol, letter);
+        _jokerRow = -1;
+        _jokerCol = -1;
+        StateHasChanged();
+    }
+
+    private void CancelJoker()
+    {
+        if (_jokerRow >= 0)
+            _vm.RecallTile(_jokerRow, _jokerCol);
+        _jokerRow = -1;
+        _jokerCol = -1;
+        StateHasChanged();
+    }
+
+    private HashSet<int> GetUsedIndices() => [.._vm.PendingPlacements
+        .Select((_, i) => i < _vm.PendingPlacements.Count ? GetUsedRackIndex(i) : -1)
+        .Where(x => x >= 0)];
+
+    private int GetUsedRackIndex(int pendingIdx)
+    {
+        // _usedRackIndices is private; expose via a helper property on the VM
+        return _vm.GetUsedRackIndex(pendingIdx);
+    }
+
+    // ── Soumission ──────────────────────────────────────────────────────────
+
+    private async Task PlayDragMoveAsync()
+    {
+        _vm.Command = "play.move";
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+        await _vm.PlayAsync(Api, token);
+    }
+
     private async Task PlayAsync()
     {
+        // En mode saisie manuelle, effacer les placements provisoires
+        _vm.RecallAll();
         var token = await Auth.GetTokenAsync();
         if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
         await _vm.PlayAsync(Api, token);
