@@ -388,9 +388,138 @@ label {
   color: var(--muted);
 }
 
+/* ── Hero section ──────────────────────────────────────────────────────────── */
+.hero-title {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  margin-bottom: 8px;
+}
+.hero-tagline {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.cta-strip {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Stats counters ────────────────────────────────────────────────────────── */
+.home-stats-row {
+  margin-top: 16px;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.stats-counters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.stat-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 140px;
+  padding: 18px 20px;
+  text-align: center;
+}
+.stat-icon { font-size: 1.6rem; }
+.stat-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+.stat-label { font-size: 0.82rem; color: var(--muted); }
+
+/* ── Two-column home layout ────────────────────────────────────────────────── */
+.home-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* ── Live board widget ─────────────────────────────────────────────────────── */
+.live-board-widget { overflow: hidden; }
+.live-board {
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin: 12px 0;
+}
+.board-cell--filled {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface-soft));
+  color: var(--text);
+  font-weight: 800;
+}
+.live-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* ── Leaderboard ───────────────────────────────────────────────────────────── */
+.leaderboard-preview table { width: 100%; }
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.82rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+}
+.rank-badge.rank-1 { background: linear-gradient(135deg, #f7d060, #e08c00); color: #2a1800; border-color: transparent; }
+.rank-badge.rank-2 { background: linear-gradient(135deg, #d0d8e0, #8fa0b0); color: #151f28; border-color: transparent; }
+.rank-badge.rank-3 { background: linear-gradient(135deg, #e0a060, #9a5020); color: #2a1400; border-color: transparent; }
+
+/* ── Downloads ─────────────────────────────────────────────────────────────── */
+.downloads-section { margin-top: 16px; }
+.download-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+.download-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 12px;
+  text-align: center;
+  border-radius: 16px;
+  color: var(--text);
+  transition: background 0.18s, transform 0.15s;
+  cursor: pointer;
+}
+.download-card:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-soft));
+  transform: translateY(-2px);
+}
+.download-icon { font-size: 2rem; }
+.download-platform { font-weight: 700; font-size: 0.95rem; }
+.download-arch { font-size: 0.78rem; }
+.download-hint { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
 @media (max-width: 900px) {
   .two-col { grid-template-columns: 1fr; }
   .auth-card { margin: 16px auto; }
   .stats-row { flex-direction: column; }
+  .home-two-col { grid-template-columns: 1fr; }
+  .download-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 520px) {
+  .download-grid { grid-template-columns: 1fr 1fr; }
+  .stats-counters { justify-content: center; }
 }
 

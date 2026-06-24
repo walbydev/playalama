@@ -1,0 +1,45 @@
+<div class="card section leaderboard-preview">
+    <div class="section-head">
+        <h2>🏆 Classement</h2>
+        <a class="button-secondary" href="/leaderboard">Classements complets →</a>
+    </div>
+
+    <table class="game-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Joueur</th>
+                <th>Score</th>
+                <th>Parties</th>
+                <th>Victoires</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Entries.Count; i++)
+            {
+                var entry = Entries[i];
+                var rank = i + 1;
+                <tr>
+                    <td><span class="rank-badge rank-@rank">@rank</span></td>
+                    <td>@entry.PlayerName</td>
+                    <td><strong>@entry.TotalScore</strong></td>
+                    <td>@entry.GamesPlayed</td>
+                    <td class="ok">@entry.Wins</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    public sealed record LeaderboardEntry(string PlayerName, int TotalScore, int GamesPlayed, int Wins);
+
+    [Parameter]
+    public IReadOnlyList<LeaderboardEntry> Entries { get; set; } = [
+        new("Alice",  4210, 38, 24),
+        new("Bob",    3870, 41, 21),
+        new("Carla",  3540, 35, 19),
+        new("Dani",   3120, 30, 15),
+        new("Evan",   2980, 27, 13),
+    ];
+}
