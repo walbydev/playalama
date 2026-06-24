@@ -1,0 +1,87 @@
+@using Lama.WebApp.Services
+@using Lama.WebApp.ViewModels
+
+@* Plateau de jeu 15×15 avec cases bonus colorées et tuiles posées. *@
+
+<div class="board-container" role="region" aria-label="Plateau de jeu">
+    <div class="board-grid" role="grid">
+        @* En-tête colonnes *@
+        <div class="board-header-cell" aria-hidden="true"></div>
+        @for (var c = 0; c < 15; c++)
+        {
+            var colLabel = GamePlayViewModel.ColLabel(c);
+            <div class="board-header-cell" aria-hidden="true">@colLabel</div>
+        }
+
+        @* Lignes *@
+        @for (var row = 0; row < 15; row++)
+        {
+            var r = row; // capture
+            <div class="board-header-cell" aria-hidden="true">@GamePlayViewModel.RowLabel(r)</div>
+            @for (var col = 0; col < 15; col++)
+            {
+                var c = col; // capture
+                var tile = GetTile(r, c);
+                var bonus = GetBonus(r, c);
+                var cssClass = tile.HasValue
+                    ? "board-cell board-cell--tile"
+                    : $"board-cell{(string.IsNullOrEmpty(bonus) ? "" : $" board-cell--{bonus}")}";
+                var ariaLabel = tile.HasValue
+                    ? $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}: {char.ToUpperInvariant(tile.Value)}"
+                    : $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}{GetBonusAriaLabel(bonus)}";
+
+                <div class="@cssClass" role="gridcell" aria-label="@ariaLabel">
+                    @if (tile.HasValue)
+                    {
+                        var upper = char.ToUpperInvariant(tile.Value);
+                        var val = GamePlayViewModel.GetTileValue(tile.Value);
+                        <span class="tile-letter" aria-hidden="true">@upper</span>
+                        @if (val > 0)
+                        {
+                            <span class="tile-val" aria-hidden="true">@val</span>
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(bonus))
+                    {
+                        <span class="board-label" aria-hidden="true">@GetBonusLabel(bonus)</span>
+                    }
+                    else if (r == 7 && c == 7)
+                    {
+                        <span aria-hidden="true">★</span>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<WebBoardTile> Board { get; set; } = [];
+    [Parameter, EditorRequired] public Func<int, int, string> GetBonus { get; set; } = (_, _) => string.Empty;
+
+    private char? GetTile(int row, int col)
+    {
+        var tile = Board.FirstOrDefault(x => x.Row == row && x.Column == col);
+        return tile?.Letter;
+    }
+
+    private static string GetBonusLabel(string bonus) => bonus switch
+    {
+        "tw" => "TM",
+        "dw" => "DM",
+        "tl" => "TL",
+        "dl" => "DL",
+        "st" => "★",
+        _ => string.Empty
+    };
+
+    private static string GetBonusAriaLabel(string bonus) => bonus switch
+    {
+        "tw" => " — Triple Mot",
+        "dw" => " — Double Mot",
+        "tl" => " — Triple Lettre",
+        "dl" => " — Double Lettre",
+        "st" => " — Départ",
+        _ => string.Empty
+    };
+}

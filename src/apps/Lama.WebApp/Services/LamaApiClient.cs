@@ -37,6 +37,17 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.ExpiresAt);
     }
 
+    public async Task<WebAuthResponse> DevLoginAsync(string playerName, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PostAsJsonAsync($"{ApiBase}/auth/login", new { playerName }, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+
+        var payload = await response.Content.ReadFromJsonAsync<AuthEnvelope>(JsonOptions, cancellationToken)
+            ?? throw new InvalidOperationException("Réponse invalide sur auth/login (dev).");
+
+        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.ExpiresAt);
+    }
+
     // ── Profil joueur ────────────────────────────────────────────────────────
 
     public async Task<WebPlayerProfile?> GetMyProfileAsync(string token, CancellationToken cancellationToken = default)
@@ -155,7 +166,15 @@ public sealed class LamaApiClient(HttpClient httpClient)
     public async Task StartGameAsync(string gameId, string? token = null, CancellationToken cancellationToken = default)
     {
         using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games/{gameId}/start", token);
-        httpRequest.Content = JsonContent.Create(new { playerId = (string?)null });
+        httpRequest.Content = JsonContent.Create(new { playerId = (string?)null, force = false });
+        var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+    }
+
+    public async Task ForceStartGameAsync(string gameId, string? token = null, CancellationToken cancellationToken = default)
+    {
+        using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games/{gameId}/start", token);
+        httpRequest.Content = JsonContent.Create(new { playerId = (string?)null, force = true });
         var response = await httpClient.SendAsync(httpRequest, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
     }
@@ -170,12 +189,20 @@ public sealed class LamaApiClient(HttpClient httpClient)
 
         return new WebGameSnapshot(
             payload.Id,
+            payload.GameName,
             payload.IsGameOver,
             payload.HasStarted,
             payload.UsesLobby,
+            payload.IsClosed,
             payload.CurrentPlayerIndex,
             payload.TurnNumber,
-            payload.Players.Select(x => new WebSnapshotPlayer(x.PlayerId, x.PlayerName, x.Score, x.IsHost)).ToList(),
+            payload.MaxPlayers,
+            payload.BoardSize,
+            payload.RackSize,
+            payload.Language ?? "fr",
+            payload.Players.Select(x => new WebSnapshotPlayer(
+                x.PlayerId, x.PlayerName, x.Score, x.IsHost,
+                x.Rack ?? [], x.RackCount)).ToList(),
             payload.Board.Select(x => new WebBoardTile(x.Row, x.Column, x.Letter)).ToList());
     }
 
@@ -260,8 +287,11 @@ public sealed class LamaApiClient(HttpClient httpClient)
     private sealed record GameListItemEnvelope(string Id, string? GameName, string Status, int Players, int MaxPlayers, JsonElement Queue, bool IsJoinable);
     private sealed record CreateGameEnvelope(string GameId, string HostPlayerId);
     private sealed record JoinGameEnvelope(string GameId, string PlayerId);
-    private sealed record GameSnapshotEnvelope(string Id, bool IsGameOver, bool HasStarted, bool UsesLobby, int CurrentPlayerIndex, int TurnNumber, List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board);
-    private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost);
+    private sealed record GameSnapshotEnvelope(
+        string Id, string? GameName, bool IsGameOver, bool HasStarted, bool UsesLobby, bool IsClosed,
+        int CurrentPlayerIndex, int TurnNumber, int MaxPlayers, int BoardSize, int RackSize, string? Language,
+        List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board);
+    private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost, List<char>? Rack, int RackCount);
     private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);
     private sealed record PlayEnvelope(string GameId, string MoveId, int Score);
     private sealed record LeaderboardEntryEnvelope(string PlayerId, string Username, string? CountryCode, int Level, int Elo, int Wins, int Games);

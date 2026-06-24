@@ -72,15 +72,21 @@ public sealed record WebGameListItem(
 
 public sealed record WebGameSnapshot(
     string Id,
+    string? GameName,
     bool IsGameOver,
     bool HasStarted,
     bool UsesLobby,
+    bool IsClosed,
     int CurrentPlayerIndex,
     int TurnNumber,
+    int MaxPlayers,
+    int BoardSize,
+    int RackSize,
+    string Language,
     IReadOnlyList<WebSnapshotPlayer> Players,
     IReadOnlyList<WebBoardTile> Board);
 
-public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int Score, bool IsHost);
+public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int Score, bool IsHost, IReadOnlyList<char> Rack, int RackCount);
 public sealed record WebBoardTile(int Row, int Column, char Letter);
 public sealed record WebPlayResponse(string GameId, string MoveId, int Score);
 

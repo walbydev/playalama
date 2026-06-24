@@ -327,7 +327,7 @@ public static class GamesCommandEndpoints
                 return Results.BadRequest(new { error = "game is over" });
 
             var occupiedSlots = game.Players.Count + game.ReservedAiSlots;
-            if (occupiedSlots < 2)
+            if (!request.Force && occupiedSlots < 2)
                 return Results.BadRequest(new { error = "at least two participants are required to start" });
 
             game.HasStarted = true;

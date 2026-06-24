@@ -135,7 +135,12 @@
             if (user is null) { Navigation.NavigateTo("/login"); return; }
 
             var created = await Api.CreateGameAsync(_createForm, user.Username, token);
-            Navigation.NavigateTo($"/games/{created.GameId}?playerId={Uri.EscapeDataString(created.HostPlayerId)}");
+            // Partie multijoueur → salle d'attente; solo → partie directement
+            var isMulti = string.Equals(_createForm.Mode, "multi", StringComparison.OrdinalIgnoreCase);
+            var dest = isMulti
+                ? $"/games/{created.GameId}/lobby?playerId={Uri.EscapeDataString(created.HostPlayerId)}"
+                : $"/games/{created.GameId}?playerId={Uri.EscapeDataString(created.HostPlayerId)}";
+            Navigation.NavigateTo(dest);
         }
         catch (Exception ex) { _error = ex.Message; }
         finally { _busy = false; }

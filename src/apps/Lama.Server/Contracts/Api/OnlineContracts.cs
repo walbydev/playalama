@@ -23,7 +23,7 @@ public sealed record JoinGameRequest(string PlayerName, string? Password = null)
 
 public sealed record EndGameRequest(string? PlayerId);
 
-public sealed record StartGameRequest(string? PlayerId);
+public sealed record StartGameRequest(string? PlayerId, bool Force = false);
 
 public sealed record PlayMoveRequest(string PlayerId, string Command, JsonElement? Payload = null);
 

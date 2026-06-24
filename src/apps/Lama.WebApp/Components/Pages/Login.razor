@@ -43,6 +43,18 @@
         <p class="text-center text-muted mt-3" style="font-size:.9rem">
             Pas encore de compte ? <a href="/register">S'inscrire</a>
         </p>
+
+        <div style="margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.25rem">
+            <p class="text-center text-dim mb-2" style="font-size:.8rem">Mode test — aucun compte requis</p>
+            <button class="btn btn-ghost" style="width:100%; border-color:var(--gold); color:var(--gold)"
+                    @onclick="DevLoginAsync" disabled="@_busy">
+                ⚡ Connexion rapide (DevJoueur)
+            </button>
+            @if (!string.IsNullOrWhiteSpace(_devError))
+            {
+                <p class="form-error mt-1 text-center" role="alert" style="font-size:.8rem">@_devError</p>
+            }
+        </div>
     </div>
 </div>
 
@@ -50,6 +62,7 @@
     private readonly LoginForm form = new();
     private bool _busy;
     private string? _error;
+    private string? _devError;
 
     protected override void OnInitialized()
     {
@@ -68,6 +81,21 @@
             Navigation.NavigateTo("/games");
         else
             _error = err ?? "Connexion échouée.";
+
+        _busy = false;
+    }
+
+    private async Task DevLoginAsync()
+    {
+        _busy = true;
+        _devError = null;
+
+        var (success, err) = await Auth.DevLoginAsync("DevJoueur");
+
+        if (success)
+            Navigation.NavigateTo("/games");
+        else
+            _devError = err ?? "Connexion dev échouée.";
 
         _busy = false;
     }
