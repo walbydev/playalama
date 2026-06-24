@@ -224,16 +224,18 @@ logs-staging: ## Afficher les logs STAGING en temps réel (lama-server-staging +
 .PHONY: cleanup-vps
 cleanup-vps: ## [VPS] Nettoyer les anciens containers/images obsolètes sur le VPS
 	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
-	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) "bash -s" <<'EOF'
-	for c in lama-portal-webapp-prod lama-game-webapp-prod lama-portal-webapp-staging lama-game-webapp-staging; do
-	  docker rm -f "$$c" 2>/dev/null && echo "Supprimé: $$c" || true
-	done
-	for img in lama-portal-webapp lama-game-webapp; do
-	  docker images "$$img" -q | xargs -r docker rmi -f 2>/dev/null || true
-	done
-	docker image prune -f
-	echo "✓ Nettoyage VPS terminé"
-	EOF
+	bash tools/scripts/deploy/cleanup-vps.sh --ssh-key $(SSH_KEY) --target $(DEPLOY_TARGET)
+
+.PHONY: cleanup-vps-dry
+cleanup-vps-dry: ## [VPS] Simulation nettoyage VPS (dry-run)
+	bash tools/scripts/deploy/cleanup-vps.sh \
+	  --ssh-key $(SSH_KEY) --target $(DEPLOY_TARGET) --dry-run
+
+.PHONY: vps-status
+vps-status: ## [VPS] Afficher l'état des containers sur le VPS
+	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
+	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
+	  "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' && echo '' && docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}' | grep lama"
 
 # =============================================================================
 # OPTION A: Debug Natif + PostgreSQL Docker (Recommandé pour développement)

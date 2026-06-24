@@ -176,14 +176,33 @@ echo "[VPS] Chargement des images..."
 docker load -i "\$BUNDLE"
 rm -f "\$BUNDLE"
 
-echo "[VPS] Arrêt des anciens containers (hors downloads)..."
-docker compose -p "\$DEPLOY_ENV" -f "\$REMOTE_DIR/docker-compose.yml" \
-  stop lama-server-\$DEPLOY_ENV lama-webapp-\$DEPLOY_ENV 2>/dev/null || true
+echo "[VPS] Arrêt des stacks depuis les anciens répertoires..."
+for OLD_DIR in "/srv/playalama/\$DEPLOY_ENV" "/srv/playalama"; do
+  if [ -d "\$OLD_DIR" ] && ([ -f "\$OLD_DIR/docker-compose.yml" ] || [ -f "\$OLD_DIR/tools/docker/docker-compose.\$DEPLOY_ENV.yml" ]); then
+    echo "  Arrêt stack depuis \$OLD_DIR..."
+    cd "\$OLD_DIR" && docker compose -p "\$DEPLOY_ENV" down --remove-orphans 2>/dev/null || true
+  fi
+done
+
+echo "[VPS] Arrêt des anciens containers nommés explicitement..."
+for c in lama-portal-webapp-\$DEPLOY_ENV lama-game-webapp-\$DEPLOY_ENV lama-portal-webapp lama-game-webapp; do
+  docker rm -f "\$c" 2>/dev/null && echo "  Supprimé: \$c" || true
+done
+
+echo "[VPS] Vérification fichier .env..."
+if [ ! -f "\$REMOTE_DIR/.env" ]; then
+  echo "  ⚠  AVERTISSEMENT: \$REMOTE_DIR/.env introuvable — les variables d'environnement seront manquantes!"
+  echo "  Créez le fichier .env avec: scp .env.prod debian@playalama.online:\$REMOTE_DIR/.env"
+fi
 
 echo "[VPS] Démarrage avec les nouvelles images..."
+cd "\$REMOTE_DIR"
 DEPLOY_TAG="\$DEPLOY_TAG" docker compose -p "\$DEPLOY_ENV" \
   -f "\$REMOTE_DIR/docker-compose.yml" \
   up -d --no-build --remove-orphans
+
+echo "[VPS] Containers actifs:"
+docker ps --format "  {{.Names}} ({{.Status}})" | grep lama || true
 EOR
 )
 
