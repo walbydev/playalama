@@ -210,16 +210,30 @@ health-staging: ## Vérifier l'état de STAGING (https://staging.playalama.onlin
 	@curl -fsS https://staging.playalama.online/health && echo "✓ Staging OK" || echo "✗ Staging KO"
 
 .PHONY: logs-prod
-logs-prod: ## Afficher les logs PROD en temps réel (lama-server-prod)
+logs-prod: ## Afficher les logs PROD en temps réel (lama-server-prod + lama-webapp-prod)
 	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
 	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
-	  "cd /srv/playalama/prod && docker compose -p prod -f tools/docker/docker-compose.prod.yml logs -f --tail=100"
+	  "cd /opt/playalama/prod && docker compose -p prod logs -f --tail=100 lama-server-prod lama-webapp-prod"
 
 .PHONY: logs-staging
-logs-staging: ## Afficher les logs STAGING en temps réel (lama-server-staging)
+logs-staging: ## Afficher les logs STAGING en temps réel (lama-server-staging + lama-webapp-staging)
 	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
 	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
-	  "cd /srv/playalama/staging && docker compose -p staging -f tools/docker/docker-compose.staging.yml logs -f --tail=100"
+	  "cd /opt/playalama/staging && docker compose -p staging logs -f --tail=100 lama-server-staging lama-webapp-staging"
+
+.PHONY: cleanup-vps
+cleanup-vps: ## [VPS] Nettoyer les anciens containers/images obsolètes sur le VPS
+	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
+	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) "bash -s" <<'EOF'
+	for c in lama-portal-webapp-prod lama-game-webapp-prod lama-portal-webapp-staging lama-game-webapp-staging; do
+	  docker rm -f "$$c" 2>/dev/null && echo "Supprimé: $$c" || true
+	done
+	for img in lama-portal-webapp lama-game-webapp; do
+	  docker images "$$img" -q | xargs -r docker rmi -f 2>/dev/null || true
+	done
+	docker image prune -f
+	echo "✓ Nettoyage VPS terminé"
+	EOF
 
 # =============================================================================
 # OPTION A: Debug Natif + PostgreSQL Docker (Recommandé pour développement)

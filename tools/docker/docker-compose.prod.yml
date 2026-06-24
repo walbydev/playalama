@@ -1,22 +1,19 @@
 # docker-compose.prod.yml
 # Environnement PRODUCTION — playalama.online
 #
-# Usage depuis le VPS (/srv/playalama/prod/) :
-#   docker compose -f tools/docker/docker-compose.prod.yml up -d --build
-#
-# Usage depuis le PC de dev :
+# Déploiement image-only (aucun build sur le VPS) :
 #   make deploy-prod SSH_KEY=~/.ssh/playalama.key
 #
 # Prérequis VPS :
 #   - Réseau Docker "traefik-net" existant (créé par make deploy-traefik)
-#   - Fichier .env présent dans /srv/playalama/prod/ (voir tools/environments/.env.prod.example)
+#   - Fichier .env présent dans /opt/playalama/prod/ (voir tools/environments/.env.prod.example)
+#   - Images chargées localement via deploy-env.sh (docker load)
 #
 # Routing Traefik (SSL géré automatiquement) :
-#   playalama.online/            → lama-portal-webapp-prod  (priorité 10)
-#   playalama.online/live/       → lama-game-webapp-prod    (priorité 20, strip /live)
-#   playalama.online/api/        → lama-server-prod         (priorité 20)
-#   playalama.online/health      → lama-server-prod         (priorité 25)
-#   playalama.online/downloads/  → lama-downloads-prod      (priorité 20)
+#   playalama.online/health    → lama-server-prod   (priorité 25)
+#   playalama.online/api/      → lama-server-prod   (priorité 20)
+#   playalama.online/downloads → lama-downloads-prod (priorité 20)
+#   playalama.online/          → lama-webapp-prod   (catch-all, priorité 10)
 
 services:
 
@@ -24,14 +21,12 @@ services:
   # API Jeu + SignalR/SSE
   # ─────────────────────────────────────────────────────────
   lama-server-prod:
-    build:
-      context: ../..
-      dockerfile: tools/docker/Dockerfile.server
+    image: lama-server:${DEPLOY_TAG:-latest}
     container_name: lama-server-prod
     networks:
       - prod-internal
       - traefik-net
-    env_file: ../../.env
+    env_file: .env
     environment:
       ASPNETCORE_URLS: "http://+:5000"
       ASPNETCORE_ENVIRONMENT: "Production"
@@ -40,8 +35,8 @@ services:
     expose:
       - "5000"
     volumes:
-      - ../../assets/languages:/app/assets/languages:ro
-      - ../../logs:/app/logs
+      - ./assets/languages:/app/assets/languages:ro
+      - lama-logs-prod:/app/logs
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
@@ -57,102 +52,50 @@ services:
       - "traefik.http.routers.server-prod-health.tls.certresolver=letsencrypt"
       - "traefik.http.routers.server-prod-health.service=server-prod-svc"
       - "traefik.http.routers.server-prod-health.priority=25"
-      # /api/ (inclut SSE events)
+      # /api/
       - "traefik.http.routers.server-prod-api.rule=Host(`playalama.online`) && PathPrefix(`/api/`)"
       - "traefik.http.routers.server-prod-api.entrypoints=websecure"
       - "traefik.http.routers.server-prod-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.server-prod-api.service=server-prod-svc"
       - "traefik.http.routers.server-prod-api.priority=20"
-      # Service definition
       - "traefik.http.services.server-prod-svc.loadbalancer.server.port=5000"
 
   # ─────────────────────────────────────────────────────────
-  # App de jeu en ligne (/live/)
+  # WebApp unifiée (portail + jeu) — catch-all /
   # ─────────────────────────────────────────────────────────
-  lama-game-webapp-prod:
-    build:
-      context: ../..
-      dockerfile: tools/docker/Dockerfile.webapp
-    container_name: lama-game-webapp-prod
+  lama-webapp-prod:
+    image: lama-webapp:${DEPLOY_TAG:-latest}
+    container_name: lama-webapp-prod
     networks:
       - prod-internal
       - traefik-net
-    env_file: ../../.env
+    env_file: .env
     environment:
-      ASPNETCORE_URLS: "http://+:5050"
+      ASPNETCORE_URLS: "http://+:5001"
       ASPNETCORE_ENVIRONMENT: "Production"
       LamaApi__BaseUrl: "http://lama-server-prod:5000"
       LAMA_SERVER_URL: "http://lama-server-prod:5000"
     expose:
-      - "5050"
+      - "5001"
     restart: unless-stopped
     depends_on:
       lama-server-prod:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5050/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 15s
     labels:
       - "traefik.enable=true"
-      # /live/ → strip le préfixe avant d'envoyer à l'app
-      - "traefik.http.routers.game-webapp-prod.rule=Host(`playalama.online`) && PathPrefix(`/live/`)"
-      - "traefik.http.routers.game-webapp-prod.entrypoints=websecure"
-      - "traefik.http.routers.game-webapp-prod.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.game-webapp-prod.service=game-webapp-prod-svc"
-      - "traefik.http.routers.game-webapp-prod.middlewares=strip-live-prod"
-      - "traefik.http.routers.game-webapp-prod.priority=20"
-      # redirect /live → /live/
-      - "traefik.http.routers.game-webapp-prod-redirect.rule=Host(`playalama.online`) && Path(`/live`)"
-      - "traefik.http.routers.game-webapp-prod-redirect.entrypoints=websecure"
-      - "traefik.http.routers.game-webapp-prod-redirect.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.game-webapp-prod-redirect.middlewares=redirect-live-prod"
-      - "traefik.http.routers.game-webapp-prod-redirect.priority=21"
-      - "traefik.http.routers.game-webapp-prod-redirect.service=game-webapp-prod-svc"
-      # Middlewares
-      - "traefik.http.middlewares.strip-live-prod.stripprefix.prefixes=/live"
-      - "traefik.http.middlewares.redirect-live-prod.redirectregex.regex=^(https://playalama.online)/live$$"
-      - "traefik.http.middlewares.redirect-live-prod.redirectregex.replacement=$${1}/live/"
-      - "traefik.http.middlewares.redirect-live-prod.redirectregex.permanent=true"
-      # Service definition
-      - "traefik.http.services.game-webapp-prod-svc.loadbalancer.server.port=5050"
-
-  # ─────────────────────────────────────────────────────────
-  # Portail public (racine /)
-  # ─────────────────────────────────────────────────────────
-  lama-portal-webapp-prod:
-    build:
-      context: ../..
-      dockerfile: tools/docker/Dockerfile.portalwebapp
-    container_name: lama-portal-webapp-prod
-    networks:
-      - prod-internal
-      - traefik-net
-    env_file: ../../.env
-    environment:
-      ASPNETCORE_URLS: "http://+:5060"
-      ASPNETCORE_ENVIRONMENT: "Production"
-    expose:
-      - "5060"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5060/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-    labels:
-      - "traefik.enable=true"
-      # Catch-all : tout ce qui n'est pas capturé par les autres routers
-      - "traefik.http.routers.portal-prod.rule=Host(`playalama.online`)"
-      - "traefik.http.routers.portal-prod.entrypoints=websecure"
-      - "traefik.http.routers.portal-prod.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.portal-prod.service=portal-prod-svc"
-      - "traefik.http.routers.portal-prod.priority=10"
-      # Service definition
-      - "traefik.http.services.portal-prod-svc.loadbalancer.server.port=5060"
+      # Catch-all : tout ce qui n'est pas capturé par les routers à priorité plus haute
+      - "traefik.http.routers.webapp-prod.rule=Host(`playalama.online`)"
+      - "traefik.http.routers.webapp-prod.entrypoints=websecure"
+      - "traefik.http.routers.webapp-prod.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.webapp-prod.service=webapp-prod-svc"
+      - "traefik.http.routers.webapp-prod.priority=10"
+      - "traefik.http.services.webapp-prod-svc.loadbalancer.server.port=5001"
 
   # ─────────────────────────────────────────────────────────
   # Fichiers statiques de téléchargement (/downloads/)
@@ -163,8 +106,8 @@ services:
     networks:
       - traefik-net
     volumes:
-      - ../../artifacts/zip:/usr/share/nginx/html/downloads:ro
-      - ../../tools/docker/nginx-downloads.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./artifacts/zip:/usr/share/nginx/html/downloads:ro
+      - ./tools/docker/nginx-downloads.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -181,4 +124,7 @@ networks:
     internal: true
   traefik-net:
     external: true
+
+volumes:
+  lama-logs-prod:
 

@@ -1,4 +1,6 @@
-# Dockerfile.webapp - Lama GameWebApp (Blazor Server)
+# Dockerfile.webapp - Lama WebApp unifiée (portail + jeu en ligne)
+# Blazor Server — ASP.NET 10
+# Maintenu dans: tools/docker/Dockerfile.webapp
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
 
@@ -8,12 +10,13 @@ COPY *.slnx ./
 COPY Directory.Build.props ./
 COPY Directory.Packages.props ./
 COPY NuGet.config ./
+COPY dotnet-tools.json ./
 
 COPY src/libs ./src/libs
-COPY src/apps/Lama.GameWebApp ./src/apps/Lama.GameWebApp
+COPY src/apps/Lama.WebApp ./src/apps/Lama.WebApp
 
-RUN dotnet restore src/apps/Lama.GameWebApp/Lama.GameWebApp.csproj
-RUN dotnet publish -c Release -o /publish --no-restore src/apps/Lama.GameWebApp/Lama.GameWebApp.csproj
+RUN dotnet restore src/apps/Lama.WebApp/Lama.WebApp.csproj
+RUN dotnet publish -c Release -o /publish --no-restore src/apps/Lama.WebApp/Lama.WebApp.csproj
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
@@ -25,13 +28,13 @@ RUN apt-get update \
 
 COPY --from=builder /publish .
 
-EXPOSE 5050
+EXPOSE 5001
 
-ENV ASPNETCORE_URLS="http://+:5050" \
+ENV ASPNETCORE_URLS="http://+:5001" \
     ASPNETCORE_ENVIRONMENT="Production"
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5050/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:5001/ || exit 1
 
-ENTRYPOINT ["dotnet", "Lama.GameWebApp.dll"]
+ENTRYPOINT ["dotnet", "Lama.WebApp.dll"]
 
