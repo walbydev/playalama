@@ -20,16 +20,17 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
     public async Task InitializeAsync()
     {
         if (_initialized) return;
-        _initialized = true;
 
         try
         {
             var stored = await js.InvokeAsync<StoredSession?>("playalamaAuth.loadSession");
             if (stored is not null && !string.IsNullOrWhiteSpace(stored.Token))
                 _currentUser = new CurrentUser(stored.PlayerId, stored.Username, stored.Email);
+            _initialized = true; // seulement après succès JS (pas pendant le prerendering)
         }
         catch
         {
+            // Prerendering : JS indisponible → on ne marque pas comme initialisé pour réessayer
             _currentUser = null;
         }
     }

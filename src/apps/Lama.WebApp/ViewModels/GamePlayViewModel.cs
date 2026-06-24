@@ -136,6 +136,21 @@ public sealed class GamePlayViewModel
         return true;
     }
 
+    /// <summary>Déplace une tuile provisoire d'une case vers une autre.</summary>
+    public bool MovePendingTile(int fromRow, int fromCol, int toRow, int toCol)
+    {
+        if (Snapshot?.Board.Any(t => t.Row == toRow && t.Column == toCol) == true) return false;
+        if (PendingPlacements.Any(p => p.Row == toRow && p.Col == toCol)) return false;
+
+        var idx = PendingPlacements.FindIndex(p => p.Row == fromRow && p.Col == fromCol);
+        if (idx < 0) return false;
+
+        var old = PendingPlacements[idx];
+        PendingPlacements[idx] = old with { Row = toRow, Col = toCol };
+        return true;
+    }
+
+
     /// <summary>Rappelle toutes les tuiles provisoires.</summary>
     public void RecallAll()
     {
@@ -171,11 +186,7 @@ public sealed class GamePlayViewModel
     {
         IsLoading = true;
         Error = null;
-        try
-        {
-            Snapshot = await api.GetGameAsync(GameId);
-            RecallAll(); // réinitialise les placements provisoires après chaque refresh
-        }
+        try { Snapshot = await api.GetGameAsync(GameId); }
         catch (Exception ex) { Error = ex.Message; }
         finally { IsLoading = false; }
     }

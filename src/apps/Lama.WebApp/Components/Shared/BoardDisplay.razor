@@ -24,7 +24,7 @@
                 var tile = GetTile(r, c);
                 var pending = GetPendingTile(r, c);
                 var bonus = GetBonus(r, c);
-                var isDropTarget = CanDrop && tile is null && pending is null;
+                var isDropTarget = CanDrop && tile is null && (pending is null || _draggingFromBoard);
 
                 string cssClass;
                 string ariaLabel;
@@ -50,7 +50,10 @@
                      aria-label="@ariaLabel"
                      @ondragover:preventDefault="@isDropTarget"
                      @ondrop="@(isDropTarget ? () => OnDrop.InvokeAsync((r, c)) : () => Task.CompletedTask)"
-                     @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : () => Task.CompletedTask)">
+                     @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     draggable="@(pending is not null && CanDrop ? "true" : "false")"
+                     @ondragstart="@(pending is not null ? () => OnPendingDragStart.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     @ondragstart:stopPropagation>
                     @if (tile.HasValue)
                     {
                         var upper = char.ToUpperInvariant(tile.Value);
@@ -92,8 +95,12 @@
     [Parameter, EditorRequired] public Func<int, int, string> GetBonus { get; set; } = (_, _) => string.Empty;
     [Parameter] public IReadOnlyList<PendingPlacement> Pending { get; set; } = [];
     [Parameter] public bool CanDrop { get; set; }
+    [Parameter] public bool DraggingFromBoard { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnDrop { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnRecall { get; set; }
+    [Parameter] public EventCallback<(int Row, int Col)> OnPendingDragStart { get; set; }
+
+    private bool _draggingFromBoard => DraggingFromBoard;
 
     private char? GetTile(int row, int col)
     {

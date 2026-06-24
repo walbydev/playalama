@@ -600,9 +600,24 @@ footer {
     color: #92400e;
     border: 2px dashed #d97706;
     z-index: 2;
-    cursor: pointer;
+    cursor: grab;
 }
 .board-cell--pending:hover { background: #fde68a; }
+.board-cell--pending:active { cursor: grabbing; }
+
+/* Compteur sac */
+.bag-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: .2rem .75rem;
+}
 
 /* Case survol pendant le drag */
 .board-cell[ondragover] { outline: 2px dashed var(--accent); }

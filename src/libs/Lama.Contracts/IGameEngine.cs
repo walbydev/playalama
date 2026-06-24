@@ -58,6 +58,11 @@ public interface IGameEngine
     List<char> CreatePlayerRack(int size = 7);
 
     /// <summary>
+    /// Retourne le nombre de tuiles restantes dans le sac.
+    /// </summary>
+    int GetBagCount();
+
+    /// <summary>
     /// Termine la partie actuelle.
     /// </summary>
     void EndGame();

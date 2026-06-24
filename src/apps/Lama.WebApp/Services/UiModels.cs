@@ -84,6 +84,7 @@ public sealed record WebGameSnapshot(
     bool IsClosed,
     int CurrentPlayerIndex,
     int TurnNumber,
+    int BagCount,
     int MaxPlayers,
     int BoardSize,
     int RackSize,

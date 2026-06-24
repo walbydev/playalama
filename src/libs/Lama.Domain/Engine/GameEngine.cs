@@ -387,6 +387,9 @@ public sealed class GameEngine : IGameEngine
     /// </summary>
     internal GameStateSnapshot? GetLastMoveSnapshot() => _lastMoveSnapshot;
 
+    /// <summary>Retourne le nombre de tuiles restantes dans le sac.</summary>
+    public int GetBagCount() => _bag?.Count ?? 0;
+
     /// <summary>
     /// Retourne les lettres restantes dans le sac (sans les consommer).
     /// Utilisé par <c>CreateGameUseCase</c> pour la persistance.

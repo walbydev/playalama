@@ -32,20 +32,24 @@ else
 
             @if (_vm.Snapshot is not null)
             {
-                @* En-tête partie *@
                 <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
                     <div>
                         <div class="eyebrow">Partie @(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")</div>
-                        <h2>Tour @_vm.Snapshot.TurnNumber
-                            @if (_vm.Snapshot.IsGameOver)
-                            {
-                                <span class="chip chip-muted" style="margin-left:.5rem">Terminée</span>
-                            }
-                            else if (_vm.IsMyTurn)
-                            {
-                                <span class="chip chip-accent" style="margin-left:.5rem">Votre tour !</span>
-                            }
-                        </h2>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <h2 style="margin:0">Tour @_vm.Snapshot.TurnNumber
+                                @if (_vm.Snapshot.IsGameOver)
+                                {
+                                    <span class="chip chip-muted" style="margin-left:.5rem">Terminée</span>
+                                }
+                                else if (_vm.IsMyTurn)
+                                {
+                                    <span class="chip chip-accent" style="margin-left:.5rem">Votre tour !</span>
+                                }
+                            </h2>
+                            <span class="bag-counter" title="Lettres restantes dans le sac">
+                                🎒 @_vm.Snapshot.BagCount lettre@(_vm.Snapshot.BagCount > 1 ? "s" : "")
+                            </span>
+                        </div>
                     </div>
                     <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
                         Rafraîchir
@@ -54,15 +58,16 @@ else
 
                 <div class="game-layout">
 
-                    @* ── Colonne gauche : plateau ── *@
+                    @* ── Colonne gauche : plateau (sans label) ── *@
                     <div>
-                        <h3 class="mb-2">Plateau</h3>
                         <BoardDisplay Board="_vm.Snapshot.Board"
                                       GetBonus="_vm.GetCellBonus"
                                       Pending="_vm.PendingPlacements"
-                                      CanDrop="@(_vm.IsMyTurn && _draggingRackIndex >= 0)"
+                                      CanDrop="@(_vm.IsMyTurn && (_draggingRackIndex >= 0 || _draggingPendingPos.HasValue))"
+                                      DraggingFromBoard="_draggingPendingPos.HasValue"
                                       OnDrop="HandleDrop"
-                                      OnRecall="HandleRecall" />
+                                      OnRecall="HandleRecall"
+                                      OnPendingDragStart="HandlePendingDragStart" />
                     </div>
 
                     @* ── Colonne droite : sidebar ── *@
@@ -82,9 +87,11 @@ else
                             <div class="card">
                                 <h3 class="mb-2">Mes tuiles @(_vm.IsMyTurn ? "— Faites glisser sur le plateau" : "")</h3>
                                 <RackDisplay Rack="_vm.MyRack"
+                                             DisplayOrder="@_rackOrder"
                                              IsMyTurn="_vm.IsMyTurn"
                                              UsedIndices="@(_vm.PendingPlacements.Count > 0 ? GetUsedIndices() : [])"
-                                             OnDragStart="HandleDragStart" />
+                                             OnDragStart="HandleDragStart"
+                                             OnRackReorder="HandleRackReorder" />
 
                                 @* Bouton rappel tuiles provisoires *@
                                 @if (_vm.PendingPlacements.Count > 0)
@@ -210,13 +217,20 @@ else
     private PeriodicTimer? _timer;
     private CancellationTokenSource? _pollingCts;
 
-    // Drag state
+    // Drag state (rack → board)
     private int _draggingRackIndex = -1;
     private char _draggingLetter = '\0';
+
+    // Drag state (board pending → board)
+    private (int Row, int Col)? _draggingPendingPos;
 
     // Joker picker state
     private int _jokerRow = -1;
     private int _jokerCol = -1;
+
+    // Rack display order (visual reorder, persists until rack changes)
+    private List<int> _rackOrder = [];
+    private int _previousRackSize = -1;
 
     protected override async Task OnInitializedAsync()
     {
@@ -230,6 +244,7 @@ else
 
         _vm.Initialize(GameId, _myPlayerId);
         await _vm.LoadAsync(Api);
+        SyncRackOrder();
 
         // Redirection vers lobby si la partie n'a pas encore démarré
         if (_vm.Snapshot is { UsesLobby: true, HasStarted: false })
@@ -242,6 +257,15 @@ else
         StartPolling();
     }
 
+    /// <summary>Réinitialise l'ordre du rack uniquement quand la taille change (nouveau tirage).</summary>
+    private void SyncRackOrder()
+    {
+        var size = _vm.MyRack.Count;
+        if (size == _previousRackSize) return;
+        _rackOrder = Enumerable.Range(0, size).ToList();
+        _previousRackSize = size;
+    }
+
     private void StartPolling()
     {
         _pollingCts = new CancellationTokenSource();
@@ -252,6 +276,7 @@ else
                 await InvokeAsync(async () =>
                 {
                     await _vm.LoadAsync(Api);
+                    SyncRackOrder();
                     StateHasChanged();
                 });
         }, _pollingCts.Token);
@@ -260,6 +285,7 @@ else
     private async Task RefreshAsync()
     {
         await _vm.LoadAsync(Api);
+        SyncRackOrder();
     }
 
     // ── Drag-and-drop ────────────────────────────────────────────────────────
@@ -268,32 +294,55 @@ else
     {
         _draggingRackIndex = args.Index;
         _draggingLetter = args.Letter;
+        _draggingPendingPos = null;
+    }
+
+    private void HandlePendingDragStart((int Row, int Col) pos)
+    {
+        _draggingPendingPos = pos;
+        _draggingRackIndex = -1;
     }
 
     private void HandleDrop((int Row, int Col) cell)
     {
-        if (_draggingRackIndex < 0) return;
-
-        if (_draggingLetter == '*')
+        if (_draggingPendingPos.HasValue)
         {
-            // Joker : placement provisoire avec '*', puis ouvre le picker
-            _vm.PlaceTile(_draggingRackIndex, '*', cell.Row, cell.Col);
-            _jokerRow = cell.Row;
-            _jokerCol = cell.Col;
+            // Déplacer une tuile provisoire vers une autre case
+            var from = _draggingPendingPos.Value;
+            if (from != cell)
+                _vm.MovePendingTile(from.Row, from.Col, cell.Row, cell.Col);
+            _draggingPendingPos = null;
         }
-        else
+        else if (_draggingRackIndex >= 0)
         {
-            _vm.PlaceTile(_draggingRackIndex, _draggingLetter, cell.Row, cell.Col);
+            if (_draggingLetter == '*')
+            {
+                _vm.PlaceTile(_draggingRackIndex, '*', cell.Row, cell.Col);
+                _jokerRow = cell.Row;
+                _jokerCol = cell.Col;
+            }
+            else
+            {
+                _vm.PlaceTile(_draggingRackIndex, _draggingLetter, cell.Row, cell.Col);
+            }
+            _draggingRackIndex = -1;
+            _draggingLetter = '\0';
         }
-
-        _draggingRackIndex = -1;
-        _draggingLetter = '\0';
         StateHasChanged();
     }
 
     private void HandleRecall((int Row, int Col) cell)
     {
         _vm.RecallTile(cell.Row, cell.Col);
+        StateHasChanged();
+    }
+
+    private void HandleRackReorder((int FromDisplayPos, int ToDisplayPos) args)
+    {
+        if (args.FromDisplayPos < 0 || args.ToDisplayPos < 0) return;
+        if (args.FromDisplayPos >= _rackOrder.Count || args.ToDisplayPos >= _rackOrder.Count) return;
+        (_rackOrder[args.FromDisplayPos], _rackOrder[args.ToDisplayPos]) =
+            (_rackOrder[args.ToDisplayPos], _rackOrder[args.FromDisplayPos]);
         StateHasChanged();
     }
 
@@ -316,14 +365,8 @@ else
     }
 
     private HashSet<int> GetUsedIndices() => [.._vm.PendingPlacements
-        .Select((_, i) => i < _vm.PendingPlacements.Count ? GetUsedRackIndex(i) : -1)
+        .Select((_, i) => _vm.GetUsedRackIndex(i))
         .Where(x => x >= 0)];
-
-    private int GetUsedRackIndex(int pendingIdx)
-    {
-        // _usedRackIndices is private; expose via a helper property on the VM
-        return _vm.GetUsedRackIndex(pendingIdx);
-    }
 
     // ── Soumission ──────────────────────────────────────────────────────────
 
