@@ -11,11 +11,11 @@ COPY NuGet.config ./
 
 # Copier les projets
 COPY src/libs ./src/libs
-COPY src/Server/Lama.Server ./src/Server/Lama.Server
+COPY src/apps/Lama.Server ./src/apps/Lama.Server
 
 # Restaurer et publier
-RUN dotnet restore src/Server/Lama.Server/Lama.Server.csproj
-RUN dotnet publish -c Release -o /publish src/Server/Lama.Server/Lama.Server.csproj
+RUN dotnet restore src/apps/Lama.Server/Lama.Server.csproj
+RUN dotnet publish -c Release -o /publish src/apps/Lama.Server/Lama.Server.csproj
 
 # Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
