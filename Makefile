@@ -19,17 +19,16 @@
 # Développement natif (Option A — PostgreSQL Docker + .NET natif) :
 #   option-a-start   Démarrer PostgreSQL (Docker)
 #   option-a-server  Lancer Lama.Server natif (port 5201)
-#   option-a-portal  Lancer Lama.PortalWebApp natif (port 5203)
-#   option-a-webapp  Lancer Lama.GameWebApp natif (port 5202)
-#   dev-debug        Build + lancer les 3 apps en parallèle (Server+Portal+GameWebApp)
+#   option-a-webapp  Lancer Lama.WebApp natif (port 5202)
+#   dev-debug        Build + lancer les 2 apps en parallèle (Server+WebApp)
 # =============================================================================
 
 SHELL := /bin/bash
 ROOT_DIR := $(shell pwd)
 CONSOLE_PROJECT := src/apps/Lama.Console/Lama.Console.csproj
 SERVER_PROJECT  := src/apps/Lama.Server/Lama.Server.csproj
-PORTAL_PROJECT  := src/apps/Lama.PortalWebApp/Lama.PortalWebApp.csproj
-WEBAPP_PROJECT  := src/apps/Lama.GameWebApp/Lama.GameWebApp.csproj
+PORTAL_PROJECT  := src/apps/Lama.WebApp/Lama.WebApp.csproj
+WEBAPP_PROJECT  := src/apps/Lama.WebApp/Lama.WebApp.csproj
 DOCKER_LOCAL    := tools/docker/docker-compose.local.yml
 DOCKER_OPTION_A := tools/docker/docker-compose.local-debug.yml
 
@@ -233,12 +232,9 @@ option-a-start: ## [OPTION A] Démarrer PostgreSQL en Docker (ports 5200/5201/52
 option-a-server: ## [OPTION A] Lancer Lama.Server natif sur port 5201
 	dotnet run --project $(SERVER_PROJECT) --urls http://127.0.0.1:5201
 
-.PHONY: option-a-portal
-option-a-portal: ## [OPTION A] Lancer Lama.PortalWebApp natif sur port 5203
-	dotnet run --project $(PORTAL_PROJECT) --urls http://127.0.0.1:5203
-
 .PHONY: option-a-webapp
-option-a-webapp: ## [OPTION A] Lancer Lama.GameWebApp natif sur port 5202
+option-a-webapp: ## [OPTION A] Lancer Lama.WebApp natif sur port 5202
+	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 \
 	dotnet run --project $(WEBAPP_PROJECT) --urls http://127.0.0.1:5202
 
 .PHONY: option-a-stop
@@ -257,15 +253,13 @@ option-a-logs: ## [OPTION A] Suivre les logs PostgreSQL
 # Dev-debug : build + lancer les 3 apps en parallèle
 # =============================================================================
 .PHONY: dev-debug
-dev-debug: option-a-start ## [Dev] Build + lancer Server (5201) + Portal (5203) + GameWebApp (5202) en parallèle
+dev-debug: option-a-start ## [Dev] Build + lancer Server (5201) + WebApp (5202) en parallèle
 	@echo "→ Build de la solution..."
 	dotnet build -c Debug --no-restore
-	@echo "→ Démarrage des 3 apps (Ctrl+C pour tout arrêter)..."
+	@echo "→ Démarrage des apps (Ctrl+C pour tout arrêter)..."
 	@trap 'kill 0' SIGINT; \
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_ALLOW_SHUTDOWN=true \
 	  dotnet run --project $(SERVER_PROJECT) --no-build --urls http://127.0.0.1:5201 & \
-	ASPNETCORE_ENVIRONMENT=Development \
-	  dotnet run --project $(PORTAL_PROJECT) --no-build --urls http://127.0.0.1:5203 & \
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 \
 	  dotnet run --project $(WEBAPP_PROJECT) --no-build --urls http://127.0.0.1:5202 & \
 	wait
@@ -300,11 +294,10 @@ health-local: ## Vérifier les endpoints locaux
 	@curl -fsS http://localhost/health && echo "✓ nginx→Server OK" || echo "✗ nginx→Server KO"
 
 .PHONY: health-option-a
-health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 5201, Portal 5203, WebApp 5202)
+health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 5201, WebApp 5202)
 	@docker exec postgres-lama-option-a pg_isready -U lama_dev -d lama_dev >/dev/null 2>&1 && echo "✓ PostgreSQL (5200) OK" || echo "✗ PostgreSQL (5200) KO"
 	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO" || true
-	@curl -fsS http://localhost:5203/ >/dev/null && echo "✓ Portal (5203) OK" || echo "✗ Portal (5203) KO" || true
-	@curl -fsS http://localhost:5202/ >/dev/null && echo "✓ GameWebApp (5202) OK" || echo "✗ GameWebApp (5202) KO" || true
+	@curl -fsS http://localhost:5202/ >/dev/null && echo "✓ WebApp (5202) OK" || echo "✗ WebApp (5202) KO" || true
 
 .PHONY: web-lobby-smoke
 web-lobby-smoke: ## [OPTION A] Smoke test Web lobby (register/create/start/my-games)

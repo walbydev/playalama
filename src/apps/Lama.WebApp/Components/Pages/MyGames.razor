@@ -1,0 +1,137 @@
+@page "/my-games"
+@layout MainLayout
+@inject AuthService Auth
+@inject LamaApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>Mes parties — Playalama</PageTitle>
+
+@if (!Auth.IsLoggedIn)
+{
+    <div class="auth-page">
+        <div class="auth-card text-center">
+            <h1>Mes parties</h1>
+            <p class="text-muted mt-2">Vous devez être connecté pour voir votre historique.</p>
+            <a href="/login" class="btn btn-primary mt-3">Se connecter</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="page-hero">
+        <div class="eyebrow">Historique</div>
+        <div class="flex items-center justify-between flex-wrap gap-2">
+            <h1>Mes parties</h1>
+            <button class="btn btn-ghost btn-sm" type="button" @onclick="LoadAsync" disabled="@_busy">Rafraîchir</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="container">
+
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <p class="form-error mb-3" role="alert">@_error</p>
+            }
+
+            @if (_busy)
+            {
+                <p class="text-muted text-center" aria-live="polite">Chargement…</p>
+            }
+            else if (_games.Count == 0)
+            {
+                <div class="empty-state">
+                    <span class="empty-state-icon" aria-hidden="true">🎮</span>
+                    <p>Aucune partie terminée pour le moment.</p>
+                    <a href="/games" class="btn btn-primary mt-2">Rejoindre une partie</a>
+                </div>
+            }
+            else
+            {
+                <div class="flex gap-3 mb-4 flex-wrap">
+                    <div class="card" style="text-align:center; min-width:120px">
+                        <div style="font-size:1.5rem; font-weight:900; color:var(--accent2)">@_games.Count</div>
+                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Parties</div>
+                    </div>
+                    <div class="card" style="text-align:center; min-width:120px">
+                        <div style="font-size:1.5rem; font-weight:900; color:var(--success)">@_games.Count(g => g.IsWinner)</div>
+                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Victoires</div>
+                    </div>
+                    <div class="card" style="text-align:center; min-width:120px">
+                        <div style="font-size:1.5rem; font-weight:900; color:var(--gold)">@WinRate()</div>
+                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Ratio V/D</div>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto">
+                    <table class="lb-table" aria-label="Historique des parties">
+                        <thead>
+                            <tr>
+                                <th scope="col">Date</th>
+                                <th scope="col">Niveau</th>
+                                <th scope="col">Mode</th>
+                                <th scope="col">Durée</th>
+                                <th scope="col">Résultat</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var g in _games)
+                            {
+                                <tr class="@(g.IsWinner ? "me" : "")">
+                                    <td>@g.EndedAt.ToString("dd/MM/yy HH:mm")</td>
+                                    <td>@g.GameLevel</td>
+                                    <td>@g.Queue</td>
+                                    <td>@FormatDuration(g.DurationSeconds)</td>
+                                    <td>
+                                        @if (g.IsWinner)
+                                            { <span class="chip chip-success">Victoire 🏆</span> }
+                                        else
+                                            { <span class="chip chip-muted">@g.Status</span> }
+                                    </td>
+                                    <td><a href="/games/@g.GameId" class="btn btn-ghost btn-sm">Voir</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<WebGameHistoryItem> _games = [];
+    private bool _busy;
+    private string? _error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Auth.InitializeAsync();
+        if (!Auth.IsLoggedIn) { StateHasChanged(); return; }
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (token is null) { _error = "Session expirée."; return; }
+            _games.Clear();
+            _games.AddRange(await Api.GetMyGamesAsync(token));
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; StateHasChanged(); }
+    }
+
+    private string WinRate() =>
+        _games.Count == 0 ? "—" : $"{(double)_games.Count(g => g.IsWinner) / _games.Count * 100:F0}%";
+
+    private static string FormatDuration(int s) =>
+        s < 60 ? $"{s}s" : s < 3600 ? $"{s / 60}m{s % 60:D2}s" : $"{s / 3600}h{(s % 3600) / 60:D2}m";
+}

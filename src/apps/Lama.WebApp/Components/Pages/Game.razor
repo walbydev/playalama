@@ -1,0 +1,233 @@
+@page "/games/{GameId}"
+@layout MainLayout
+@implements IAsyncDisposable
+@inject LamaApiClient Api
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Partie @GameId — Playalama</PageTitle>
+
+<div class="page-hero">
+    <div class="eyebrow">Partie en cours</div>
+    <div class="flex items-center justify-between flex-wrap gap-2">
+        <h1>@GameId</h1>
+        <button class="btn btn-ghost btn-sm" @onclick="LoadSnapshotAsync" disabled="@_busy">Rafraîchir</button>
+    </div>
+</div>
+
+<div class="section">
+    <div class="container">
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <p class="form-error mb-3" role="alert">@_error</p>
+        }
+
+        @if (_snapshot is null)
+        {
+            <p class="text-muted text-center" aria-live="polite">Chargement de la partie…</p>
+        }
+        else
+        {
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem">
+
+                <!-- Joueurs -->
+                <div class="card">
+                    <h3 class="mb-2">Joueurs</h3>
+                    <ul style="list-style:none; display:flex; flex-direction:column; gap:.5rem" role="list">
+                        @for (var i = 0; i < _snapshot.Players.Count; i++)
+                        {
+                            var player = _snapshot.Players[i];
+                            var isActive = i == _snapshot.CurrentPlayerIndex;
+                            <li class="flex items-center gap-2" role="listitem">
+                                <div class="lb-avatar">@player.PlayerName[0]</div>
+                                <div style="flex:1">
+                                    <div class="lb-name">@player.PlayerName @(player.IsHost ? "👑" : "")</div>
+                                    <div class="text-dim" style="font-size:.8rem">@player.Score pts</div>
+                                </div>
+                                @if (isActive)
+                                {
+                                    <span class="chip chip-accent">Tour actif</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- Actions -->
+                <div class="card">
+                    <h3 class="mb-2">Mon action</h3>
+                    @if (_snapshot.UsesLobby && !_snapshot.HasStarted)
+                    {
+                        <p class="text-muted mb-2">Partie en attente de démarrage.</p>
+                        @if (_canStart)
+                        {
+                            <button class="btn btn-primary" @onclick="StartGameAsync" disabled="@_busy">Démarrer la partie</button>
+                        }
+                        else
+                        {
+                            <p class="text-dim">Seul l'hôte peut démarrer la partie.</p>
+                        }
+                    }
+
+                    @if (!_snapshot.UsesLobby || _snapshot.HasStarted)
+                    {
+                        <EditForm Model="_playForm" OnValidSubmit="PlayAsync">
+                            <div class="form-field">
+                                <label for="play-cmd">Commande</label>
+                                <InputSelect id="play-cmd" @bind-Value="_playForm.Command">
+                                    <option value="play.pass">Passer</option>
+                                    <option value="play.move">Poser un mot</option>
+                                    <option value="play.swap">Échanger des lettres</option>
+                                </InputSelect>
+                            </div>
+                            @if (_playForm.Command == "play.move")
+                            {
+                                <div class="form-field">
+                                    <label for="play-pos">Position (ex: H8)</label>
+                                    <InputText id="play-pos" @bind-Value="_playForm.Position" placeholder="H8" />
+                                </div>
+                                <div class="form-field">
+                                    <label for="play-word">Mot</label>
+                                    <InputText id="play-word" @bind-Value="_playForm.Word" placeholder="BONJOUR" />
+                                </div>
+                                <div class="form-field">
+                                    <label for="play-dir">Direction</label>
+                                    <InputSelect id="play-dir" @bind-Value="_playForm.Direction">
+                                        <option value="H">Horizontal</option>
+                                        <option value="V">Vertical</option>
+                                    </InputSelect>
+                                </div>
+                            }
+                            @if (_playForm.Command == "play.swap")
+                            {
+                                <div class="form-field">
+                                    <label for="play-letters">Lettres à échanger</label>
+                                    <InputText id="play-letters" @bind-Value="_playForm.Word" placeholder="ABCDE" />
+                                </div>
+                            }
+                            <button class="btn btn-primary" type="submit" disabled="@_busy">Jouer</button>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+
+            <!-- Plateau -->
+            <div class="card">
+                <h3 class="mb-2">Plateau (@_snapshot.TurnNumber) <span class="text-dim" style="font-size:.8rem">— Tour @(_snapshot.CurrentPlayerIndex + 1)</span></h3>
+                <div style="overflow-x:auto">
+                    <div style="display:grid; grid-template-columns:repeat(15,1fr); gap:1px; min-width:300px; font-family:monospace; font-size:.8rem" role="grid" aria-label="Plateau de jeu">
+                        @for (var row = 0; row < 15; row++)
+                        {
+                            @for (var col = 0; col < 15; col++)
+                            {
+                                var letter = ResolveLetter(row, col);
+                                <div style="aspect-ratio:1; display:flex; align-items:center; justify-content:center; background:@(letter is null ? "var(--bg3)" : "var(--accent)"); color:@(letter is null ? "var(--text-dim)" : "#fff"); border-radius:3px; font-weight:700"
+                                     role="gridcell"
+                                     aria-label="@(letter is null ? $"Case {row},{col} vide" : $"Case {row},{col} lettre {letter}")">
+                                    @(letter ?? "·")
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string GameId { get; set; } = string.Empty;
+
+    private WebGameSnapshot? _snapshot;
+    private readonly PlayForm _playForm = new() { Command = "play.pass" };
+    private bool _busy;
+    private string? _error;
+    private bool _canStart;
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _pollingCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var parsed = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        _playForm.PlayerId = parsed.TryGetValue("playerId", out var playerId)
+            ? playerId.ToString()
+            : Auth.CurrentUser?.PlayerId ?? string.Empty;
+
+        await LoadSnapshotAsync();
+        StartPolling();
+    }
+
+    private void StartPolling()
+    {
+        _pollingCts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        _ = Task.Run(async () =>
+        {
+            while (await _timer.WaitForNextTickAsync(_pollingCts.Token))
+                await InvokeAsync(LoadSnapshotAsync);
+        }, _pollingCts.Token);
+    }
+
+    private async Task LoadSnapshotAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            _snapshot = await Api.GetGameAsync(GameId);
+            _canStart = _snapshot.UsesLobby
+                && !_snapshot.HasStarted
+                && _snapshot.Players.Any(p => p.IsHost
+                    && string.Equals(p.PlayerId, Auth.CurrentUser?.PlayerId, StringComparison.Ordinal));
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+
+    private async Task PlayAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_playForm.PlayerId)) { _error = "PlayerId requis."; return; }
+        _busy = true;
+        _error = null;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+            await Api.PlayAsync(GameId, _playForm, token);
+            await LoadSnapshotAsync();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+
+    private async Task StartGameAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+            await Api.StartGameAsync(GameId, token);
+            await LoadSnapshotAsync();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+
+    private string? ResolveLetter(int row, int col)
+    {
+        var tile = _snapshot?.Board.FirstOrDefault(x => x.Row == row && x.Column == col);
+        return tile is null ? null : tile.Letter.ToString();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_pollingCts is not null) { await _pollingCts.CancelAsync(); _pollingCts.Dispose(); }
+        _timer?.Dispose();
+    }
+}

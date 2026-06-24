@@ -1,0 +1,84 @@
+@page "/leaderboard"
+@layout MainLayout
+@inject LeaderboardViewModel VM
+
+<PageTitle>Classements — Playalama</PageTitle>
+
+<div class="page-hero">
+    <div class="eyebrow">Classements</div>
+    <h1>🏆 Classements complets</h1>
+    <p class="text-muted mt-2">Retrouvez le palmarès de tous les joueurs sur l'ensemble des parties jouées.</p>
+</div>
+
+<div class="section">
+    <div class="container">
+
+        <!-- Filtres -->
+        <div class="lb-filter" role="group" aria-label="Filtres du classement">
+            <div class="lb-tabs" role="tablist" aria-label="Mode de jeu">
+                @foreach (var modeEntry in LeaderboardViewModel.Modes)
+                {
+                    <button class="lb-tab @(VM.SelectedMode == modeEntry.Mode ? "active" : "")"
+                            role="tab"
+                            aria-selected="@(VM.SelectedMode == modeEntry.Mode)"
+                            @onclick="() => SwitchModeAsync(modeEntry.Mode)">
+                        @modeEntry.Label
+                    </button>
+                }
+            </div>
+
+            <label class="sr-only" for="country-filter">Filtrer par pays</label>
+            <select id="country-filter"
+                    @onchange="OnCountryChangeAsync"
+                    aria-label="Filtrer par pays">
+                @foreach (var countryEntry in LeaderboardViewModel.Countries)
+                {
+                    <option value="@countryEntry.Code" selected="@(VM.SelectedCountry == countryEntry.Code)">@countryEntry.Label</option>
+                }
+            </select>
+        </div>
+
+        @if (VM.IsLoading)
+        {
+            <p class="text-muted text-center" aria-live="polite" style="padding:3rem">Chargement…</p>
+        }
+        else if (!string.IsNullOrEmpty(VM.Error))
+        {
+            <p class="form-error text-center" role="alert">@VM.Error</p>
+        }
+        else
+        {
+            <LeaderboardTable Entries="VM.Entries" />
+        }
+
+        <div class="flex items-center mt-3 gap-2">
+            <div class="live-indicator" aria-live="polite">
+                <div class="live-dot" aria-hidden="true"></div>
+                Mis à jour en direct
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await VM.LoadAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task SwitchModeAsync(string mode)
+    {
+        await VM.SwitchModeAsync(mode);
+        StateHasChanged();
+    }
+
+    private async Task OnCountryChangeAsync(ChangeEventArgs e)
+    {
+        await VM.FilterByCountryAsync(e.Value?.ToString() ?? "");
+        StateHasChanged();
+    }
+}

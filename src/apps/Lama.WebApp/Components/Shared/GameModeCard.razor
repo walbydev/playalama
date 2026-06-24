@@ -1,0 +1,18 @@
+@* Carte d'un mode de jeu — utilisée sur Home et Rules *@
+
+<a href="/modes/@Mode.Slug"
+   class="mode-card"
+   style="--card-color: @Mode.Color"
+   aria-label="@Mode.Name — @Mode.ShortDesc">
+    <span class="mode-card-icon" aria-hidden="true">@Mode.Icon</span>
+    <div class="mode-card-head">
+        <h3>@Mode.Name</h3>
+        <span class="badge">@Mode.Badge</span>
+    </div>
+    <p>@Mode.ShortDesc</p>
+    <span class="btn btn-ghost btn-sm" style="align-self: flex-start; margin-top: auto;">Voir les règles →</span>
+</a>
+
+@code {
+    [Parameter, EditorRequired] public GameModeViewModel Mode { get; set; } = null!;
+}

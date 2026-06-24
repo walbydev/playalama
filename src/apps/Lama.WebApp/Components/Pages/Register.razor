@@ -1,0 +1,87 @@
+@page "/register"
+@layout MainLayout
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Inscription — Playalama</PageTitle>
+
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="text-center mb-3">
+            <span style="font-size:2.5rem" aria-hidden="true">🦙</span>
+            <h1 class="mt-1">Créer un compte</h1>
+            <p class="text-muted mt-1">L'email est optionnel — il ne sert pas à se connecter.</p>
+        </div>
+
+        <EditForm Model="form" OnValidSubmit="SubmitAsync">
+            <DataAnnotationsValidator />
+
+            <div class="form-field">
+                <label for="reg-username">Pseudo <small class="text-dim">(min. 2 caractères)</small></label>
+                <InputText id="reg-username" @bind-Value="form.Username"
+                           autocomplete="username" placeholder="VotreAlias" />
+                <ValidationMessage For="() => form.Username" class="form-error" />
+            </div>
+
+            <div class="form-field">
+                <label for="reg-email">Email <small class="text-dim">(optionnel)</small></label>
+                <InputText id="reg-email" type="email" @bind-Value="form.Email"
+                           autocomplete="email" placeholder="vous@exemple.fr" />
+            </div>
+
+            <div class="form-field">
+                <label for="reg-pwd">Mot de passe <small class="text-dim">(min. 6 caractères)</small></label>
+                <InputText id="reg-pwd" type="password" @bind-Value="form.Password"
+                           autocomplete="new-password" placeholder="••••••" />
+                <ValidationMessage For="() => form.Password" class="form-error" />
+            </div>
+
+            <div class="form-field">
+                <label for="reg-pwd2">Confirmer le mot de passe</label>
+                <InputText id="reg-pwd2" type="password" @bind-Value="form.PasswordConfirm"
+                           autocomplete="new-password" placeholder="••••••" />
+                <ValidationMessage For="() => form.PasswordConfirm" class="form-error" />
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <p class="form-error mb-2" role="alert">@_error</p>
+            }
+
+            <button class="btn btn-primary" type="submit" style="width:100%" disabled="@_busy">
+                @(_busy ? "Inscription…" : "Créer mon compte")
+            </button>
+        </EditForm>
+
+        <p class="text-center text-muted mt-3" style="font-size:.9rem">
+            Déjà un compte ? <a href="/login">Se connecter</a>
+        </p>
+    </div>
+</div>
+
+@code {
+    private readonly RegisterForm form = new();
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Auth.IsLoggedIn)
+            Navigation.NavigateTo("/games");
+    }
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        _error = null;
+
+        var (success, err) = await Auth.RegisterAsync(form.Username, form.Password, form.Email);
+
+        if (success)
+            Navigation.NavigateTo("/games");
+        else
+            _error = err ?? "Inscription échouée.";
+
+        _busy = false;
+    }
+}

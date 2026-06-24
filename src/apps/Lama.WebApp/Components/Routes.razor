@@ -1,0 +1,15 @@
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <section class="card section">
+                <h1>Page introuvable</h1>
+                <p>La route demandée n'existe pas.</p>
+                <a class="btn btn-outline" href="/">← Accueil</a>
+            </section>
+        </LayoutView>
+    </NotFound>
+</Router>

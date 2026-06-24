@@ -1,0 +1,21 @@
+@inject HomeViewModel VM
+
+<section id="why" class="section" aria-labelledby="why-title">
+    <div class="container">
+        <div class="section-header">
+            <div class="eyebrow">Pourquoi PLAYLAMA ?</div>
+            <h2 id="why-title">Pensé pour les vrais joueurs</h2>
+        </div>
+
+        <div class="why-grid" role="list" aria-label="Arguments pour jouer à Playalama">
+            @foreach (var arg in VM.WhyArguments)
+            {
+                <article class="why-card" role="listitem">
+                    <span class="why-icon" aria-hidden="true">@arg.Icon</span>
+                    <h3>@arg.Title</h3>
+                    <p>@arg.Text</p>
+                </article>
+            }
+        </div>
+    </div>
+</section>
