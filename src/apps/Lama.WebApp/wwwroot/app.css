@@ -643,19 +643,22 @@ footer {
 
 .rack-container {
     display: flex;
-    gap: .5rem;
-    flex-wrap: wrap;
+    gap: .6rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     justify-content: center;
-    padding: .75rem;
+    padding: .5rem .75rem;
     background: var(--bg2);
     border-radius: var(--radius);
     border: 1px solid var(--border);
-    min-height: 68px;
+    min-height: 76px;
+    scrollbar-width: thin;
 }
 
 .rack-tile {
-    width: 52px;
-    height: 62px;
+    width: 60px;
+    height: 68px;
+    flex-shrink: 0;
     background: #ca8a04;
     color: #fff;
     border-radius: 6px;
@@ -818,11 +821,35 @@ footer {
 
 .game-layout {
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: 1fr 320px;
     gap: 1.5rem;
     align-items: start;
 }
-@media (max-width: 960px) { .game-layout { grid-template-columns: 1fr; } }
+@media (max-width: 1024px) { .game-layout { grid-template-columns: 1fr 280px; } }
+@media (max-width: 800px)  { .game-layout { grid-template-columns: 1fr; } }
+
+/* Colonne gauche plateau + rack */
+.game-board-area {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+
+/* Card rack sous le plateau */
+.rack-below-board {
+    padding: .75rem 1rem !important;
+}
+
+.rack-below-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: .6rem;
+}
+.rack-below-header h3 { margin: 0; }
+
 
 .action-panel .form-field input,
 .action-panel .form-field select {

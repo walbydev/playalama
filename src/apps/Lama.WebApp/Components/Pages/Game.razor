@@ -111,8 +111,8 @@ else
 
                 <div class="game-layout">
 
-                    @* ── Colonne gauche : plateau (sans label) ── *@
-                    <div>
+                    @* ── Colonne gauche : plateau + rack ── *@
+                    <div class="game-board-area">
                         <BoardDisplay Board="_vm.Snapshot.Board"
                                       GetBonus="_vm.GetCellBonus"
                                       Pending="_vm.PendingPlacements"
@@ -121,9 +121,41 @@ else
                                       OnDrop="HandleDrop"
                                       OnRecall="HandleRecall"
                                       OnPendingDragStart="HandlePendingDragStart" />
+
+                        @* Rack sous le plateau — ligne unique *@
+                        @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
+                        {
+                            <div class="card rack-below-board">
+                                <div class="rack-below-header">
+                                    <h3>Mes tuiles @(_vm.IsMyTurn ? "— Faites glisser sur le plateau" : "")</h3>
+                                    @if (_vm.PendingPlacements.Count > 0)
+                                    {
+                                        <div class="flex gap-2 flex-wrap">
+                                            <button class="btn btn-ghost btn-sm" @onclick="() => { _vm.RecallAll(); StateHasChanged(); }">
+                                                ↩ Rappeler
+                                            </button>
+                                            <button class="btn btn-primary btn-sm" @onclick="PlayDragMoveAsync"
+                                                    disabled="@(_vm.IsLoading || _vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))">
+                                                ✔ Valider (@_vm.PendingPlacements.Count tuile@(_vm.PendingPlacements.Count > 1 ? "s" : ""))
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                                <RackDisplay Rack="_vm.MyRack"
+                                             DisplayOrder="@_rackOrder"
+                                             IsMyTurn="_vm.IsMyTurn"
+                                             UsedIndices="@(_vm.PendingPlacements.Count > 0 ? GetUsedIndices() : [])"
+                                             OnDragStart="HandleDragStart"
+                                             OnRackReorder="HandleRackReorder" />
+                                @if (_vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))
+                                {
+                                    <p class="form-error mt-1" style="font-size:.8rem">Assignez une lettre à chaque joker (★ → clic)</p>
+                                }
+                            </div>
+                        }
                     </div>
 
-                    @* ── Colonne droite : sidebar ── *@
+                    @* ── Colonne droite : sidebar (scores + actions) ── *@
                     <div style="display:flex; flex-direction:column; gap:1.25rem">
 
                         @* Scores *@
@@ -134,38 +166,6 @@ else
                                         MyPlayerId="@_myPlayerId"
                                         AbandonedPlayerIds="_vm.Snapshot.AbandonedPlayerIds" />
                         </div>
-
-                        @* Mon rack (masqué en mode spectateur) *@
-                        @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
-                        {
-                            <div class="card">
-                                <h3 class="mb-2">Mes tuiles @(_vm.IsMyTurn ? "— Faites glisser sur le plateau" : "")</h3>
-                                <RackDisplay Rack="_vm.MyRack"
-                                             DisplayOrder="@_rackOrder"
-                                             IsMyTurn="_vm.IsMyTurn"
-                                             UsedIndices="@(_vm.PendingPlacements.Count > 0 ? GetUsedIndices() : [])"
-                                             OnDragStart="HandleDragStart"
-                                             OnRackReorder="HandleRackReorder" />
-
-                                @* Bouton rappel tuiles provisoires *@
-                                @if (_vm.PendingPlacements.Count > 0)
-                                {
-                                    <div class="flex gap-2 mt-2 flex-wrap">
-                                        <button class="btn btn-ghost btn-sm" @onclick="() => { _vm.RecallAll(); StateHasChanged(); }">
-                                            ↩ Rappeler toutes les tuiles
-                                        </button>
-                                        <button class="btn btn-primary btn-sm" @onclick="PlayDragMoveAsync"
-                                                disabled="@(_vm.IsLoading || _vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))">
-                                            ✔ Valider le placement (@_vm.PendingPlacements.Count tuile@(_vm.PendingPlacements.Count > 1 ? "s" : ""))
-                                        </button>
-                                    </div>
-                                    @if (_vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))
-                                    {
-                                        <p class="form-error mt-1" style="font-size:.8rem">Assignez une lettre à chaque joker (★ → clic)</p>
-                                    }
-                                }
-                            </div>
-                        }
 
                         @* Panneau d'action (masqué en mode spectateur) *@
                         @if (!_vm.Snapshot.IsGameOver && _vm.IsMyTurn && !_vm.IsAbandoned)
