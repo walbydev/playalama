@@ -29,6 +29,13 @@ else
             {
                 <p class="form-error mb-3" role="alert">@_vm.Error</p>
             }
+            @if (!string.IsNullOrWhiteSpace(_abandonError))
+            {
+                <p class="form-error mb-3" role="alert">
+                    ⚠️ @_abandonError
+                    <button class="abandon-notice-close" @onclick="() => _abandonError = null" aria-label="Fermer">✕</button>
+                </p>
+            }
 
             @if (_vm.Snapshot is not null)
             {
@@ -328,6 +335,7 @@ else
     private string? _abandonNotice;
     private int _abandonRedirectCountdown;
     private int _previousAbandonedCount;
+    private string? _abandonError; // erreur d'abandon persistante (non effacée par le polling)
 
     protected override async Task OnInitializedAsync()
     {
@@ -529,11 +537,21 @@ else
     private async Task AbandonAsync()
     {
         _confirmAbandon = false;
+        _abandonError = null;
         var token = await Auth.GetTokenAsync();
         if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
         var isGameOver = await _vm.AbandonAsync(Api, token);
         if (isGameOver)
+        {
             Navigation.NavigateTo("/games");
+            return;
+        }
+        // En cas d'erreur ou de mode spectateur : forcer un re-render
+        if (!string.IsNullOrWhiteSpace(_vm.Error))
+        {
+            _abandonError = _vm.Error;
+        }
+        StateHasChanged();
     }
 
     public async ValueTask DisposeAsync()
