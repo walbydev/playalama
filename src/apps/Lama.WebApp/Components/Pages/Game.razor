@@ -128,7 +128,7 @@ else
                                       KeyboardCursorCol="_vm.KeyboardCursorCol"
                                       OnDrop="HandleDrop"
                                       OnRecall="HandleRecall"
-                                      OnContextMenu="HandleContextMenu"
+                                      OnKeyboardActivate="HandleKeyboardActivate"
                                       OnPendingDragStart="HandlePendingDragStart" />
 
                         @* Rack sous le plateau — ligne unique *@
@@ -174,7 +174,7 @@ else
                                 @if (_vm.IsMyTurn && !_vm.KeyboardModeActive && _vm.PendingPlacements.Count > 0)
                                 {
                                     <p class="kbd-hint" aria-live="polite">
-                                        💡 <b>Astuce :</b> Clic droit sur la prochaine case vide → saisie clavier directe (Entrée pour valider, Échap pour annuler)
+                                        💡 <b>Astuce :</b> Double-clic (ou double-tap) sur la prochaine case vide → saisie clavier directe (Entrée pour valider, Échap pour annuler)
                                     </p>
                                 }
                                 <RackDisplay Rack="_vm.MyRack"
@@ -523,14 +523,13 @@ else
 
     private ElementReference _keyboardInput;
 
-    private async Task HandleContextMenu((int Row, int Col) cell)
+    private async Task HandleKeyboardActivate((int Row, int Col) cell)
     {
         if (!_vm.IsMyTurn) return;
         _vm.StartKeyboardMode(cell.Row, cell.Col);
         StateHasChanged();
-        // Focus l'input caché après le rendu
         await Task.Yield();
-        try { await _keyboardInput.FocusAsync(); } catch { /* ignore si non rendu */ }
+        try { await _keyboardInput.FocusAsync(); } catch { }
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)

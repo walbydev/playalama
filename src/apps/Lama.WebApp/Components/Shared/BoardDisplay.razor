@@ -26,7 +26,7 @@
                 var bonus = GetBonus(r, c);
                 var isDropTarget = CanDrop && tile is null && (pending is null || _draggingFromBoard);
                 var isKeyboardCursor = KeyboardModeActive && r == KeyboardCursorRow && c == KeyboardCursorCol;
-                var isContextMenuTarget = OnContextMenu.HasDelegate && tile is null && pending is null && CanDrop;
+                var isKeyboardTarget = OnKeyboardActivate.HasDelegate && tile is null && pending is null && CanDrop;
 
                 string cssClass;
                 string ariaLabel;
@@ -54,8 +54,8 @@
                      @ondragover:preventDefault="@isDropTarget"
                      @ondrop="@(isDropTarget ? () => OnDrop.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : () => Task.CompletedTask)"
-                     @oncontextmenu:preventDefault="@isContextMenuTarget"
-                     @oncontextmenu="@(isContextMenuTarget ? () => OnContextMenu.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     @ondblclick="@(isKeyboardTarget ? () => OnKeyboardActivate.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     @ontouchend="@(isKeyboardTarget ? (e) => HandleTouchEnd(e, r, c) : (Func<TouchEventArgs,Task>)(_ => Task.CompletedTask))"
                      draggable="@(pending is not null && CanDrop ? "true" : "false")"
                      @ondragstart="@(pending is not null ? () => OnPendingDragStart.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ondragstart:stopPropagation>
@@ -107,9 +107,37 @@
     [Parameter] public EventCallback<(int Row, int Col)> OnDrop { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnRecall { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnPendingDragStart { get; set; }
-    [Parameter] public EventCallback<(int Row, int Col)> OnContextMenu { get; set; }
+    /// <summary>Activé par double-clic (souris) ou double-tap (tactile) sur une case vide.</summary>
+    [Parameter] public EventCallback<(int Row, int Col)> OnKeyboardActivate { get; set; }
 
     private bool _draggingFromBoard => DraggingFromBoard;
+
+    // ── Détection double-tap tactile ─────────────────────────────────────────
+
+    private long _lastTapMs;
+    private int  _lastTapRow = -1;
+    private int  _lastTapCol = -1;
+    private const int DoubleTapThresholdMs = 350;
+
+    private Task HandleTouchEnd(TouchEventArgs e, int row, int col)
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var delta = now - _lastTapMs;
+
+        if (delta <= DoubleTapThresholdMs && _lastTapRow == row && _lastTapCol == col)
+        {
+            // Double-tap détecté — réinitialiser pour éviter triple-déclenchement
+            _lastTapMs  = 0;
+            _lastTapRow = -1;
+            _lastTapCol = -1;
+            return OnKeyboardActivate.InvokeAsync((row, col));
+        }
+
+        _lastTapMs  = now;
+        _lastTapRow = row;
+        _lastTapCol = col;
+        return Task.CompletedTask;
+    }
 
     private char? GetTile(int row, int col)
     {
