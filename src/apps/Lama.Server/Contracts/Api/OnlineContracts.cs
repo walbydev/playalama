@@ -79,6 +79,10 @@ public sealed class OnlineGame(
     public bool IsClosed { get; set; } = IsClosed;
     /// <summary>IDs des joueurs qui ont abandonné (mais la partie continue pour les autres).</summary>
     public HashSet<string> AbandonedPlayerIds { get; } = [];
+    /// <summary>Raison de fin de partie : "abandoned" si un joueur a forcé la fin.</summary>
+    public string? EndReason { get; set; }
+    /// <summary>Nom du joueur à l'origine de la fin prématurée.</summary>
+    public string? AbandonedByName { get; set; }
 }
 
 public sealed record OnlinePlayer(string PlayerId, string PlayerName, bool IsHost);

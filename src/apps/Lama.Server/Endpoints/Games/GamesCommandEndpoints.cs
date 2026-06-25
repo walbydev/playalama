@@ -600,6 +600,8 @@ public static class GamesCommandEndpoints
                     ? scores[0].PlayerName
                     : null;
                 game.IsClosed = true;
+                game.EndReason = "abandoned";
+                game.AbandonedByName = abandonedPlayerName;
                 isGameOver = true;
             }
             else

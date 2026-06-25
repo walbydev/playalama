@@ -204,7 +204,10 @@ public sealed class LamaApiClient(HttpClient httpClient)
             payload.Players.Select(x => new WebSnapshotPlayer(
                 x.PlayerId, x.PlayerName, x.Score, x.IsHost,
                 x.Rack ?? [], x.RackCount)).ToList(),
-            payload.Board.Select(x => new WebBoardTile(x.Row, x.Column, x.Letter)).ToList());
+            payload.Board.Select(x => new WebBoardTile(x.Row, x.Column, x.Letter)).ToList(),
+            payload.AbandonedPlayerIds ?? [],
+            payload.EndReason,
+            payload.AbandonedByName);
     }
 
     public async Task<WebPlayResponse> PlayAsync(string gameId, PlayForm form, string? token = null, CancellationToken cancellationToken = default)
@@ -312,7 +315,8 @@ public sealed class LamaApiClient(HttpClient httpClient)
     private sealed record GameSnapshotEnvelope(
         string Id, string? GameName, bool IsGameOver, bool HasStarted, bool UsesLobby, bool IsClosed,
         int CurrentPlayerIndex, int TurnNumber, int BagCount, int MaxPlayers, int BoardSize, int RackSize, string? Language,
-        List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board);
+        List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board,
+        List<string>? AbandonedPlayerIds, string? EndReason, string? AbandonedByName);
     private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost, List<char>? Rack, int RackCount);
     private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);
     private sealed record PlayEnvelope(string GameId, string MoveId, int Score);

@@ -760,6 +760,39 @@ footer {
     transition: border-color .15s;
 }
 .scoreboard-row--active { border-color: var(--accent2); background: rgba(124,92,252,0.1); }
+.scoreboard-row--abandoned { opacity: .55; }
+
+/* ── Abandon notice & spectator banner ── */
+.abandon-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(220,120,0,.14);
+    border: 1px solid rgba(220,120,0,.3);
+    color: var(--text);
+    border-radius: var(--radius);
+    padding: .6rem 1rem;
+    margin-bottom: .75rem;
+    font-size: .9rem;
+}
+.abandon-notice-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 1rem;
+    padding: 0 .25rem;
+}
+.spectator-banner {
+    background: rgba(100,100,100,.12);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: .6rem 1rem;
+    margin-bottom: .75rem;
+    font-size: .9rem;
+    color: var(--text-dim);
+    text-align: center;
+}
 
 .scoreboard-avatar {
     width: 36px;

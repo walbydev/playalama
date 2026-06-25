@@ -41,6 +41,10 @@ else
                                 {
                                     <span class="chip chip-muted" style="margin-left:.5rem">Terminée</span>
                                 }
+                                else if (_vm.IsAbandoned)
+                                {
+                                    <span class="chip" style="margin-left:.5rem; background:rgba(120,120,120,.18); color:var(--text-dim)">Observateur</span>
+                                }
                                 else if (_vm.IsMyTurn)
                                 {
                                     <span class="chip chip-accent" style="margin-left:.5rem">Votre tour !</span>
@@ -55,7 +59,11 @@ else
                         <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
                             Rafraîchir
                         </button>
-                        @if (!_vm.Snapshot!.IsGameOver && _vm.Snapshot.HasStarted)
+                        @if (_vm.IsAbandoned)
+                        {
+                            <a href="/games" class="btn btn-ghost btn-sm">← Quitter</a>
+                        }
+                        else if (!_vm.Snapshot!.IsGameOver && _vm.Snapshot.HasStarted)
                         {
                             @if (_confirmAbandon)
                             {
@@ -76,6 +84,23 @@ else
                         }
                     </div>
                 </div>
+
+                @* ── Notification abandon ── *@
+                @if (_abandonNotice is not null)
+                {
+                    <div class="abandon-notice" role="alert" aria-live="polite">
+                        ⚠️ @_abandonNotice
+                        <button class="abandon-notice-close" @onclick="() => _abandonNotice = null" aria-label="Fermer">✕</button>
+                    </div>
+                }
+
+                @* ── Bandeau spectateur ── *@
+                @if (_vm.IsAbandoned && !_vm.Snapshot!.IsGameOver)
+                {
+                    <div class="spectator-banner" role="status" aria-live="polite">
+                        🔍 Vous observez la partie. <a href="/games">Quitter →</a>
+                    </div>
+                }
 
                 <div class="game-layout">
 
@@ -99,11 +124,12 @@ else
                             <h3 class="mb-2">Scores</h3>
                             <ScoreBoard Players="_vm.Snapshot.Players"
                                         CurrentPlayerIndex="_vm.Snapshot.CurrentPlayerIndex"
-                                        MyPlayerId="@_myPlayerId" />
+                                        MyPlayerId="@_myPlayerId"
+                                        AbandonedPlayerIds="_vm.Snapshot.AbandonedPlayerIds" />
                         </div>
 
-                        @* Mon rack *@
-                        @if (_vm.MyRack.Count > 0)
+                        @* Mon rack (masqué en mode spectateur) *@
+                        @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
                         {
                             <div class="card">
                                 <h3 class="mb-2">Mes tuiles @(_vm.IsMyTurn ? "— Faites glisser sur le plateau" : "")</h3>
@@ -134,8 +160,8 @@ else
                             </div>
                         }
 
-                        @* Panneau d'action (passer / swap / saisie manuelle) *@
-                        @if (!_vm.Snapshot.IsGameOver && _vm.IsMyTurn)
+                        @* Panneau d'action (masqué en mode spectateur) *@
+                        @if (!_vm.Snapshot.IsGameOver && _vm.IsMyTurn && !_vm.IsAbandoned)
                         {
                             <div class="card action-panel">
                                 <h3 class="mb-2">Autres actions</h3>
@@ -191,7 +217,7 @@ else
                                 </EditForm>
                             </div>
                         }
-                        else if (!_vm.Snapshot.IsGameOver)
+                        else if (!_vm.Snapshot.IsGameOver && !_vm.IsAbandoned)
                         {
                             <div class="card">
                                 <p class="text-muted text-center" aria-live="polite">
@@ -199,11 +225,23 @@ else
                                 </p>
                             </div>
                         }
-                        else
+                        else if (_vm.Snapshot.IsGameOver)
                         {
                             @* ── Écran de fin de partie ── *@
                             <div class="card text-center">
-                                <h3 class="mb-3">🏆 Partie terminée !</h3>
+                                @if (string.Equals(_vm.Snapshot.EndReason, "abandoned", StringComparison.Ordinal))
+                                {
+                                    <h3 class="mb-1">🏳 Partie abandonnée</h3>
+                                    <p class="text-dim mb-3" style="font-size:.9rem">@(_vm.Snapshot.AbandonedByName) a mis fin à la partie</p>
+                                    @if (_abandonRedirectCountdown > 0)
+                                    {
+                                        <p class="text-dim" style="font-size:.85rem">Redirection dans @_abandonRedirectCountdown s…</p>
+                                    }
+                                }
+                                else
+                                {
+                                    <h3 class="mb-3">🏆 Partie terminée !</h3>
+                                }
                                 @{
                                     var ranked = _vm.Snapshot.Players.OrderByDescending(p => p.Score).ToList();
                                     var medals = new[] { "🥇", "🥈", "🥉" };
@@ -287,6 +325,9 @@ else
 
     // Abandon state
     private bool _confirmAbandon;
+    private string? _abandonNotice;
+    private int _abandonRedirectCountdown;
+    private int _previousAbandonedCount;
 
     protected override async Task OnInitializedAsync()
     {
@@ -313,13 +354,49 @@ else
         StartPolling();
     }
 
-    /// <summary>Réinitialise l'ordre du rack uniquement quand la taille change (nouveau tirage).</summary>
+    /// <summary>Réinitialise l'ordre du rack uniquement quand la taille change (nouveau tirage).
+    /// Détecte aussi les nouveaux abandons pour notifier les autres joueurs.</summary>
     private void SyncRackOrder()
     {
         var size = _vm.MyRack.Count;
-        if (size == _previousRackSize) return;
-        _rackOrder = Enumerable.Range(0, size).ToList();
-        _previousRackSize = size;
+        if (size != _previousRackSize)
+        {
+            _rackOrder = Enumerable.Range(0, size).ToList();
+            _previousRackSize = size;
+        }
+
+        // Détecter un nouvel abandon → notification pour les autres joueurs
+        var abandonedCount = _vm.Snapshot?.AbandonedPlayerIds.Count ?? 0;
+        if (abandonedCount > _previousAbandonedCount && _vm.Snapshot is not null)
+        {
+            // Identifier le dernier joueur qui vient d'abandonner
+            var newlyAbandonedNames = _vm.AbandonedPlayerNames
+                .Where(n => !string.Equals(n, _vm.Snapshot.AbandonedByName, StringComparison.Ordinal) || _previousAbandonedCount == 0)
+                .ToList();
+            if (newlyAbandonedNames.Count > 0 && !_vm.IsAbandoned)
+                _abandonNotice = $"{newlyAbandonedNames[^1]} a abandonné la partie";
+            _previousAbandonedCount = abandonedCount;
+        }
+
+        // Détecter fin de partie par abandon (hôte) → lancer countdown auto-redirection
+        if (_vm.Snapshot is { IsGameOver: true } &&
+            string.Equals(_vm.Snapshot.EndReason, "abandoned", StringComparison.Ordinal) &&
+            !_vm.IsAbandoned && _abandonRedirectCountdown == 0)
+        {
+            _ = StartAbandonRedirectCountdownAsync();
+        }
+    }
+
+    private async Task StartAbandonRedirectCountdownAsync()
+    {
+        _abandonRedirectCountdown = 5;
+        while (_abandonRedirectCountdown > 0)
+        {
+            StateHasChanged();
+            await Task.Delay(1000);
+            _abandonRedirectCountdown--;
+        }
+        Navigation.NavigateTo("/games");
     }
 
     private void StartPolling()

@@ -74,7 +74,19 @@ public sealed class GamePlayViewModel
         && Snapshot.CurrentPlayerIndex < Snapshot.Players.Count
         && string.Equals(
             Snapshot.Players[Snapshot.CurrentPlayerIndex].PlayerId,
-            _myPlayerId, StringComparison.Ordinal);
+            _myPlayerId, StringComparison.Ordinal)
+        && !IsAbandoned;
+
+    /// <summary>Vrai si le joueur courant a abandonné la partie (mode spectateur).</summary>
+    public bool IsAbandoned => _myPlayerId is not null
+        && Snapshot?.AbandonedPlayerIds.Contains(_myPlayerId) == true;
+
+    /// <summary>Noms des joueurs qui ont abandonné, pour notification.</summary>
+    public IReadOnlyList<string> AbandonedPlayerNames =>
+        Snapshot?.Players
+            .Where(p => Snapshot.AbandonedPlayerIds.Contains(p.PlayerId))
+            .Select(p => p.PlayerName)
+            .ToList() ?? [];
 
     public IReadOnlyList<char> MyRack
     {

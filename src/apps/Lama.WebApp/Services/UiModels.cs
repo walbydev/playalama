@@ -92,7 +92,10 @@ public sealed record WebGameSnapshot(
     int RackSize,
     string Language,
     IReadOnlyList<WebSnapshotPlayer> Players,
-    IReadOnlyList<WebBoardTile> Board);
+    IReadOnlyList<WebBoardTile> Board,
+    IReadOnlyList<string> AbandonedPlayerIds,
+    string? EndReason,
+    string? AbandonedByName);
 
 public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int Score, bool IsHost, IReadOnlyList<char> Rack, int RackCount);
 public sealed record WebBoardTile(int Row, int Column, char Letter);

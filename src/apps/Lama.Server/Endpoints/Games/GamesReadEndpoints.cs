@@ -169,6 +169,9 @@ public static class GamesReadEndpoints
                     stateSnapshot.CurrentPlayerIndex,
                     stateSnapshot.TurnNumber,
                     bagCount = game.Engine.GetBagCount(),
+                    abandonedPlayerIds = game.AbandonedPlayerIds.ToList(),
+                    endReason = game.EndReason,
+                    abandonedByName = game.AbandonedByName,
                     players = game.Players.Select((player, index) => new
                     {
                         player.PlayerId,
