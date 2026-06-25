@@ -1,4 +1,5 @@
 using Lama.Server.Data;
+using Lama.Server.Data.Models.Sessions;
 using Lama.Server.Contracts.Api;
 using Lama.Server.Runtime;
 using Microsoft.EntityFrameworkCore;
@@ -67,28 +68,36 @@ public static class GamesReadEndpoints
             }
         }
 
-        var persistedGames = await db.SessionGames
-            .AsNoTracking()
-            .OrderByDescending(x => x.UpdatedAt)
-            .ToListAsync(cancellationToken);
-
+        List<SessionGameEntity> persistedGames = [];
         try
         {
-            persistedPlayerCountsByGame = await db.SessionPlayersInGame
+            persistedGames = await db.SessionGames
                 .AsNoTracking()
-                .GroupBy(x => x.GameId)
-                .Select(x => new { x.Key, Count = x.Count() })
-                .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
+                .OrderByDescending(x => x.UpdatedAt)
+                .ToListAsync(cancellationToken);
 
-            persistedMoveCountsByGame = await db.SessionTurnLogs
-                .AsNoTracking()
-                .GroupBy(x => x.GameId)
-                .Select(x => new { x.Key, Count = x.Count() })
-                .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
+            try
+            {
+                persistedPlayerCountsByGame = await db.SessionPlayersInGame
+                    .AsNoTracking()
+                    .GroupBy(x => x.GameId)
+                    .Select(x => new { x.Key, Count = x.Count() })
+                    .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
+
+                persistedMoveCountsByGame = await db.SessionTurnLogs
+                    .AsNoTracking()
+                    .GroupBy(x => x.GameId)
+                    .Select(x => new { x.Key, Count = x.Count() })
+                    .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
+            }
+            catch (PostgresException ex) when (GamesEndpointParsers.IsMissingDatabaseObject(ex))
+            {
+                // Backward compatibility: DB may still be at the minimal sessions.games schema.
+            }
         }
-        catch (PostgresException ex) when (GamesEndpointParsers.IsMissingDatabaseObject(ex))
+        catch
         {
-            // Backward compatibility: DB may still be at the minimal sessions.games schema.
+            // DB unavailable (dev without PostgreSQL) — return in-memory games only.
         }
 
         foreach (var persistedGame in persistedGames)

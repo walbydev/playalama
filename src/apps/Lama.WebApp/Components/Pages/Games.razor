@@ -3,6 +3,7 @@
 @inject LamaApiClient Api
 @inject AuthService Auth
 @inject NavigationManager Navigation
+@implements IAsyncDisposable
 
 <PageTitle>Jouer — Playalama</PageTitle>
 
@@ -38,9 +39,9 @@
                         <InputNumber id="game-max" @bind-Value="_createForm.MaxPlayers" min="2" max="4" />
                     </div>
 
-                    @if (!string.IsNullOrWhiteSpace(_error))
+                    @if (!string.IsNullOrWhiteSpace(_createError))
                     {
-                        <p class="form-error mb-2" role="alert">@_error</p>
+                        <p class="form-error mb-2" role="alert">@_createError</p>
                     }
 
                     <button class="btn btn-primary" type="submit" style="width:100%" disabled="@_busy">
@@ -53,10 +54,23 @@
             <div>
                 <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
                     <h2>Parties disponibles</h2>
-                    <button class="btn btn-ghost btn-sm" @onclick="LoadGamesAsync" disabled="@_busy">Rafraîchir</button>
+                    <div class="flex items-center gap-2">
+                        <span class="text-dim" style="font-size:.8rem">↻ auto</span>
+                        <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_listBusy">
+                            Rafraîchir
+                        </button>
+                    </div>
                 </div>
 
-                @if (_busy && _games.Count == 0)
+                @if (!string.IsNullOrWhiteSpace(_listError))
+                {
+                    <div class="form-error mb-3" role="alert" style="display:flex;align-items:center;gap:.5rem">
+                        ⚠️ @_listError
+                        <button style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:1rem" @onclick="() => _listError = null" aria-label="Fermer">✕</button>
+                    </div>
+                }
+
+                @if (_listBusy && _games.Count == 0)
                 {
                     <p class="text-muted" aria-live="polite">Chargement…</p>
                 }
@@ -64,7 +78,7 @@
                 {
                     <div class="empty-state">
                         <span class="empty-state-icon" aria-hidden="true">🃏</span>
-                        <p>Aucune partie disponible. Créez la première !</p>
+                        <p>Aucune partie active. Créez la première !</p>
                     </div>
                 }
                 else
@@ -85,7 +99,17 @@
                                 {
                                     <tr>
                                         <td>@(string.IsNullOrWhiteSpace(game.GameName) ? game.Id[..8] + "…" : game.GameName)</td>
-                                        <td><span class="chip chip-muted">@game.Status</span></td>
+                                        <td>
+                                            @{
+                                                var (chipClass, label) = game.Status switch
+                                                {
+                                                    "waiting" => ("chip chip-accent", "⏳ En attente"),
+                                                    "active"  => ("chip chip-success", "▶ En cours"),
+                                                    _         => ("chip chip-muted", game.Status)
+                                                };
+                                            }
+                                            <span class="@chipClass">@label</span>
+                                        </td>
                                         <td>@game.Players / @game.MaxPlayers</td>
                                         <td>@game.Queue</td>
                                         <td>
@@ -115,18 +139,45 @@
     private readonly CreateGameForm _createForm = new();
     private readonly List<WebGameListItem> _games = [];
     private bool _busy;
-    private string? _error;
+    private bool _listBusy;
+    private string? _createError;
+    private string? _listError;
+    private PeriodicTimer? _refreshTimer;
+    private CancellationTokenSource? _timerCts;
 
     protected override async Task OnInitializedAsync()
     {
         await Auth.InitializeAsync();
+        await LoadGamesAsync();
+        StartAutoRefresh();
+    }
+
+    private void StartAutoRefresh()
+    {
+        _timerCts = new CancellationTokenSource();
+        _refreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        _ = Task.Run(async () =>
+        {
+            while (await _refreshTimer.WaitForNextTickAsync(_timerCts.Token))
+            {
+                await InvokeAsync(async () =>
+                {
+                    await LoadGamesAsync();
+                    StateHasChanged();
+                });
+            }
+        }, _timerCts.Token);
+    }
+
+    private async Task RefreshAsync()
+    {
         await LoadGamesAsync();
     }
 
     private async Task CreateGameAsync()
     {
         _busy = true;
-        _error = null;
+        _createError = null;
         try
         {
             var token = await Auth.GetTokenAsync();
@@ -135,21 +186,20 @@
             if (user is null) { Navigation.NavigateTo("/login"); return; }
 
             var created = await Api.CreateGameAsync(_createForm, user.Username, token);
-            // Partie multijoueur → salle d'attente; solo → partie directement
             var isMulti = string.Equals(_createForm.Mode, "multi", StringComparison.OrdinalIgnoreCase);
             var dest = isMulti
                 ? $"/games/{created.GameId}/lobby?playerId={Uri.EscapeDataString(created.HostPlayerId)}"
                 : $"/games/{created.GameId}?playerId={Uri.EscapeDataString(created.HostPlayerId)}";
             Navigation.NavigateTo(dest);
         }
-        catch (Exception ex) { _error = ex.Message; }
+        catch (Exception ex) { _createError = ex.Message; }
         finally { _busy = false; }
     }
 
     private async Task JoinGameAsync(string gameId)
     {
         _busy = true;
-        _error = null;
+        _createError = null;
         try
         {
             var token = await Auth.GetTokenAsync();
@@ -160,20 +210,29 @@
             var joined = await Api.JoinGameAsync(gameId, playerName, password: null, token);
             Navigation.NavigateTo($"/games/{joined.GameId}/lobby?playerId={Uri.EscapeDataString(joined.PlayerId)}");
         }
-        catch (Exception ex) { _error = ex.Message; }
+        catch (Exception ex) { _createError = ex.Message; }
         finally { _busy = false; }
     }
 
     private async Task LoadGamesAsync()
     {
-        _busy = true;
-        _error = null;
+        _listBusy = true;
         try
         {
+            var all = await Api.ListGamesAsync();
+            // Afficher uniquement les parties actives (pas closed/ended)
             _games.Clear();
-            _games.AddRange(await Api.ListGamesAsync());
+            _games.AddRange(all.Where(g => !string.Equals(g.Status, "closed", StringComparison.OrdinalIgnoreCase)
+                                        && !string.Equals(g.Status, "ended", StringComparison.OrdinalIgnoreCase)
+                                        && !string.Equals(g.Status, "abandoned", StringComparison.OrdinalIgnoreCase)));
         }
-        catch (Exception ex) { _error = ex.Message; }
-        finally { _busy = false; }
+        catch (Exception ex) { _listError = ex.Message; }
+        finally { _listBusy = false; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_timerCts is not null) { await _timerCts.CancelAsync(); _timerCts.Dispose(); }
+        _refreshTimer?.Dispose();
     }
 }
