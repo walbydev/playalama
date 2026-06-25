@@ -119,7 +119,8 @@ public sealed class GameEngine : IGameEngine
         if (!result.IsValid)
             return (false, result.ErrorMessage ?? "Coup invalide.", 0);
 
-        var score = _scoreCalculator.Calculate(letters, _board!);
+        var isHorizontal = letters.Keys.Select(p => p.Row).Distinct().Count() == 1;
+        var score = _scoreCalculator.CalculateTotal(letters, _board!, null, isHorizontal);
         return (true, string.Empty, score);
     }
 
@@ -142,7 +143,8 @@ public sealed class GameEngine : IGameEngine
         // 3. Vérifier que les nouvelles lettres sont bien dans le rack du joueur courant
         var wildcardPositions = ConsumeLettersFromRack(newPlacements);
 
-        var score = _scoreCalculator.Calculate(letters, _board!, wildcardPositions);
+        var isHorizontal = letters.Keys.Select(p => p.Row).Distinct().Count() == 1;
+        var score = _scoreCalculator.CalculateTotal(letters, _board!, wildcardPositions, isHorizontal);
 
         // 2b. Mémoriser l'état précédent pour permettre un challenge
         _lastMoveSnapshot = CaptureSnapshot();

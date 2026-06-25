@@ -20,7 +20,7 @@ public class GameEngineTests
         new HashSet<string>
         {
             "LA", "LAMA", "MA", "MOT", "MOTS", "AS", "SA",
-            "AMI", "MAS", "ZEN", "AI", "RI", "LI"
+            "AMI", "MAS", "ZEN", "AI", "RI", "LI", "AME"
         };
 
     private static readonly IReadOnlyDictionary<char, int> LetterScores =
