@@ -20,6 +20,9 @@ public sealed class LobbyViewModel
     public bool IsHost => Snapshot?.Players.Any(p => p.IsHost
         && string.Equals(p.PlayerId, _myPlayerId, StringComparison.Ordinal)) ?? false;
 
+    public bool IsParticipant => _myPlayerId is not null
+        && (Snapshot?.Players.Any(p => string.Equals(p.PlayerId, _myPlayerId, StringComparison.Ordinal)) ?? false);
+
     public bool CanStart => Snapshot is { HasStarted: false, UsesLobby: true }
                             && IsHost
                             && Snapshot.Players.Count >= 2;

@@ -20,6 +20,10 @@
         <button class="btn btn-ghost btn-sm" @onclick="CopyCodeAsync" aria-label="Copier le code">
             @(_codeCopied ? "✓ Copié !" : "📋 Copier")
         </button>
+        <button class="btn btn-ghost btn-sm" @onclick="CopyLinkAsync" aria-label="Copier le lien d'invitation"
+                title="Copie l'URL du lobby pour inviter des joueurs">
+            @(_linkCopied ? "✓ Lien copié !" : "🔗 Partager")
+        </button>
     </div>
 
     @* Slots *@
@@ -62,6 +66,29 @@
         <p class="form-error mb-3" role="alert">@_vm.Error</p>
     }
 
+    @* Section rejoindre — visible si le joueur courant n'est pas encore participant *@
+    @if (_vm.Snapshot is not null && !_vm.IsParticipant && !_vm.HasStarted)
+    {
+        <div class="card mt-3" style="border-color:var(--accent); background:var(--bg2)">
+            <h3 class="mb-2" style="font-size:1.1rem">🎮 Rejoindre cette partie</h3>
+            <p class="text-muted mb-2" style="font-size:.9rem">Vous n'êtes pas encore inscrit dans cette partie.</p>
+            <div class="form-field mb-2">
+                <label for="join-name" style="font-size:.85rem">Votre pseudo</label>
+                <input id="join-name" class="form-field" type="text" @bind="_joinName" @bind:event="oninput"
+                       placeholder="Alice, Bob…" style="font-size:.9rem" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_joinError))
+            {
+                <p class="form-error mb-2" role="alert" style="font-size:.85rem">@_joinError</p>
+            }
+            <button class="btn btn-primary" style="width:100%"
+                    @onclick="JoinFromLobbyAsync"
+                    disabled="@(_busy || string.IsNullOrWhiteSpace(_joinName))">
+                @(_busy ? "Rejoindre…" : "▶ Rejoindre la partie")
+            </button>
+        </div>
+    }
+
     @* Actions (hôte uniquement) *@
     @if (_vm.IsHost)
     {
@@ -84,7 +111,7 @@
             </div>
         </div>
     }
-    else
+    else if (_vm.IsParticipant && !_vm.IsHost)
     {
         <p class="text-muted mt-3">En attente que l'hôte démarre la partie…</p>
     }
@@ -97,9 +124,12 @@
     private readonly LobbyViewModel _vm = new();
     private bool _busy;
     private bool _codeCopied;
+    private bool _linkCopied;
     private PeriodicTimer? _timer;
     private CancellationTokenSource? _pollingCts;
     private string? _myPlayerId;
+    private string _joinName = string.Empty;
+    private string? _joinError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -110,6 +140,9 @@
         _myPlayerId = parsed.TryGetValue("playerId", out var pid)
             ? pid.ToString()
             : Auth.CurrentUser?.PlayerId;
+
+        // Pré-remplir le nom pour rejoindre depuis l'utilisateur connecté
+        _joinName = Auth.CurrentUser?.Username ?? string.Empty;
 
         _vm.Initialize(GameId, _myPlayerId);
         await _vm.LoadAsync(Api);
@@ -178,8 +211,51 @@
             _codeCopied = true;
             await Task.Delay(2000);
             _codeCopied = false;
+            StateHasChanged();
         }
         catch { /* pas de clipboard API */ }
+    }
+
+    private async Task CopyLinkAsync()
+    {
+        try
+        {
+            var lobbyUrl = Navigation.ToAbsoluteUri($"/games/{GameId}/lobby").ToString();
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", lobbyUrl);
+            _linkCopied = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            _linkCopied = false;
+            StateHasChanged();
+        }
+        catch { /* pas de clipboard API */ }
+    }
+
+    private async Task JoinFromLobbyAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_joinName)) return;
+        _busy = true;
+        _joinError = null;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            // Connexion dev rapide si pas encore connecté
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                var (ok, err) = await Auth.DevLoginAsync(_joinName.Trim());
+                if (!ok) { _joinError = err ?? "Connexion échouée."; _busy = false; return; }
+                token = await Auth.GetTokenAsync();
+            }
+
+            var joined = await Api.JoinGameAsync(GameId, _joinName.Trim(), password: null, token);
+            _myPlayerId = joined.PlayerId;
+            _vm.Initialize(GameId, _myPlayerId);
+            await _vm.LoadAsync(Api);
+            // Recharger la page avec le nouveau playerId dans l'URL
+            Navigation.NavigateTo($"/games/{GameId}/lobby?playerId={Uri.EscapeDataString(_myPlayerId)}", forceLoad: false);
+        }
+        catch (Exception ex) { _joinError = ex.Message; }
+        finally { _busy = false; }
     }
 
     public async ValueTask DisposeAsync()

@@ -20,6 +20,8 @@ public sealed class PlayForm
     public string Direction { get; set; } = "H";
     /// <summary>Placements visuels (drag-and-drop). Prioritaire sur Position/Word/Direction.</summary>
     public List<PlacementDto>? Placements { get; set; }
+    /// <summary>Échanger toutes les lettres du rack (play.swap).</summary>
+    public bool SwapAll { get; set; } = false;
 }
 
 /// <summary>Placement d'une tuile : ligne/colonne/lettre (minuscule = joker).</summary>

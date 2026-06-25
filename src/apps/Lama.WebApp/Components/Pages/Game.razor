@@ -122,7 +122,7 @@ else
                                     <div class="form-field">
                                         <label for="play-cmd">Commande</label>
                                         <InputSelect id="play-cmd" @bind-Value="_vm.Command">
-                                            <option value="play.pass">Passer</option>
+                                            <option value="play.pass">Passer mon tour</option>
                                             <option value="play.move">Poser un mot (saisie)</option>
                                             <option value="play.swap">Échanger des lettres</option>
                                         </InputSelect>
@@ -150,9 +150,18 @@ else
                                     @if (_vm.Command == "play.swap")
                                     {
                                         <div class="form-field">
-                                            <label for="play-letters">Lettres à échanger</label>
-                                            <InputText id="play-letters" @bind-Value="_vm.Word" placeholder="ABC" />
+                                            <label style="display:flex; align-items:center; gap:.5rem; cursor:pointer">
+                                                <input type="checkbox" @bind="_swapAll" style="width:1rem;height:1rem" />
+                                                <span>Tout échanger</span>
+                                            </label>
                                         </div>
+                                        @if (!_swapAll)
+                                        {
+                                            <div class="form-field">
+                                                <label for="play-letters">Lettres à échanger <small class="text-dim">(ex: ABC)</small></label>
+                                                <InputText id="play-letters" @bind-Value="_vm.Word" placeholder="ABC" />
+                                            </div>
+                                        }
                                     }
 
                                     <button class="btn btn-primary" type="submit" disabled="@_vm.IsLoading" style="width:100%">
@@ -165,22 +174,42 @@ else
                         {
                             <div class="card">
                                 <p class="text-muted text-center" aria-live="polite">
-                                    En attente du tour de @(_vm.Snapshot.Players.ElementAtOrDefault(_vm.Snapshot.CurrentPlayerIndex)?.PlayerName ?? "…")…
+                                    ⏳ Tour de <strong>@(_vm.Snapshot.Players.ElementAtOrDefault(_vm.Snapshot.CurrentPlayerIndex)?.PlayerName ?? "…")</strong>
                                 </p>
                             </div>
                         }
                         else
                         {
+                            @* ── Écran de fin de partie ── *@
                             <div class="card text-center">
-                                <h3 class="mb-2">🏆 Partie terminée !</h3>
+                                <h3 class="mb-3">🏆 Partie terminée !</h3>
                                 @{
-                                    var winner = _vm.Snapshot.Players.MaxBy(p => p.Score);
+                                    var ranked = _vm.Snapshot.Players.OrderByDescending(p => p.Score).ToList();
+                                    var medals = new[] { "🥇", "🥈", "🥉" };
                                 }
-                                @if (winner is not null)
-                                {
-                                    <p class="text-muted">Vainqueur : <strong>@winner.PlayerName</strong> avec @winner.Score points</p>
-                                }
-                                <a href="/games" class="btn btn-primary mt-3">Nouvelle partie</a>
+                                <table style="width:100%; border-collapse:collapse; margin-bottom:1rem">
+                                    <thead>
+                                        <tr style="border-bottom:1px solid var(--border); color:var(--text-dim); font-size:.8rem">
+                                            <th style="padding:.4rem; text-align:left">Rang</th>
+                                            <th style="padding:.4rem; text-align:left">Joueur</th>
+                                            <th style="padding:.4rem; text-align:right">Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (var i = 0; i < ranked.Count; i++)
+                                        {
+                                            var p = ranked[i];
+                                            var medal = i < medals.Length ? medals[i] : $"{i + 1}.";
+                                            var isMe = string.Equals(p.PlayerId, _vm.MyPlayerId, StringComparison.Ordinal);
+                                            <tr style="border-bottom:1px solid var(--border); @(isMe ? "background:var(--bg2); font-weight:600" : "")">
+                                                <td style="padding:.5rem">@medal</td>
+                                                <td style="padding:.5rem; text-align:left">@p.PlayerName @(isMe ? "(vous)" : "")</td>
+                                                <td style="padding:.5rem; text-align:right; font-variant-numeric:tabular-nums">@p.Score pts</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                                <a href="/games" class="btn btn-primary">Nouvelle partie</a>
                             </div>
                         }
 
@@ -231,6 +260,9 @@ else
     // Rack display order (visual reorder, persists until rack changes)
     private List<int> _rackOrder = [];
     private int _previousRackSize = -1;
+
+    // Swap options
+    private bool _swapAll = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -382,9 +414,15 @@ else
     {
         // En mode saisie manuelle, effacer les placements provisoires
         _vm.RecallAll();
+        // Appliquer swapAll si nécessaire
+        if (_vm.Command == "play.swap" && _swapAll)
+            _vm.SwapAll = true;
+        else
+            _vm.SwapAll = false;
         var token = await Auth.GetTokenAsync();
         if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
         await _vm.PlayAsync(Api, token);
+        _swapAll = true; // reset pour le prochain coup
     }
 
     public async ValueTask DisposeAsync()

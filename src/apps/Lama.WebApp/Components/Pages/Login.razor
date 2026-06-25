@@ -46,9 +46,14 @@
 
         <div style="margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.25rem">
             <p class="text-center text-dim mb-2" style="font-size:.8rem">Mode test — aucun compte requis</p>
+            <div class="form-field mb-2">
+                <label for="dev-name" style="font-size:.85rem">Votre pseudo de test</label>
+                <InputText id="dev-name" @bind-Value="_devName" placeholder="Alice, Bob, Charlie…"
+                           style="font-size:.9rem" />
+            </div>
             <button class="btn btn-ghost" style="width:100%; border-color:var(--gold); color:var(--gold)"
-                    @onclick="DevLoginAsync" disabled="@_busy">
-                ⚡ Connexion rapide (DevJoueur)
+                    @onclick="DevLoginAsync" disabled="@(_busy || string.IsNullOrWhiteSpace(_devName))">
+                ⚡ Jouer comme @(string.IsNullOrWhiteSpace(_devName) ? "…" : _devName)
             </button>
             @if (!string.IsNullOrWhiteSpace(_devError))
             {
@@ -63,6 +68,7 @@
     private bool _busy;
     private string? _error;
     private string? _devError;
+    private string _devName = "Alice";
 
     protected override void OnInitialized()
     {
@@ -90,7 +96,7 @@
         _busy = true;
         _devError = null;
 
-        var (success, err) = await Auth.DevLoginAsync("DevJoueur");
+        var (success, err) = await Auth.DevLoginAsync(_devName.Trim());
 
         if (success)
             Navigation.NavigateTo("/games");

@@ -220,6 +220,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
                     }).ToArray()
                 },
             "play.move" => new { position = form.Position, word = form.Word, direction = form.Direction },
+            "play.swap" when form.SwapAll => new { swapAll = true },
             "play.swap" => new { letters = form.Word },
             _ => null
         };

@@ -51,6 +51,7 @@ public sealed class GamePlayViewModel
     private readonly List<int> _usedRackIndices = [];
 
     public string GameId { get; private set; } = string.Empty;
+    public string? MyPlayerId => _myPlayerId;
     public WebGameSnapshot? Snapshot { get; private set; }
     public bool IsLoading { get; private set; }
     public string? Error { get; private set; }
@@ -63,6 +64,7 @@ public sealed class GamePlayViewModel
     public string Position { get; set; } = "H8";
     public string Word { get; set; } = string.Empty;
     public string Direction { get; set; } = "H";
+    public bool SwapAll { get; set; } = false;
 
     // ── Propriétés calculées ─────────────────────────────────────────────────
 
@@ -204,6 +206,7 @@ public sealed class GamePlayViewModel
                 Position = Position,
                 Word = Word,
                 Direction = Direction,
+                SwapAll = SwapAll,
                 // Priorité aux placements visuels si présents
                 Placements = PendingPlacements.Count > 0
                     ? PendingPlacements.Select(p => new PlacementDto(p.Row, p.Col, p.Letter)).ToList()
