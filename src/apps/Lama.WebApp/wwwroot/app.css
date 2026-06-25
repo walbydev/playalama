@@ -618,7 +618,7 @@ footer {
 .board-cell--pending:hover { background: #fde68a; }
 .board-cell--pending:active { cursor: grabbing; }
 
-/* Compteur sac (inline, ancien style) */
+/* Compteur sac (inline, ancien style — conservé pour compatibilité) */
 .bag-counter {
     display: inline-flex;
     align-items: center;
@@ -632,49 +632,122 @@ footer {
     padding: .2rem .75rem;
 }
 
-/* En-tête du plateau avec grand sac de lettres */
-.board-header-row {
+/* ── En-tête principal de la partie ────────────────────── */
+.game-header {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: .5rem;
+    align-items: stretch;   /* le sac s'étire pour couvrir toute la hauteur */
+    gap: 1rem;
+    margin-bottom: .75rem;
 }
 
+.game-header-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+}
+
+.game-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    line-height: 1.1;
+}
+
+.game-subtitle {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.15;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.game-header-right {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+/* Sac de lettres dans l'en-tête — s'étire sur toute la hauteur */
 .letter-bag-display {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: .1rem;
     background: var(--bg2);
     border: 2px solid var(--border);
     border-radius: 16px;
-    padding: .5rem .9rem;
+    padding: .4rem .85rem;
     min-width: 72px;
     cursor: default;
     user-select: none;
     transition: border-color .2s;
+    /* align-self: stretch est hérité du parent flex (game-header) */
 }
 .letter-bag-display:hover { border-color: var(--accent); }
 
 .letter-bag-icon {
-    font-size: 2rem;
+    font-size: 1.9rem;
     line-height: 1;
 }
 
 .letter-bag-count {
-    font-size: 1.5rem;
+    font-size: 1.45rem;
     font-weight: 800;
     line-height: 1;
     color: var(--text);
 }
 
 .letter-bag-label {
-    font-size: .7rem;
+    font-size: .68rem;
     font-weight: 600;
     letter-spacing: .04em;
     color: var(--text-dim);
     text-transform: uppercase;
 }
+
+/* Erreur de coup inline (près du rack) */
+.move-error-inline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-top: .5rem;
+    padding: .55rem .9rem;
+    background: rgba(220, 60, 60, .12);
+    border: 1px solid rgba(220, 60, 60, .4);
+    border-radius: var(--radius-sm);
+    color: var(--danger, #e44);
+    font-size: .88rem;
+    font-weight: 600;
+    line-height: 1.3;
+    animation: slideIn .2s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.btn-icon-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: .7;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 .2rem;
+    flex-shrink: 0;
+}
+.btn-icon-close:hover { opacity: 1; }
 
 /* Case survol pendant le drag */
 .board-cell[ondragover] { outline: 2px dashed var(--accent); }

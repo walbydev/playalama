@@ -55,6 +55,7 @@ public sealed class GamePlayViewModel
     public WebGameSnapshot? Snapshot { get; private set; }
     public bool IsLoading { get; private set; }
     public string? Error { get; private set; }
+    public void ClearError() => Error = null;
 
     // Placements provisoires (drag-and-drop)
     public List<PendingPlacement> PendingPlacements { get; } = [];

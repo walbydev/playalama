@@ -39,27 +39,34 @@ else
 
             @if (_vm.Snapshot is not null)
             {
-                <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
-                    <div>
-                        <div class="eyebrow">Partie @(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")</div>
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <h2 style="margin:0">Tour @_vm.Snapshot.TurnNumber
-                                @if (_vm.Snapshot.IsGameOver)
-                                {
-                                    <span class="chip chip-muted" style="margin-left:.5rem">Terminée</span>
-                                }
-                                else if (_vm.IsAbandoned)
-                                {
-                                    <span class="chip" style="margin-left:.5rem; background:rgba(120,120,120,.18); color:var(--text-dim)">Observateur</span>
-                                }
-                                else if (_vm.IsMyTurn)
-                                {
-                                    <span class="chip chip-accent" style="margin-left:.5rem">Votre tour !</span>
-                                }
-                            </h2>
+                @* ── En-tête principal : titre + sac + actions ── *@
+                <div class="game-header mb-3">
+                    <div class="game-header-left">
+                        <div class="game-title">@(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")</div>
+                        <div class="game-subtitle flex items-center gap-2 flex-wrap">
+                            <span>Tour @_vm.Snapshot.TurnNumber</span>
+                            @if (_vm.Snapshot.IsGameOver)
+                            {
+                                <span class="chip chip-muted">Terminée</span>
+                            }
+                            else if (_vm.IsAbandoned)
+                            {
+                                <span class="chip" style="background:rgba(120,120,120,.18); color:var(--text-dim)">Observateur</span>
+                            }
+                            else if (_vm.IsMyTurn)
+                            {
+                                <span class="chip chip-accent">Votre tour !</span>
+                            }
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 flex-wrap">
+
+                    <div class="letter-bag-display" title="Lettres restantes dans le sac">
+                        <span class="letter-bag-icon">🎒</span>
+                        <span class="letter-bag-count">@_vm.Snapshot.BagCount</span>
+                        <span class="letter-bag-label">lettre@(_vm.Snapshot.BagCount > 1 ? "s" : "")</span>
+                    </div>
+
+                    <div class="game-header-right">
                         <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
                             Rafraîchir
                         </button>
@@ -111,18 +118,6 @@ else
                     @* ── Colonne gauche : plateau + rack ── *@
                     <div class="game-board-area">
 
-                        @* En-tête du plateau : sac de lettres à droite *@
-                        <div class="board-header-row">
-                            <div class="board-header-info">
-                                <span class="eyebrow">Plateau</span>
-                            </div>
-                            <div class="letter-bag-display" title="Lettres restantes dans le sac">
-                                <span class="letter-bag-icon">🎒</span>
-                                <span class="letter-bag-count">@_vm.Snapshot.BagCount</span>
-                                <span class="letter-bag-label">lettre@(_vm.Snapshot.BagCount > 1 ? "s" : "")</span>
-                            </div>
-                        </div>
-
                         <BoardDisplay Board="_vm.Snapshot.Board"
                                       GetBonus="_vm.GetCellBonus"
                                       Pending="_vm.PendingPlacements"
@@ -165,6 +160,13 @@ else
                                 @if (_vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))
                                 {
                                     <p class="form-error mt-1" style="font-size:.8rem">Assignez une lettre à chaque joker (★ → clic)</p>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(_vm.Error))
+                                {
+                                    <div class="move-error-inline" role="alert" aria-live="assertive">
+                                        ⚠️ @_vm.Error
+                                        <button class="btn-icon-close" @onclick="() => { _vm.ClearError(); StateHasChanged(); }" aria-label="Fermer">✕</button>
+                                    </div>
                                 }
                             </div>
                         }
