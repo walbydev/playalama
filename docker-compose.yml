@@ -1,6 +1,29 @@
 version: '3.8'
 
 services:
+  postgres-lama:
+    image: postgres:16-alpine
+    container_name: postgres-lama-local
+    networks:
+      - lama-network
+    environment:
+      POSTGRES_DB: lama_dev
+      POSTGRES_USER: lama_dev
+      POSTGRES_PASSWORD: dev_password_change_me
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - lama-postgres-data:/var/lib/postgresql/data
+      - ./tools/postgres/01-init-sessions-schema.sql:/docker-entrypoint-initdb.d/01-init-sessions-schema.sql:ro
+      - ./tools/postgres/02-init-history-schema.sql:/docker-entrypoint-initdb.d/02-init-history-schema.sql:ro
+      - ./tools/postgres/03-init-rating-schema.sql:/docker-entrypoint-initdb.d/03-init-rating-schema.sql:ro
+      - ./tools/postgres/04-baseline-ef-history.sql:/docker-entrypoint-initdb.d/04-baseline-ef-history.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lama_dev -d lama_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   lama-server:
     build:
       context: .
@@ -10,20 +33,25 @@ services:
       - lama-network
     environment:
       ASPNETCORE_URLS: "http://+:5000"
-      ASPNETCORE_ENVIRONMENT: "Production"
+      ASPNETCORE_ENVIRONMENT: "Development"
       LAMA_SERVER_ALLOW_SHUTDOWN: "false"
+      ConnectionStrings__LamaServerDb: "Host=postgres-lama;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;Ssl Mode=Disable;Application Name=LamaServer;"
+      Database__AutoMigrate: "true"
     ports:
       - "5000:5000"
     volumes:
       - ./assets/languages:/app/assets/languages:ro
       - ./logs:/app/logs
+    depends_on:
+      postgres-lama:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 5s
+      start_period: 10s
 
   lama-webapp:
     build:
@@ -39,7 +67,8 @@ services:
     ports:
       - "5001:5001"
     depends_on:
-      - lama-server
+      lama-server:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/"]
@@ -81,6 +110,8 @@ networks:
     driver: bridge
 
 volumes:
+  lama-postgres-data:
+    driver: local
   lama-logs:
   nginx-certs:
 
