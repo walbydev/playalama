@@ -11,9 +11,10 @@ public sealed record PlayerProfileResponse(
     string PlayerId,
     string Username,
     string? Email,
+    string? CountryCode,
     DateTimeOffset CreatedAt);
 
-public sealed record UpdateProfileRequest(string? Email, string? NewPassword, string? CurrentPassword);
+public sealed record UpdateProfileRequest(string? Email, string? NewPassword, string? CurrentPassword, string? CountryCode);
 
 public sealed record PlayerGameHistoryItem(
     string GameId,
@@ -64,15 +65,24 @@ public static class PlayerEndpoints
             if (playerId is null)
                 return Results.Unauthorized();
 
-            var player = await db.Players.FirstOrDefaultAsync(p => p.PlayerId == playerId);
-            if (player is null)
-                return Results.Unauthorized();
+            try
+            {
+                var player = await db.Players.FirstOrDefaultAsync(p => p.PlayerId == playerId);
+                if (player is null)
+                    return Results.Unauthorized();
 
-            return Results.Ok(new PlayerProfileResponse(
-                player.PlayerId.ToString("N"),
-                player.Username,
-                player.Email,
-                player.CreatedAt));
+                return Results.Ok(new PlayerProfileResponse(
+                    player.PlayerId.ToString("N"),
+                    player.Username,
+                    player.Email,
+                    player.CountryCode,
+                    player.CreatedAt));
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return Results.Json(new { error = "Service de profil temporairement indisponible." },
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
         };
     }
 
@@ -84,41 +94,58 @@ public static class PlayerEndpoints
             if (playerId is null)
                 return Results.Unauthorized();
 
-            var player = await db.Players.FirstOrDefaultAsync(p => p.PlayerId == playerId);
-            if (player is null)
-                return Results.Unauthorized();
-
-            // Mise à jour email (optionnel)
-            if (request.Email is not null)
+            try
             {
-                player.Email = string.IsNullOrWhiteSpace(request.Email)
-                    ? null
-                    : request.Email.Trim().ToLowerInvariant();
-            }
+                var player = await db.Players.FirstOrDefaultAsync(p => p.PlayerId == playerId);
+                if (player is null)
+                    return Results.Unauthorized();
 
-            // Mise à jour mot de passe (nécessite l'ancien si compte avec mot de passe)
-            if (!string.IsNullOrWhiteSpace(request.NewPassword))
-            {
-                if (request.NewPassword.Length < 6)
-                    return Results.BadRequest(new { error = "Le nouveau mot de passe doit contenir au moins 6 caractères." });
-
-                if (player.PasswordHash is not null)
+                // Mise à jour email (optionnel)
+                if (request.Email is not null)
                 {
-                    if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
-                        !PasswordHasher.Verify(request.CurrentPassword, player.PasswordHash))
-                        return Results.BadRequest(new { error = "Mot de passe actuel incorrect." });
+                    player.Email = string.IsNullOrWhiteSpace(request.Email)
+                        ? null
+                        : request.Email.Trim().ToLowerInvariant();
                 }
 
-                player.PasswordHash = PasswordHasher.Hash(request.NewPassword);
+                // Mise à jour pays (optionnel)
+                if (request.CountryCode is not null)
+                {
+                    player.CountryCode = string.IsNullOrWhiteSpace(request.CountryCode)
+                        ? null
+                        : request.CountryCode.Trim().ToUpperInvariant()[..Math.Min(2, request.CountryCode.Trim().Length)];
+                }
+
+                // Mise à jour mot de passe (nécessite l'ancien si compte avec mot de passe)
+                if (!string.IsNullOrWhiteSpace(request.NewPassword))
+                {
+                    if (request.NewPassword.Length < 6)
+                        return Results.BadRequest(new { error = "Le nouveau mot de passe doit contenir au moins 6 caractères." });
+
+                    if (player.PasswordHash is not null)
+                    {
+                        if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
+                            !PasswordHasher.Verify(request.CurrentPassword, player.PasswordHash))
+                            return Results.BadRequest(new { error = "Mot de passe actuel incorrect." });
+                    }
+
+                    player.PasswordHash = PasswordHasher.Hash(request.NewPassword);
+                }
+
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new PlayerProfileResponse(
+                    player.PlayerId.ToString("N"),
+                    player.Username,
+                    player.Email,
+                    player.CountryCode,
+                    player.CreatedAt));
             }
-
-            await db.SaveChangesAsync();
-
-            return Results.Ok(new PlayerProfileResponse(
-                player.PlayerId.ToString("N"),
-                player.Username,
-                player.Email,
-                player.CreatedAt));
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return Results.Json(new { error = "Service de profil temporairement indisponible." },
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
         };
     }
 
@@ -130,38 +157,45 @@ public static class PlayerEndpoints
             if (playerId is null)
                 return Results.Unauthorized();
 
-            // Historique depuis CompletedGames via SessionPlayerInGame
-            var rows = await db.SessionPlayersInGame
-                .Where(p => p.PlayerId == playerId.Value)
-                .Join(db.CompletedGames,
-                    p => p.GameId,
-                    g => g.GameId,
-                    (p, g) => new
-                    {
-                        g.GameId,
-                        g.GameLevel,
-                        g.Queue,
-                        g.Status,
-                        g.EndedAt,
-                        g.DurationSeconds,
-                        IsWinner = g.WinningPlayerId.HasValue && g.WinningPlayerId.Value == p.PlayerId
-                    })
-                .OrderByDescending(x => x.EndedAt)
-                .Take(50)
-                .ToListAsync();
+            try
+            {
+                // Historique depuis CompletedGames via SessionPlayerInGame
+                var rows = await db.SessionPlayersInGame
+                    .Where(p => p.PlayerId == playerId.Value)
+                    .Join(db.CompletedGames,
+                        p => p.GameId,
+                        g => g.GameId,
+                        (p, g) => new
+                        {
+                            g.GameId,
+                            g.GameLevel,
+                            g.Queue,
+                            g.Status,
+                            g.EndedAt,
+                            g.DurationSeconds,
+                            IsWinner = g.WinningPlayerId.HasValue && g.WinningPlayerId.Value == p.PlayerId
+                        })
+                    .OrderByDescending(x => x.EndedAt)
+                    .Take(50)
+                    .ToListAsync();
 
-            var games = rows
-                .Select(x => new PlayerGameHistoryItem(
-                    x.GameId.ToString("N"),
-                    x.GameLevel,
-                    x.Queue,
-                    x.Status,
-                    x.EndedAt,
-                    x.DurationSeconds,
-                    x.IsWinner))
-                .ToList();
+                var games = rows
+                    .Select(x => new PlayerGameHistoryItem(
+                        x.GameId.ToString("N"),
+                        x.GameLevel,
+                        x.Queue,
+                        x.Status,
+                        x.EndedAt,
+                        x.DurationSeconds,
+                        x.IsWinner))
+                    .ToList();
 
-            return Results.Ok(games);
+                return Results.Ok(games);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return Results.Ok(new List<PlayerGameHistoryItem>());
+            }
         };
     }
 

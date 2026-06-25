@@ -15,15 +15,15 @@ public sealed class LamaApiClient(HttpClient httpClient)
 
     // ── Auth ─────────────────────────────────────────────────────────────────
 
-    public async Task<WebAuthResponse> RegisterAsync(string username, string password, string? email, CancellationToken cancellationToken = default)
+    public async Task<WebAuthResponse> RegisterAsync(string username, string password, string? email, string? countryCode = null, CancellationToken cancellationToken = default)
     {
-        var response = await httpClient.PostAsJsonAsync($"{ApiBase}/auth/register", new { username, password, email }, cancellationToken);
+        var response = await httpClient.PostAsJsonAsync($"{ApiBase}/auth/register", new { username, password, email, countryCode }, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
 
         var payload = await response.Content.ReadFromJsonAsync<AuthEnvelope>(JsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("Réponse invalide sur auth/register.");
 
-        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.ExpiresAt);
+        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.CountryCode, payload.ExpiresAt);
     }
 
     public async Task<WebAuthResponse> AccountLoginAsync(string username, string password, CancellationToken cancellationToken = default)
@@ -34,7 +34,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
         var payload = await response.Content.ReadFromJsonAsync<AuthEnvelope>(JsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("Réponse invalide sur auth/login/account.");
 
-        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.ExpiresAt);
+        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.CountryCode, payload.ExpiresAt);
     }
 
     public async Task<WebAuthResponse> DevLoginAsync(string playerName, CancellationToken cancellationToken = default)
@@ -45,7 +45,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
         var payload = await response.Content.ReadFromJsonAsync<AuthEnvelope>(JsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("Réponse invalide sur auth/login (dev).");
 
-        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.ExpiresAt);
+        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.CountryCode, payload.ExpiresAt);
     }
 
     // ── Profil joueur ────────────────────────────────────────────────────────
@@ -62,20 +62,20 @@ public sealed class LamaApiClient(HttpClient httpClient)
         await EnsureSuccessAsync(response, cancellationToken);
 
         var payload = await response.Content.ReadFromJsonAsync<PlayerProfileEnvelope>(JsonOptions, cancellationToken);
-        return payload is null ? null : new WebPlayerProfile(payload.PlayerId, payload.Username, payload.Email, payload.CreatedAt);
+        return payload is null ? null : new WebPlayerProfile(payload.PlayerId, payload.Username, payload.Email, payload.CountryCode, payload.CreatedAt);
     }
 
-    public async Task<WebPlayerProfile?> UpdateMyProfileAsync(string token, string? email, string? currentPassword, string? newPassword, CancellationToken cancellationToken = default)
+    public async Task<WebPlayerProfile?> UpdateMyProfileAsync(string token, string? email, string? currentPassword, string? newPassword, string? countryCode = null, CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Put, $"{ApiBase}/players/me");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        request.Content = JsonContent.Create(new { email, currentPassword, newPassword });
+        request.Content = JsonContent.Create(new { email, currentPassword, newPassword, countryCode });
 
         var response = await httpClient.SendAsync(request, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
 
         var payload = await response.Content.ReadFromJsonAsync<PlayerProfileEnvelope>(JsonOptions, cancellationToken);
-        return payload is null ? null : new WebPlayerProfile(payload.PlayerId, payload.Username, payload.Email, payload.CreatedAt);
+        return payload is null ? null : new WebPlayerProfile(payload.PlayerId, payload.Username, payload.Email, payload.CountryCode, payload.CreatedAt);
     }
 
     public async Task<IReadOnlyList<WebGameHistoryItem>> GetMyGamesAsync(string token, CancellationToken cancellationToken = default)
@@ -305,8 +305,8 @@ public sealed class LamaApiClient(HttpClient httpClient)
 
     // ── Enveloppes API (privées) ──────────────────────────────────────────────
 
-    private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, DateTime ExpiresAt);
-    private sealed record PlayerProfileEnvelope(string PlayerId, string Username, string? Email, DateTimeOffset CreatedAt);
+    private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, DateTime ExpiresAt);
+    private sealed record PlayerProfileEnvelope(string PlayerId, string Username, string? Email, string? CountryCode, DateTimeOffset CreatedAt);
     private sealed record GameHistoryEnvelope(string GameId, string GameLevel, string Queue, string Status, DateTimeOffset EndedAt, int DurationSeconds, bool IsWinner);
     private sealed record GameListEnvelope(List<GameListItemEnvelope> Games);
     private sealed record GameListItemEnvelope(string Id, string? GameName, string Status, int Players, int MaxPlayers, JsonElement Queue, bool IsJoinable);

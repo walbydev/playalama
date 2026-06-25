@@ -50,11 +50,11 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
         }
     }
 
-    public async Task<(bool Success, string? Error)> RegisterAsync(string username, string password, string? email)
+    public async Task<(bool Success, string? Error)> RegisterAsync(string username, string password, string? email, string? countryCode = null)
     {
         try
         {
-            var result = await api.RegisterAsync(username, password, email);
+            var result = await api.RegisterAsync(username, password, email, countryCode);
             await PersistSessionAsync(result);
             _currentUser = new CurrentUser(result.PlayerId, result.PlayerName, result.Email);
             return (true, null);

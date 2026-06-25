@@ -50,6 +50,7 @@ public sealed class RegisterForm
     public string PasswordConfirm { get; set; } = string.Empty;
 
     public string? Email { get; set; }
+    public string? CountryCode { get; set; }
 }
 
 public sealed class ProfileUpdateForm
@@ -60,11 +61,12 @@ public sealed class ProfileUpdateForm
 
     [Compare(nameof(NewPassword), ErrorMessage = "Les mots de passe ne correspondent pas.")]
     public string? NewPasswordConfirm { get; set; }
+    public string? CountryCode { get; set; }
 }
 
 // ── Réponses API ──────────────────────────────────────────────────────────────
 
-public sealed record WebAuthResponse(string Token, string PlayerId, string PlayerName, string? Email, DateTime ExpiresAt);
+public sealed record WebAuthResponse(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, DateTime ExpiresAt);
 public sealed record WebCreateGameResponse(string GameId, string HostPlayerId);
 public sealed record WebJoinGameResponse(string GameId, string PlayerId);
 
@@ -101,7 +103,7 @@ public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int S
 public sealed record WebBoardTile(int Row, int Column, char Letter);
 public sealed record WebPlayResponse(string GameId, string MoveId, int Score);
 
-public sealed record WebPlayerProfile(string PlayerId, string Username, string? Email, DateTimeOffset CreatedAt);
+public sealed record WebPlayerProfile(string PlayerId, string Username, string? Email, string? CountryCode, DateTimeOffset CreatedAt);
 
 public sealed record WebGameHistoryItem(
     string GameId,

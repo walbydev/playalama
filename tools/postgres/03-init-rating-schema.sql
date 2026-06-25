@@ -21,6 +21,9 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA rating GRANT ALL ON TABLES TO lama_dev;
 CREATE TABLE IF NOT EXISTS rating.players (
     player_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(256) UNIQUE,
+    password_hash VARCHAR(512),
+    country_code CHAR(2),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT check_username_length CHECK (LENGTH(username) BETWEEN 1 AND 100)

@@ -6,6 +6,7 @@ public sealed class PlayerEntity
     public string Username { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string? PasswordHash { get; set; }
+    public string? CountryCode { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public ICollection<PlayerRatingEntity> Ratings { get; set; } = [];

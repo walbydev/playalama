@@ -21,3 +21,13 @@ INSERT INTO public."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 VALUES ('20260618165737_InitialThreeSchemas', '10.0.4')
 ON CONFLICT ("MigrationId") DO NOTHING;
 
+-- Migration 2: email + password_hash (colonnes déjà présentes dans le SQL init)
+INSERT INTO public."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260619222532_AddPlayerEmailPassword', '10.0.4')
+ON CONFLICT ("MigrationId") DO NOTHING;
+
+-- Migration 3: country_code (colonne déjà présente dans le SQL init)
+INSERT INTO public."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260625103636_AddPlayerCountryCode', '10.0.4')
+ON CONFLICT ("MigrationId") DO NOTHING;
+
