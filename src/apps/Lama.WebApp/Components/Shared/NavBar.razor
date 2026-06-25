@@ -4,7 +4,10 @@
 @implements IDisposable
 
 <nav class="navbar" role="navigation" aria-label="Navigation principale">
-    <a href="/" class="navbar-logo" aria-label="Playalama — Accueil">PLAYALAMA</a>
+    <a href="/" class="navbar-logo" aria-label="Playalama — Accueil">
+        PLAYALAMA
+        <span class="dev-ribbon" aria-hidden="true">En développement</span>
+    </a>
 
     <ul class="navbar-links @(_menuOpen ? "open" : "")" id="nav-links">
         <li><a href="/" class="@ActiveClass("/")" @onclick="CloseMenu">Accueil</a></li>

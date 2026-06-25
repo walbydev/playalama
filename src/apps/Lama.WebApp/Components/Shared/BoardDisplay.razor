@@ -26,7 +26,7 @@
                 var bonus = GetBonus(r, c);
                 var isDropTarget = CanDrop && tile is null && (pending is null || _draggingFromBoard);
                 var isKeyboardCursor = KeyboardModeActive && r == KeyboardCursorRow && c == KeyboardCursorCol;
-                var isKeyboardTarget = OnKeyboardActivate.HasDelegate && tile is null && pending is null && CanDrop;
+                var isKeyboardTarget = CanActivateKeyboard && OnKeyboardActivate.HasDelegate && tile is null && pending is null;
 
                 string cssClass;
                 string ariaLabel;
@@ -56,7 +56,7 @@
                      @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ondblclick="@(isKeyboardTarget ? () => OnKeyboardActivate.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ontouchend="@(isKeyboardTarget ? (e) => HandleTouchEnd(e, r, c) : (Func<TouchEventArgs,Task>)(_ => Task.CompletedTask))"
-                     draggable="@(pending is not null && CanDrop ? "true" : "false")"
+                     draggable="@(pending is not null && CanDragPending ? "true" : "false")"
                      @ondragstart="@(pending is not null ? () => OnPendingDragStart.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ondragstart:stopPropagation>
                     @if (tile.HasValue)
@@ -104,6 +104,10 @@
     [Parameter] public bool KeyboardModeActive { get; set; }
     [Parameter] public int KeyboardCursorRow { get; set; } = -1;
     [Parameter] public int KeyboardCursorCol { get; set; } = -1;
+    /// <summary>Vrai si c'est le tour du joueur — tuiles provisoires déplaçables même sans drag actif.</summary>
+    [Parameter] public bool CanDragPending { get; set; }
+    /// <summary>Vrai si le double-clic/double-tap peut activer le clavier — indépendant de CanDrop.</summary>
+    [Parameter] public bool CanActivateKeyboard { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnDrop { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnRecall { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnPendingDragStart { get; set; }

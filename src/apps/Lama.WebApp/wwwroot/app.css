@@ -194,6 +194,32 @@ html.light .navbar {
     background-clip: text;
     text-decoration: none;
     flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    padding-bottom: .15rem; /* espace pour le ruban */
+}
+
+/* Ruban diagonal "En développement" */
+.dev-ribbon {
+    position: absolute;
+    bottom: -2px;
+    right: -22px;
+    width: 90px;
+    background: #d32f2f;
+    color: #fff;
+    font-size: .48rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-align: center;
+    padding: 2px 0;
+    transform: rotate(-22deg);
+    transform-origin: center;
+    -webkit-text-fill-color: #fff; /* override gradient parent */
+    line-height: 1.2;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,.35);
 }
 
 .navbar-links {
