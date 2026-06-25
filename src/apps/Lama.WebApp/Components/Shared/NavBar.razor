@@ -1,6 +1,7 @@
 @inject AuthService Auth
 @inject ThemeService Theme
 @inject NavigationManager Nav
+@implements IDisposable
 
 <nav class="navbar" role="navigation" aria-label="Navigation principale">
     <a href="/" class="navbar-logo" aria-label="Playalama — Accueil">PLAYALAMA</a>
@@ -42,6 +43,18 @@
 
 @code {
     private bool _menuOpen;
+
+    protected override void OnInitialized()
+    {
+        Auth.OnAuthStateChanged += HandleAuthChanged;
+    }
+
+    private void HandleAuthChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Auth.OnAuthStateChanged -= HandleAuthChanged;
+    }
 
     private string ActiveClass(string path)
     {

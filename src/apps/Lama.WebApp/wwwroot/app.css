@@ -618,7 +618,7 @@ footer {
 .board-cell--pending:hover { background: #fde68a; }
 .board-cell--pending:active { cursor: grabbing; }
 
-/* Compteur sac */
+/* Compteur sac (inline, ancien style) */
 .bag-counter {
     display: inline-flex;
     align-items: center;
@@ -630,6 +630,50 @@ footer {
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: .2rem .75rem;
+}
+
+/* En-tête du plateau avec grand sac de lettres */
+.board-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .5rem;
+}
+
+.letter-bag-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .1rem;
+    background: var(--bg2);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: .5rem .9rem;
+    min-width: 72px;
+    cursor: default;
+    user-select: none;
+    transition: border-color .2s;
+}
+.letter-bag-display:hover { border-color: var(--accent); }
+
+.letter-bag-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.letter-bag-count {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text);
+}
+
+.letter-bag-label {
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--text-dim);
+    text-transform: uppercase;
 }
 
 /* Case survol pendant le drag */
@@ -843,11 +887,24 @@ footer {
 .rack-below-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     flex-wrap: wrap;
     gap: .5rem;
     margin-bottom: .6rem;
 }
+
+.rack-title-row {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex: 1;
+}
+.rack-title-row h3 { margin: 0; }
+
+.rack-recall-btn {
+    font-size: .8rem !important;
+    padding: .2rem .6rem !important;
+}
+
 .rack-below-header h3 { margin: 0; }
 
 

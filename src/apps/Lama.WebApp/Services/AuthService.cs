@@ -16,6 +16,9 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
     public CurrentUser? CurrentUser => _currentUser;
     public bool IsLoggedIn => _currentUser is not null;
 
+    /// <summary>Notifie les composants abonnés d'un changement d'état d'authentification.</summary>
+    public event Action? OnAuthStateChanged;
+
     /// <summary>Initialise depuis localStorage — à appeler dans OnAfterRenderAsync(firstRender:true).</summary>
     public async Task InitializeAsync()
     {
@@ -33,6 +36,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             // Prerendering : JS indisponible → on ne marque pas comme initialisé pour réessayer
             _currentUser = null;
         }
+        OnAuthStateChanged?.Invoke();
     }
 
     public async Task<(bool Success, string? Error)> LoginAsync(string username, string password)
@@ -84,6 +88,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
     {
         _currentUser = null;
         await js.InvokeVoidAsync("playalamaAuth.clearSession");
+        OnAuthStateChanged?.Invoke();
     }
 
     public async Task<string?> GetTokenAsync()
