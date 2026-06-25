@@ -1,0 +1,68 @@
+@using Lama.WebApp.ViewModels
+
+@* Rack du joueur courant : tuiles avec lettre + valeur, joker en blanc.
+   IsMyTurn → les tuiles sont draggables vers le plateau.
+   DisplayOrder → indices dans Rack, permet de réordonner par drag. *@
+
+<div class="rack-container" role="list" aria-label="Vos tuiles @(IsMyTurn ? "(c'est votre tour)" : "")">
+    @if (Rack.Count == 0)
+    {
+        <span class="text-dim" style="font-size:.85rem">Rack vide</span>
+    }
+    else
+    {
+        @for (var displayPos = 0; displayPos < DisplayOrder.Count; displayPos++)
+        {
+            var dp = displayPos;
+            var rackIdx = DisplayOrder[dp];
+            if (rackIdx >= Rack.Count) continue;
+
+            var letter = Rack[rackIdx];
+            var upper = char.ToUpperInvariant(letter);
+            var val = GamePlayViewModel.GetTileValue(letter);
+            var isJoker = letter == '*';
+            var used = UsedIndices.Contains(rackIdx);
+
+            <div class="rack-tile @(isJoker ? "rack-tile--joker" : "") @(used ? "rack-tile--used" : "")"
+                 role="listitem"
+                 aria-label="@(isJoker ? "Joker" : $"Lettre {upper} valant {val} point{(val > 1 ? "s" : "")}")"
+                 aria-disabled="@(used ? "true" : null)"
+                 draggable="true"
+                 @ondragstart="@(() => HandleDragStart(dp, rackIdx, letter, used))"
+                 @ondragstart:stopPropagation
+                 @ondragover:preventDefault
+                 @ondrop="@(() => HandleRackDrop(dp))">
+                <span aria-hidden="true">@(isJoker ? "★" : upper.ToString())</span>
+                @if (!isJoker)
+                {
+                    <span class="rack-tile-val" aria-hidden="true">@val</span>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<char> Rack { get; set; } = [];
+    [Parameter, EditorRequired] public List<int> DisplayOrder { get; set; } = [];
+    [Parameter] public bool IsMyTurn { get; set; }
+    [Parameter] public IReadOnlyCollection<int> UsedIndices { get; set; } = [];
+    [Parameter] public EventCallback<(int Index, char Letter)> OnDragStart { get; set; }
+    [Parameter] public EventCallback<(int FromDisplayPos, int ToDisplayPos)> OnRackReorder { get; set; }
+
+    private int _draggingDisplayPos = -1;
+
+    private void HandleDragStart(int displayPos, int rackIdx, char letter, bool used)
+    {
+        _draggingDisplayPos = displayPos;
+        if (!used)
+            OnDragStart.InvokeAsync((rackIdx, letter));
+    }
+
+    private void HandleRackDrop(int toDisplayPos)
+    {
+        if (_draggingDisplayPos >= 0 && _draggingDisplayPos != toDisplayPos)
+            OnRackReorder.InvokeAsync((_draggingDisplayPos, toDisplayPos));
+        _draggingDisplayPos = -1;
+    }
+}

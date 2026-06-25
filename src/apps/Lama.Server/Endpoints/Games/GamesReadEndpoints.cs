@@ -168,6 +168,7 @@ public static class GamesReadEndpoints
                     stateSnapshot.IsGameOver,
                     stateSnapshot.CurrentPlayerIndex,
                     stateSnapshot.TurnNumber,
+                    bagCount = game.Engine.GetBagCount(),
                     players = game.Players.Select((player, index) => new
                     {
                         player.PlayerId,

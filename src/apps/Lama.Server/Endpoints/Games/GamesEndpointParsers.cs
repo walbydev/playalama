@@ -191,6 +191,25 @@ internal static class GamesEndpointParsers
         if (payload is null || payload.Value.ValueKind != JsonValueKind.Object)
             throw new GameException("Payload play.move invalide.");
 
+        // Format tableau : { placements: [{row, column, letter}, ...] }
+        if (payload.Value.TryGetProperty("placements", out var placementsElement) &&
+            placementsElement.ValueKind == JsonValueKind.Array)
+        {
+            var result = new Dictionary<Position, char>();
+            foreach (var item in placementsElement.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object) continue;
+                if (!TryGetIntProperty(item, "row", out var row)) continue;
+                if (!TryGetIntProperty(item, "column", out var col)) continue;
+                if (!TryGetLetterProperty(item, "letter", out var letter)) continue;
+                result[new Position(row, col)] = letter;
+            }
+            if (result.Count == 0)
+                throw new GameException("Payload play.move : aucun placement valide.");
+            return result;
+        }
+
+        // Format texte : { position, word, direction }
         if (!payload.Value.TryGetProperty("position", out var positionProperty) ||
             !payload.Value.TryGetProperty("word", out var wordProperty) ||
             !payload.Value.TryGetProperty("direction", out var directionProperty))

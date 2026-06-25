@@ -1,0 +1,62 @@
+@inject AuthService Auth
+@inject ThemeService Theme
+@inject NavigationManager Nav
+
+<nav class="navbar" role="navigation" aria-label="Navigation principale">
+    <a href="/" class="navbar-logo" aria-label="Playalama — Accueil">PLAYALAMA</a>
+
+    <ul class="navbar-links @(_menuOpen ? "open" : "")" id="nav-links">
+        <li><a href="/" class="@ActiveClass("/")" @onclick="CloseMenu">Accueil</a></li>
+        <li><a href="/leaderboard" class="@ActiveClass("/leaderboard")" @onclick="CloseMenu">Classements</a></li>
+        <li><a href="/rules" class="@ActiveClass("/rules")" @onclick="CloseMenu">Règles</a></li>
+        <li><a href="/downloads" class="@ActiveClass("/downloads")" @onclick="CloseMenu">Télécharger</a></li>
+        @if (Auth.IsLoggedIn)
+        {
+            <li><a href="/games" class="@ActiveClass("/games")" @onclick="CloseMenu">Jouer</a></li>
+            <li><a href="/my-games" class="@ActiveClass("/my-games")" @onclick="CloseMenu">Mes parties</a></li>
+        }
+    </ul>
+
+    <div class="navbar-actions">
+        <ThemeToggle />
+        @if (Auth.IsLoggedIn)
+        {
+            <a href="/profile" class="btn btn-ghost btn-sm">@Auth.CurrentUser!.Username</a>
+            <button class="btn btn-outline btn-sm" type="button" @onclick="LogoutAsync">Déconnexion</button>
+        }
+        else
+        {
+            <a href="/login"    class="btn btn-ghost btn-sm">Connexion</a>
+            <a href="/register" class="btn btn-primary btn-sm">Jouer →</a>
+        }
+        <button class="navbar-burger" type="button" @onclick="ToggleMenu"
+                aria-expanded="@_menuOpen" aria-controls="nav-links"
+                aria-label="Menu">
+            @(_menuOpen ? "✕" : "☰")
+        </button>
+    </div>
+</nav>
+
+<!-- Spacer pour compenser la navbar fixe -->
+<div style="height: var(--nav-h);" aria-hidden="true"></div>
+
+@code {
+    private bool _menuOpen;
+
+    private string ActiveClass(string path)
+    {
+        var current = Nav.ToBaseRelativePath(Nav.Uri);
+        var rel     = path.TrimStart('/');
+        return (rel == "" ? current == "" : current.StartsWith(rel, StringComparison.OrdinalIgnoreCase))
+            ? "active" : "";
+    }
+
+    private void ToggleMenu() => _menuOpen = !_menuOpen;
+    private void CloseMenu()  => _menuOpen = false;
+
+    private async Task LogoutAsync()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("/");
+    }
+}

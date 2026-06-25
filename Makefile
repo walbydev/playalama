@@ -4,10 +4,13 @@
 # Usage : make <cible> [ARGS="..."] [SSH_KEY="~/.ssh/..."]
 #
 # Déploiement VPS (PROD + STAGING avec Traefik) :
-#   setup-vps        Initialisation VPS (1 seule fois)
+#   setup-vps        Initialisation VPS (1 seule fois, idempotent, image-only)
+#   clean-all-vps    ⚠ Remise à zéro COMPLÈTE du VPS (destructif)
 #   deploy-traefik   (Re)déployer Traefik sur le VPS
 #   deploy-prod      Déployer l'environnement PROD  (playalama.online)
 #   deploy-staging   Déployer l'environnement STAGING (staging.playalama.online)
+#   vps-status       Afficher l'état des containers sur le VPS
+#   cleanup-vps      Nettoyer les anciens containers/images obsolètes
 #
 # Scénarios de démarrage local :
 #   1. dev-local         Debug CLI en local (même PC, sans serveur)
@@ -19,17 +22,16 @@
 # Développement natif (Option A — PostgreSQL Docker + .NET natif) :
 #   option-a-start   Démarrer PostgreSQL (Docker)
 #   option-a-server  Lancer Lama.Server natif (port 5201)
-#   option-a-portal  Lancer Lama.PortalWebApp natif (port 5203)
-#   option-a-webapp  Lancer Lama.GameWebApp natif (port 5202)
-#   dev-debug        Build + lancer les 3 apps en parallèle (Server+Portal+GameWebApp)
+#   option-a-webapp  Lancer Lama.WebApp natif (port 5202)
+#   dev-debug        Build + lancer les 2 apps en parallèle (Server+WebApp)
 # =============================================================================
 
 SHELL := /bin/bash
 ROOT_DIR := $(shell pwd)
 CONSOLE_PROJECT := src/apps/Lama.Console/Lama.Console.csproj
 SERVER_PROJECT  := src/apps/Lama.Server/Lama.Server.csproj
-PORTAL_PROJECT  := src/apps/Lama.PortalWebApp/Lama.PortalWebApp.csproj
-WEBAPP_PROJECT  := src/apps/Lama.GameWebApp/Lama.GameWebApp.csproj
+PORTAL_PROJECT  := src/apps/Lama.WebApp/Lama.WebApp.csproj
+WEBAPP_PROJECT  := src/apps/Lama.WebApp/Lama.WebApp.csproj
 DOCKER_LOCAL    := tools/docker/docker-compose.local.yml
 DOCKER_OPTION_A := tools/docker/docker-compose.local-debug.yml
 
@@ -101,7 +103,7 @@ docker-local-logs: ## Suivre les logs de la stack locale
 DEPLOY_TARGET ?= debian@playalama.online
 
 .PHONY: setup-vps
-setup-vps: ## [VPS] Initialisation du VPS (1 seule fois) — installe Docker, crée la structure, clone le repo, lance Traefik
+setup-vps: ## [VPS] Initialisation du VPS (idempotent, image-only) — Docker, structure, Traefik
 	@if [ -z "$(SSH_KEY)" ]; then \
 	  echo "⚠  SSH_KEY non définie. Usage : make setup-vps SSH_KEY=~/.ssh/playalama.key"; \
 	  exit 1; \
@@ -121,36 +123,33 @@ setup-vps-dry: ## [VPS] Simulation du setup VPS (dry-run)
 	  --ssh-key $(SSH_KEY) \
 	  --dry-run
 
-# BUNDLE_FILE peut être surchargé : make push-bundle BUNDLE_FILE=/tmp/mabranch.bundle
-BUNDLE_FILE ?= /tmp/playalama-$(shell date +%Y%m%d%H%M%S).bundle
-VPS_BARE_REPO ?= /opt/playalama/git/playalama.git
-
-.PHONY: push-bundle
-push-bundle: ## [VPS] Envoyer les commits locaux vers le bare repo du VPS (remplace git push)
+.PHONY: clean-all-vps
+clean-all-vps: ## [VPS] ⚠ DESTRUCTIF — Remise à zéro complète (containers, images, volumes, répertoires)
 	@if [ -z "$(SSH_KEY)" ]; then \
-	  echo "⚠  SSH_KEY non définie. Usage : make push-bundle SSH_KEY=~/.ssh/playalama.key"; \
+	  echo "⚠  SSH_KEY non définie. Usage : make clean-all-vps SSH_KEY=~/.ssh/playalama.key"; \
 	  exit 1; \
 	fi
-	@echo "→ Création du bundle git..."
-	git bundle create $(BUNDLE_FILE) --branches --tags
-	@echo "→ Copie vers le VPS..."
-	scp -i $(SSH_KEY) $(BUNDLE_FILE) $(DEPLOY_TARGET):/tmp/playalama.bundle
-	@echo "→ Mise à jour du bare repo VPS..."
-	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
-	  "git --git-dir=$(VPS_BARE_REPO) fetch /tmp/playalama.bundle 'refs/heads/*:refs/heads/*' && rm /tmp/playalama.bundle"
-	rm -f $(BUNDLE_FILE)
-	@echo "✓ Bundle poussé — lancer make deploy-prod / make deploy-staging"
+	bash tools/scripts/deploy/clean-all-vps.sh \
+	  --target $(DEPLOY_TARGET) \
+	  --ssh-key $(SSH_KEY)
 
-.PHONY: setup-vps-bundle
-setup-vps-bundle: ## [VPS] Setup VPS complet via bundle SSH (quand Gitea LAN est inaccessible depuis le VPS)
+.PHONY: clean-all-vps-with-traefik
+clean-all-vps-with-traefik: ## [VPS] ⚠ DESTRUCTIF — Remise à zéro TOTALE Traefik inclus (certs TLS perdus !)
 	@if [ -z "$(SSH_KEY)" ]; then \
-	  echo "⚠  SSH_KEY non définie. Usage : make setup-vps-bundle SSH_KEY=~/.ssh/playalama.key"; \
+	  echo "⚠  SSH_KEY non définie."; \
 	  exit 1; \
 	fi
-	bash tools/scripts/deploy/setup-vps.sh \
+	bash tools/scripts/deploy/clean-all-vps.sh \
 	  --target $(DEPLOY_TARGET) \
 	  --ssh-key $(SSH_KEY) \
-	  --bundle $(ROOT_DIR)
+	  --include-traefik
+
+.PHONY: clean-all-vps-dry
+clean-all-vps-dry: ## [VPS] Simulation remise à zéro complète (dry-run)
+	bash tools/scripts/deploy/clean-all-vps.sh \
+	  --target $(DEPLOY_TARGET) \
+	  --ssh-key $(SSH_KEY) \
+	  --dry-run
 
 .PHONY: deploy-traefik
 deploy-traefik: ## [VPS] (Re)déployer Traefik sur le VPS
@@ -211,16 +210,32 @@ health-staging: ## Vérifier l'état de STAGING (https://staging.playalama.onlin
 	@curl -fsS https://staging.playalama.online/health && echo "✓ Staging OK" || echo "✗ Staging KO"
 
 .PHONY: logs-prod
-logs-prod: ## Afficher les logs PROD en temps réel (lama-server-prod)
+logs-prod: ## Afficher les logs PROD en temps réel (lama-server-prod + lama-webapp-prod)
 	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
 	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
-	  "cd /srv/playalama/prod && docker compose -p prod -f tools/docker/docker-compose.prod.yml logs -f --tail=100"
+	  "cd /opt/playalama/prod && docker compose -p prod logs -f --tail=100 lama-server-prod lama-webapp-prod"
 
 .PHONY: logs-staging
-logs-staging: ## Afficher les logs STAGING en temps réel (lama-server-staging)
+logs-staging: ## Afficher les logs STAGING en temps réel (lama-server-staging + lama-webapp-staging)
 	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
 	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
-	  "cd /srv/playalama/staging && docker compose -p staging -f tools/docker/docker-compose.staging.yml logs -f --tail=100"
+	  "cd /opt/playalama/staging && docker compose -p staging logs -f --tail=100 lama-server-staging lama-webapp-staging"
+
+.PHONY: cleanup-vps
+cleanup-vps: ## [VPS] Nettoyer les anciens containers/images obsolètes sur le VPS
+	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
+	bash tools/scripts/deploy/cleanup-vps.sh --ssh-key $(SSH_KEY) --target $(DEPLOY_TARGET)
+
+.PHONY: cleanup-vps-dry
+cleanup-vps-dry: ## [VPS] Simulation nettoyage VPS (dry-run)
+	bash tools/scripts/deploy/cleanup-vps.sh \
+	  --ssh-key $(SSH_KEY) --target $(DEPLOY_TARGET) --dry-run
+
+.PHONY: vps-status
+vps-status: ## [VPS] Afficher l'état des containers sur le VPS
+	@if [ -z "$(SSH_KEY)" ]; then echo "⚠  SSH_KEY non définie."; exit 1; fi
+	ssh -i $(SSH_KEY) $(DEPLOY_TARGET) \
+	  "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' && echo '' && docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}' | grep lama"
 
 # =============================================================================
 # OPTION A: Debug Natif + PostgreSQL Docker (Recommandé pour développement)
@@ -233,12 +248,9 @@ option-a-start: ## [OPTION A] Démarrer PostgreSQL en Docker (ports 5200/5201/52
 option-a-server: ## [OPTION A] Lancer Lama.Server natif sur port 5201
 	dotnet run --project $(SERVER_PROJECT) --urls http://127.0.0.1:5201
 
-.PHONY: option-a-portal
-option-a-portal: ## [OPTION A] Lancer Lama.PortalWebApp natif sur port 5203
-	dotnet run --project $(PORTAL_PROJECT) --urls http://127.0.0.1:5203
-
 .PHONY: option-a-webapp
-option-a-webapp: ## [OPTION A] Lancer Lama.GameWebApp natif sur port 5202
+option-a-webapp: ## [OPTION A] Lancer Lama.WebApp natif sur port 5202
+	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 \
 	dotnet run --project $(WEBAPP_PROJECT) --urls http://127.0.0.1:5202
 
 .PHONY: option-a-stop
@@ -257,15 +269,13 @@ option-a-logs: ## [OPTION A] Suivre les logs PostgreSQL
 # Dev-debug : build + lancer les 3 apps en parallèle
 # =============================================================================
 .PHONY: dev-debug
-dev-debug: option-a-start ## [Dev] Build + lancer Server (5201) + Portal (5203) + GameWebApp (5202) en parallèle
+dev-debug: option-a-start ## [Dev] Build + lancer Server (5201) + WebApp (5202) en parallèle
 	@echo "→ Build de la solution..."
 	dotnet build -c Debug --no-restore
-	@echo "→ Démarrage des 3 apps (Ctrl+C pour tout arrêter)..."
+	@echo "→ Démarrage des apps (Ctrl+C pour tout arrêter)..."
 	@trap 'kill 0' SIGINT; \
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_ALLOW_SHUTDOWN=true \
 	  dotnet run --project $(SERVER_PROJECT) --no-build --urls http://127.0.0.1:5201 & \
-	ASPNETCORE_ENVIRONMENT=Development \
-	  dotnet run --project $(PORTAL_PROJECT) --no-build --urls http://127.0.0.1:5203 & \
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 \
 	  dotnet run --project $(WEBAPP_PROJECT) --no-build --urls http://127.0.0.1:5202 & \
 	wait
@@ -300,11 +310,10 @@ health-local: ## Vérifier les endpoints locaux
 	@curl -fsS http://localhost/health && echo "✓ nginx→Server OK" || echo "✗ nginx→Server KO"
 
 .PHONY: health-option-a
-health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 5201, Portal 5203, WebApp 5202)
+health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 5201, WebApp 5202)
 	@docker exec postgres-lama-option-a pg_isready -U lama_dev -d lama_dev >/dev/null 2>&1 && echo "✓ PostgreSQL (5200) OK" || echo "✗ PostgreSQL (5200) KO"
 	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO" || true
-	@curl -fsS http://localhost:5203/ >/dev/null && echo "✓ Portal (5203) OK" || echo "✗ Portal (5203) KO" || true
-	@curl -fsS http://localhost:5202/ >/dev/null && echo "✓ GameWebApp (5202) OK" || echo "✗ GameWebApp (5202) KO" || true
+	@curl -fsS http://localhost:5202/ >/dev/null && echo "✓ WebApp (5202) OK" || echo "✗ WebApp (5202) KO" || true
 
 .PHONY: web-lobby-smoke
 web-lobby-smoke: ## [OPTION A] Smoke test Web lobby (register/create/start/my-games)

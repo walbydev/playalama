@@ -1,0 +1,396 @@
+@page "/games/{GameId}"
+@layout MainLayout
+@implements IAsyncDisposable
+@inject LamaApiClient Api
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Partie @GameId — Playalama</PageTitle>
+
+@if (_vm.Snapshot is null && _vm.IsLoading)
+{
+    <div class="page-hero">
+        <p class="text-muted" aria-live="polite">Chargement de la partie…</p>
+    </div>
+}
+else if (_vm.Snapshot is { UsesLobby: true, HasStarted: false })
+{
+    @* Redirige vers le lobby si la partie n'a pas encore démarré *@
+    <div class="page-hero">
+        <p class="text-muted">La partie n'a pas encore démarré. Redirection vers la salle d'attente…</p>
+    </div>
+}
+else
+{
+    <div class="section" style="padding-top: calc(var(--nav-h) + 1rem)">
+        <div class="container">
+
+            @if (!string.IsNullOrWhiteSpace(_vm.Error))
+            {
+                <p class="form-error mb-3" role="alert">@_vm.Error</p>
+            }
+
+            @if (_vm.Snapshot is not null)
+            {
+                <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+                    <div>
+                        <div class="eyebrow">Partie @(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")</div>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <h2 style="margin:0">Tour @_vm.Snapshot.TurnNumber
+                                @if (_vm.Snapshot.IsGameOver)
+                                {
+                                    <span class="chip chip-muted" style="margin-left:.5rem">Terminée</span>
+                                }
+                                else if (_vm.IsMyTurn)
+                                {
+                                    <span class="chip chip-accent" style="margin-left:.5rem">Votre tour !</span>
+                                }
+                            </h2>
+                            <span class="bag-counter" title="Lettres restantes dans le sac">
+                                🎒 @_vm.Snapshot.BagCount lettre@(_vm.Snapshot.BagCount > 1 ? "s" : "")
+                            </span>
+                        </div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
+                        Rafraîchir
+                    </button>
+                </div>
+
+                <div class="game-layout">
+
+                    @* ── Colonne gauche : plateau (sans label) ── *@
+                    <div>
+                        <BoardDisplay Board="_vm.Snapshot.Board"
+                                      GetBonus="_vm.GetCellBonus"
+                                      Pending="_vm.PendingPlacements"
+                                      CanDrop="@(_vm.IsMyTurn && (_draggingRackIndex >= 0 || _draggingPendingPos.HasValue))"
+                                      DraggingFromBoard="_draggingPendingPos.HasValue"
+                                      OnDrop="HandleDrop"
+                                      OnRecall="HandleRecall"
+                                      OnPendingDragStart="HandlePendingDragStart" />
+                    </div>
+
+                    @* ── Colonne droite : sidebar ── *@
+                    <div style="display:flex; flex-direction:column; gap:1.25rem">
+
+                        @* Scores *@
+                        <div class="card">
+                            <h3 class="mb-2">Scores</h3>
+                            <ScoreBoard Players="_vm.Snapshot.Players"
+                                        CurrentPlayerIndex="_vm.Snapshot.CurrentPlayerIndex"
+                                        MyPlayerId="@_myPlayerId" />
+                        </div>
+
+                        @* Mon rack *@
+                        @if (_vm.MyRack.Count > 0)
+                        {
+                            <div class="card">
+                                <h3 class="mb-2">Mes tuiles @(_vm.IsMyTurn ? "— Faites glisser sur le plateau" : "")</h3>
+                                <RackDisplay Rack="_vm.MyRack"
+                                             DisplayOrder="@_rackOrder"
+                                             IsMyTurn="_vm.IsMyTurn"
+                                             UsedIndices="@(_vm.PendingPlacements.Count > 0 ? GetUsedIndices() : [])"
+                                             OnDragStart="HandleDragStart"
+                                             OnRackReorder="HandleRackReorder" />
+
+                                @* Bouton rappel tuiles provisoires *@
+                                @if (_vm.PendingPlacements.Count > 0)
+                                {
+                                    <div class="flex gap-2 mt-2 flex-wrap">
+                                        <button class="btn btn-ghost btn-sm" @onclick="() => { _vm.RecallAll(); StateHasChanged(); }">
+                                            ↩ Rappeler toutes les tuiles
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" @onclick="PlayDragMoveAsync"
+                                                disabled="@(_vm.IsLoading || _vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))">
+                                            ✔ Valider le placement (@_vm.PendingPlacements.Count tuile@(_vm.PendingPlacements.Count > 1 ? "s" : ""))
+                                        </button>
+                                    </div>
+                                    @if (_vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))
+                                    {
+                                        <p class="form-error mt-1" style="font-size:.8rem">Assignez une lettre à chaque joker (★ → clic)</p>
+                                    }
+                                }
+                            </div>
+                        }
+
+                        @* Panneau d'action (passer / swap / saisie manuelle) *@
+                        @if (!_vm.Snapshot.IsGameOver && _vm.IsMyTurn)
+                        {
+                            <div class="card action-panel">
+                                <h3 class="mb-2">Autres actions</h3>
+                                <EditForm Model="_vm" OnValidSubmit="PlayAsync">
+                                    <div class="form-field">
+                                        <label for="play-cmd">Commande</label>
+                                        <InputSelect id="play-cmd" @bind-Value="_vm.Command">
+                                            <option value="play.pass">Passer</option>
+                                            <option value="play.move">Poser un mot (saisie)</option>
+                                            <option value="play.swap">Échanger des lettres</option>
+                                        </InputSelect>
+                                    </div>
+
+                                    @if (_vm.Command == "play.move")
+                                    {
+                                        <div class="form-field">
+                                            <label for="play-pos">Position <small class="text-dim">(ex: H8)</small></label>
+                                            <InputText id="play-pos" @bind-Value="_vm.Position" placeholder="H8" />
+                                        </div>
+                                        <div class="form-field">
+                                            <label for="play-word">Mot <small class="text-dim">(minuscule = joker)</small></label>
+                                            <InputText id="play-word" @bind-Value="_vm.Word" placeholder="BONJOUR" />
+                                        </div>
+                                        <div class="form-field">
+                                            <label for="play-dir">Direction</label>
+                                            <InputSelect id="play-dir" @bind-Value="_vm.Direction">
+                                                <option value="H">Horizontal →</option>
+                                                <option value="V">Vertical ↓</option>
+                                            </InputSelect>
+                                        </div>
+                                    }
+
+                                    @if (_vm.Command == "play.swap")
+                                    {
+                                        <div class="form-field">
+                                            <label for="play-letters">Lettres à échanger</label>
+                                            <InputText id="play-letters" @bind-Value="_vm.Word" placeholder="ABC" />
+                                        </div>
+                                    }
+
+                                    <button class="btn btn-primary" type="submit" disabled="@_vm.IsLoading" style="width:100%">
+                                        @(_vm.IsLoading ? "Envoi…" : "Jouer")
+                                    </button>
+                                </EditForm>
+                            </div>
+                        }
+                        else if (!_vm.Snapshot.IsGameOver)
+                        {
+                            <div class="card">
+                                <p class="text-muted text-center" aria-live="polite">
+                                    En attente du tour de @(_vm.Snapshot.Players.ElementAtOrDefault(_vm.Snapshot.CurrentPlayerIndex)?.PlayerName ?? "…")…
+                                </p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="card text-center">
+                                <h3 class="mb-2">🏆 Partie terminée !</h3>
+                                @{
+                                    var winner = _vm.Snapshot.Players.MaxBy(p => p.Score);
+                                }
+                                @if (winner is not null)
+                                {
+                                    <p class="text-muted">Vainqueur : <strong>@winner.PlayerName</strong> avec @winner.Score points</p>
+                                }
+                                <a href="/games" class="btn btn-primary mt-3">Nouvelle partie</a>
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@* ── Modal joker : assignation de la lettre ── *@
+@if (_jokerRow >= 0)
+{
+    <div class="joker-overlay" role="dialog" aria-modal="true" aria-label="Choisir la lettre du joker">
+        <div class="joker-picker">
+            <h4 class="mb-2">★ Quel lettre pour ce joker ?</h4>
+            <div class="joker-grid">
+                @foreach (var ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                {
+                    var letter = ch;
+                    <button class="joker-btn" @onclick="() => AssignJoker(letter)" aria-label="@letter">@letter</button>
+                }
+            </div>
+            <button class="btn btn-ghost btn-sm mt-2" @onclick="CancelJoker">Annuler</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string GameId { get; set; } = string.Empty;
+
+    private readonly GamePlayViewModel _vm = new();
+    private string? _myPlayerId;
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _pollingCts;
+
+    // Drag state (rack → board)
+    private int _draggingRackIndex = -1;
+    private char _draggingLetter = '\0';
+
+    // Drag state (board pending → board)
+    private (int Row, int Col)? _draggingPendingPos;
+
+    // Joker picker state
+    private int _jokerRow = -1;
+    private int _jokerCol = -1;
+
+    // Rack display order (visual reorder, persists until rack changes)
+    private List<int> _rackOrder = [];
+    private int _previousRackSize = -1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var parsed = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        _myPlayerId = parsed.TryGetValue("playerId", out var pid)
+            ? pid.ToString()
+            : Auth.CurrentUser?.PlayerId;
+
+        _vm.Initialize(GameId, _myPlayerId);
+        await _vm.LoadAsync(Api);
+        SyncRackOrder();
+
+        // Redirection vers lobby si la partie n'a pas encore démarré
+        if (_vm.Snapshot is { UsesLobby: true, HasStarted: false })
+        {
+            var pidParam = _myPlayerId is not null ? $"?playerId={Uri.EscapeDataString(_myPlayerId)}" : string.Empty;
+            Navigation.NavigateTo($"/games/{GameId}/lobby{pidParam}");
+            return;
+        }
+
+        StartPolling();
+    }
+
+    /// <summary>Réinitialise l'ordre du rack uniquement quand la taille change (nouveau tirage).</summary>
+    private void SyncRackOrder()
+    {
+        var size = _vm.MyRack.Count;
+        if (size == _previousRackSize) return;
+        _rackOrder = Enumerable.Range(0, size).ToList();
+        _previousRackSize = size;
+    }
+
+    private void StartPolling()
+    {
+        _pollingCts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        _ = Task.Run(async () =>
+        {
+            while (await _timer.WaitForNextTickAsync(_pollingCts.Token))
+                await InvokeAsync(async () =>
+                {
+                    await _vm.LoadAsync(Api);
+                    SyncRackOrder();
+                    StateHasChanged();
+                });
+        }, _pollingCts.Token);
+    }
+
+    private async Task RefreshAsync()
+    {
+        await _vm.LoadAsync(Api);
+        SyncRackOrder();
+    }
+
+    // ── Drag-and-drop ────────────────────────────────────────────────────────
+
+    private void HandleDragStart((int Index, char Letter) args)
+    {
+        _draggingRackIndex = args.Index;
+        _draggingLetter = args.Letter;
+        _draggingPendingPos = null;
+    }
+
+    private void HandlePendingDragStart((int Row, int Col) pos)
+    {
+        _draggingPendingPos = pos;
+        _draggingRackIndex = -1;
+    }
+
+    private void HandleDrop((int Row, int Col) cell)
+    {
+        if (_draggingPendingPos.HasValue)
+        {
+            // Déplacer une tuile provisoire vers une autre case
+            var from = _draggingPendingPos.Value;
+            if (from != cell)
+                _vm.MovePendingTile(from.Row, from.Col, cell.Row, cell.Col);
+            _draggingPendingPos = null;
+        }
+        else if (_draggingRackIndex >= 0)
+        {
+            if (_draggingLetter == '*')
+            {
+                _vm.PlaceTile(_draggingRackIndex, '*', cell.Row, cell.Col);
+                _jokerRow = cell.Row;
+                _jokerCol = cell.Col;
+            }
+            else
+            {
+                _vm.PlaceTile(_draggingRackIndex, _draggingLetter, cell.Row, cell.Col);
+            }
+            _draggingRackIndex = -1;
+            _draggingLetter = '\0';
+        }
+        StateHasChanged();
+    }
+
+    private void HandleRecall((int Row, int Col) cell)
+    {
+        _vm.RecallTile(cell.Row, cell.Col);
+        StateHasChanged();
+    }
+
+    private void HandleRackReorder((int FromDisplayPos, int ToDisplayPos) args)
+    {
+        if (args.FromDisplayPos < 0 || args.ToDisplayPos < 0) return;
+        if (args.FromDisplayPos >= _rackOrder.Count || args.ToDisplayPos >= _rackOrder.Count) return;
+        (_rackOrder[args.FromDisplayPos], _rackOrder[args.ToDisplayPos]) =
+            (_rackOrder[args.ToDisplayPos], _rackOrder[args.FromDisplayPos]);
+        StateHasChanged();
+    }
+
+    private void AssignJoker(char letter)
+    {
+        if (_jokerRow >= 0)
+            _vm.AssignJokerLetter(_jokerRow, _jokerCol, letter);
+        _jokerRow = -1;
+        _jokerCol = -1;
+        StateHasChanged();
+    }
+
+    private void CancelJoker()
+    {
+        if (_jokerRow >= 0)
+            _vm.RecallTile(_jokerRow, _jokerCol);
+        _jokerRow = -1;
+        _jokerCol = -1;
+        StateHasChanged();
+    }
+
+    private HashSet<int> GetUsedIndices() => [.._vm.PendingPlacements
+        .Select((_, i) => _vm.GetUsedRackIndex(i))
+        .Where(x => x >= 0)];
+
+    // ── Soumission ──────────────────────────────────────────────────────────
+
+    private async Task PlayDragMoveAsync()
+    {
+        _vm.Command = "play.move";
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+        await _vm.PlayAsync(Api, token);
+    }
+
+    private async Task PlayAsync()
+    {
+        // En mode saisie manuelle, effacer les placements provisoires
+        _vm.RecallAll();
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+        await _vm.PlayAsync(Api, token);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_pollingCts is not null) { await _pollingCts.CancelAsync(); _pollingCts.Dispose(); }
+        _timer?.Dispose();
+    }
+}
+

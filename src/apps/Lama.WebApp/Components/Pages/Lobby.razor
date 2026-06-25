@@ -1,0 +1,194 @@
+@page "/games/{GameId}/lobby"
+@layout MainLayout
+@implements IAsyncDisposable
+@inject LamaApiClient Api
+@inject AuthService Auth
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Salle d'attente — Playalama</PageTitle>
+
+<div class="lobby-page">
+
+    <div class="eyebrow">Multijoueur</div>
+    <h1 class="mb-1">@(_vm.GameName ?? "Partie en cours de préparation")</h1>
+    <p class="text-muted mb-3">Partagez le code ci-dessous pour inviter des joueurs.</p>
+
+    @* Code de la partie *@
+    <div class="lobby-code" aria-label="Code de la partie">
+        <span class="lobby-code-value" id="lobby-code-val">@GameId</span>
+        <button class="btn btn-ghost btn-sm" @onclick="CopyCodeAsync" aria-label="Copier le code">
+            @(_codeCopied ? "✓ Copié !" : "📋 Copier")
+        </button>
+    </div>
+
+    @* Slots *@
+    @if (_vm.Snapshot is not null)
+    {
+        <p class="lobby-slots">
+            @_vm.Snapshot.Players.Count / @_vm.MaxPlayers joueur@(_vm.Snapshot.Players.Count > 1 ? "s" : "") · @(_vm.MaxPlayers - _vm.Snapshot.Players.Count) slot@(_vm.MaxPlayers - _vm.Snapshot.Players.Count > 1 ? "s" : "") libre@(_vm.MaxPlayers - _vm.Snapshot.Players.Count > 1 ? "s" : "")
+        </p>
+
+        @* Liste des joueurs *@
+        <div class="lobby-player-list" role="list" aria-label="Joueurs présents">
+            @foreach (var player in _vm.Snapshot.Players)
+            {
+                <div class="lobby-player-row" role="listitem">
+                    <div class="lobby-player-avatar" aria-hidden="true">@player.PlayerName[0]</div>
+                    <div style="flex:1">
+                        <span class="fw-600">@player.PlayerName</span>
+                        @if (player.IsHost) { <span aria-label="hôte" title="Hôte"> 👑</span> }
+                    </div>
+                    <span class="chip chip-success">Connecté</span>
+                </div>
+            }
+            @* Slots vides *@
+            @for (var i = _vm.Snapshot.Players.Count; i < _vm.MaxPlayers; i++)
+            {
+                <div class="lobby-player-row" role="listitem" style="opacity:.4">
+                    <div class="lobby-player-avatar" style="background:var(--bg3); color:var(--text-dim)" aria-hidden="true">?</div>
+                    <span class="text-dim">En attente d'un joueur…</span>
+                </div>
+            }
+        </div>
+    }
+    else if (_vm.IsLoading)
+    {
+        <p class="text-muted" aria-live="polite">Chargement…</p>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_vm.Error))
+    {
+        <p class="form-error mb-3" role="alert">@_vm.Error</p>
+    }
+
+    @* Actions (hôte uniquement) *@
+    @if (_vm.IsHost)
+    {
+        <div class="flex flex-col gap-2 mt-3">
+            <button class="btn btn-primary"
+                    @onclick="StartAsync"
+                    disabled="@(!_vm.CanStart || _busy)"
+                    aria-disabled="@(!_vm.CanStart)">
+                @(_busy ? "Démarrage…" : "▶ Démarrer la partie")
+            </button>
+
+            <div style="display:flex; align-items:center; gap:.75rem; margin-top:.25rem">
+                <button class="btn btn-force btn-sm"
+                        @onclick="ForceStartAsync"
+                        disabled="@(_busy)"
+                        title="Force le démarrage avec 1 seul joueur — mode test uniquement">
+                    ⚡ Forcer le démarrage
+                </button>
+                <span class="text-dim" style="font-size:.75rem">mode test — 1 joueur</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted mt-3">En attente que l'hôte démarre la partie…</p>
+    }
+
+</div>
+
+@code {
+    [Parameter] public string GameId { get; set; } = string.Empty;
+
+    private readonly LobbyViewModel _vm = new();
+    private bool _busy;
+    private bool _codeCopied;
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _pollingCts;
+    private string? _myPlayerId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var parsed = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        _myPlayerId = parsed.TryGetValue("playerId", out var pid)
+            ? pid.ToString()
+            : Auth.CurrentUser?.PlayerId;
+
+        _vm.Initialize(GameId, _myPlayerId);
+        await _vm.LoadAsync(Api);
+        StartPolling();
+    }
+
+    private void StartPolling()
+    {
+        _pollingCts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        _ = Task.Run(async () =>
+        {
+            while (await _timer.WaitForNextTickAsync(_pollingCts.Token))
+            {
+                await InvokeAsync(async () =>
+                {
+                    await _vm.LoadAsync(Api);
+                    StateHasChanged();
+
+                    if (_vm.HasStarted)
+                    {
+                        await (_pollingCts?.CancelAsync() ?? Task.CompletedTask);
+                        var playerId = _myPlayerId is not null
+                            ? $"?playerId={Uri.EscapeDataString(_myPlayerId)}"
+                            : string.Empty;
+                        Navigation.NavigateTo($"/games/{GameId}{playerId}");
+                    }
+                });
+            }
+        }, _pollingCts.Token);
+    }
+
+    private async Task StartAsync()
+    {
+        _busy = true;
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+        await _vm.StartAsync(Api, token);
+        if (_vm.HasStarted)
+        {
+            var pid = _myPlayerId is not null ? $"?playerId={Uri.EscapeDataString(_myPlayerId)}" : string.Empty;
+            Navigation.NavigateTo($"/games/{GameId}{pid}");
+        }
+        _busy = false;
+    }
+
+    private async Task ForceStartAsync()
+    {
+        _busy = true;
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+        await _vm.ForceStartAsync(Api, token);
+        if (string.IsNullOrWhiteSpace(_vm.Error))
+        {
+            var pid = _myPlayerId is not null ? $"?playerId={Uri.EscapeDataString(_myPlayerId)}" : string.Empty;
+            Navigation.NavigateTo($"/games/{GameId}{pid}");
+        }
+        _busy = false;
+    }
+
+    private async Task CopyCodeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", GameId);
+            _codeCopied = true;
+            await Task.Delay(2000);
+            _codeCopied = false;
+        }
+        catch { /* pas de clipboard API */ }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_pollingCts is not null)
+        {
+            await _pollingCts.CancelAsync();
+            _pollingCts.Dispose();
+        }
+        _timer?.Dispose();
+    }
+}

@@ -1,0 +1,57 @@
+@inject HomeViewModel VM
+
+<section id="leaderboard" class="section bg2" aria-labelledby="lb-preview-title">
+    <div class="container">
+        <div class="section-header">
+            <div class="eyebrow">Classements</div>
+            <h2 id="lb-preview-title">Les meilleurs du monde</h2>
+            <p>Classements mis à jour en temps réel. Tournois et parties libres séparés.</p>
+        </div>
+
+        <div class="lb-tabs" role="tablist" aria-label="Filtrer par mode de jeu">
+            <button class="lb-tab @(VM.SelectedTab == "tournament" ? "active" : "")"
+                    role="tab"
+                    aria-selected="@(VM.SelectedTab == "tournament")"
+                    @onclick='() => SwitchTabAsync("tournament")'>
+                🏆 Tournois
+            </button>
+            <button class="lb-tab @(VM.SelectedTab == "free" ? "active" : "")"
+                    role="tab"
+                    aria-selected="@(VM.SelectedTab == "free")"
+                    @onclick='() => SwitchTabAsync("free")'>
+                ⚔️ Parties libres
+            </button>
+            <button class="lb-tab @(VM.SelectedTab == "blitz" ? "active" : "")"
+                    role="tab"
+                    aria-selected="@(VM.SelectedTab == "blitz")"
+                    @onclick='() => SwitchTabAsync("blitz")'>
+                ⚡ Blitz
+            </button>
+        </div>
+
+        @if (VM.IsLoadingLeaderboard)
+        {
+            <p class="text-muted text-center" aria-live="polite">Chargement…</p>
+        }
+        else
+        {
+            <LeaderboardTable Entries="VM.PreviewEntries" Compact="true" />
+        }
+
+        <div class="flex justify-between items-center mt-3 flex-wrap gap-2">
+            <div class="live-indicator" aria-live="polite">
+                <div class="live-dot" aria-hidden="true"></div>
+                Mis à jour en direct
+            </div>
+            <a href="/leaderboard" class="btn btn-outline btn-sm">Classement complet →</a>
+        </div>
+    </div>
+</section>
+
+@code {
+    private async Task SwitchTabAsync(string tab)
+    {
+        await VM.SwitchTabAsync(tab);
+        StateHasChanged();
+    }
+}

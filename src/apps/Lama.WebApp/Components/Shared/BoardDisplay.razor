@@ -1,0 +1,133 @@
+@using Lama.WebApp.Services
+@using Lama.WebApp.ViewModels
+
+@* Plateau de jeu 15×15 avec cases bonus colorées, tuiles posées et placements provisoires. *@
+
+<div class="board-container" role="region" aria-label="Plateau de jeu">
+    <div class="board-grid" role="grid">
+        @* En-tête colonnes *@
+        <div class="board-header-cell" aria-hidden="true"></div>
+        @for (var c = 0; c < 15; c++)
+        {
+            var colLabel = GamePlayViewModel.ColLabel(c);
+            <div class="board-header-cell" aria-hidden="true">@colLabel</div>
+        }
+
+        @* Lignes *@
+        @for (var row = 0; row < 15; row++)
+        {
+            var r = row; // capture
+            <div class="board-header-cell" aria-hidden="true">@GamePlayViewModel.RowLabel(r)</div>
+            @for (var col = 0; col < 15; col++)
+            {
+                var c = col; // capture
+                var tile = GetTile(r, c);
+                var pending = GetPendingTile(r, c);
+                var bonus = GetBonus(r, c);
+                var isDropTarget = CanDrop && tile is null && (pending is null || _draggingFromBoard);
+
+                string cssClass;
+                string ariaLabel;
+
+                if (tile.HasValue)
+                {
+                    cssClass = "board-cell board-cell--tile";
+                    ariaLabel = $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}: {char.ToUpperInvariant(tile.Value)}";
+                }
+                else if (pending is not null)
+                {
+                    cssClass = "board-cell board-cell--pending";
+                    ariaLabel = $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}: {char.ToUpperInvariant(pending.Letter)} (provisoire, clic pour rappeler)";
+                }
+                else
+                {
+                    cssClass = $"board-cell{(string.IsNullOrEmpty(bonus) ? "" : $" board-cell--{bonus}")}";
+                    ariaLabel = $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}{GetBonusAriaLabel(bonus)}";
+                }
+
+                <div class="@cssClass"
+                     role="gridcell"
+                     aria-label="@ariaLabel"
+                     @ondragover:preventDefault="@isDropTarget"
+                     @ondrop="@(isDropTarget ? () => OnDrop.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     draggable="@(pending is not null && CanDrop ? "true" : "false")"
+                     @ondragstart="@(pending is not null ? () => OnPendingDragStart.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     @ondragstart:stopPropagation>
+                    @if (tile.HasValue)
+                    {
+                        var upper = char.ToUpperInvariant(tile.Value);
+                        var val = GamePlayViewModel.GetTileValue(tile.Value);
+                        <span class="tile-letter" aria-hidden="true">@upper</span>
+                        @if (val > 0)
+                        {
+                            <span class="tile-val" aria-hidden="true">@val</span>
+                        }
+                    }
+                    else if (pending is not null)
+                    {
+                        var dispLetter = pending.IsJoker
+                            ? (pending.Letter == '*' ? "?" : char.ToUpperInvariant(pending.Letter).ToString())
+                            : char.ToUpperInvariant(pending.Letter).ToString();
+                        var val = pending.IsJoker ? 0 : GamePlayViewModel.GetTileValue(pending.Letter);
+                        <span class="tile-letter" aria-hidden="true">@dispLetter</span>
+                        @if (val > 0)
+                        {
+                            <span class="tile-val" aria-hidden="true">@val</span>
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(bonus))
+                    {
+                        <span class="board-label" aria-hidden="true">@GetBonusLabel(bonus)</span>
+                    }
+                    else if (r == 7 && c == 7)
+                    {
+                        <span aria-hidden="true">★</span>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<WebBoardTile> Board { get; set; } = [];
+    [Parameter, EditorRequired] public Func<int, int, string> GetBonus { get; set; } = (_, _) => string.Empty;
+    [Parameter] public IReadOnlyList<PendingPlacement> Pending { get; set; } = [];
+    [Parameter] public bool CanDrop { get; set; }
+    [Parameter] public bool DraggingFromBoard { get; set; }
+    [Parameter] public EventCallback<(int Row, int Col)> OnDrop { get; set; }
+    [Parameter] public EventCallback<(int Row, int Col)> OnRecall { get; set; }
+    [Parameter] public EventCallback<(int Row, int Col)> OnPendingDragStart { get; set; }
+
+    private bool _draggingFromBoard => DraggingFromBoard;
+
+    private char? GetTile(int row, int col)
+    {
+        var tile = Board.FirstOrDefault(x => x.Row == row && x.Column == col);
+        return tile?.Letter;
+    }
+
+    private PendingPlacement? GetPendingTile(int row, int col) =>
+        Pending.FirstOrDefault(p => p.Row == row && p.Col == col);
+
+    private static string GetBonusLabel(string bonus) => bonus switch
+    {
+        "tw" => "TM",
+        "dw" => "DM",
+        "tl" => "TL",
+        "dl" => "DL",
+        "st" => "★",
+        _ => string.Empty
+    };
+
+    private static string GetBonusAriaLabel(string bonus) => bonus switch
+    {
+        "tw" => " — Triple Mot",
+        "dw" => " — Double Mot",
+        "tl" => " — Triple Lettre",
+        "dl" => " — Double Lettre",
+        "st" => " — Départ",
+        _ => string.Empty
+    };
+}

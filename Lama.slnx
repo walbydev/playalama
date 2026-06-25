@@ -2,8 +2,7 @@
   <Folder Name="/Apps/">
     <Project Path="src/apps/Lama.Console/Lama.Console.csproj" />
     <Project Path="src/apps/Lama.Server/Lama.Server.csproj" />
-    <Project Path="src/apps/Lama.GameWebApp/Lama.GameWebApp.csproj" />
-    <Project Path="src/apps/Lama.PortalWebApp/Lama.PortalWebApp.csproj" />
+    <Project Path="src/apps/Lama.WebApp/Lama.WebApp.csproj" />
   </Folder>
   <Folder Name="/Libraries/">
     <File Path="Directory.Build.props" />
@@ -20,7 +19,7 @@
     <Project Path="tests/Lama.Domain.UnitTests/Lama.Domain.UnitTests.csproj" />
     <Project Path="tests/Lama.Infrastructure.UnitTests/Lama.Infrastructure.UnitTests.csproj" />
     <Project Path="tests/Lama.Languages.fr.UnitTests/Lama.Languages.fr.UnitTests.csproj" />
-    <Project Path="tests/Lama.GameWebApp.UnitTests/Lama.GameWebApp.UnitTests.csproj" />
+    <Project Path="tests/Lama.WebApp.UnitTests/Lama.WebApp.UnitTests.csproj" />
   </Folder>
   <Folder Name="/Tools/">
     <File Path="tools\distribution\README.txt" />

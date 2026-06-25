@@ -1,0 +1,179 @@
+@page "/games"
+@layout MainLayout
+@inject LamaApiClient Api
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Jouer — Playalama</PageTitle>
+
+<div class="page-hero">
+    <div class="eyebrow">Multijoueur</div>
+    <h1>🎮 Zone de jeu</h1>
+    <p class="text-muted mt-2">Créez ou rejoignez une partie en ligne.</p>
+</div>
+
+<div class="section">
+    <div class="container">
+        <div style="display:grid; grid-template-columns:1fr 2fr; gap:2rem; align-items:start">
+
+            <!-- Créer une partie -->
+            <div class="card">
+                <h2 class="mb-3">Créer une partie</h2>
+                <EditForm Model="_createForm" OnValidSubmit="CreateGameAsync">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-field">
+                        <label for="game-mode">Mode</label>
+                        <InputSelect id="game-mode" @bind-Value="_createForm.Mode">
+                            <option value="multi">Multijoueur</option>
+                            <option value="solo">Solo vs IA</option>
+                        </InputSelect>
+                    </div>
+                    <div class="form-field">
+                        <label for="game-name">Nom de partie <small class="text-dim">(optionnel)</small></label>
+                        <InputText id="game-name" @bind-Value="_createForm.GameName" placeholder="Ma partie" />
+                    </div>
+                    <div class="form-field">
+                        <label for="game-max">Joueurs max</label>
+                        <InputNumber id="game-max" @bind-Value="_createForm.MaxPlayers" min="2" max="4" />
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_error))
+                    {
+                        <p class="form-error mb-2" role="alert">@_error</p>
+                    }
+
+                    <button class="btn btn-primary" type="submit" style="width:100%" disabled="@_busy">
+                        @(_busy ? "Création…" : "Créer")
+                    </button>
+                </EditForm>
+            </div>
+
+            <!-- Liste des parties -->
+            <div>
+                <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+                    <h2>Parties disponibles</h2>
+                    <button class="btn btn-ghost btn-sm" @onclick="LoadGamesAsync" disabled="@_busy">Rafraîchir</button>
+                </div>
+
+                @if (_busy && _games.Count == 0)
+                {
+                    <p class="text-muted" aria-live="polite">Chargement…</p>
+                }
+                else if (_games.Count == 0)
+                {
+                    <div class="empty-state">
+                        <span class="empty-state-icon" aria-hidden="true">🃏</span>
+                        <p>Aucune partie disponible. Créez la première !</p>
+                    </div>
+                }
+                else
+                {
+                    <div style="overflow-x:auto">
+                        <table class="lb-table" aria-label="Liste des parties disponibles">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Nom</th>
+                                    <th scope="col">Statut</th>
+                                    <th scope="col">Joueurs</th>
+                                    <th scope="col">Mode</th>
+                                    <th scope="col"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var game in _games)
+                                {
+                                    <tr>
+                                        <td>@(string.IsNullOrWhiteSpace(game.GameName) ? game.Id[..8] + "…" : game.GameName)</td>
+                                        <td><span class="chip chip-muted">@game.Status</span></td>
+                                        <td>@game.Players / @game.MaxPlayers</td>
+                                        <td>@game.Queue</td>
+                                        <td>
+                                            @if (game.IsJoinable)
+                                            {
+                                                <button class="btn btn-primary btn-sm" @onclick="() => JoinGameAsync(game.Id)">
+                                                    Rejoindre
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <a href="/games/@game.Id" class="btn btn-ghost btn-sm">Voir</a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly CreateGameForm _createForm = new();
+    private readonly List<WebGameListItem> _games = [];
+    private bool _busy;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+        await LoadGamesAsync();
+    }
+
+    private async Task CreateGameAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+            var user = Auth.CurrentUser;
+            if (user is null) { Navigation.NavigateTo("/login"); return; }
+
+            var created = await Api.CreateGameAsync(_createForm, user.Username, token);
+            // Partie multijoueur → salle d'attente; solo → partie directement
+            var isMulti = string.Equals(_createForm.Mode, "multi", StringComparison.OrdinalIgnoreCase);
+            var dest = isMulti
+                ? $"/games/{created.GameId}/lobby?playerId={Uri.EscapeDataString(created.HostPlayerId)}"
+                : $"/games/{created.GameId}?playerId={Uri.EscapeDataString(created.HostPlayerId)}";
+            Navigation.NavigateTo(dest);
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+
+    private async Task JoinGameAsync(string gameId)
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+            var playerName = Auth.CurrentUser?.Username;
+            if (string.IsNullOrWhiteSpace(playerName)) { Navigation.NavigateTo("/login"); return; }
+
+            var joined = await Api.JoinGameAsync(gameId, playerName, password: null, token);
+            Navigation.NavigateTo($"/games/{joined.GameId}?playerId={Uri.EscapeDataString(joined.PlayerId)}");
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+
+    private async Task LoadGamesAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            _games.Clear();
+            _games.AddRange(await Api.ListGamesAsync());
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+}

@@ -1,0 +1,64 @@
+@* Tableau de classement réutilisable (Home preview + page Leaderboard) *@
+
+<table class="lb-table" aria-label="Classement des joueurs">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Joueur</th>
+            <th scope="col">Pays</th>
+            <th scope="col" style="text-align:right">Niveau</th>
+            <th scope="col" style="text-align:right">ELO</th>
+            <th scope="col" style="text-align:right">Victoires</th>
+            @if (!Compact)
+            {
+                <th scope="col" style="text-align:right">Parties</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var entry in Entries)
+        {
+            <tr class="@(entry.PlayerId == CurrentPlayerId ? "me" : "")">
+                <td>
+                    <span class="lb-rank @RankClass(entry.Rank)" aria-label="Rang @entry.Rank">
+                        @RankLabel(entry.Rank)
+                    </span>
+                </td>
+                <td>
+                    <div class="lb-player">
+                        <div class="lb-avatar" aria-hidden="true">@entry.Username[0]</div>
+                        <div>
+                            <div class="lb-name">@entry.Username</div>
+                            <div class="lb-level text-dim">Niv. @entry.Level</div>
+                        </div>
+                    </div>
+                </td>
+                <td>@(string.IsNullOrEmpty(entry.CountryCode) ? "—" : entry.CountryCode)</td>
+                <td style="text-align:right">@entry.Level</td>
+                <td style="text-align:right; font-weight:700">@entry.Elo</td>
+                <td style="text-align:right">@entry.Wins</td>
+                @if (!Compact)
+                {
+                    <td style="text-align:right">@entry.Games</td>
+                }
+            </tr>
+        }
+        @if (!Entries.Any())
+        {
+            <tr>
+                <td colspan="@(Compact ? 6 : 7)" style="text-align:center; padding:2rem; color:var(--text-dim)">
+                    Aucune donnée disponible
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<LeaderboardEntry> Entries { get; set; } = [];
+    [Parameter] public string? CurrentPlayerId { get; set; }
+    [Parameter] public bool Compact { get; set; }
+
+    private static string RankClass(int rank) => rank switch { 1 => "gold", 2 => "silver", 3 => "bronze", _ => "" };
+    private static string RankLabel(int rank) => rank switch { 1 => "🥇", 2 => "🥈", 3 => "🥉", _ => rank.ToString() };
+}

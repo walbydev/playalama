@@ -1,0 +1,133 @@
+@page "/profile"
+@layout MainLayout
+@inject AuthService Auth
+@inject LamaApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>Mon profil — Playalama</PageTitle>
+
+@if (!Auth.IsLoggedIn)
+{
+    <div class="auth-page">
+        <div class="auth-card text-center">
+            <h1>Profil</h1>
+            <p class="text-muted mt-2">Vous devez être connecté pour accéder à cette page.</p>
+            <a href="/login" class="btn btn-primary mt-3">Se connecter</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="page-hero">
+        <div class="eyebrow">Compte</div>
+        <h1>Mon profil</h1>
+    </div>
+
+    <div class="section">
+        <div class="container" style="max-width:600px">
+
+            @if (_profile is not null)
+            {
+                <div class="card mb-4">
+                    <h2 class="mb-3">Informations</h2>
+                    <div style="display:flex; flex-direction:column; gap:.75rem">
+                        <div class="flex justify-between"><span class="text-muted">Pseudo</span><strong>@_profile.Username</strong></div>
+                        @if (!string.IsNullOrWhiteSpace(_profile.Email))
+                        {
+                            <div class="flex justify-between"><span class="text-muted">Email</span><strong>@_profile.Email</strong></div>
+                        }
+                        <div class="flex justify-between"><span class="text-muted">Membre depuis</span><strong>@_profile.CreatedAt.ToString("dd/MM/yyyy")</strong></div>
+                    </div>
+                </div>
+            }
+
+            <div class="card">
+                <h2 class="mb-3">Modifier mon profil</h2>
+                <EditForm Model="_updateForm" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-field">
+                        <label for="upd-email">Email <small class="text-dim">(optionnel)</small></label>
+                        <InputText id="upd-email" type="email" @bind-Value="_updateForm.Email" placeholder="vous@exemple.fr" />
+                    </div>
+
+                    <h3 class="mt-3 mb-2">Changer le mot de passe</h3>
+
+                    <div class="form-field">
+                        <label for="upd-pwd">Mot de passe actuel</label>
+                        <InputText id="upd-pwd" type="password" @bind-Value="_updateForm.CurrentPassword" />
+                    </div>
+                    <div class="form-field">
+                        <label for="upd-pwd2">Nouveau mot de passe</label>
+                        <InputText id="upd-pwd2" type="password" @bind-Value="_updateForm.NewPassword" />
+                        <ValidationMessage For="() => _updateForm.NewPassword" class="form-error" />
+                    </div>
+                    <div class="form-field">
+                        <label for="upd-pwd3">Confirmer le nouveau mot de passe</label>
+                        <InputText id="upd-pwd3" type="password" @bind-Value="_updateForm.NewPasswordConfirm" />
+                        <ValidationMessage For="() => _updateForm.NewPasswordConfirm" class="form-error" />
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_error))   { <p class="form-error mb-2" role="alert">@_error</p> }
+                    @if (!string.IsNullOrWhiteSpace(_success)) { <p class="form-success mb-2" role="status">@_success</p> }
+
+                    <button class="btn btn-primary" type="submit" disabled="@_busy">
+                        @(_busy ? "Sauvegarde…" : "Enregistrer")
+                    </button>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private WebPlayerProfile? _profile;
+    private readonly ProfileUpdateForm _updateForm = new();
+    private bool _busy;
+    private string? _error;
+    private string? _success;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Auth.InitializeAsync();
+        if (!Auth.IsLoggedIn) { StateHasChanged(); return; }
+        await LoadProfileAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (token is null) return;
+            _profile = await Api.GetMyProfileAsync(token);
+            _updateForm.Email = _profile?.Email;
+        }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        _error = null;
+        _success = null;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (token is null) { _error = "Session expirée."; return; }
+
+            _profile = await Api.UpdateMyProfileAsync(
+                token, _updateForm.Email, _updateForm.CurrentPassword,
+                string.IsNullOrWhiteSpace(_updateForm.NewPassword) ? null : _updateForm.NewPassword);
+
+            _success = "Profil mis à jour.";
+            _updateForm.CurrentPassword = null;
+            _updateForm.NewPassword = null;
+            _updateForm.NewPasswordConfirm = null;
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+}

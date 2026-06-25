@@ -1,0 +1,104 @@
+@page "/downloads"
+@layout MainLayout
+@inject DownloadsViewModel VM
+@inject IJSRuntime JS
+
+<PageTitle>Téléchargements — Playalama CLI</PageTitle>
+
+<div class="page-hero">
+    <div class="eyebrow">Ligne de commande</div>
+    <h1>⬇ Télécharger Playalama CLI</h1>
+    <p class="text-muted mt-2">
+        Un client natif ultra-léger pour Windows, Linux et macOS. Jouez en local ou connecté
+        au serveur en ligne — sans navigateur.
+    </p>
+</div>
+
+<div class="section">
+    <div class="container">
+
+        <!-- Présentation du mode CLI -->
+        <div class="card mb-4" style="max-width:780px; margin:0 auto 2.5rem">
+            <h2 class="mb-2">Pourquoi le mode CLI ?</h2>
+            <ul style="list-style:none; display:flex; flex-direction:column; gap:.75rem">
+                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">⚡</span><span><strong>Ultra-rapide</strong> — Aucune interface graphique, zéro latence.</span></li>
+                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🔒</span><span><strong>Hors ligne</strong> — Jouez sans connexion en mode local (JSON).</span></li>
+                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🌐</span><span><strong>En ligne</strong> — Connectez-vous au serveur avec <code>LAMA_RUNTIME_MODE=online</code>.</span></li>
+                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🔧</span><span><strong>Scriptable</strong> — Intégrable dans vos scripts shell, CI, automatisations.</span></li>
+                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🖥️</span><span><strong>Multiplateforme</strong> — Linux (x64/ARM64), Windows x64, macOS Intel & Apple Silicon.</span></li>
+            </ul>
+        </div>
+
+        <!-- Blocs téléchargements -->
+        <h2 class="mb-3">Téléchargements</h2>
+        <div class="dl-grid">
+            @foreach (var platform in VM.Platforms)
+            {
+                <div class="dl-platform">
+                    <div class="dl-platform-head">
+                        <span style="font-size:1.5rem" aria-hidden="true">@platform.Os.Split(' ')[0]</span>
+                        <div>
+                            <h3>@platform.Os.Substring(platform.Os.IndexOf(' ') + 1)</h3>
+                            <span class="dl-arch">@platform.Arch</span>
+                        </div>
+                    </div>
+                    @foreach (var item in platform.Items)
+                    {
+                        <div class="dl-item">
+                            <span class="dl-label">@item.Label</span>
+                            <div class="dl-cmd-wrap">
+                                <code class="dl-cmd" title="@item.InstallCmd">@item.InstallCmd</code>
+                                <button class="dl-copy"
+                                        type="button"
+                                        @onclick="() => CopyAsync(item.Label, item.InstallCmd)"
+                                        aria-label="Copier la commande @item.Label"
+                                        title="Copier">
+                                    @(VM.IsCopied(item.Label) ? "✓" : "📋")
+                                </button>
+                            </div>
+                            <a href="@item.ZipUrl" class="btn btn-ghost btn-sm" download aria-label="Télécharger @item.Label (.zip)">ZIP</a>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Commandes principales -->
+        <div class="cli-commands mt-4">
+            <h2>Commandes principales</h2>
+            <p class="text-muted mt-1 mb-3">Les commandes essentielles pour commencer à jouer.</p>
+            <div class="cli-cmd-list" role="list">
+                @foreach (var cmd in VM.MainCommands)
+                {
+                    <div class="cli-cmd-row" role="listitem">
+                        <span class="cli-cmd-desc">@cmd.Description</span>
+                        <code class="cli-cmd-code">@cmd.Command</code>
+                        <button class="dl-copy"
+                                type="button"
+                                @onclick="() => CopyAsync(cmd.Command, cmd.Command)"
+                                aria-label="Copier : @cmd.Command"
+                                title="Copier">
+                            @(VM.IsCopied(cmd.Command) ? "✓" : "📋")
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private async Task CopyAsync(string key, string text)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            VM.MarkCopied(key);
+            StateHasChanged();
+            await Task.Delay(1500);
+            VM.ClearCopied(key);
+            StateHasChanged();
+        }
+        catch { /* clipboard non disponible */ }
+    }
+}

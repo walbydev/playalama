@@ -1,0 +1,84 @@
+@page "/modes/{Slug}"
+@layout MainLayout
+@inject NavigationManager Nav
+
+<PageTitle>@(_mode?.Name ?? "Mode de jeu") — Playalama</PageTitle>
+
+@if (_mode is null)
+{
+    <div class="page-hero">
+        <div class="empty-state">
+            <span class="empty-state-icon" aria-hidden="true">🎮</span>
+            <p>Mode de jeu introuvable.</p>
+            <a href="/#modes" class="btn btn-outline mt-2">← Retour aux modes</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="page-hero">
+        <div class="eyebrow">Mode de jeu</div>
+        <h1 style="--card-color: @_mode.Color">
+            <span aria-hidden="true">@_mode.Icon</span>
+            @_mode.Name
+            <span class="badge">@_mode.Badge</span>
+        </h1>
+        <p class="text-muted mt-2" style="max-width:680px; font-size:1.1rem">@_mode.FullDesc</p>
+        <div class="hero-btns mt-3">
+            <a href="/games" class="btn btn-primary">🎮 Jouer en @_mode.Name</a>
+            <a href="/#modes" class="btn btn-ghost">← Tous les modes</a>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="container">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items:start">
+
+                <section aria-labelledby="rules-title-@_mode.Slug">
+                    <h2 id="rules-title-@_mode.Slug" class="mb-3">📖 Règles</h2>
+                    <ul style="list-style:none; display:flex; flex-direction:column; gap:.75rem">
+                        @foreach (var rule in _mode.Rules)
+                        {
+                            <li class="rules-rule" style="display:flex; align-items:baseline; gap:.75rem">
+                                <span aria-hidden="true" style="color:var(--accent2); font-size:1.1rem">•</span>
+                                <span>@rule</span>
+                            </li>
+                        }
+                    </ul>
+                </section>
+
+                <section aria-labelledby="options-title-@_mode.Slug">
+                    <h2 id="options-title-@_mode.Slug" class="mb-3">⚙️ Options disponibles</h2>
+                    <ul style="list-style:none; display:flex; flex-direction:column; gap:.75rem">
+                        @foreach (var opt in _mode.Options)
+                        {
+                            <li class="rules-rule" style="display:flex; align-items:baseline; gap:.75rem">
+                                <span aria-hidden="true" style="color:var(--gold); font-size:1.1rem">✦</span>
+                                <span>@opt</span>
+                            </li>
+                        }
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div class="section bg2 text-center">
+        <div class="container">
+            <h2>Prêt à jouer en mode @_mode.Name ?</h2>
+            <p class="text-muted mt-2">Lance une partie maintenant ou télécharge le client CLI pour jouer hors ligne.</p>
+            <div class="hero-btns mt-3">
+                <a href="/games"     class="btn btn-primary btn-lg">🎮 Jouer maintenant</a>
+                <a href="/downloads" class="btn btn-outline btn-lg">⬇ Télécharger le CLI</a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    private GameModeViewModel? _mode;
+
+    protected override void OnParametersSet()
+        => _mode = GameModes.FindBySlug(Slug);
+}

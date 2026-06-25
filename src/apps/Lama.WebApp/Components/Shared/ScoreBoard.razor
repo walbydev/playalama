@@ -1,0 +1,34 @@
+@using Lama.WebApp.Services
+
+@* Tableau des scores avec indicateur du joueur actif. *@
+
+<div class="scoreboard" role="list" aria-label="Scores">
+    @for (var i = 0; i < Players.Count; i++)
+    {
+        var player = Players[i];
+        var isActive = i == CurrentPlayerIndex;
+        var isMe = string.Equals(player.PlayerId, MyPlayerId, StringComparison.Ordinal);
+        <div class="scoreboard-row @(isActive ? "scoreboard-row--active" : "")" role="listitem" aria-current="@(isActive ? "true" : "false")">
+            <div class="scoreboard-avatar" aria-hidden="true">@player.PlayerName[0]</div>
+            <div style="flex:1; min-width:0">
+                <div class="scoreboard-name">
+                    @player.PlayerName
+                    @if (player.IsHost) { <span aria-label="hôte" title="Hôte">👑</span> }
+                    @if (isMe) { <span class="chip chip-accent" style="font-size:.65rem; margin-left:.3rem">Vous</span> }
+                </div>
+                <div class="scoreboard-rack-count">@player.RackCount tuile@(player.RackCount > 1 ? "s" : "") en main</div>
+            </div>
+            <div class="scoreboard-score" aria-label="@player.Score points">@player.Score <small>pts</small></div>
+            @if (isActive)
+            {
+                <span class="chip chip-accent" style="font-size:.7rem" aria-label="Tour actif">▶</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<WebSnapshotPlayer> Players { get; set; } = [];
+    [Parameter] public int CurrentPlayerIndex { get; set; }
+    [Parameter] public string? MyPlayerId { get; set; }
+}
