@@ -23,7 +23,7 @@ public sealed class RealCliE2ETests : IDisposable
     public RealCliE2ETests()
     {
         _repoRoot = FindRepoRoot();
-        _consoleProjectPath = Path.Combine(_repoRoot, "src", "Console", "Lama.Console", "Lama.Console.csproj");
+        _consoleProjectPath = Path.Combine(_repoRoot, "src", "apps", "Lama.Console", "Lama.Console.csproj");
         _sessionDir = Path.Combine(Path.GetTempPath(), "LamaCliE2E", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sessionDir);
     }
@@ -189,6 +189,7 @@ public sealed class RealCliE2ETests : IDisposable
         };
 
         psi.ArgumentList.Add("run");
+        psi.ArgumentList.Add("--no-build");
         psi.ArgumentList.Add("--project");
         psi.ArgumentList.Add(_consoleProjectPath);
         psi.ArgumentList.Add("--");

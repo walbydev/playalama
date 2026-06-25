@@ -22,8 +22,8 @@ public sealed class OnlineCliE2ETests : IAsyncLifetime, IDisposable
 	public OnlineCliE2ETests()
 	{
 		_repoRoot = FindRepoRoot();
-		_consoleProjectPath = Path.Combine(_repoRoot, "src", "Console", "Lama.Console", "Lama.Console.csproj");
-		_serverProjectPath = Path.Combine(_repoRoot, "src", "Server", "Lama.Server", "Lama.Server.csproj");
+		_consoleProjectPath = Path.Combine(_repoRoot, "src", "apps", "Lama.Console", "Lama.Console.csproj");
+		_serverProjectPath = Path.Combine(_repoRoot, "src", "apps", "Lama.Server", "Lama.Server.csproj");
 
 		_hostSessionDir = Path.Combine(Path.GetTempPath(), "LamaOnlineHost", Guid.NewGuid().ToString("N"));
 		_guestSessionDir = Path.Combine(Path.GetTempPath(), "LamaOnlineGuest", Guid.NewGuid().ToString("N"));
@@ -45,6 +45,7 @@ public sealed class OnlineCliE2ETests : IAsyncLifetime, IDisposable
 		};
 
 		psi.ArgumentList.Add("run");
+		psi.ArgumentList.Add("--no-build");
 		psi.ArgumentList.Add("--project");
 		psi.ArgumentList.Add(_serverProjectPath);
 		psi.ArgumentList.Add("--urls");
@@ -262,6 +263,7 @@ public sealed class OnlineCliE2ETests : IAsyncLifetime, IDisposable
 		};
 
 		psi.ArgumentList.Add("run");
+		psi.ArgumentList.Add("--no-build");
 		psi.ArgumentList.Add("--project");
 		psi.ArgumentList.Add(_consoleProjectPath);
 		psi.ArgumentList.Add("--");

@@ -10,8 +10,8 @@ public sealed class HelpCatalogConsistencyTests
     public void HelpCatalog_CoversAllCommandsRegisteredInProgram()
     {
         var repoRoot = FindRepoRoot();
-        var programPath = Path.Combine(repoRoot, "src", "Console", "Lama.Console", "Program.cs");
-        var commandsPath = Path.Combine(repoRoot, "src", "Console", "Lama.Console", "Commands");
+        var programPath = Path.Combine(repoRoot, "src", "apps", "Lama.Console", "Program.cs");
+        var commandsPath = Path.Combine(repoRoot, "src", "apps", "Lama.Console", "Commands");
 
         var registeredTypeNames = ParseRegisteredCommandTypes(programPath);
         var commandIdByTypeName = ParseCommandIdsByType(commandsPath);
