@@ -37,6 +37,13 @@ public static class GamesCommandEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
+        app.MapPost("/games/{gameId}/abandon", AbandonGame)
+            .WithName("AbandonGame")
+            .Produces<dynamic>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
+
         app.MapPost("/games/{gameId}/start", StartGame)
             .WithName("StartGame")
             .Produces<dynamic>(StatusCodes.Status200OK)
@@ -541,6 +548,141 @@ public static class GamesCommandEndpoints
             nextPlayerId,
             message = actionMessage,
             challengeSucceeded
+        });
+    }
+
+    private static IResult AbandonGame(HttpContext context, string gameId, AbandonGameRequest request, GameHubState state)
+    {
+        if (!context.IsAuthenticated())
+            return Results.Unauthorized();
+
+        if (!state.TryGet(gameId, out var game))
+            return Results.NotFound(new { error = "game not found" });
+
+        var callerPlayerId = context.GetPlayerId();
+        if (string.IsNullOrWhiteSpace(callerPlayerId))
+            return Results.Unauthorized();
+
+        bool isGameOver;
+        string? winner;
+        List<OnlineScoreEntry> scores;
+        string abandonedPlayerName;
+        bool isHost;
+
+        lock (game)
+        {
+            var currentState = game.Engine.GetGameState();
+            if (currentState.IsGameOver)
+                return Results.BadRequest(new { error = "game is already over" });
+
+            if (!game.PlayerIndexById.TryGetValue(callerPlayerId, out var playerIndex))
+                return Results.BadRequest(new { error = "unknown playerId" });
+
+            var player = game.Players.ElementAtOrDefault(playerIndex);
+            if (player is null)
+                return Results.BadRequest(new { error = "player not found" });
+
+            abandonedPlayerName = player.PlayerName;
+            isHost = player.IsHost;
+
+            if (isHost)
+            {
+                // L'hôte abandonne → fin de partie pour tout le monde
+                game.Engine.EndGame();
+                game.UpdatedAt = DateTimeOffset.UtcNow;
+
+                var endedState = game.Engine.GetGameState();
+                scores = endedState.Players
+                    .OrderByDescending(p => p.Score)
+                    .Select(p => new OnlineScoreEntry(p.Name, p.Score))
+                    .ToList();
+                winner = scores.Count > 0 && scores.Count(s => s.Score == scores[0].Score) == 1
+                    ? scores[0].PlayerName
+                    : null;
+                game.IsClosed = true;
+                isGameOver = true;
+            }
+            else
+            {
+                // Non-hôte abandonne → il quitte, la partie continue
+                game.AbandonedPlayerIds.Add(callerPlayerId);
+                game.UpdatedAt = DateTimeOffset.UtcNow;
+
+                // Si c'est son tour, passer automatiquement jusqu'au prochain joueur actif
+                var maxPasses = game.Players.Count;
+                var passes = 0;
+                while (passes < maxPasses)
+                {
+                    var st = game.Engine.GetGameState();
+                    var curId = game.Players.ElementAtOrDefault(st.CurrentPlayerIndex)?.PlayerId;
+                    if (curId is null || !game.AbandonedPlayerIds.Contains(curId))
+                        break;
+                    game.Engine.PassTurn();
+                    passes++;
+                }
+
+                // Si tous les joueurs restants sauf 1 ont abandonné → fin de partie
+                var activeCount = game.Players.Count - game.AbandonedPlayerIds.Count;
+                if (activeCount <= 1)
+                {
+                    game.Engine.EndGame();
+                    var endedState = game.Engine.GetGameState();
+                    scores = endedState.Players
+                        .OrderByDescending(p => p.Score)
+                        .Select(p => new OnlineScoreEntry(p.Name, p.Score))
+                        .ToList();
+                    winner = scores.Count > 0 && scores.Count(s => s.Score == scores[0].Score) == 1
+                        ? scores[0].PlayerName
+                        : null;
+                    game.IsClosed = true;
+                    isGameOver = true;
+                }
+                else
+                {
+                    scores = game.Engine.GetGameState().Players
+                        .OrderByDescending(p => p.Score)
+                        .Select(p => new OnlineScoreEntry(p.Name, p.Score))
+                        .ToList();
+                    winner = null;
+                    isGameOver = false;
+                }
+            }
+        }
+
+        if (isGameOver)
+        {
+            var releasedPlayerIds = game.Players.Select(p => p.PlayerId).ToList();
+            state.ReleaseAllPlayerReservations(gameId, releasedPlayerIds);
+
+            state.Publish(gameId, new ServerEvent("game.ended", new
+            {
+                gameId,
+                endedAt = DateTimeOffset.UtcNow,
+                reason = "abandoned",
+                abandonedBy = abandonedPlayerName,
+                scores,
+                winner
+            }));
+        }
+        else
+        {
+            state.ReleasePlayerReservation(callerPlayerId, gameId);
+
+            state.Publish(gameId, new ServerEvent("player.abandoned", new
+            {
+                gameId,
+                playerId = callerPlayerId,
+                playerName = abandonedPlayerName
+            }));
+        }
+
+        return Results.Ok(new
+        {
+            gameId,
+            abandoned = true,
+            isGameOver,
+            winner = isGameOver ? winner : null,
+            scores = isGameOver ? scores : null
         });
     }
 

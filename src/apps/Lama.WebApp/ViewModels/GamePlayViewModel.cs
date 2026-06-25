@@ -213,8 +213,23 @@ public sealed class GamePlayViewModel
                     : null
             };
             await api.PlayAsync(GameId, form, token);
+            RecallAll(); // Vider les placements provisoires après soumission réussie
             await LoadAsync(api);
             return true;
+        }
+        catch (Exception ex) { Error = ex.Message; return false; }
+        finally { IsLoading = false; }
+    }
+
+    public async Task<bool> AbandonAsync(LamaApiClient api, string token)
+    {
+        IsLoading = true;
+        Error = null;
+        try
+        {
+            var isGameOver = await api.AbandonAsync(GameId, _myPlayerId ?? string.Empty, token);
+            await LoadAsync(api);
+            return isGameOver;
         }
         catch (Exception ex) { Error = ex.Message; return false; }
         finally { IsLoading = false; }

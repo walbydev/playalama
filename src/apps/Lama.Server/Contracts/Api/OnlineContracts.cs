@@ -23,6 +23,8 @@ public sealed record JoinGameRequest(string PlayerName, string? Password = null)
 
 public sealed record EndGameRequest(string? PlayerId);
 
+public sealed record AbandonGameRequest(string? PlayerId);
+
 public sealed record StartGameRequest(string? PlayerId, bool Force = false);
 
 public sealed record PlayMoveRequest(string PlayerId, string Command, JsonElement? Payload = null);
@@ -75,6 +77,8 @@ public sealed class OnlineGame(
     public bool HasStarted { get; set; } = HasStarted;
     public bool UsesLobby { get; } = UsesLobby;
     public bool IsClosed { get; set; } = IsClosed;
+    /// <summary>IDs des joueurs qui ont abandonné (mais la partie continue pour les autres).</summary>
+    public HashSet<string> AbandonedPlayerIds { get; } = [];
 }
 
 public sealed record OnlinePlayer(string PlayerId, string PlayerName, bool IsHost);

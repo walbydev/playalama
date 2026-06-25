@@ -147,6 +147,14 @@ h4 { font-size: 1.05rem; font-weight: 600; }
 html.light .btn-ghost { background: rgba(0,0,0,0.04); }
 .btn-ghost:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); color: var(--text); }
 
+.btn-danger {
+    background: rgba(220,50,50,0.15);
+    color: #e55;
+    border: 1px solid rgba(220,50,50,0.4);
+}
+html.light .btn-danger { background: rgba(220,50,50,0.08); }
+.btn-danger:hover { background: rgba(220,50,50,0.25); transform: translateY(-1px); color: #c33; }
+
 .btn-sm { padding: .45rem 1rem; font-size: .85rem; }
 .btn-lg { padding: .9rem 2.2rem; font-size: 1.05rem; }
 .btn-icon { padding: .5rem; line-height: 1; border-radius: 50%; }

@@ -237,6 +237,18 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return new WebPlayResponse(result.GameId, result.MoveId, result.Score);
     }
 
+    public async Task<bool> AbandonAsync(string gameId, string playerId, string? token = null, CancellationToken cancellationToken = default)
+    {
+        var request = new { playerId };
+        using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games/{gameId}/abandon", token);
+        httpRequest.Content = JsonContent.Create(request);
+        var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        return doc.RootElement.TryGetProperty("isGameOver", out var iso) && iso.GetBoolean();
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)

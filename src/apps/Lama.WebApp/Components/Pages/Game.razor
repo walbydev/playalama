@@ -51,9 +51,30 @@ else
                             </span>
                         </div>
                     </div>
-                    <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
-                        Rafraîchir
-                    </button>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
+                            Rafraîchir
+                        </button>
+                        @if (!_vm.Snapshot!.IsGameOver && _vm.Snapshot.HasStarted)
+                        {
+                            @if (_confirmAbandon)
+                            {
+                                <span class="text-dim" style="font-size:.85rem">Confirmer ?</span>
+                                <button class="btn btn-danger btn-sm" @onclick="AbandonAsync" disabled="@_vm.IsLoading">
+                                    ✔ Oui, abandonner
+                                </button>
+                                <button class="btn btn-ghost btn-sm" @onclick="() => _confirmAbandon = false">
+                                    Annuler
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-ghost btn-sm" style="color:var(--danger,#e55)" @onclick="() => _confirmAbandon = true">
+                                    🏳 Abandonner
+                                </button>
+                            }
+                        }
+                    </div>
                 </div>
 
                 <div class="game-layout">
@@ -264,6 +285,9 @@ else
     // Swap options
     private bool _swapAll = true;
 
+    // Abandon state
+    private bool _confirmAbandon;
+
     protected override async Task OnInitializedAsync()
     {
         await Auth.InitializeAsync();
@@ -423,6 +447,16 @@ else
         if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
         await _vm.PlayAsync(Api, token);
         _swapAll = true; // reset pour le prochain coup
+    }
+
+    private async Task AbandonAsync()
+    {
+        _confirmAbandon = false;
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+        var isGameOver = await _vm.AbandonAsync(Api, token);
+        if (isGameOver)
+            Navigation.NavigateTo("/games");
     }
 
     public async ValueTask DisposeAsync()
