@@ -121,19 +121,39 @@ else
                         <BoardDisplay Board="_vm.Snapshot.Board"
                                       GetBonus="_vm.GetCellBonus"
                                       Pending="_vm.PendingPlacements"
-                                      CanDrop="@(_vm.IsMyTurn && (_draggingRackIndex >= 0 || _draggingPendingPos.HasValue))"
+                                      CanDrop="@(_vm.IsMyTurn && (_draggingRackIndex >= 0 || _draggingPendingPos.HasValue || _vm.KeyboardModeActive))"
                                       DraggingFromBoard="_draggingPendingPos.HasValue"
+                                      KeyboardModeActive="_vm.KeyboardModeActive"
+                                      KeyboardCursorRow="_vm.KeyboardCursorRow"
+                                      KeyboardCursorCol="_vm.KeyboardCursorCol"
                                       OnDrop="HandleDrop"
                                       OnRecall="HandleRecall"
+                                      OnContextMenu="HandleContextMenu"
                                       OnPendingDragStart="HandlePendingDragStart" />
 
                         @* Rack sous le plateau — ligne unique *@
                         @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
                         {
                             <div class="card rack-below-board">
+                                @* Input clavier caché — capturé quand le mode clavier est actif *@
+                                @if (_vm.KeyboardModeActive)
+                                {
+                                    <input @ref="_keyboardInput"
+                                           class="keyboard-input-hidden"
+                                           aria-label="Saisie clavier"
+                                           @onkeydown="HandleKeyDown"
+                                           @onkeydown:preventDefault />
+                                }
+
                                 <div class="rack-below-header">
                                     <div class="rack-title-row">
                                         <h3>Mes tuiles</h3>
+                                        @if (_vm.KeyboardModeActive)
+                                        {
+                                            <span class="chip chip-accent kbd-mode-chip" title="Mode clavier actif — tapez des lettres, Entrée pour valider, Échap pour annuler">
+                                                ⌨ Mode clavier
+                                            </span>
+                                        }
                                         @if (_vm.IsMyTurn && _vm.PendingPlacements.Count > 0)
                                         {
                                             <button class="btn btn-ghost btn-sm rack-recall-btn"
@@ -151,6 +171,12 @@ else
                                         </button>
                                     }
                                 </div>
+                                @if (_vm.IsMyTurn && !_vm.KeyboardModeActive && _vm.PendingPlacements.Count > 0)
+                                {
+                                    <p class="kbd-hint" aria-live="polite">
+                                        💡 <b>Astuce :</b> Clic droit sur la prochaine case vide → saisie clavier directe (Entrée pour valider, Échap pour annuler)
+                                    </p>
+                                }
                                 <RackDisplay Rack="_vm.MyRack"
                                              DisplayOrder="@_rackOrder"
                                              IsMyTurn="_vm.IsMyTurn"
@@ -493,6 +519,56 @@ else
     {
         _vm.RecallTile(cell.Row, cell.Col);
         StateHasChanged();
+    }
+
+    private ElementReference _keyboardInput;
+
+    private async Task HandleContextMenu((int Row, int Col) cell)
+    {
+        if (!_vm.IsMyTurn) return;
+        _vm.StartKeyboardMode(cell.Row, cell.Col);
+        StateHasChanged();
+        // Focus l'input caché après le rendu
+        await Task.Yield();
+        try { await _keyboardInput.FocusAsync(); } catch { /* ignore si non rendu */ }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (!_vm.KeyboardModeActive) return;
+
+        switch (e.Key)
+        {
+            case "Enter":
+                _vm.StopKeyboardMode();
+                if (_vm.PendingPlacements.Count > 0)
+                    await PlayDragMoveAsync();
+                else
+                    StateHasChanged();
+                break;
+
+            case "Escape":
+                _vm.RecallAll();
+                StateHasChanged();
+                break;
+
+            case "Backspace":
+                _vm.HandleKeyboardBackspace();
+                StateHasChanged();
+                await Task.Yield();
+                try { await _keyboardInput.FocusAsync(); } catch { }
+                break;
+
+            default:
+                if (e.Key.Length == 1 && char.IsLetter(e.Key[0]))
+                {
+                    _vm.HandleKeyboardLetter(e.Key[0]);
+                    StateHasChanged();
+                    await Task.Yield();
+                    try { await _keyboardInput.FocusAsync(); } catch { }
+                }
+                break;
+        }
     }
 
     private void HandleRackReorder((int FromDisplayPos, int ToDisplayPos) args)

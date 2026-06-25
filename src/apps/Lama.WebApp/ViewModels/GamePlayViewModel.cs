@@ -171,6 +171,155 @@ public sealed class GamePlayViewModel
     {
         PendingPlacements.Clear();
         _usedRackIndices.Clear();
+        StopKeyboardMode();
+    }
+
+    // ── Mode clavier ─────────────────────────────────────────────────────────
+
+    /// <summary>Vrai quand le mode clavier est actif (frappe directe pour poser des lettres).</summary>
+    public bool KeyboardModeActive { get; private set; }
+
+    /// <summary>Position du curseur clavier courant (case à remplir).</summary>
+    public int KeyboardCursorRow { get; private set; }
+    public int KeyboardCursorCol { get; private set; }
+
+    /// <summary>Direction du mode clavier : true = horizontal, false = vertical.</summary>
+    public bool KeyboardIsHorizontal { get; private set; }
+
+    /// <summary>Nombre de tuiles posées depuis le mode clavier (pour le retour arrière).</summary>
+    private int _keyboardPlacedCount;
+
+    /// <summary>
+    /// Active le mode clavier depuis la case (row, col), direction déduite des placements existants.
+    /// </summary>
+    public void StartKeyboardMode(int row, int col)
+    {
+        // Déterminer la direction depuis les placements provisoires déjà en place
+        bool isHorizontal;
+        if (PendingPlacements.Count > 0)
+        {
+            var firstPending = PendingPlacements[0];
+            isHorizontal = firstPending.Row == row || PendingPlacements.All(p => p.Row == firstPending.Row);
+            // Si la case cliquée est sur la même ligne → horizontal, sinon vertical
+            if (firstPending.Row == row) isHorizontal = true;
+            else if (firstPending.Col == col) isHorizontal = false;
+            else isHorizontal = true; // fallback
+        }
+        else
+        {
+            isHorizontal = true; // par défaut horizontal si aucun placement
+        }
+
+        KeyboardModeActive = true;
+        KeyboardCursorRow = row;
+        KeyboardCursorCol = col;
+        KeyboardIsHorizontal = isHorizontal;
+        _keyboardPlacedCount = 0;
+    }
+
+    /// <summary>Place une lettre au curseur clavier, avance vers la prochaine case libre.</summary>
+    /// <returns>True si la lettre a pu être posée.</returns>
+    public bool HandleKeyboardLetter(char letter)
+    {
+        if (!KeyboardModeActive || Snapshot is null) return false;
+
+        // Trouver l'index rack disponible pour cette lettre (ou joker)
+        var rack = MyRack;
+        var upperLetter = char.ToUpperInvariant(letter);
+        var rackIndex = -1;
+
+        // Chercher d'abord la lettre exacte dans le rack
+        for (var i = 0; i < rack.Count; i++)
+        {
+            if (!_usedRackIndices.Contains(i) && char.ToUpperInvariant(rack[i]) == upperLetter)
+            {
+                rackIndex = i;
+                break;
+            }
+        }
+
+        // Sinon chercher un joker
+        if (rackIndex < 0)
+        {
+            for (var i = 0; i < rack.Count; i++)
+            {
+                if (!_usedRackIndices.Contains(i) && rack[i] == '*')
+                {
+                    rackIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (rackIndex < 0) return false; // pas de lettre disponible
+
+        // Sauter les cases déjà occupées par le plateau ou un placement provisoire
+        while (KeyboardCursorRow >= 0 && KeyboardCursorRow < 15
+               && KeyboardCursorCol >= 0 && KeyboardCursorCol < 15)
+        {
+            var existsOnBoard = Snapshot.Board.Any(t => t.Row == KeyboardCursorRow && t.Column == KeyboardCursorCol);
+            var existsPending = PendingPlacements.Any(p => p.Row == KeyboardCursorRow && p.Col == KeyboardCursorCol);
+            if (!existsOnBoard && !existsPending) break;
+
+            AdvanceCursor();
+        }
+
+        if (KeyboardCursorRow < 0 || KeyboardCursorRow >= 15 || KeyboardCursorCol < 0 || KeyboardCursorCol >= 15)
+            return false;
+
+        // Déterminer si c'est un joker
+        var isJoker = rack[rackIndex] == '*';
+        var charToPlace = isJoker ? char.ToLowerInvariant(letter) : upperLetter;
+
+        PendingPlacements.Add(new PendingPlacement(KeyboardCursorRow, KeyboardCursorCol, charToPlace, isJoker));
+        _usedRackIndices.Add(rackIndex);
+        _keyboardPlacedCount++;
+
+        AdvanceCursor();
+        return true;
+    }
+
+    /// <summary>Supprime la dernière lettre posée par le clavier et recule le curseur.</summary>
+    public void HandleKeyboardBackspace()
+    {
+        if (!KeyboardModeActive || _keyboardPlacedCount <= 0) return;
+
+        // Supprimer le dernier placement posé via le clavier
+        // On cherche depuis la fin des placements
+        for (var i = PendingPlacements.Count - 1; i >= 0; i--)
+        {
+            // Reculer le curseur d'abord
+            RetreatCursor();
+
+            // Vérifier si cette case correspond à un placement clavier (pas un drag préexistant)
+            var p = PendingPlacements[i];
+            if (p.Row == KeyboardCursorRow && p.Col == KeyboardCursorCol)
+            {
+                _usedRackIndices.RemoveAt(i);
+                PendingPlacements.RemoveAt(i);
+                _keyboardPlacedCount--;
+                return;
+            }
+        }
+    }
+
+    /// <summary>Désactive le mode clavier sans rappeler les tuiles.</summary>
+    public void StopKeyboardMode()
+    {
+        KeyboardModeActive = false;
+        _keyboardPlacedCount = 0;
+    }
+
+    private void AdvanceCursor()
+    {
+        if (KeyboardIsHorizontal) KeyboardCursorCol++;
+        else KeyboardCursorRow++;
+    }
+
+    private void RetreatCursor()
+    {
+        if (KeyboardIsHorizontal) KeyboardCursorCol--;
+        else KeyboardCursorRow--;
     }
 
     /// <summary>Remplace la lettre d'un placement joker (après saisie du joueur).</summary>

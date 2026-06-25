@@ -25,6 +25,8 @@
                 var pending = GetPendingTile(r, c);
                 var bonus = GetBonus(r, c);
                 var isDropTarget = CanDrop && tile is null && (pending is null || _draggingFromBoard);
+                var isKeyboardCursor = KeyboardModeActive && r == KeyboardCursorRow && c == KeyboardCursorCol;
+                var isContextMenuTarget = OnContextMenu.HasDelegate && tile is null && pending is null && CanDrop;
 
                 string cssClass;
                 string ariaLabel;
@@ -41,7 +43,8 @@
                 }
                 else
                 {
-                    cssClass = $"board-cell{(string.IsNullOrEmpty(bonus) ? "" : $" board-cell--{bonus}")}";
+                    var cursorClass = isKeyboardCursor ? " board-cell--kbd-cursor" : "";
+                    cssClass = $"board-cell{cursorClass}{(string.IsNullOrEmpty(bonus) ? "" : $" board-cell--{bonus}")}";
                     ariaLabel = $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}{GetBonusAriaLabel(bonus)}";
                 }
 
@@ -51,6 +54,8 @@
                      @ondragover:preventDefault="@isDropTarget"
                      @ondrop="@(isDropTarget ? () => OnDrop.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     @oncontextmenu:preventDefault="@isContextMenuTarget"
+                     @oncontextmenu="@(isContextMenuTarget ? () => OnContextMenu.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      draggable="@(pending is not null && CanDrop ? "true" : "false")"
                      @ondragstart="@(pending is not null ? () => OnPendingDragStart.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ondragstart:stopPropagation>
@@ -96,9 +101,13 @@
     [Parameter] public IReadOnlyList<PendingPlacement> Pending { get; set; } = [];
     [Parameter] public bool CanDrop { get; set; }
     [Parameter] public bool DraggingFromBoard { get; set; }
+    [Parameter] public bool KeyboardModeActive { get; set; }
+    [Parameter] public int KeyboardCursorRow { get; set; } = -1;
+    [Parameter] public int KeyboardCursorCol { get; set; } = -1;
     [Parameter] public EventCallback<(int Row, int Col)> OnDrop { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnRecall { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnPendingDragStart { get; set; }
+    [Parameter] public EventCallback<(int Row, int Col)> OnContextMenu { get; set; }
 
     private bool _draggingFromBoard => DraggingFromBoard;
 
