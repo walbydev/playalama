@@ -185,9 +185,14 @@ echo "  ✓ /opt/playalama/prod/ supprimé"
 echo "  ✓ /opt/playalama/staging/ supprimé"
 
 # Nettoyer aussi l'ancienne structure si elle existe
-if [ -d /srv/playalama/prod ] || [ -d /srv/playalama/staging ]; then
-  sudo rm -rf /srv/playalama/prod /srv/playalama/staging
-  echo "  ✓ /srv/playalama/{prod,staging}/ supprimés (ancienne structure)"
+if [ -d /srv/playalama ]; then
+  sudo rm -rf /srv/playalama
+  echo "  ✓ /srv/playalama/ supprimé (ancienne structure + code source)"
+fi
+
+if [ -d /opt/playalama/git ]; then
+  sudo rm -rf /opt/playalama/git
+  echo "  ✓ /opt/playalama/git/ supprimé (bare repo git obsolète)"
 fi
 
 if [ "\$INCLUDE_TRAEFIK" = "true" ]; then
