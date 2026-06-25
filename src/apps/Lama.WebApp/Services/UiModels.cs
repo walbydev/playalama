@@ -102,6 +102,7 @@ public sealed record WebGameSnapshot(
 public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int Score, bool IsHost, IReadOnlyList<char> Rack, int RackCount);
 public sealed record WebBoardTile(int Row, int Column, char Letter);
 public sealed record WebPlayResponse(string GameId, string MoveId, int Score);
+public sealed record WebCheckResponse(int Score, string Message);
 
 public sealed record WebPlayerProfile(string PlayerId, string Username, string? Email, string? CountryCode, DateTimeOffset CreatedAt);
 

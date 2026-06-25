@@ -501,6 +501,12 @@ public static class GamesCommandEndpoints
                 return Results.BadRequest(new { error = ex.Message });
             }
 
+            // play.check = simulation pure, aucune mutation ni événement
+            if (normalizedCommand == "play.check")
+            {
+                return Results.Ok(new { gameId, score, message = actionMessage });
+            }
+
             createdMove = new OnlineMove(
                 MoveId: Guid.NewGuid().ToString("N"),
                 PlayerId: request.PlayerId,

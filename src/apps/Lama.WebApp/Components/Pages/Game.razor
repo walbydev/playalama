@@ -123,9 +123,9 @@ else
                                       Pending="_vm.PendingPlacements"
                                       CanDrop="@(_vm.IsMyTurn && (_draggingRackIndex >= 0 || _draggingPendingPos.HasValue))"
                                       CanDragPending="_vm.IsMyTurn"
-                                      CanActivateKeyboard="_vm.IsMyTurn"
+                                      CanActivateKeyboard="false"
                                       DraggingFromBoard="_draggingPendingPos.HasValue"
-                                      KeyboardModeActive="_vm.KeyboardModeActive"
+                                      KeyboardModeActive="false"
                                       KeyboardCursorRow="_vm.KeyboardCursorRow"
                                       KeyboardCursorCol="_vm.KeyboardCursorCol"
                                       OnDrop="HandleDrop"
@@ -137,25 +137,11 @@ else
                         @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
                         {
                             <div class="card rack-below-board">
-                                @* Input clavier caché — capturé quand le mode clavier est actif *@
-                                @if (_vm.KeyboardModeActive)
-                                {
-                                    <input @ref="_keyboardInput"
-                                           class="keyboard-input-hidden"
-                                           aria-label="Saisie clavier"
-                                           @onkeydown="HandleKeyDown"
-                                           @onkeydown:preventDefault />
-                                }
+                                @* Input clavier caché — mode clavier désactivé temporairement *@
 
                                 <div class="rack-below-header">
                                     <div class="rack-title-row">
                                         <h3>Mes tuiles</h3>
-                                        @if (_vm.KeyboardModeActive)
-                                        {
-                                            <span class="chip chip-accent kbd-mode-chip" title="Mode clavier actif — tapez des lettres, Entrée pour valider, Échap pour annuler">
-                                                ⌨ Mode clavier
-                                            </span>
-                                        }
                                         @if (_vm.IsMyTurn && _vm.PendingPlacements.Count > 0)
                                         {
                                             <button class="btn btn-ghost btn-sm rack-recall-btn"
@@ -167,18 +153,20 @@ else
                                     </div>
                                     @if (_vm.PendingPlacements.Count > 0)
                                     {
-                                        <button class="btn btn-primary btn-sm" @onclick="PlayDragMoveAsync"
-                                                disabled="@(_vm.IsLoading || _vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))">
-                                            ✔ Valider (@_vm.PendingPlacements.Count tuile@(_vm.PendingPlacements.Count > 1 ? "s" : ""))
-                                        </button>
+                                        <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center">
+                                            <button class="btn btn-ghost btn-sm"
+                                                    @onclick="CheckMoveAsync"
+                                                    disabled="@(_vm.IsCheckLoading || _vm.IsLoading)"
+                                                    title="Vérifier le mot et calculer son score sans le jouer">
+                                                @(_vm.IsCheckLoading ? "…" : "🔍 Tester")
+                                            </button>
+                                            <button class="btn btn-primary btn-sm" @onclick="PlayDragMoveAsync"
+                                                    disabled="@(_vm.IsLoading || _vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))">
+                                                ✔ Valider (@_vm.PendingPlacements.Count tuile@(_vm.PendingPlacements.Count > 1 ? "s" : ""))
+                                            </button>
+                                        </div>
                                     }
                                 </div>
-                                @if (_vm.IsMyTurn && !_vm.KeyboardModeActive && _vm.PendingPlacements.Count > 0)
-                                {
-                                    <p class="kbd-hint" aria-live="polite">
-                                        💡 <b>Astuce :</b> Double-clic (ou double-tap) sur la prochaine case vide → saisie clavier directe (Entrée pour valider, Échap pour annuler)
-                                    </p>
-                                }
                                 <RackDisplay Rack="_vm.MyRack"
                                              DisplayOrder="@_rackOrder"
                                              IsMyTurn="_vm.IsMyTurn"
@@ -188,6 +176,13 @@ else
                                 @if (_vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))
                                 {
                                     <p class="form-error mt-1" style="font-size:.8rem">Assignez une lettre à chaque joker (★ → clic)</p>
+                                }
+                                @if (_vm.CheckScore.HasValue)
+                                {
+                                    <div class="move-check-inline" role="status" aria-live="polite">
+                                        ✅ @_vm.CheckMessage
+                                        <button class="btn-icon-close" @onclick="() => { _vm.ClearCheck(); StateHasChanged(); }" aria-label="Fermer">✕</button>
+                                    </div>
                                 }
                                 @if (!string.IsNullOrWhiteSpace(_vm.Error))
                                 {
@@ -523,53 +518,20 @@ else
         StateHasChanged();
     }
 
-    private ElementReference _keyboardInput;
+    // _keyboardInput gardé pour réactivation future du mode clavier
+    // private ElementReference _keyboardInput;
 
     private async Task HandleKeyboardActivate((int Row, int Col) cell)
     {
-        if (!_vm.IsMyTurn) return;
-        _vm.StartKeyboardMode(cell.Row, cell.Col);
-        StateHasChanged();
-        await Task.Yield();
-        try { await _keyboardInput.FocusAsync(); } catch { }
+        // Mode clavier désactivé temporairement
+        await Task.CompletedTask;
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
+        // Mode clavier désactivé temporairement — méthode conservée pour réactivation future
         if (!_vm.KeyboardModeActive) return;
-
-        switch (e.Key)
-        {
-            case "Enter":
-                _vm.StopKeyboardMode();
-                if (_vm.PendingPlacements.Count > 0)
-                    await PlayDragMoveAsync();
-                else
-                    StateHasChanged();
-                break;
-
-            case "Escape":
-                _vm.RecallAll();
-                StateHasChanged();
-                break;
-
-            case "Backspace":
-                _vm.HandleKeyboardBackspace();
-                StateHasChanged();
-                await Task.Yield();
-                try { await _keyboardInput.FocusAsync(); } catch { }
-                break;
-
-            default:
-                if (e.Key.Length == 1 && char.IsLetter(e.Key[0]))
-                {
-                    _vm.HandleKeyboardLetter(e.Key[0]);
-                    StateHasChanged();
-                    await Task.Yield();
-                    try { await _keyboardInput.FocusAsync(); } catch { }
-                }
-                break;
-        }
+        await Task.CompletedTask;
     }
 
     private void HandleRackReorder((int FromDisplayPos, int ToDisplayPos) args)
@@ -611,6 +573,14 @@ else
         var token = await Auth.GetTokenAsync();
         if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
         await _vm.PlayAsync(Api, token);
+    }
+
+    private async Task CheckMoveAsync()
+    {
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+        await _vm.CheckAsync(Api, token);
+        StateHasChanged();
     }
 
     private async Task PlayAsync()

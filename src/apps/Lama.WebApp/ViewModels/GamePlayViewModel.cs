@@ -57,6 +57,12 @@ public sealed class GamePlayViewModel
     public string? Error { get; private set; }
     public void ClearError() => Error = null;
 
+    // ── Aperçu du coup (play.check) ──────────────────────────────────────────
+    public bool IsCheckLoading { get; private set; }
+    public int? CheckScore { get; private set; }
+    public string? CheckMessage { get; private set; }
+    public void ClearCheck() { CheckScore = null; CheckMessage = null; }
+
     // Placements provisoires (drag-and-drop)
     public List<PendingPlacement> PendingPlacements { get; } = [];
 
@@ -349,7 +355,7 @@ public sealed class GamePlayViewModel
     public async Task LoadAsync(LamaApiClient api)
     {
         IsLoading = true;
-        Error = null;
+        // Ne pas effacer Error ici : les erreurs de mouvement persistent jusqu'au dismiss manuel
         try { Snapshot = await api.GetGameAsync(GameId); }
         catch (Exception ex) { Error = ex.Message; }
         finally { IsLoading = false; }
@@ -359,6 +365,7 @@ public sealed class GamePlayViewModel
     {
         IsLoading = true;
         Error = null;
+        ClearCheck();
         try
         {
             var form = new PlayForm
@@ -395,6 +402,28 @@ public sealed class GamePlayViewModel
         }
         catch (Exception ex) { Error = ex.Message; return false; }
         finally { IsLoading = false; }
+    }
+
+    /// <summary>Vérifie et calcule le score du coup en cours sans le jouer.</summary>
+    public async Task CheckAsync(LamaApiClient api, string token)
+    {
+        if (PendingPlacements.Count == 0) return;
+        IsCheckLoading = true;
+        CheckScore = null;
+        CheckMessage = null;
+        Error = null;
+        try
+        {
+            var placements = PendingPlacements.Select(p => new PlacementDto(p.Row, p.Col, p.Letter)).ToList();
+            var result = await api.CheckMoveAsync(GameId, _myPlayerId ?? string.Empty, placements, token);
+            CheckScore = result.Score;
+            CheckMessage = result.Message;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+        finally { IsCheckLoading = false; }
     }
 
     // ── BonusMap helpers ─────────────────────────────────────────────────────

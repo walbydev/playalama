@@ -240,6 +240,32 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return new WebPlayResponse(result.GameId, result.MoveId, result.Score);
     }
 
+    /// <summary>
+    /// Vérifie et calcule le score des placements sans jouer le coup (play.check).
+    /// Retourne (score, message). Lance une exception si invalide.
+    /// </summary>
+    public async Task<WebCheckResponse> CheckMoveAsync(string gameId, string playerId, List<PlacementDto> placements, string? token = null, CancellationToken cancellationToken = default)
+    {
+        var payload = new
+        {
+            placements = placements.Select(p => new
+            {
+                row = p.Row, column = p.Col, letter = p.Letter.ToString()
+            }).ToArray()
+        };
+        var request = new { playerId, command = "play.check", payload };
+        using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games/{gameId}/moves", token);
+        httpRequest.Content = JsonContent.Create(request);
+        var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        var root = doc.RootElement;
+        var score = root.TryGetProperty("score", out var s) ? s.GetInt32() : 0;
+        var message = root.TryGetProperty("message", out var m) ? m.GetString() ?? string.Empty : string.Empty;
+        return new WebCheckResponse(score, message);
+    }
+
     public async Task<bool> AbandonAsync(string gameId, string playerId, string? token = null, CancellationToken cancellationToken = default)
     {
         var request = new { playerId };
