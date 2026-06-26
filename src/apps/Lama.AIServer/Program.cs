@@ -50,3 +50,6 @@ app.MapPost("/suggest", async (SuggestRequest request, SuggestionService svc, Ca
 });
 
 app.Run();
+
+// Rend la classe Program accessible depuis les tests d'intégration (WebApplicationFactory).
+public partial class Program { }
