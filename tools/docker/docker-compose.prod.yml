@@ -18,6 +18,53 @@
 services:
 
   # ─────────────────────────────────────────────────────────
+  # Base de données PostgreSQL
+  # ─────────────────────────────────────────────────────────
+  postgres-lama-prod:
+    image: postgres:16-alpine
+    container_name: postgres-lama-prod
+    networks:
+      - prod-internal
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lama_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-lama_prod}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - lama-postgres-prod:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lama_prod} -d ${POSTGRES_DB:-lama_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ─────────────────────────────────────────────────────────
+  # Service IA — Suggestions de mots (français)
+  # ─────────────────────────────────────────────────────────
+  lama-aiserver-fr-prod:
+    image: lama-aiserver:${DEPLOY_TAG:-latest}
+    container_name: lama-aiserver-fr-prod
+    networks:
+      - prod-internal
+    environment:
+      ASPNETCORE_URLS: "http://+:5301"
+      ASPNETCORE_ENVIRONMENT: "Production"
+      LAMA_AI_LANGUAGE: "fr"
+      LAMA_AI_MAX_CONCURRENT: "3"
+    volumes:
+      - ./assets/languages:/app/assets/languages:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5301/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ─────────────────────────────────────────────────────────
   # API Jeu + SignalR/SSE
   # ─────────────────────────────────────────────────────────
   lama-server-prod:
@@ -32,12 +79,20 @@ services:
       ASPNETCORE_ENVIRONMENT: "Production"
       LAMA_SERVER_ALLOW_SHUTDOWN: "false"
       LAMA_RUNTIME_MODE: "online"
+      LAMA_AI_SERVER_URL: "http://lama-aiserver-fr-prod:5301"
+      Database__AutoMigrate: "true"
+      # LAMA_ADMIN_SECRET is read from .env
     expose:
       - "5000"
     volumes:
       - ./assets/languages:/app/assets/languages:ro
       - lama-logs-prod:/app/logs
     restart: unless-stopped
+    depends_on:
+      postgres-lama-prod:
+        condition: service_healthy
+      lama-aiserver-fr-prod:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -75,6 +130,7 @@ services:
       ASPNETCORE_ENVIRONMENT: "Production"
       LamaApi__BaseUrl: "http://lama-server-prod:5000"
       LAMA_SERVER_URL: "http://lama-server-prod:5000"
+      # LAMA_ADMIN_SECRET is read from .env
     expose:
       - "5001"
     restart: unless-stopped
@@ -127,4 +183,5 @@ networks:
 
 volumes:
   lama-logs-prod:
+  lama-postgres-prod:
 

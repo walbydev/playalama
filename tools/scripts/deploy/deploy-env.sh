@@ -93,6 +93,7 @@ SSH_ARGS=(-o StrictHostKeyChecking=accept-new -o ConnectTimeout=15)
 
 SERVER_IMAGE="lama-server:$DEPLOY_TAG"
 WEBAPP_IMAGE="lama-webapp:$DEPLOY_TAG"
+AISERVER_IMAGE="lama-aiserver:$DEPLOY_TAG"
 BUNDLE_FILE="/tmp/lama-images-$DEPLOY_TAG.tar.gz"
 
 log "════════════════════════════════════════════════════"
@@ -117,12 +118,19 @@ else
   docker build -f tools/docker/Dockerfile.webapp -t "$WEBAPP_IMAGE" "$ROOT_DIR"
 fi
 
+log "Build image aiserver ($AISERVER_IMAGE)..."
+if [[ "$DRY_RUN" == "true" ]]; then
+  printf '\033[0;33m[DRY-RUN]\033[0m docker build -f Dockerfile.aiserver -t %s .\n' "$AISERVER_IMAGE"
+else
+  docker build -f "$ROOT_DIR/Dockerfile.aiserver" -t "$AISERVER_IMAGE" "$ROOT_DIR"
+fi
+
 # ── 2. Empaquetage des images ───────────────────────────────────────────────
 log "Empaquetage des images → $BUNDLE_FILE..."
 if [[ "$DRY_RUN" == "true" ]]; then
-  printf '\033[0;33m[DRY-RUN]\033[0m docker save %s %s | gzip > %s\n' "$SERVER_IMAGE" "$WEBAPP_IMAGE" "$BUNDLE_FILE"
+  printf '\033[0;33m[DRY-RUN]\033[0m docker save %s %s %s | gzip > %s\n' "$SERVER_IMAGE" "$WEBAPP_IMAGE" "$AISERVER_IMAGE" "$BUNDLE_FILE"
 else
-  docker save "$SERVER_IMAGE" "$WEBAPP_IMAGE" | gzip > "$BUNDLE_FILE"
+  docker save "$SERVER_IMAGE" "$WEBAPP_IMAGE" "$AISERVER_IMAGE" | gzip > "$BUNDLE_FILE"
   BUNDLE_SIZE=$(du -sh "$BUNDLE_FILE" | cut -f1)
   log "Bundle créé : $BUNDLE_FILE ($BUNDLE_SIZE)"
 fi
@@ -223,8 +231,8 @@ for c in lama-portal-webapp-$DEPLOY_ENV lama-game-webapp-$DEPLOY_ENV; do
 done
 echo "[VPS] Nettoyage images dangling..."
 docker image prune -f
-echo "[VPS] Suppression des anciennes images lama-server/lama-webapp (garder 2)..."
-for img in lama-server lama-webapp; do
+echo "[VPS] Suppression des anciennes images lama-server/lama-webapp/lama-aiserver (garder 2)..."
+for img in lama-server lama-webapp lama-aiserver; do
   docker images "\$img" --format '{{.Tag}}' | sort -r | tail -n +3 | \
     xargs -I{} docker rmi "\$img:{}" 2>/dev/null || true
 done

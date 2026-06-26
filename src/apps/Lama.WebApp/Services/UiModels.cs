@@ -127,3 +127,54 @@ public sealed record LeaderboardEntry(
     int Elo,
     int Wins,
     int Games);
+
+// ── Monitoring / Dashboard ─────────────────────────────────────────────────
+
+public sealed record ServerStatusDto(
+    DateTimeOffset CollectedAt,
+    ServerSectionDto Server,
+    GamesSectionDto Games,
+    PlayersSectionDto Players,
+    HistorySectionDto History,
+    DatabaseSectionDto Database,
+    AiServerSectionDto AiServer
+);
+
+public sealed record ServerSectionDto(
+    string Uptime,
+    long UptimeSeconds,
+    double MemoryMb,
+    int ThreadCount,
+    string Environment,
+    string Version
+);
+
+public sealed record GamesSectionDto(
+    int ActiveCount,
+    int ActivePlayers
+);
+
+public sealed record PlayersSectionDto(
+    int TotalRegistered,
+    int RegisteredToday
+);
+
+public sealed record HistorySectionDto(
+    int TotalCompleted,
+    int CompletedToday,
+    int TotalSessions,
+    int SessionsToday
+);
+
+public sealed record DatabaseSectionDto(
+    string Status,
+    string Provider,
+    bool MigrationPending
+);
+
+public sealed record AiServerSectionDto(
+    string Status,
+    string? Url,
+    string? Language,
+    int? ResponseTimeMs
+);

@@ -1,0 +1,208 @@
+@page "/status"
+@layout MainLayout
+@inject StatusViewModel VM
+@implements IAsyncDisposable
+
+<PageTitle>Monitoring — Playalama</PageTitle>
+
+<div class="page-hero">
+    <div class="eyebrow">Administration</div>
+    <h1>📊 Tableau de bord</h1>
+    <p class="text-muted mt-2">Santé et statistiques de la pile Lama en temps réel.</p>
+</div>
+
+<div class="section">
+    <div class="container">
+
+        @if (VM.IsSecretMissing)
+        {
+            <div class="card" style="max-width:480px; margin:0 auto;">
+                <h3 style="margin-bottom:1rem">🔐 Authentification requise</h3>
+                <p class="text-muted" style="margin-bottom:1rem">Renseignez le secret admin pour accéder au tableau de bord.</p>
+                <div class="form-group">
+                    <label class="form-label" for="admin-secret">Secret admin</label>
+                    <input id="admin-secret" type="password" class="form-input"
+                           placeholder="LAMA_ADMIN_SECRET"
+                           @bind="VM.AdminSecret" @bind:event="oninput" />
+                </div>
+                <button class="btn btn-primary mt-3" @onclick="RefreshAsync" disabled="@VM.IsLoading">
+                    @(VM.IsLoading ? "Connexion…" : "Accéder au dashboard")
+                </button>
+                @if (!string.IsNullOrEmpty(VM.ErrorMessage))
+                {
+                    <p class="form-error mt-2" role="alert">@VM.ErrorMessage</p>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="status-toolbar">
+                <div class="flex items-center gap-2">
+                    @if (VM.LastRefreshed.HasValue)
+                    {
+                        <span class="text-muted" style="font-size:.85rem">
+                            Mis à jour : @VM.LastRefreshed.Value.LocalDateTime.ToString("HH:mm:ss")
+                        </span>
+                    }
+                    <div class="live-indicator">
+                        <div class="live-dot"></div>
+                        Auto-refresh 30s
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@VM.IsLoading">
+                    @(VM.IsLoading ? "⏳" : "🔄 Actualiser")
+                </button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(VM.ErrorMessage))
+            {
+                <p class="form-error" role="alert" style="margin-bottom:1rem">@VM.ErrorMessage</p>
+            }
+
+            @if (VM.IsLoading && VM.Snapshot is null)
+            {
+                <p class="text-muted text-center" style="padding:3rem">Chargement…</p>
+            }
+            else if (VM.Snapshot is { } s)
+            {
+                <div class="status-grid">
+
+                    <!-- Serveur -->
+                    <div class="card status-card">
+                        <div class="status-card-header">
+                            <span class="status-card-icon">🖥️</span>
+                            <h3>Serveur</h3>
+                            <span class="chip chip-success">OK</span>
+                        </div>
+                        <div class="status-metrics">
+                            <div class="metric"><span class="metric-label">Version</span><span class="metric-value">@s.Server.Version</span></div>
+                            <div class="metric"><span class="metric-label">Environnement</span><span class="metric-value">@s.Server.Environment</span></div>
+                            <div class="metric"><span class="metric-label">Uptime</span><span class="metric-value">@s.Server.Uptime</span></div>
+                            <div class="metric"><span class="metric-label">Mémoire</span><span class="metric-value">@s.Server.MemoryMb MB</span></div>
+                            <div class="metric"><span class="metric-label">Threads</span><span class="metric-value">@s.Server.ThreadCount</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Parties -->
+                    <div class="card status-card">
+                        <div class="status-card-header">
+                            <span class="status-card-icon">🎮</span>
+                            <h3>Parties</h3>
+                        </div>
+                        <div class="status-metrics">
+                            <div class="metric highlight"><span class="metric-label">En cours</span><span class="metric-value big">@s.Games.ActiveCount</span></div>
+                            <div class="metric"><span class="metric-label">Joueurs en jeu</span><span class="metric-value">@s.Games.ActivePlayers</span></div>
+                            <div class="metric"><span class="metric-label">Sessions totales</span><span class="metric-value">@s.History.TotalSessions</span></div>
+                            <div class="metric"><span class="metric-label">Sessions aujourd'hui</span><span class="metric-value">@s.History.SessionsToday</span></div>
+                            <div class="metric"><span class="metric-label">Terminées (total)</span><span class="metric-value">@s.History.TotalCompleted</span></div>
+                            <div class="metric"><span class="metric-label">Terminées aujourd'hui</span><span class="metric-value">@s.History.CompletedToday</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Joueurs -->
+                    <div class="card status-card">
+                        <div class="status-card-header">
+                            <span class="status-card-icon">👥</span>
+                            <h3>Joueurs</h3>
+                        </div>
+                        <div class="status-metrics">
+                            <div class="metric highlight"><span class="metric-label">Inscrits (total)</span><span class="metric-value big">@s.Players.TotalRegistered</span></div>
+                            <div class="metric"><span class="metric-label">Inscrits aujourd'hui</span><span class="metric-value">@s.Players.RegisteredToday</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Base de données -->
+                    <div class="card status-card">
+                        <div class="status-card-header">
+                            <span class="status-card-icon">🗄️</span>
+                            <h3>Base de données</h3>
+                            <span class="chip @DbStatusClass(s.Database.Status)">@s.Database.Status</span>
+                        </div>
+                        <div class="status-metrics">
+                            <div class="metric"><span class="metric-label">Fournisseur</span><span class="metric-value">@s.Database.Provider</span></div>
+                            <div class="metric"><span class="metric-label">Migrations en attente</span>
+                                <span class="metric-value @(s.Database.MigrationPending ? "text-error" : "")">
+                                    @(s.Database.MigrationPending ? "⚠️ Oui" : "✅ Non")
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AIServer -->
+                    <div class="card status-card">
+                        <div class="status-card-header">
+                            <span class="status-card-icon">🤖</span>
+                            <h3>AIServer</h3>
+                            <span class="chip @AiStatusClass(s.AiServer.Status)">@s.AiServer.Status</span>
+                        </div>
+                        <div class="status-metrics">
+                            @if (s.AiServer.Url is not null)
+                            {
+                                <div class="metric"><span class="metric-label">URL</span><span class="metric-value" style="font-size:.8rem;word-break:break-all">@s.AiServer.Url</span></div>
+                            }
+                            @if (s.AiServer.Language is not null)
+                            {
+                                <div class="metric"><span class="metric-label">Langue</span><span class="metric-value">@s.AiServer.Language</span></div>
+                            }
+                            @if (s.AiServer.ResponseTimeMs.HasValue)
+                            {
+                                <div class="metric"><span class="metric-label">Latence</span><span class="metric-value">@s.AiServer.ResponseTimeMs ms</span></div>
+                            }
+                            @if (s.AiServer.Status == "not_configured")
+                            {
+                                <p class="text-muted" style="font-size:.85rem">LAMA_AI_SERVER_URL non configurée.</p>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+            }
+        }
+
+    </div>
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            VM.StateChanged += OnVmStateChanged;
+            await VM.LoadAsync();
+            VM.StartAutoRefresh(30);
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        await VM.LoadAsync();
+        StateHasChanged();
+    }
+
+    private void OnVmStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private static string DbStatusClass(string status) => status switch
+    {
+        "ok"          => "chip-success",
+        "unreachable" => "chip-muted",
+        _             => "chip-muted"
+    };
+
+    private static string AiStatusClass(string status) => status switch
+    {
+        "ok"             => "chip-success",
+        "not_configured" => "chip-muted",
+        _                => "chip-muted"
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        VM.StateChanged -= OnVmStateChanged;
+        VM.StopAutoRefresh();
+        await VM.DisposeAsync();
+    }
+}

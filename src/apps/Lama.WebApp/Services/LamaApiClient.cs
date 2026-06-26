@@ -364,6 +364,20 @@ public sealed class LamaApiClient(HttpClient httpClient)
         };
     }
 
+    // ── Status / Monitoring ───────────────────────────────────────────────────
+
+    public async Task<ServerStatusDto?> GetStatusAsync(string adminSecret, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBase}/status");
+        request.Headers.Add("X-Admin-Secret", adminSecret);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<ServerStatusDto>(JsonOptions, cancellationToken);
+    }
+
     // ── Enveloppes API (privées) ──────────────────────────────────────────────
 
     private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, DateTime ExpiresAt);

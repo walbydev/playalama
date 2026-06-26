@@ -38,6 +38,8 @@ public sealed class GameHubState
 
     public IReadOnlyList<OnlineGame> ListGames() => _games.Values.ToList();
 
+    public int ActivePlayerCount => _activeGameByPlayerId.Count;
+
     public SubscriberToken Subscribe(string gameId)
     {
         var subscribers = _subscribers.GetOrAdd(gameId, _ => new EventSubscribers());

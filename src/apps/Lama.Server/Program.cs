@@ -41,6 +41,10 @@ else
     builder.Services.AddSingleton<IAISuggestionClient, NullAISuggestionClient>();
 }
 
+// ── StatusCollector (scoped — partage le DbContext de la requête) ─────────
+builder.Services.AddScoped<IStatusCollector, StatusCollector>();
+builder.Services.AddHttpClient("status-aiserver");
+
 // JWT Configuration
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? Environment.GetEnvironmentVariable("LAMA_JWT_SECRET")
@@ -69,6 +73,7 @@ app.UseJwtMiddleware(jwtService);
 
 app.MapHealthEndpoints();
 app.MapInternalEndpoints(allowShutdown);
+app.MapStatusEndpoints();
 
 // Auth endpoints
 app.MapAuthEndpoints(jwtService);

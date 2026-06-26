@@ -36,7 +36,8 @@ public static class AuthEndpoints
         this WebApplication app,
         JwtTokenService tokenService)
     {
-        var group = app.MapGroup("/api/v1/auth")
+        var logger = app.Logger;
+        var group  = app.MapGroup("/api/v1/auth")
             .WithTags("Authentication");
 
         // CLI legacy — rétrocompatible
@@ -101,6 +102,7 @@ public static class AuthEndpoints
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                logger.LogError(ex, "Erreur lors de l'inscription du joueur");
                 return Results.Json(new { error = "Service de comptes temporairement indisponible. Assurez-vous que PostgreSQL est en cours d'exécution." },
                     statusCode: StatusCodes.Status503ServiceUnavailable);
             }
@@ -134,6 +136,7 @@ public static class AuthEndpoints
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                logger.LogError(ex, "Erreur lors de la connexion du joueur");
                 return Results.Json(new { error = "Service de comptes temporairement indisponible." },
                     statusCode: StatusCodes.Status503ServiceUnavailable);
             }

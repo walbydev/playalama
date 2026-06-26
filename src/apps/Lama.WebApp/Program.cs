@@ -24,6 +24,7 @@ builder.Services.AddScoped<HomeViewModel>();
 builder.Services.AddScoped<LeaderboardViewModel>();
 builder.Services.AddScoped<DownloadsViewModel>();
 builder.Services.AddScoped<RulesViewModel>();
+builder.Services.AddScoped<StatusViewModel>();
 
 var app = builder.Build();
 
