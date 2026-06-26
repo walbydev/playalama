@@ -25,19 +25,42 @@
 
                     <div class="form-field">
                         <label for="game-mode">Mode</label>
-                        <InputSelect id="game-mode" @bind-Value="_createForm.Mode">
+                        <InputSelect id="game-mode" @bind-Value="_createForm.Mode" @bind-Value:after="OnModeChanged">
                             <option value="multi">Multijoueur</option>
                             <option value="solo">Solo vs IA</option>
                         </InputSelect>
                     </div>
-                    <div class="form-field">
-                        <label for="game-name">Nom de partie <small class="text-dim">(optionnel)</small></label>
-                        <InputText id="game-name" @bind-Value="_createForm.GameName" placeholder="Ma partie" />
-                    </div>
-                    <div class="form-field">
-                        <label for="game-max">Joueurs max</label>
-                        <InputNumber id="game-max" @bind-Value="_createForm.MaxPlayers" min="2" max="4" />
-                    </div>
+
+                    @if (_isSolo)
+                    {
+                        <div class="form-field">
+                            <label for="bot-select">Adversaire IA</label>
+                            @if (_bots.Count == 0)
+                            {
+                                <p class="text-muted" style="font-size:.85rem">Chargement des bots…</p>
+                            }
+                            else
+                            {
+                                <InputSelect id="bot-select" @bind-Value="_createForm.AiBotId">
+                                    @foreach (var bot in _bots)
+                                    {
+                                        <option value="@bot.BotId">@bot.LevelEmoji @bot.Name — @bot.LevelLabel (Elo @bot.InitialElo)</option>
+                                    }
+                                </InputSelect>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="form-field">
+                            <label for="game-name">Nom de partie <small class="text-dim">(optionnel)</small></label>
+                            <InputText id="game-name" @bind-Value="_createForm.GameName" placeholder="Ma partie" />
+                        </div>
+                        <div class="form-field">
+                            <label for="game-max">Joueurs max</label>
+                            <InputNumber id="game-max" @bind-Value="_createForm.MaxPlayers" min="2" max="4" />
+                        </div>
+                    }
 
                     @if (!string.IsNullOrWhiteSpace(_createError))
                     {
@@ -45,7 +68,7 @@
                     }
 
                     <button class="btn btn-primary" type="submit" style="width:100%" disabled="@_busy">
-                        @(_busy ? "Création…" : "Créer")
+                        @(_busy ? "Création…" : (_isSolo ? "Jouer contre l'IA" : "Créer"))
                     </button>
                 </EditForm>
             </div>
@@ -138,8 +161,10 @@
 @code {
     private readonly CreateGameForm _createForm = new();
     private readonly List<WebGameListItem> _games = [];
+    private readonly List<WebBotDto> _bots = [];
     private bool _busy;
     private bool _listBusy;
+    private bool _isSolo;
     private string? _createError;
     private string? _listError;
     private PeriodicTimer? _refreshTimer;
@@ -148,8 +173,26 @@
     protected override async Task OnInitializedAsync()
     {
         await Auth.InitializeAsync();
-        await LoadGamesAsync();
+        await Task.WhenAll(LoadGamesAsync(), LoadBotsAsync());
         StartAutoRefresh();
+    }
+
+    private async Task LoadBotsAsync()
+    {
+        try
+        {
+            var bots = await Api.GetBotsAsync();
+            _bots.Clear();
+            _bots.AddRange(bots.OrderBy(b => b.Level));
+            if (_bots.Count > 0 && _createForm.AiBotId is null)
+                _createForm.AiBotId = _bots[0].BotId;
+        }
+        catch { /* bots non critiques */ }
+    }
+
+    private void OnModeChanged()
+    {
+        _isSolo = string.Equals(_createForm.Mode, "solo", StringComparison.OrdinalIgnoreCase);
     }
 
     private void StartAutoRefresh()

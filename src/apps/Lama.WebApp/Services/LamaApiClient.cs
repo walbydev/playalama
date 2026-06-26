@@ -128,14 +128,16 @@ public sealed class LamaApiClient(HttpClient httpClient)
 
     public async Task<WebCreateGameResponse> CreateGameAsync(CreateGameForm form, string hostName, string? token = null, CancellationToken cancellationToken = default)
     {
+        var isSolo = string.Equals(form.Mode, "solo", StringComparison.OrdinalIgnoreCase);
         var request = new
         {
             hostName,
             gameLevel = GameLevel.Standard,
-            mode = string.Equals(form.Mode, "multi", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
+            mode = isSolo ? 0 : 1,
             gameName = form.GameName,
-            maxPlayers = form.MaxPlayers,
-            enableAi = false,
+            maxPlayers = isSolo ? 2 : form.MaxPlayers,
+            enableAi = isSolo,
+            aiBotId = isSolo ? (form.AiBotId ?? "bot-karim") : null,
             language = "fr"
         };
 
@@ -401,6 +403,17 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return doc.RootElement.TryGetProperty("terminated", out var t) ? t.GetInt32() : 0;
     }
 
+    // ── Bots ─────────────────────────────────────────────────────────────────
+
+    public async Task<IReadOnlyList<WebBotDto>> GetBotsAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.GetAsync($"{ApiBase}/bots", cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+
+        var payload = await response.Content.ReadFromJsonAsync<BotListEnvelope>(JsonOptions, cancellationToken);
+        return payload?.Bots?.Select(b => new WebBotDto(b.BotId, b.Name, b.Level, b.InitialElo)).ToList() ?? [];
+    }
+
     // ── Enveloppes API (privées) ──────────────────────────────────────────────
 
     private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, DateTime ExpiresAt);
@@ -419,4 +432,6 @@ public sealed class LamaApiClient(HttpClient httpClient)
     private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);
     private sealed record PlayEnvelope(string GameId, string MoveId, int Score);
     private sealed record LeaderboardEntryEnvelope(string PlayerId, string Username, string? CountryCode, int Level, int Elo, int Wins, int Games);
+    private sealed record BotListEnvelope(List<BotItemEnvelope> Bots);
+    private sealed record BotItemEnvelope(string BotId, string Name, int Level, int InitialElo);
 }

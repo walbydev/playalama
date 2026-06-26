@@ -9,6 +9,8 @@ public sealed class CreateGameForm
     public string Mode { get; set; } = "multi";
     public string? GameName { get; set; }
     public int MaxPlayers { get; set; } = 4;
+    /// <summary>Identifiant du bot sélectionné (ex: "bot-karim"). Null = pas de bot.</summary>
+    public string? AiBotId { get; set; }
 }
 
 public sealed class PlayForm
@@ -115,6 +117,30 @@ public sealed record WebGameHistoryItem(
     DateTimeOffset EndedAt,
     int DurationSeconds,
     bool IsWinner);
+
+// ── Bots IA ───────────────────────────────────────────────────────────────────
+
+public sealed record WebBotDto(string BotId, string Name, int Level, int InitialElo)
+{
+    public string LevelLabel => Level switch
+    {
+        1 => "Débutant",
+        2 => "Intermédiaire",
+        3 => "Avancé",
+        4 => "Expert",
+        5 => "Légendaire",
+        _ => $"Niveau {Level}"
+    };
+    public string LevelEmoji => Level switch
+    {
+        1 => "🌱",
+        2 => "🎓",
+        3 => "⚔️",
+        4 => "🏆",
+        5 => "👑",
+        _ => "🤖"
+    };
+}
 
 // ── Classements ───────────────────────────────────────────────────────────────
 
