@@ -17,8 +17,8 @@ namespace Lama.Console.Services;
 ///   game.pause / save           |    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✗
 ///   play.move / pass / swap     |    ✗       |  ✗    |  ✅   |      ✅       |           ✅            |    ✗
 ///   play.challenge              |    ✗       |  ✗    |  ✅   |      ✅       |           ✅            |    ✗
+///   play.suggest                |    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✗
 ///   play.check / simulate       |    ✅      |  ✅   |  ✅   |      ✅       |           ✗             |    ✗
-///   play.suggest                |    ✅      |  ✅   |  ✅   |      ✅       |           ✗             |    ✗
 ///   show.board / scores / hist  |    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✅
 ///   show.rack                   |    ✗       |  ✗    |  ✅   |      ✅       |           ✅            |    ✗
 ///   show.hints                  |    ✅      |  ✅   |  ✅   |      ✅       |           ✗             |    ✗
@@ -97,11 +97,17 @@ public sealed class AccessControlService : IAccessControlService
         {
             "play.check",
             "play.simulate",
-            "play.suggest",
             "show.hints",
             "dict.check",
             "dict.search",
             "dict.anagram"
+        };
+
+    // ── Commandes de suggestion disponibles dans tous les modes de jeu ────────
+    private static readonly HashSet<string> AllModesAidCommands =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "play.suggest"
         };
 
     // ── Commandes accessibles en lecture seule (spectateurs inclus) ──────────
@@ -225,6 +231,10 @@ public sealed class AccessControlService : IAccessControlService
                 "Les aides sont réservées au mode Casual.");
         }
 
+        // Suggestions disponibles dans tous les modes de jeu (Host + Player)
+        if (AllModesAidCommands.Contains(cmd))
+            return AccessResult.Allowed;
+
         // Commandes accessibles à Host + Player
         if (ReadOnlyCommands.Contains(cmd) ||
             PlayCommands.Contains(cmd)     ||
@@ -249,6 +259,7 @@ public sealed class AccessControlService : IAccessControlService
             allowed.UnionWith(AdminCommands);
             allowed.UnionWith(HostManagementCommands);
             allowed.UnionWith(CasualOnlyCommands);
+            allowed.UnionWith(AllModesAidCommands);
             allowed.UnionWith(ReadOnlyCommands);
             allowed.UnionWith(PlayerCommands);
             // SuperAdmin ne joue pas
@@ -260,6 +271,7 @@ public sealed class AccessControlService : IAccessControlService
             allowed.UnionWith(AdminCommands);
             allowed.UnionWith(HostManagementCommands);
             allowed.UnionWith(CasualOnlyCommands);
+            allowed.UnionWith(AllModesAidCommands);
             allowed.UnionWith(ReadOnlyCommands);
             allowed.UnionWith(PlayerCommands);
             // Admin ne joue pas : PlayCommands non inclus
@@ -274,6 +286,7 @@ public sealed class AccessControlService : IAccessControlService
         // Host et Player
         allowed.UnionWith(PlayerCommands);
         allowed.UnionWith(PlayCommands);
+        allowed.UnionWith(AllModesAidCommands); // suggestions disponibles dans tous les modes
 
         if (role == Role.Host)
             allowed.UnionWith(HostManagementCommands);

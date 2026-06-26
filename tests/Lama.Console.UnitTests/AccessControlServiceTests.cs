@@ -367,7 +367,7 @@ public class AccessControlServiceTests
         allowed.Should().NotContain("show.hints",       because: "aides désactivées en Competitive");
         allowed.Should().NotContain("dict.check",       because: "aides désactivées en Competitive");
         allowed.Should().NotContain("play.simulate",    because: "aides désactivées en Competitive");
-        allowed.Should().NotContain("play.suggest",     because: "aides désactivées en Competitive");
+        allowed.Should().Contain("play.suggest",        because: "suggestions disponibles dans tous les modes");
 
         allowed.Should().Contain("play.move",           because: "Player joue toujours");
         allowed.Should().Contain("play.challenge",      because: "challenge toujours disponible");
