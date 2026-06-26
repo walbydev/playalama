@@ -27,6 +27,20 @@
     <File Path="tools\distribution\README.txt" />
     <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
   </Folder>
+  <Folder Name="/Root/">
+    <File Path="AGENTS.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="docker-compose.postgresdev.yml" />
+    <File Path="docker-compose.yml" />
+    <File Path="Dockerfile" />
+    <File Path="Dockerfile.aiserver" />
+    <File Path="Dockerfile.webapp" />
+    <File Path="dotnet-tools.json" />
+    <File Path="Lama.sln.DotSettings.user" />
+    <File Path="Makefile" />
+    <File Path="README.md" />
+  </Folder>
   <Folder Name="/Site/">
     <File Path="site/static/index.html" />
     <File Path="site/static/README.md" />
