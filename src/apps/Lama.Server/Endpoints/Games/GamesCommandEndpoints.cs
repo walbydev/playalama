@@ -1,4 +1,5 @@
 using Lama.Contracts;
+using Lama.Server.Bots;
 using Lama.Server.Contracts.Api;
 using Lama.Server.Runtime;
 using Lama.Server.Services;
@@ -96,7 +97,8 @@ public static class GamesCommandEndpoints
         if (mode == OnlineGameMode.Multi && request.EnableAi && requestedMaxPlayers < 2)
             return Results.BadRequest(new { error = "invalid AI slot configuration" });
 
-        var reservedAiSlots = request.EnableAi ? 1 : 0;
+        // Le bot est injecté comme joueur réel : plus besoin de slot réservé
+        var reservedAiSlots = 0;
         var maxPlayers = mode == OnlineGameMode.Solo
             ? Math.Min(2, Math.Max(1, requestedMaxPlayers))
             : requestedMaxPlayers;
@@ -134,7 +136,28 @@ public static class GamesCommandEndpoints
             GameType: gameType);
 
         var engine = state.CreateEngine(profile);
-        engine.InitializeGame([hostName]);
+
+        // ── Joueurs initiaux ──────────────────────────────────────────────────
+        var initialPlayers = new List<OnlinePlayer>
+        {
+            new(hostId, hostName, IsHost: true)
+        };
+        var playerIndexById = new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            [hostId] = 0
+        };
+
+        // Injection du bot si demandée
+        BotProfile? botProfile = null;
+        if (request.EnableAi)
+        {
+            botProfile = BotCatalog.Default;
+            initialPlayers.Add(new OnlinePlayer(botProfile.BotId, botProfile.Name, IsHost: false, IsBot: true));
+            playerIndexById[botProfile.BotId] = 1;
+        }
+
+        // Initialiser le moteur avec tous les joueurs (humains + bot)
+        engine.InitializeGame(initialPlayers.Select(p => p.PlayerName).ToList());
         var initialState = engine.GetGameState();
 
         var game = new OnlineGame(
@@ -146,8 +169,8 @@ public static class GamesCommandEndpoints
             Language: language,
             CreatedAt: DateTimeOffset.UtcNow,
             UpdatedAt: DateTimeOffset.UtcNow,
-            Players: [new OnlinePlayer(hostId, hostName, true)],
-            PlayerIndexById: new Dictionary<string, int>(StringComparer.Ordinal) { [hostId] = 0 },
+            Players: initialPlayers,
+            PlayerIndexById: playerIndexById,
             Moves: [],
             TournamentId: request.TournamentId,
             Queue: GamesEndpointParsers.ResolveQueue(level),
@@ -361,7 +384,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static async Task<IResult> PlayMove(HttpContext context, string gameId, PlayMoveRequest request, GameHubState state, IAISuggestionClient aiClient)
+    private static async Task<IResult> PlayMove(HttpContext context, string gameId, PlayMoveRequest request, GameHubState state, IAISuggestionClient aiClient, BotAutoPlayService botAutoPlay)
     {
         // Vérifier l'authentification
         if (!context.IsAuthenticated())
@@ -539,6 +562,54 @@ public static class GamesCommandEndpoints
             currentPlayerIndex = nextCurrentPlayerIndex,
             nextPlayerId
         }));
+
+        // ── Tour du bot : si le prochain joueur est une IA, jouer automatiquement ──
+        var nextPlayer = game.Players.ElementAtOrDefault(nextCurrentPlayerIndex);
+        if (nextPlayer?.IsBot == true)
+        {
+            var botProfile = BotCatalog.Find(nextPlayer.PlayerId);
+            if (botProfile is not null)
+            {
+                _ = Task.Run(async () =>
+                {
+                    // Petite pause pour un rendu naturel côté client
+                    await Task.Delay(600, CancellationToken.None);
+
+                    var (botMove, _) = await botAutoPlay.AutoPlayAsync(
+                        game, botProfile, aiClient, CancellationToken.None);
+
+                    if (botMove is null) return;
+
+                    int botNextIndex;
+                    string? botNextPlayerId;
+
+                    lock (game)
+                    {
+                        game.Moves.Add(botMove);
+                        game.UpdatedAt = DateTimeOffset.UtcNow;
+                        var botState = game.Engine.GetGameState();
+                        botNextIndex    = botState.CurrentPlayerIndex;
+                        botNextPlayerId = game.Players.ElementAtOrDefault(botNextIndex)?.PlayerId;
+                    }
+
+                    state.Publish(gameId, new ServerEvent("game.move.played", new
+                    {
+                        gameId,
+                        botMove.MoveId,
+                        botMove.PlayerId,
+                        botMove.PlayerName,
+                        botMove.Command,
+                        botMove.TurnNumber,
+                        botMove.Placements,
+                        botMove.Score,
+                        botMove.Payload,
+                        botMove.PlayedAt,
+                        currentPlayerIndex = botNextIndex,
+                        nextPlayerId       = botNextPlayerId
+                    }));
+                });
+            }
+        }
 
         return Results.Ok(new
         {

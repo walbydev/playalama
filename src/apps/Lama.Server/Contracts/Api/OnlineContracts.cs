@@ -85,7 +85,7 @@ public sealed class OnlineGame(
     public string? AbandonedByName { get; set; }
 }
 
-public sealed record OnlinePlayer(string PlayerId, string PlayerName, bool IsHost);
+public sealed record OnlinePlayer(string PlayerId, string PlayerName, bool IsHost, bool IsBot = false);
 
 public sealed record OnlineMove(
     string MoveId,

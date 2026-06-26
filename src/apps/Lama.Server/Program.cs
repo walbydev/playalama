@@ -1,4 +1,5 @@
 using Lama.Contracts;
+using Lama.Server.Bots;
 using Lama.Server.Data;
 using Lama.Server.Endpoints;
 using Lama.Server.Endpoints.Auth;
@@ -23,6 +24,7 @@ builder.Services.AddSingleton<IGameLanguageProvider>(_ =>
     return new FrenchLanguageProvider(basePath);
 });
 builder.Services.AddSingleton<GameHubState>();
+builder.Services.AddSingleton<BotAutoPlayService>();
 
 // ── Client IA (Lama.AIServer) ─────────────────────────────────────────────
 var aiServerUrl = Environment.GetEnvironmentVariable("LAMA_AI_SERVER_URL")
