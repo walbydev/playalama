@@ -247,6 +247,44 @@ dev-debug-stop: ## [Dev] Arrêter PostgreSQL Docker (les apps .NET s'arrêtent a
 dev-debug-clean: ## [Dev] Arrêter PostgreSQL et supprimer les volumes (réinitialiser DB)
 	docker compose -f $(DOCKER_DEBUG) down -v
 
+.PHONY: db-reset-sessions
+db-reset-sessions: ## [Dev] Vider toutes les sessions en cours (DB + mémoire serveur, sans redémarrage)
+	@echo "1/2 — Vidage des sessions en base de données..."
+	@docker exec postgres-lama-debug psql -U lama_dev -d lama_dev -c " \
+	  DELETE FROM sessions.turn_log; \
+	  DELETE FROM sessions.players_in_game; \
+	  DELETE FROM sessions.board_state; \
+	  DELETE FROM sessions.games;" \
+	  && echo "    ✓ DB vidée." \
+	  || (echo "    ✗ Erreur DB — postgres-lama-debug est-il démarré ?" && exit 1)
+	@echo "2/2 — Vidage de la mémoire du serveur..."
+	@curl -sf -X POST http://127.0.0.1:5201/internal/games/clear \
+	  && echo "    ✓ Mémoire serveur vidée." \
+	  || echo "    ⚠ Serveur non joignable — redémarrez-le pour que la mémoire soit cohérente."
+	@echo "✅ Réinitialisation terminée."
+
+.PHONY: db-list-games
+db-list-games: ## [Dev] Lister les sessions de jeu actives en base (avec ID, statut, date)
+	@docker exec postgres-lama-debug psql -U lama_dev -d lama_dev -c \
+	  "SELECT game_id, status, game_level, queue, created_at FROM sessions.games ORDER BY created_at DESC;" \
+	  || echo "❌ Erreur — postgres-lama-debug est-il démarré ?"
+
+.PHONY: db-delete-game
+db-delete-game: ## [Dev] Supprimer une partie précise (usage : make db-delete-game GAME_ID=xxx)
+	@test -n "$(GAME_ID)" || (echo "❌ Usage : make db-delete-game GAME_ID=<identifiant>" && exit 1)
+	@echo "Suppression de la partie $(GAME_ID)..."
+	@docker exec postgres-lama-debug psql -U lama_dev -d lama_dev -c " \
+	  DELETE FROM sessions.turn_log        WHERE game_id = '$(GAME_ID)'; \
+	  DELETE FROM sessions.players_in_game WHERE game_id = '$(GAME_ID)'; \
+	  DELETE FROM sessions.board_state     WHERE game_id = '$(GAME_ID)'; \
+	  DELETE FROM sessions.games           WHERE game_id = '$(GAME_ID)';" \
+	  && echo "    ✓ DB : partie supprimée." \
+	  || (echo "    ✗ Erreur DB." && exit 1)
+	@curl -sf -X POST http://127.0.0.1:5201/internal/games/$(GAME_ID)/close \
+	  && echo "    ✓ Mémoire serveur : partie clôturée." \
+	  || echo "    ⚠ Serveur non joignable ou partie déjà absente de la mémoire."
+	@echo "✅ Partie $(GAME_ID) supprimée."
+
 .PHONY: health-debug
 health-debug: ## [Dev] Vérifier les endpoints (Server 5201, WebApp 5202, AIServer 5301)
 	@docker exec postgres-lama-debug pg_isready -U lama_dev -d lama_dev >/dev/null 2>&1 && echo "✓ PostgreSQL (5200) OK" || echo "✗ PostgreSQL (5200) KO"

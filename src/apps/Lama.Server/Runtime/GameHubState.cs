@@ -38,6 +38,40 @@ public sealed class GameHubState
 
     public IReadOnlyList<OnlineGame> ListGames() => _games.Values.ToList();
 
+    /// <summary>
+    /// Clôture et supprime toutes les parties actives de la mémoire.
+    /// Retourne le nombre de parties supprimées.
+    /// </summary>
+    public int ClearAll()
+    {
+        var count = 0;
+        foreach (var (gameId, game) in _games)
+        {
+            lock (game)
+            {
+                if (!game.IsClosed)
+                {
+                    game.IsClosed  = true;
+                    game.EndReason = "admin_reset";
+                    count++;
+                }
+            }
+
+            // Notifie les clients SSE éventuellement connectés
+            Publish(gameId, new ServerEvent("game.ended", new
+            {
+                gameId,
+                endedAt = DateTimeOffset.UtcNow,
+                reason  = "admin_reset"
+            }));
+        }
+
+        _games.Clear();
+        _subscribers.Clear();
+        _activeGameByPlayerId.Clear();
+        return count;
+    }
+
     public int ActivePlayerCount => _activeGameByPlayerId.Count;
 
     public SubscriberToken Subscribe(string gameId)
