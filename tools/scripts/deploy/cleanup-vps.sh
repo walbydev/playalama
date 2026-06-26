@@ -40,18 +40,6 @@ echo "=== Containers actifs ==="
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 echo ""
-echo "=== Suppression anciens containers obsolètes ==="
-for c in lama-portal-webapp-prod lama-game-webapp-prod \
-         lama-portal-webapp-staging lama-game-webapp-staging \
-         lama-portal-webapp lama-game-webapp; do
-  if docker inspect "$c" &>/dev/null; then
-    docker rm -f "$c" && echo "  ✓ Supprimé: $c"
-  else
-    echo "  - Absent: $c"
-  fi
-done
-
-echo ""
 echo "=== Arrêt stacks depuis ancien répertoire /srv/playalama ==="
 for env in prod staging; do
   OLD_DIR="/srv/playalama/$env"
@@ -60,17 +48,6 @@ for env in prod staging; do
       echo "  Arrêt stack $env depuis $OLD_DIR..."
       cd "$OLD_DIR" && docker compose -p "$env" down --remove-orphans 2>/dev/null || true
     fi
-  fi
-done
-
-echo ""
-echo "=== Suppression images orphelines lama-portal/game-webapp ==="
-for img in lama-portal-webapp lama-game-webapp; do
-  IDS=$(docker images "$img" -q 2>/dev/null || true)
-  if [ -n "$IDS" ]; then
-    echo "$IDS" | xargs docker rmi -f 2>/dev/null && echo "  ✓ Images $img supprimées" || true
-  else
-    echo "  - Aucune image: $img"
   fi
 done
 

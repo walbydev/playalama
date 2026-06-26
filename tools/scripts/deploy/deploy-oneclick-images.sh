@@ -198,11 +198,6 @@ DEPLOY_TAG="$DEPLOY_TAG" docker compose \
   -f docker-compose.images.yml \
   up -d --no-build --remove-orphans
 
-echo "[VPS] Suppression anciens containers obsolètes..."
-for c in lama-portal-webapp-prod lama-game-webapp-prod lama-portal-webapp-staging lama-game-webapp-staging; do
-  docker rm -f "$c" 2>/dev/null && echo "  Supprimé: $c" || true
-done
-
 echo "[VPS] Nettoyage images dangling..."
 docker image prune -f
 EOS

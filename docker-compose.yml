@@ -141,6 +141,4 @@ networks:
 volumes:
   lama-postgres-data:
     driver: local
-  lama-logs:
-  nginx-certs:
 

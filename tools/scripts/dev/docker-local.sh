@@ -44,24 +44,12 @@ cd "$ROOT_DIR"
 
 case "$CMD" in
   up)
-    info "Démarrage stack complète (lama-server + nginx)..."
+    info "Démarrage stack complète (postgres + lama-server + lama-webapp)..."
     docker compose -f "$COMPOSE_FILE" up -d --build
     ok "Stack démarrée"
     echo ""
-    echo "  Site web    : http://localhost/"
+    echo "  WebApp      : http://localhost:5050"
     echo "  Server API  : http://localhost:5000/health"
-    echo "  Download    : http://localhost/download/"
-    ;;
-
-  nginx-only)
-    info "Démarrage nginx seul (mode debug Rider — serveur géré par Rider)"
-    docker compose -f "$COMPOSE_FILE" up -d nginx
-    ok "nginx démarré sur http://localhost"
-    echo ""
-    warn "Démarrez Lama.Server dans Rider avec :"
-    echo "  ASPNETCORE_ENVIRONMENT=Development"
-    echo "  ASPNETCORE_URLS=http://127.0.0.1:5000"
-    echo "  LAMA_SERVER_ALLOW_SHUTDOWN=true"
     ;;
 
   rebuild)
@@ -88,11 +76,11 @@ case "$CMD" in
   health)
     info "Vérification des endpoints..."
     curl -fsS http://localhost:5000/health >/dev/null && ok "lama-server : http://localhost:5000/health" || warn "lama-server non disponible"
-    curl -fsS http://localhost/ >/dev/null          && ok "nginx       : http://localhost/"            || warn "nginx non disponible"
+    curl -fsS http://localhost:5050/       >/dev/null && ok "lama-webapp : http://localhost:5050/"      || warn "lama-webapp non disponible"
     ;;
 
   *)
-    echo "Usage : $0 [up|down|rebuild|logs|status|nginx-only|health]"
+    echo "Usage : $0 [up|down|rebuild|logs|status|health]"
     exit 1
     ;;
 esac

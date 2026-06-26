@@ -45,11 +45,11 @@ COPY --from=builder /publish .
 # Copier les assets de langues (IMPORTANT: verifier que ce volume existe)
 COPY assets/languages ./assets/languages
 
-# Déclarer ports
-EXPOSE 5000 5001
+# Déclarer port
+EXPOSE 5000
 
 # Variables d'environnement par défaut
-ENV ASPNETCORE_URLS="http://+:5000;https://+:5001" \
+ENV ASPNETCORE_URLS="http://+:5000" \
     ASPNETCORE_ENVIRONMENT="Production"
 
 # Health check Docker

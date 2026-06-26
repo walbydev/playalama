@@ -16,8 +16,7 @@
 #   1. dev-local         Debug CLI en local (même PC, sans serveur)
 #   2. dev-server        Serveur ASP.NET en mode développement (Rider ou terminal)
 #   3. run-local         Exécution CLI locale simple (sans Rider)
-#   4. docker-site-local Déploiement site web en local via Docker
-#   5. docker-local      Déploiement + exécution stack complète en local (Docker)
+#   4. docker-local      Déploiement + exécution stack complète en local (Docker)
 #
 # Développement natif (Option A — PostgreSQL Docker + .NET natif) :
 #   option-a-start   Démarrer PostgreSQL (Docker)
@@ -30,7 +29,6 @@ SHELL := /bin/bash
 ROOT_DIR := $(shell pwd)
 CONSOLE_PROJECT := src/apps/Lama.Console/Lama.Console.csproj
 SERVER_PROJECT  := src/apps/Lama.Server/Lama.Server.csproj
-PORTAL_PROJECT  := src/apps/Lama.WebApp/Lama.WebApp.csproj
 WEBAPP_PROJECT  := src/apps/Lama.WebApp/Lama.WebApp.csproj
 AISERVER_PROJECT := src/apps/Lama.AIServer/Lama.AIServer.csproj
 DOCKER_LOCAL    := tools/docker/docker-compose.local.yml
@@ -69,18 +67,7 @@ run-local: ## [Cas 3] Exécuter une commande CLI locale  →  make run-local ARG
 	dotnet run --project $(CONSOLE_PROJECT) -- $(ARGS)
 
 # =============================================================================
-# 4. Site web local (Docker nginx uniquement)
-# =============================================================================
-.PHONY: docker-site-local
-docker-site-local: ## [Cas 4] Démarrer nginx local seul (site statique sur http://localhost)
-	docker compose -f $(DOCKER_LOCAL) up -d nginx
-
-.PHONY: docker-site-local-stop
-docker-site-local-stop: ## Arrêter nginx local
-	docker compose -f $(DOCKER_LOCAL) stop nginx
-
-# =============================================================================
-# 5. Stack Docker locale complète (serveur + nginx)
+# 4. Stack Docker locale complète (serveur + webapp)
 # =============================================================================
 .PHONY: docker-local
 docker-local: ## [Cas 5] Démarrer stack complète locale (lama-server + nginx)
@@ -317,7 +304,6 @@ docker-local-ps: ## État des conteneurs Docker locaux
 .PHONY: health-local
 health-local: ## Vérifier les endpoints locaux
 	@curl -fsS http://localhost:5000/health && echo "✓ Server OK" || echo "✗ Server KO"
-	@curl -fsS http://localhost/health && echo "✓ nginx→Server OK" || echo "✗ nginx→Server KO"
 
 .PHONY: health-option-a
 health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 5201, WebApp 5202)

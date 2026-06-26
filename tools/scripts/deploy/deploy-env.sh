@@ -192,11 +192,6 @@ for OLD_DIR in "/srv/playalama/\$DEPLOY_ENV" "/srv/playalama"; do
   fi
 done
 
-echo "[VPS] Arrêt des anciens containers nommés explicitement..."
-for c in lama-portal-webapp-\$DEPLOY_ENV lama-game-webapp-\$DEPLOY_ENV lama-portal-webapp lama-game-webapp; do
-  docker rm -f "\$c" 2>/dev/null && echo "  Supprimé: \$c" || true
-done
-
 echo "[VPS] Vérification fichier .env..."
 if [ ! -f "\$REMOTE_DIR/.env" ]; then
   echo "  ⚠  AVERTISSEMENT: \$REMOTE_DIR/.env introuvable — les variables d'environnement seront manquantes!"
@@ -225,10 +220,6 @@ fi
 if [[ "$SKIP_CLEANUP" == "false" ]]; then
   log "Nettoyage des anciennes images Docker sur le VPS..."
   CLEANUP_SCRIPT=$(cat <<EOR
-echo "[VPS] Suppression containers obsolètes (portal/game webapp anciens)..."
-for c in lama-portal-webapp-$DEPLOY_ENV lama-game-webapp-$DEPLOY_ENV; do
-  docker rm -f "\$c" 2>/dev/null && echo "  Supprimé: \$c" || true
-done
 echo "[VPS] Nettoyage images dangling..."
 docker image prune -f
 echo "[VPS] Suppression des anciennes images lama-server/lama-webapp/lama-aiserver (garder 2)..."

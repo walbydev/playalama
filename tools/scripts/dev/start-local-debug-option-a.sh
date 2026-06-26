@@ -18,9 +18,9 @@ echo ""
 # Démarrage des services Docker
 echo -e "${YELLOW}📦 Démarrage de PostgreSQL sur le port 5200...${NC}"
 cd "$PROJECT_ROOT"
-docker-compose -f "$COMPOSE_FILE" up -d
+docker compose -f "$COMPOSE_FILE" up -d
 sleep 3
-docker-compose -f "$COMPOSE_FILE" ps
+docker compose -f "$COMPOSE_FILE" ps
 
 echo ""
 echo -e "${GREEN}✓ PostgreSQL est prêt sur localhost:5200${NC}"
@@ -29,18 +29,18 @@ echo ""
 # Affichage de la topologie
 echo -e "${BLUE}📊 Topologie des services:${NC}"
 echo "  • PostgreSQL:    localhost:5200"
-echo "  • Server:        localhost:5201 (à lancer: dotnet run --project src/Server/Lama.Server)"
-echo "  • WebApp:        localhost:5202 (a lancer: dotnet run --project src/Web/Lama.GameWebApp)"
+echo "  • Server:        localhost:5201 (à lancer: dotnet run --project src/apps/Lama.Server)"
+echo "  • WebApp:        localhost:5202 (a lancer: dotnet run --project src/apps/Lama.WebApp)"
 echo ""
 
 echo -e "${BLUE}📝 Prochaines étapes:${NC}"
-echo "  1. Dans un terminal: cd $PROJECT_ROOT && dotnet run --project src/Server/Lama.Server"
-echo "  2. Dans un autre:    cd $PROJECT_ROOT && dotnet run --project src/Web/Lama.GameWebApp"
+echo "  1. Dans un terminal: cd $PROJECT_ROOT && dotnet run --project src/apps/Lama.Server"
+echo "  2. Dans un autre:    cd $PROJECT_ROOT && dotnet run --project src/apps/Lama.WebApp"
 echo "  3. Ouvrir: http://localhost:5202 dans le navigateur"
 echo ""
 
 echo -e "${YELLOW}🛑 Pour arrêter PostgreSQL:${NC}"
-echo "   docker-compose -f $COMPOSE_FILE down"
+echo "   docker compose -f $COMPOSE_FILE down"
 echo ""
 
 echo -e "${GREEN}✓ Configuration prête!${NC}"

@@ -79,6 +79,8 @@ publish/
 # .deploy/ contient: certs/ certbot-webroot/ et config sensibles
 .deploy/certs/
 .deploy/certbot-webroot/
+.deploy/stage/
+.deploy/oneclick-*/
 .env
 .env.*.local
 *.key

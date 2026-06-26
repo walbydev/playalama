@@ -29,11 +29,11 @@ services:
       retries: 10
     restart: unless-stopped
 
-  lama-game-webapp:
+  lama-webapp:
     build:
       context: ../..
       dockerfile: tools/docker/Dockerfile.webapp
-    container_name: lama-game-webapp-dev
+    container_name: lama-webapp-dev
     networks:
       - lama-network
     environment:
@@ -41,6 +41,7 @@ services:
       ASPNETCORE_ENVIRONMENT: "Development"
       LamaApi__BaseUrl: "http://lama-server:5000"
       LAMA_SERVER_URL: "http://lama-server:5000"
+      LAMA_ADMIN_SECRET: "dev_admin_secret_change_in_prod"
     ports:
       - "5050:5050"
     depends_on:

@@ -84,5 +84,5 @@ echo ""
 
 # Lancer le serveur
 cd "$PROJECT_ROOT"
-ASPNETCORE_ENVIRONMENT="$CONFIG" dotnet run --project src/Server/Lama.Server --configuration "$CONFIG" --no-build
+ASPNETCORE_ENVIRONMENT="$CONFIG" dotnet run --project src/apps/Lama.Server --configuration "$CONFIG" --no-build
 

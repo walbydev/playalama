@@ -33,11 +33,11 @@ COPY --from=builder /publish .
 # Copier les assets de langues
 COPY assets/languages ./assets/languages
 
-# Exposer les ports
-EXPOSE 5000 5001
+# Exposer le port
+EXPOSE 5000
 
 # Variables d'environnement
-ENV ASPNETCORE_URLS="http://+:5000;https://+:5001" \
+ENV ASPNETCORE_URLS="http://+:5000" \
     ASPNETCORE_ENVIRONMENT="Production"
 
 # Health check
