@@ -6,7 +6,6 @@
 <nav class="navbar" role="navigation" aria-label="Navigation principale">
     <a href="/" class="navbar-logo" aria-label="Playalama — Accueil">
         PLAYALAMA
-        <span class="dev-ribbon" aria-hidden="true">En développement</span>
     </a>
 
     <ul class="navbar-links @(_menuOpen ? "open" : "")" id="nav-links">
@@ -41,8 +40,8 @@
     </div>
 </nav>
 
-<!-- Spacer pour compenser la navbar fixe -->
-<div style="height: var(--nav-h);" aria-hidden="true"></div>
+<!-- Spacer pour compenser la navbar fixe + la bannière dev -->
+<div style="height: calc(var(--nav-h) + var(--banner-h));" aria-hidden="true"></div>
 
 @code {
     private bool _menuOpen;
