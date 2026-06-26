@@ -1,6 +1,8 @@
 @page "/status"
 @layout MainLayout
 @inject StatusViewModel VM
+@inject AuthService Auth
+@inject NavigationManager Nav
 @implements IAsyncDisposable
 
 <PageTitle>Monitoring — Playalama</PageTitle>
@@ -14,23 +16,28 @@
 <div class="section">
     <div class="container">
 
-        @if (VM.IsSecretMissing)
+        @if (!Auth.IsLoggedIn)
         {
-            <div class="card" style="max-width:480px; margin:0 auto;">
-                <h3 style="margin-bottom:1rem">🔐 Authentification requise</h3>
-                <p class="text-muted" style="margin-bottom:1rem">Renseignez le secret admin pour accéder au tableau de bord.</p>
-                <div class="form-group">
-                    <label class="form-label" for="admin-secret">Secret admin</label>
-                    <input id="admin-secret" type="password" class="form-input"
-                           placeholder="LAMA_ADMIN_SECRET"
-                           @bind="VM.AdminSecret" @bind:event="oninput" />
-                </div>
-                <button class="btn btn-primary mt-3" @onclick="RefreshAsync" disabled="@VM.IsLoading">
-                    @(VM.IsLoading ? "Connexion…" : "Accéder au dashboard")
-                </button>
+            <div class="card" style="max-width:480px; margin:0 auto; text-align:center">
+                <span style="font-size:3rem">🔐</span>
+                <h3 style="margin:1rem 0 .5rem">Connexion requise</h3>
+                <p class="text-muted" style="margin-bottom:1.5rem">
+                    Connectez-vous pour accéder au panneau d'administration.
+                </p>
+                <a class="btn btn-primary" href="/login">Se connecter</a>
+            </div>
+        }
+        else if (!VM.IsAuthenticated && !VM.IsLoading)
+        {
+            <div class="card" style="max-width:480px; margin:0 auto; text-align:center">
+                <span style="font-size:3rem">🚫</span>
+                <h3 style="margin:1rem 0 .5rem">Accès refusé</h3>
+                <p class="text-muted" style="margin-bottom:.5rem">
+                    Votre compte ne dispose pas des droits administrateur.
+                </p>
                 @if (!string.IsNullOrEmpty(VM.ErrorMessage))
                 {
-                    <p class="form-error mt-2" role="alert">@VM.ErrorMessage</p>
+                    <p class="form-error" role="alert">@VM.ErrorMessage</p>
                 }
             </div>
         }
@@ -57,6 +64,10 @@
             @if (!string.IsNullOrEmpty(VM.ErrorMessage))
             {
                 <p class="form-error" role="alert" style="margin-bottom:1rem">@VM.ErrorMessage</p>
+            }
+            @if (!string.IsNullOrEmpty(VM.SuccessMessage))
+            {
+                <p class="form-success" role="status" style="margin-bottom:1rem">✅ @VM.SuccessMessage</p>
             }
 
             @if (VM.IsLoading && VM.Snapshot is null)
@@ -155,6 +166,34 @@
                         </div>
                     </div>
 
+                    <!-- Actions admin -->
+                    <div class="card status-card">
+                        <div class="status-card-header">
+                            <span class="status-card-icon">⚙️</span>
+                            <h3>Actions admin</h3>
+                        </div>
+                        <div class="status-metrics" style="gap:1rem">
+                            <div style="display:flex; flex-direction:column; gap:.5rem">
+                                <p class="text-muted" style="font-size:.85rem">
+                                    Termine immédiatement toutes les parties actives en mémoire
+                                    (les joueurs reçoivent un événement <code>game.ended</code>).
+                                </p>
+                                <button class="btn btn-danger btn-sm"
+                                        @onclick="ConfirmTerminateAllAsync"
+                                        disabled="@(VM.IsTerminating || s.Games.ActiveCount == 0)">
+                                    @if (VM.IsTerminating)
+                                    {
+                                        <span>⏳ Terminaison…</span>
+                                    }
+                                    else
+                                    {
+                                        <span>🛑 Terminer toutes les parties (@s.Games.ActiveCount)</span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             }
         }
@@ -177,6 +216,13 @@
     private async Task RefreshAsync()
     {
         await VM.LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task ConfirmTerminateAllAsync()
+    {
+        // Pas d'IJSRuntime pour confirm() — utilise un simple double-clic guard via IsTerminating
+        await VM.TerminateAllAsync();
         StateHasChanged();
     }
 

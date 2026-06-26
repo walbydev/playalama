@@ -2,30 +2,29 @@ using Lama.WebApp.Services;
 
 namespace Lama.WebApp.ViewModels;
 
-public sealed class StatusViewModel(LamaApiClient api, IConfiguration configuration) : IAsyncDisposable
+public sealed class StatusViewModel(LamaApiClient api, AuthService auth) : IAsyncDisposable
 {
     private Timer? _timer;
 
-    public ServerStatusDto? Snapshot      { get; private set; }
-    public bool              IsLoading    { get; private set; }
-    public string?           ErrorMessage { get; private set; }
-    public DateTimeOffset?   LastRefreshed { get; private set; }
-
-    /// <summary>Secret fourni via env LAMA_ADMIN_SECRET (ou saisi manuellement dans la page).</summary>
-    public string AdminSecret { get; set; } =
-        configuration["LAMA_ADMIN_SECRET"]
-        ?? Environment.GetEnvironmentVariable("LAMA_ADMIN_SECRET")
-        ?? string.Empty;
-
-    public bool IsSecretMissing => string.IsNullOrWhiteSpace(AdminSecret);
+    public ServerStatusDto? Snapshot        { get; private set; }
+    public bool              IsLoading      { get; private set; }
+    public bool              IsTerminating  { get; private set; }
+    public string?           ErrorMessage   { get; private set; }
+    public string?           SuccessMessage { get; private set; }
+    public DateTimeOffset?   LastRefreshed  { get; private set; }
+    public bool              IsAuthenticated { get; private set; }
 
     public event Action? StateChanged;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
-        if (IsSecretMissing)
+        var token = await auth.GetTokenAsync();
+
+        if (string.IsNullOrWhiteSpace(token))
         {
-            ErrorMessage = "Secret admin requis.";
+            IsAuthenticated = false;
+            ErrorMessage    = null;
+            NotifyStateChanged();
             return;
         }
 
@@ -35,18 +34,65 @@ public sealed class StatusViewModel(LamaApiClient api, IConfiguration configurat
 
         try
         {
-            Snapshot       = await api.GetStatusAsync(AdminSecret, cancellationToken);
-            LastRefreshed  = DateTimeOffset.Now;
-            ErrorMessage   = Snapshot is null ? "Accès refusé (secret invalide ou endpoint introuvable)." : null;
+            Snapshot = await api.GetStatusAsync(token, cancellationToken);
+            if (Snapshot is null)
+            {
+                IsAuthenticated = false;
+                ErrorMessage    = "Accès refusé. Votre compte n'a pas les droits admin, ou votre session a expiré.";
+            }
+            else
+            {
+                IsAuthenticated = true;
+                LastRefreshed   = DateTimeOffset.Now;
+                ErrorMessage    = null;
+            }
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Erreur de connexion : {ex.Message}";
-            Snapshot     = null;
+            IsAuthenticated = false;
+            ErrorMessage    = $"Erreur de connexion : {ex.Message}";
+            Snapshot        = null;
         }
         finally
         {
             IsLoading = false;
+            NotifyStateChanged();
+        }
+    }
+
+    public async Task TerminateAllAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsAuthenticated)
+            return;
+
+        IsTerminating  = true;
+        SuccessMessage = null;
+        ErrorMessage   = null;
+        NotifyStateChanged();
+
+        try
+        {
+            var token  = await auth.GetTokenAsync();
+            var count  = await api.TerminateAllGamesAsync(token, cancellationToken);
+            SuccessMessage = count == 0
+                ? "Aucune partie active à terminer."
+                : $"{count} partie{(count > 1 ? "s" : "")} terminée{(count > 1 ? "s" : "")}.";
+
+            await LoadAsync(cancellationToken);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            IsAuthenticated = false;
+            ErrorMessage    = "Accès refusé.";
+            Snapshot        = null;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Échec : {ex.Message}";
+        }
+        finally
+        {
+            IsTerminating = false;
             NotifyStateChanged();
         }
     }
@@ -56,7 +102,8 @@ public sealed class StatusViewModel(LamaApiClient api, IConfiguration configurat
         _timer?.Dispose();
         _timer = new Timer(async _ =>
         {
-            await LoadAsync();
+            if (IsAuthenticated)
+                await LoadAsync();
         }, null, TimeSpan.FromSeconds(intervalSeconds), TimeSpan.FromSeconds(intervalSeconds));
     }
 

@@ -370,16 +370,35 @@ public sealed class LamaApiClient(HttpClient httpClient)
 
     // ── Status / Monitoring ───────────────────────────────────────────────────
 
-    public async Task<ServerStatusDto?> GetStatusAsync(string adminSecret, CancellationToken cancellationToken = default)
+    public async Task<ServerStatusDto?> GetStatusAsync(string? jwtToken, CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBase}/status");
-        request.Headers.Add("X-Admin-Secret", adminSecret);
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
 
         var response = await httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
             return null;
 
         return await response.Content.ReadFromJsonAsync<ServerStatusDto>(JsonOptions, cancellationToken);
+    }
+
+    /// <summary>Ferme de force toutes les parties actives. Retourne le nombre de parties terminées.</summary>
+    /// <exception cref="UnauthorizedAccessException">Token invalide ou accès refusé.</exception>
+    public async Task<int> TerminateAllGamesAsync(string? jwtToken, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{ApiBase}/admin/games/terminate-all");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            throw new UnauthorizedAccessException("Accès refusé. Vérifiez votre connexion.");
+
+        response.EnsureSuccessStatusCode();
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        return doc.RootElement.TryGetProperty("terminated", out var t) ? t.GetInt32() : 0;
     }
 
     // ── Enveloppes API (privées) ──────────────────────────────────────────────
