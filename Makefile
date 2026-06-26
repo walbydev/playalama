@@ -17,12 +17,7 @@
 #   2. dev-server        Serveur ASP.NET en mode développement (Rider ou terminal)
 #   3. run-local         Exécution CLI locale simple (sans Rider)
 #   4. docker-local      Déploiement + exécution stack complète en local (Docker)
-#
-# Développement natif (Option A — PostgreSQL Docker + .NET natif) :
-#   option-a-start   Démarrer PostgreSQL (Docker)
-#   option-a-server  Lancer Lama.Server natif (port 5201)
-#   option-a-webapp  Lancer Lama.WebApp natif (port 5202)
-#   dev-debug        Build + lancer les 2 apps en parallèle (Server+WebApp)
+#   5. dev-debug         Build + lancer Server+WebApp+AIServer en natif (DB Docker)
 # =============================================================================
 
 SHELL := /bin/bash
@@ -32,7 +27,7 @@ SERVER_PROJECT  := src/apps/Lama.Server/Lama.Server.csproj
 WEBAPP_PROJECT  := src/apps/Lama.WebApp/Lama.WebApp.csproj
 AISERVER_PROJECT := src/apps/Lama.AIServer/Lama.AIServer.csproj
 DOCKER_LOCAL    := tools/docker/docker-compose.local.yml
-DOCKER_OPTION_A := tools/docker/docker-compose.local-debug.yml
+DOCKER_DEBUG    := tools/docker/docker-compose.local-debug.yml
 
 # SSH_KEY peut être surchargé : make deploy-server-prod SSH_KEY=~/.ssh/machines/playalama.key
 SSH_KEY         ?= $(LAMA_DEPLOY_SSH_KEY)
@@ -226,45 +221,12 @@ vps-status: ## [VPS] Afficher l'état des containers sur le VPS
 	  "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' && echo '' && docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}' | grep lama"
 
 # =============================================================================
-# OPTION A: Debug Natif + PostgreSQL Docker (Recommandé pour développement)
+# Dev-debug : PostgreSQL Docker + les 3 apps natives en parallèle
 # =============================================================================
-.PHONY: option-a-start
-option-a-start: ## [OPTION A] Démarrer PostgreSQL en Docker (ports 5200/5201/5202)
-	bash tools/scripts/dev/start-local-debug-option-a.sh
-
-.PHONY: option-a-server
-option-a-server: ## [OPTION A] Lancer Lama.Server natif sur port 5201
-	LAMA_AI_SERVER_URL=http://127.0.0.1:5301 \
-	dotnet run --project $(SERVER_PROJECT) --urls http://127.0.0.1:5201
-
-.PHONY: option-a-webapp
-option-a-webapp: ## [OPTION A] Lancer Lama.WebApp natif sur port 5202
-	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 \
-	dotnet run --project $(WEBAPP_PROJECT) --urls http://127.0.0.1:5202
-
-.PHONY: option-a-aiserver
-option-a-aiserver: ## [OPTION A] Lancer Lama.AIServer natif sur port 5301 (langue française)
-	LAMA_AI_LANGUAGE=fr LAMA_AI_MAX_CONCURRENT=3 \
-	dotnet run --project $(AISERVER_PROJECT) --urls http://127.0.0.1:5301
-
-.PHONY: option-a-stop
-option-a-stop: ## [OPTION A] Arrêter PostgreSQL Docker
-	docker compose -f $(DOCKER_OPTION_A) down
-
-.PHONY: option-a-clean
-option-a-clean: ## [OPTION A] Arrêter et supprimer les volumes (réinitialiser DB)
-	docker compose -f $(DOCKER_OPTION_A) down -v
-
-.PHONY: option-a-logs
-option-a-logs: ## [OPTION A] Suivre les logs PostgreSQL
-	docker compose -f $(DOCKER_OPTION_A) logs -f postgres-lama
-
-# =============================================================================
-# Dev-debug : build + lancer les 3 apps en parallèle
-# =============================================================================
-## [Dev] Build + lancer Server (5201) + WebApp (5202) + AIServer (5301) en parallèle
 .PHONY: dev-debug
-dev-debug: option-a-start ## [Dev] Build + lancer Server (5201) + WebApp (5202) + AIServer fr (5301) en parallèle
+dev-debug: ## [Dev] PostgreSQL Docker + Server (5201) + WebApp (5202) + AIServer (5301) en parallèle
+	@echo "→ Démarrage de PostgreSQL..."
+	docker compose -f $(DOCKER_DEBUG) up -d
 	@echo "→ Build de la solution..."
 	dotnet build -c Debug --no-restore
 	@echo "→ Démarrage des apps (Ctrl+C pour tout arrêter)..."
@@ -276,6 +238,21 @@ dev-debug: option-a-start ## [Dev] Build + lancer Server (5201) + WebApp (5202) 
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 \
 	  dotnet run --project $(WEBAPP_PROJECT) --no-build --urls http://127.0.0.1:5202 & \
 	wait
+
+.PHONY: dev-debug-stop
+dev-debug-stop: ## [Dev] Arrêter PostgreSQL Docker (les apps .NET s'arrêtent avec Ctrl+C)
+	docker compose -f $(DOCKER_DEBUG) down
+
+.PHONY: dev-debug-clean
+dev-debug-clean: ## [Dev] Arrêter PostgreSQL et supprimer les volumes (réinitialiser DB)
+	docker compose -f $(DOCKER_DEBUG) down -v
+
+.PHONY: health-debug
+health-debug: ## [Dev] Vérifier les endpoints (Server 5201, WebApp 5202, AIServer 5301)
+	@docker exec postgres-lama-debug pg_isready -U lama_dev -d lama_dev >/dev/null 2>&1 && echo "✓ PostgreSQL (5200) OK" || echo "✗ PostgreSQL (5200) KO"
+	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO" || true
+	@curl -fsS http://localhost:5202/ >/dev/null && echo "✓ WebApp (5202) OK" || echo "✗ WebApp (5202) KO" || true
+	@curl -fsS http://localhost:5301/health && echo "✓ AIServer-fr (5301) OK" || echo "✗ AIServer-fr (5301) KO" || true
 
 # =============================================================================
 # Utilitaires
@@ -305,15 +282,8 @@ docker-local-ps: ## État des conteneurs Docker locaux
 health-local: ## Vérifier les endpoints locaux
 	@curl -fsS http://localhost:5000/health && echo "✓ Server OK" || echo "✗ Server KO"
 
-.PHONY: health-option-a
-health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 5201, WebApp 5202)
-	@docker exec postgres-lama-option-a pg_isready -U lama_dev -d lama_dev >/dev/null 2>&1 && echo "✓ PostgreSQL (5200) OK" || echo "✗ PostgreSQL (5200) KO"
-	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO" || true
-	@curl -fsS http://localhost:5202/ >/dev/null && echo "✓ WebApp (5202) OK" || echo "✗ WebApp (5202) KO" || true
-	@curl -fsS http://localhost:5301/health && echo "✓ AIServer-fr (5301) OK" || echo "✗ AIServer-fr (5301) KO" || true
-
 .PHONY: web-lobby-smoke
-web-lobby-smoke: ## [OPTION A] Smoke test Web lobby (register/create/start/my-games)
+web-lobby-smoke: ## Smoke test Web lobby (register/create/start/my-games)
 	bash tools/scripts/e2e/e2e-web-lobby-smoke.sh
 
 # =============================================================================

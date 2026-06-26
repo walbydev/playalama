@@ -6,7 +6,7 @@ services:
   # 5200: PostgreSQL Database
   postgres-lama:
     image: postgres:16-alpine
-    container_name: postgres-lama-option-a
+    container_name: postgres-lama-debug
     environment:
       POSTGRES_USER: lama_dev
       POSTGRES_PASSWORD: dev_password_change_me
