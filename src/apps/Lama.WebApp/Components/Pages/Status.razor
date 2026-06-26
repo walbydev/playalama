@@ -2,7 +2,6 @@
 @layout MainLayout
 @inject StatusViewModel VM
 @inject AuthService Auth
-@inject NavigationManager Nav
 @implements IAsyncDisposable
 
 <PageTitle>Monitoring — Playalama</PageTitle>
@@ -27,18 +26,24 @@
                 <a class="btn btn-primary" href="/login">Se connecter</a>
             </div>
         }
-        else if (!VM.IsAuthenticated && !VM.IsLoading)
+        else if (VM.IsLoading && VM.Snapshot is null)
+        {
+            <p class="text-muted text-center" style="padding:3rem">⏳ Chargement…</p>
+        }
+        else if (!VM.IsAuthenticated)
         {
             <div class="card" style="max-width:480px; margin:0 auto; text-align:center">
                 <span style="font-size:3rem">🚫</span>
                 <h3 style="margin:1rem 0 .5rem">Accès refusé</h3>
                 <p class="text-muted" style="margin-bottom:.5rem">
-                    Votre compte ne dispose pas des droits administrateur.
+                    Votre compte ne dispose pas des droits administrateur,
+                    ou votre session a expiré.
                 </p>
                 @if (!string.IsNullOrEmpty(VM.ErrorMessage))
                 {
-                    <p class="form-error" role="alert">@VM.ErrorMessage</p>
+                    <p class="form-error mt-2" role="alert">@VM.ErrorMessage</p>
                 }
+                <button class="btn btn-ghost btn-sm mt-3" @onclick="RefreshAsync">🔄 Réessayer</button>
             </div>
         }
         else
@@ -70,11 +75,7 @@
                 <p class="form-success" role="status" style="margin-bottom:1rem">✅ @VM.SuccessMessage</p>
             }
 
-            @if (VM.IsLoading && VM.Snapshot is null)
-            {
-                <p class="text-muted text-center" style="padding:3rem">Chargement…</p>
-            }
-            else if (VM.Snapshot is { } s)
+            @if (VM.Snapshot is { } s)
             {
                 <div class="status-grid">
 
@@ -179,7 +180,7 @@
                                     (les joueurs reçoivent un événement <code>game.ended</code>).
                                 </p>
                                 <button class="btn btn-danger btn-sm"
-                                        @onclick="ConfirmTerminateAllAsync"
+                                        @onclick="() => VM.TerminateAllAsync()"
                                         disabled="@(VM.IsTerminating || s.Games.ActiveCount == 0)">
                                     @if (VM.IsTerminating)
                                     {
@@ -206,11 +207,20 @@
     {
         if (firstRender)
         {
-            VM.StateChanged += OnVmStateChanged;
+            VM.StateChanged   += OnVmStateChanged;
+            Auth.OnAuthStateChanged += OnAuthChanged;
             await VM.LoadAsync();
             VM.StartAutoRefresh(30);
             StateHasChanged();
         }
+    }
+
+    private async void OnAuthChanged()
+    {
+        // Quand l'auth change (InitializeAsync termine), recharge le dashboard
+        if (Auth.IsLoggedIn && !VM.IsAuthenticated)
+            await VM.LoadAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task RefreshAsync()
@@ -219,17 +229,7 @@
         StateHasChanged();
     }
 
-    private async Task ConfirmTerminateAllAsync()
-    {
-        // Pas d'IJSRuntime pour confirm() — utilise un simple double-clic guard via IsTerminating
-        await VM.TerminateAllAsync();
-        StateHasChanged();
-    }
-
-    private void OnVmStateChanged()
-    {
-        InvokeAsync(StateHasChanged);
-    }
+    private void OnVmStateChanged() => InvokeAsync(StateHasChanged);
 
     private static string DbStatusClass(string status) => status switch
     {
@@ -247,7 +247,8 @@
 
     public async ValueTask DisposeAsync()
     {
-        VM.StateChanged -= OnVmStateChanged;
+        VM.StateChanged         -= OnVmStateChanged;
+        Auth.OnAuthStateChanged -= OnAuthChanged;
         VM.StopAutoRefresh();
         await VM.DisposeAsync();
     }

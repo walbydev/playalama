@@ -75,32 +75,38 @@ public static class StatusEndpoints
 
     private static bool IsAuthorized(HttpContext ctx, IConfiguration config)
     {
-        // Option 1 : X-Admin-Secret header
         var expectedSecret = config["LAMA_ADMIN_SECRET"]
                           ?? Environment.GetEnvironmentVariable("LAMA_ADMIN_SECRET");
+        var adminPlayers   = config["LAMA_ADMIN_PLAYERS"]
+                          ?? Environment.GetEnvironmentVariable("LAMA_ADMIN_PLAYERS");
 
+        // Option 1 : X-Admin-Secret header (scripts, CLI)
         if (!string.IsNullOrWhiteSpace(expectedSecret))
         {
-            ctx.Request.Headers.TryGetValue(AdminSecretHeader, out var providedSecret);
-            if (string.Equals(expectedSecret, providedSecret.ToString(), StringComparison.Ordinal))
+            ctx.Request.Headers.TryGetValue(AdminSecretHeader, out var provided);
+            if (string.Equals(expectedSecret, provided.ToString(), StringComparison.Ordinal))
                 return true;
         }
 
-        // Option 2 : JWT Bearer — le middleware JwtMiddleware a déjà validé le token
-        var adminPlayers = config["LAMA_ADMIN_PLAYERS"]
-                        ?? Environment.GetEnvironmentVariable("LAMA_ADMIN_PLAYERS");
-
-        if (!string.IsNullOrWhiteSpace(adminPlayers) && ctx.IsAuthenticated())
+        // Option 2 : JWT Bearer
+        if (ctx.IsAuthenticated())
         {
-            if (adminPlayers.Trim() == "*")
-                return true;
-
-            var playerId = ctx.GetPlayerId();
-            if (playerId is not null)
+            // LAMA_ADMIN_PLAYERS est configuré → filtre par liste
+            if (!string.IsNullOrWhiteSpace(adminPlayers))
             {
-                var allowed = adminPlayers.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                return allowed.Contains(playerId, StringComparer.OrdinalIgnoreCase);
+                if (adminPlayers.Trim() == "*") return true;
+                var playerId = ctx.GetPlayerId();
+                if (playerId is not null)
+                {
+                    var allowed = adminPlayers.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    return allowed.Contains(playerId, StringComparer.OrdinalIgnoreCase);
+                }
+                return false;
             }
+
+            // Aucune restriction configurée → tout joueur authentifié peut accéder
+            // (comportement par défaut dev/petites installations)
+            return true;
         }
 
         return false;
