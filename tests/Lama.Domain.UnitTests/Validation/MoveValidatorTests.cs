@@ -137,6 +137,130 @@ public class MoveValidatorTests
 
     #endregion
 
+    #region Mots croisés et tuile unique
+
+    [Fact]
+    public void SingleTile_WithOnlyVerticalNeighbors_IsValid()
+    {
+        // Plateau : "MA" vertical — M en (7,7), A en (8,7)
+        var board = BoardWith(new Dictionary<Position, char>
+        {
+            [new Position(7, 7)] = 'M',
+            [new Position(8, 7)] = 'A'
+        });
+
+        // Pose 'S' en (9,7) → forme "MAS" vertical (aucun voisin horizontal)
+        var move = new Dictionary<Position, char>
+        {
+            [new Position(9, 7)] = 'S'
+        };
+
+        var result = _sut.Validate(move, board, isFirstMove: false);
+
+        result.IsValid.Should().BeTrue(
+            because: "une tuile unique avec voisins uniquement verticaux doit former un mot vertical valide");
+    }
+
+    [Fact]
+    public void SingleTile_WithBothHorizontalAndVerticalNeighbors_IsValid()
+    {
+        // Plateau : "MA" horizontal en ligne 7 (M(7,7), A(7,8))
+        //          + "AS" vertical en colonne 7 (A(7,7)... attention conflit)
+        // Utilisons une disposition sans conflit :
+        // "MA" horizontal : M(7,6), A(7,7)
+        // "AI" vertical   : A(7,7), I(8,7)  → mais (7,7) est 'A' dans les deux → OK
+        var board = BoardWith(new Dictionary<Position, char>
+        {
+            [new Position(7, 6)] = 'M',  // "MA" horizontal
+            [new Position(7, 7)] = 'A',
+            [new Position(8, 7)] = 'I'   // "AI" vertical (A déjà compté)
+        });
+
+        // Pose 'S' en (7,8) — voisin gauche 'A'(h) et voisin bas 'I'(v)
+        // Mot horizontal : "MAS" ; mot vertical (croisement) : "IS" ou "AI"+"S"
+        // "IS" n'est pas dans le dict — rejet attendu car croisement invalide
+        // Utilisons plutôt une configuration avec des mots croisés valides :
+
+        // Plateau : "MA" horizontal M(7,7), A(7,8)
+        //          + "AI" vertical  A(6,8), I(7,8)  → (7,8) = 'A' dans les deux
+        var board2 = BoardWith(new Dictionary<Position, char>
+        {
+            [new Position(7, 7)] = 'M',
+            [new Position(7, 8)] = 'A',
+            [new Position(6, 8)] = 'A'   // 'A' au-dessus de (7,8) → "MA" vertical si on pose dessous
+        });
+
+        // Pose 'S' en (7,9) — voisin gauche 'A'(7,8) → horizontal "MAS"
+        //                     voisin haut 'A'(6,8)... mais pas de lien ici
+        // En fait juste : pose S en (7,9) adjacent à "MA", direction horizontale
+        var move2 = new Dictionary<Position, char>
+        {
+            [new Position(7, 9)] = 'S'
+        };
+
+        var result2 = _sut.Validate(move2, board2, isFirstMove: false);
+
+        result2.IsValid.Should().BeTrue(
+            because: "S prolonge 'MA' en 'MAS' horizontalement");
+    }
+
+    [Fact]
+    public void Move_FormingValidCrossWord_IsValid()
+    {
+        // Plateau : "MAS" horizontal en ligne 10, cols 1-3
+        var board = BoardWith(new Dictionary<Position, char>
+        {
+            [new Position(10, 1)] = 'M',
+            [new Position(10, 2)] = 'A',
+            [new Position(10, 3)] = 'S'
+        });
+
+        // Pose "AI" horizontal en ligne 11, cols 1-2
+        // Mot principal : "AI" (dans le dict)
+        // Mot croisé col 1 : M(10,1)+A(11,1) = "MA" (dans le dict)
+        // Mot croisé col 2 : A(10,2)+I(11,2) = "AI" (dans le dict)
+        var move = new Dictionary<Position, char>
+        {
+            [new Position(11, 1)] = 'A',
+            [new Position(11, 2)] = 'I'
+        };
+
+        var result = _sut.Validate(move, board, isFirstMove: false);
+
+        result.IsValid.Should().BeTrue(
+            because: "AI forme 'AI' principal + 'MA' et 'AI' en croisement, tous dans le dictionnaire");
+    }
+
+    [Fact]
+    public void Move_FormingInvalidCrossWord_IsInvalid()
+    {
+        // Plateau : "MAS" horizontal en ligne 10, cols 1-3
+        var board = BoardWith(new Dictionary<Position, char>
+        {
+            [new Position(10, 1)] = 'M',
+            [new Position(10, 2)] = 'A',
+            [new Position(10, 3)] = 'S'
+        });
+
+        // Pose "MA" horizontal en ligne 11, cols 1-2
+        // Mot principal "MA" est dans le dict, mais les croisements :
+        //   col 1 : M(10,1)+M(11,1) = "MM" → hors dictionnaire
+        //   col 2 : A(10,2)+A(11,2) = "AA" → hors dictionnaire
+        var move = new Dictionary<Position, char>
+        {
+            [new Position(11, 1)] = 'M',
+            [new Position(11, 2)] = 'A'
+        };
+
+        var result = _sut.Validate(move, board, isFirstMove: false);
+
+        result.IsValid.Should().BeFalse(
+            because: "les croisements 'MM' et 'AA' ne sont pas dans le dictionnaire");
+        result.ErrorMessage.Should().Contain("croisement");
+    }
+
+    #endregion
+
     #region Continuité — pas de trou autorisé
 
     [Fact]

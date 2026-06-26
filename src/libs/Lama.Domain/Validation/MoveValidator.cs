@@ -66,15 +66,16 @@ public sealed class MoveValidator
             return MoveValidationResult.Invalid(
                 "Au moins une lettre doit être nouvellement posée.");
 
-        // 4. Alignement
+        // 4. Alignement + direction
         var rows = placements.Keys.Select(p => p.Row).Distinct().ToList();
         var cols = placements.Keys.Select(p => p.Column).Distinct().ToList();
-        var isHorizontal = rows.Count == 1;
-        var isVertical   = cols.Count == 1;
 
-        if (!isHorizontal && !isVertical)
+        if (rows.Count > 1 && cols.Count > 1)
             return MoveValidationResult.Invalid(
                 "Toutes les lettres doivent être sur la même ligne ou la même colonne.");
+
+        // Pour une tuile unique, la direction se déduit des voisins existants sur le plateau
+        var isHorizontal = DetermineIsHorizontal(placements, board);
 
         // 5. Pas de trou
         if (isHorizontal)
@@ -150,6 +151,36 @@ public sealed class MoveValidator
     }
 
     // ── Extraction des mots ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Détermine si le coup est horizontal, en tenant compte du contexte du plateau
+    /// pour les placements d'une seule tuile.
+    /// <list type="bullet">
+    ///   <item>Multi-tuiles sur une même ligne → horizontal</item>
+    ///   <item>Multi-tuiles sur une même colonne → vertical</item>
+    ///   <item>Tuile unique : horizontal si un voisin existe à gauche/droite,
+    ///         vertical sinon (voisin haut/bas ou tuile isolée sans connexion).</item>
+    /// </list>
+    /// </summary>
+    public static bool DetermineIsHorizontal(
+        IReadOnlyDictionary<Position, char> placements,
+        BoardState board)
+    {
+        var rowCount = placements.Keys.Select(p => p.Row).Distinct().Count();
+        var colCount = placements.Keys.Select(p => p.Column).Distinct().Count();
+
+        if (rowCount > 1) return false; // vertical multi-tuiles
+        if (colCount > 1) return true;  // horizontal multi-tuiles
+
+        // Tuile unique : voisins du plateau déterminent la direction
+        var pos = placements.Keys.First();
+        var hasHorizontalNeighbor =
+            (pos.Column > 0  && board.Grid[pos.Row, pos.Column - 1] is not null) ||
+            (pos.Column < 14 && board.Grid[pos.Row, pos.Column + 1] is not null);
+
+        // Si voisin horizontal → sens horizontal ; sinon vertical (ou tuile isolée)
+        return hasHorizontalNeighbor;
+    }
 
     /// <summary>
     /// Extrait le mot principal formé par le coup (lettres posées + lettres existantes contiguës).

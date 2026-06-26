@@ -367,4 +367,90 @@ public class ScoreCalculatorTests
     }
 
     #endregion
+
+    #region CalculateTotal — mots principal + croisements
+
+    [Fact]
+    public void CalculateTotal_WithCrossWords_SumsMainAndCrossScores()
+    {
+        // Plateau : "MAS" horizontal en ligne 10, cols 1-3 (toutes cases None)
+        var grid = new Tile?[15, 15];
+        grid[10, 1] = new Tile('M'); // 2pts
+        grid[10, 2] = new Tile('A'); // 1pt
+        grid[10, 3] = new Tile('S'); // 1pt
+        var board = new BoardState(grid);
+
+        // Pose "AI" horizontal en ligne 11, cols 1-2 (cases None)
+        // Mot principal "AI"   : A(1)+I(1) = 2pts
+        // Croisement col 1 "MA": M(2,existant)+A(1,nouveau) = 3pts
+        // Croisement col 2 "AI": A(1,existant)+I(1,nouveau) = 2pts
+        // Total attendu : 2 + 3 + 2 = 7pts
+        var placements = new Dictionary<Position, char>
+        {
+            [new Position(11, 1)] = 'A',
+            [new Position(11, 2)] = 'I'
+        };
+
+        BonusMap.GetBonus(11, 1).Type.Should().Be(BonusType.None,
+            because: "(11,1) doit être une case normale pour ce test");
+        BonusMap.GetBonus(11, 2).Type.Should().Be(BonusType.None,
+            because: "(11,2) doit être une case normale pour ce test");
+
+        var total = _sut.CalculateTotal(placements, board, wildcardPositions: null, isHorizontal: true);
+
+        total.Should().Be(7,
+            because: "mot principal 'AI'(2pts) + croisement 'MA'(3pts) + croisement 'AI'(2pts) = 7pts");
+    }
+
+    [Fact]
+    public void CalculateTotal_NoCrossWords_EqualsSingleWordScore()
+    {
+        // Plateau vide — pas de croisements possibles
+        var board = new BoardState();
+
+        var placements = new Dictionary<Position, char>
+        {
+            [new Position(10, 7)] = 'M',
+            [new Position(10, 8)] = 'A'
+        };
+
+        BonusMap.GetBonus(10, 7).Type.Should().Be(BonusType.None);
+        BonusMap.GetBonus(10, 8).Type.Should().Be(BonusType.None);
+
+        var total    = _sut.CalculateTotal(placements, board, wildcardPositions: null, isHorizontal: true);
+        var mainOnly = _sut.Calculate(placements, board);
+
+        total.Should().Be(mainOnly,
+            because: "sans tuiles adjacentes, CalculateTotal == Calculate (pas de croisements)");
+    }
+
+    [Fact]
+    public void CalculateTotal_Extension_ScoresFullNewWord()
+    {
+        // Plateau : "MA" existant à (10,7-8)
+        var grid = new Tile?[15, 15];
+        grid[10, 7] = new Tile('M'); // 2pts (existant)
+        grid[10, 8] = new Tile('A'); // 1pt  (existant)
+        var board = new BoardState(grid);
+
+        // Joueur pose les lettres du mot complet "MAS" en incluant M et A existants
+        // Seul S(10,9) est nouveau — lettres existantes entrent dans placements pour calculer le mot
+        var placements = new Dictionary<Position, char>
+        {
+            [new Position(10, 7)] = 'M', // existant
+            [new Position(10, 8)] = 'A', // existant
+            [new Position(10, 9)] = 'S'  // nouveau
+        };
+
+        BonusMap.GetBonus(10, 9).Type.Should().Be(BonusType.None,
+            because: "(10,9) doit être une case normale pour ce test");
+
+        var total = _sut.CalculateTotal(placements, board, wildcardPositions: null, isHorizontal: true);
+
+        // M(2,existant,pas de bonus)+A(1,existant,pas de bonus)+S(1,nouveau,case normale) = 4pts
+        total.Should().Be(4,
+            because: "extension 'MAS' : M(2)+A(1) existants sans multiplicateur + S(1) nouveau = 4pts");
+    }
+
+    #endregion
 }
