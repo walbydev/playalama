@@ -70,6 +70,21 @@ public static class GamesCommandEndpoints
         if (string.IsNullOrWhiteSpace(request.HostName))
             return Results.BadRequest(new { error = "hostName is required" });
 
+        // Résolution du bot demandé (AiBotId prioritaire sur EnableAi)
+        var requestedBotId = request.AiBotId?.Trim();
+        var enableAi = request.EnableAi || !string.IsNullOrWhiteSpace(requestedBotId);
+        BotProfile? botProfile = null;
+
+        if (enableAi)
+        {
+            botProfile = !string.IsNullOrWhiteSpace(requestedBotId)
+                ? BotCatalog.Find(requestedBotId)
+                : BotCatalog.Default;
+
+            if (botProfile is null)
+                return Results.BadRequest(new { error = $"unknown bot: '{requestedBotId}'" });
+        }
+
         var gameId = Guid.NewGuid().ToString("N");
         var hostId = context.GetPlayerId() ?? Guid.NewGuid().ToString("N");
         var hostName = request.HostName.Trim();
@@ -78,7 +93,7 @@ public static class GamesCommandEndpoints
                         || !string.IsNullOrWhiteSpace(request.GameName)
                         || request.IsPrivate
                         || request.MaxPlayers is not null
-                        || request.EnableAi;
+                        || enableAi;
 
         var mode = request.Mode ?? OnlineGameMode.Multi;
         if (mode == OnlineGameMode.Multi && request.RackSize <= 0)
@@ -94,7 +109,7 @@ public static class GamesCommandEndpoints
         if (mode == OnlineGameMode.Solo && requestedMaxPlayers > 2)
             return Results.BadRequest(new { error = "solo mode supports at most host + 1 AI" });
 
-        if (mode == OnlineGameMode.Multi && request.EnableAi && requestedMaxPlayers < 2)
+        if (mode == OnlineGameMode.Multi && enableAi && requestedMaxPlayers < 2)
             return Results.BadRequest(new { error = "invalid AI slot configuration" });
 
         // Le bot est injecté comme joueur réel : plus besoin de slot réservé
@@ -147,11 +162,9 @@ public static class GamesCommandEndpoints
             [hostId] = 0
         };
 
-        // Injection du bot si demandée
-        BotProfile? botProfile = null;
-        if (request.EnableAi)
+        // Injection du bot (botProfile déjà résolu en amont)
+        if (botProfile is not null)
         {
-            botProfile = BotCatalog.Default;
             initialPlayers.Add(new OnlinePlayer(botProfile.BotId, botProfile.Name, IsHost: false, IsBot: true));
             playerIndexById[botProfile.BotId] = 1;
         }
@@ -765,7 +778,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static IResult EndGame(HttpContext context, string gameId, EndGameRequest request, GameHubState state)
+    private static async Task<IResult> EndGame(HttpContext context, string gameId, EndGameRequest request, GameHubState state, IPlayerRatingService ratingService)
     {
         // Vérifier l'authentification
         if (!context.IsAuthenticated())
@@ -804,6 +817,69 @@ public static class GamesCommandEndpoints
         state.ReleaseAllPlayerReservations(gameId, releasedPlayerIds);
 
         var endedAt = DateTimeOffset.UtcNow;
+
+        // ── Mise à jour des ratings Elo ───────────────────────────────────────
+        if (game.Queue != RankingQueue.CasualUnranked)
+        {
+            try
+            {
+                var endedState2 = game.Engine.GetGameState();
+                var duration    = (int)(endedAt - game.CreatedAt).TotalSeconds;
+                var rankedNames = endedState2.Players.OrderByDescending(p => p.Score)
+                    .Select(p => p.Name).ToList();
+
+                var gameResults = game.Players
+                    .Where(p => !game.AbandonedPlayerIds.Contains(p.PlayerId))
+                    .Select(player =>
+                    {
+                        // Bots : utiliser leur GUID stable plutôt que "bot-xxx"
+                        var persistentId = player.IsBot
+                            ? (BotCatalog.Find(player.PlayerId)?.PersistentPlayerId ?? player.PlayerId)
+                            : player.PlayerId;
+
+                        var enginePlayer = endedState2.Players
+                            .FirstOrDefault(p => p.Name == player.PlayerName);
+
+                        var rank  = rankedNames.IndexOf(player.PlayerName) + 1;
+                        var score = enginePlayer?.Score ?? 0;
+
+                        var opponentPersistentIds = game.Players
+                            .Where(p => p.PlayerId != player.PlayerId)
+                            .Select(p => p.IsBot
+                                ? (BotCatalog.Find(p.PlayerId)?.PersistentPlayerId ?? p.PlayerId)
+                                : p.PlayerId)
+                            .ToList();
+
+                        return new GameResult(
+                            GameId:     gameId,
+                            PlayerId:   persistentId,
+                            PlayerName: player.PlayerName,
+                            Rank:       rank > 0 ? rank : game.Players.Count,
+                            IsAbandoned: false,
+                            Score:      score,
+                            OpponentIds:     opponentPersistentIds,
+                            OpponentRatings: [],  // le service utilise les ratings en DB
+                            PlayedAt:       endedAt,
+                            DurationSeconds:duration,
+                            Queue:          game.Queue,
+                            GameLevel:      game.GameLevel,
+                            BoardSize:      game.BoardSize,
+                            RackSize:       game.RackSize,
+                            MinWordLength:  game.MinWordLength,
+                            Language:       game.Language,
+                            IsRanked:       true,
+                            TournamentId:   game.TournamentId);
+                    }).ToList();
+
+                await ratingService.UpdateRatingsAsync(gameResults);
+            }
+            catch (Exception ex)
+            {
+                // Dégrade sans bloquer la réponse
+                var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning(ex, "Impossible de mettre à jour les ratings pour la partie {GameId}", gameId);
+            }
+        }
 
         state.Publish(gameId, new ServerEvent("game.ended", new
         {

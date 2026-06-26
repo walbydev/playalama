@@ -17,7 +17,12 @@ public sealed record CreateGameRequest(
     bool IsPrivate = false,
     string? Password = null,
     int? MaxPlayers = null,
-    bool EnableAi = false);
+    bool EnableAi = false,
+    /// <summary>
+    /// Identifiant du bot à utiliser (ex: "bot-karim"). Prioritaire sur <see cref="EnableAi"/>.
+    /// Si null et <see cref="EnableAi"/> est true, le bot par défaut (Karim) est sélectionné.
+    /// </summary>
+    string? AiBotId = null);
 
 public sealed record JoinGameRequest(string PlayerName, string? Password = null);
 

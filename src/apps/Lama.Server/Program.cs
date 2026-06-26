@@ -43,6 +43,9 @@ else
     builder.Services.AddSingleton<IAISuggestionClient, NullAISuggestionClient>();
 }
 
+// ── Rating service (scoped — partage le DbContext) ────────────────────────
+builder.Services.AddScoped<IPlayerRatingService, PlayerRatingService>();
+
 // ── StatusCollector (scoped — partage le DbContext de la requête) ─────────
 builder.Services.AddScoped<IStatusCollector, StatusCollector>();
 builder.Services.AddHttpClient("status-aiserver");
@@ -65,6 +68,47 @@ if (autoMigrate)
     db.Database.Migrate();
 }
 
+// ── Seeding des bots IA ───────────────────────────────────────────────────
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<LamaDbContext>();
+
+    foreach (var bot in BotCatalog.All)
+    {
+        // PlayerEntity
+        if (!await db.Players.AnyAsync(p => p.PlayerId == bot.BotGuid))
+        {
+            db.Players.Add(new Lama.Server.Data.Models.Rating.PlayerEntity
+            {
+                PlayerId  = bot.BotGuid,
+                Username  = bot.Name,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
+        }
+
+        // PlayerRatingEntity (file "open")
+        if (!await db.PlayerRatings.AnyAsync(r => r.PlayerId == bot.BotGuid && r.Queue == "open"))
+        {
+            db.PlayerRatings.Add(new Lama.Server.Data.Models.Rating.PlayerRatingEntity
+            {
+                PlayerId  = bot.BotGuid,
+                Queue     = "open",
+                EloRating = (decimal)bot.InitialElo,
+                UpdatedAt = DateTimeOffset.UtcNow
+            });
+        }
+    }
+
+    await db.SaveChangesAsync();
+}
+catch (Exception ex)
+{
+    // La DB peut être absente en dev — on dégrade sans bloquer le démarrage
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning(ex, "Impossible de seeder les bots IA (DB indisponible ?)");
+}
+
 var allowShutdown = string.Equals(
     Environment.GetEnvironmentVariable("LAMA_SERVER_ALLOW_SHUTDOWN"),
     "true",
@@ -82,6 +126,7 @@ app.MapAuthEndpoints(jwtService);
 
 // Player profile endpoints
 app.MapPlayerEndpoints();
+app.MapBotsEndpoints();
 
 var api = app.MapGroup("/api/v1");
 api.MapGamesReadEndpoints();
