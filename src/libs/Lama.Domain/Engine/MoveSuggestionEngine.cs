@@ -36,7 +36,8 @@ public sealed class MoveSuggestionEngine
         GameState gameState,
         Player currentPlayer,
         int top,
-        MoveSuggestionStrategy strategy)
+        MoveSuggestionStrategy strategy,
+        CancellationToken cancellationToken = default)
     {
         if (top <= 0 || _dictionary.Count == 0)
             return [];
@@ -51,6 +52,9 @@ public sealed class MoveSuggestionEngine
 
         foreach (var rawWord in _dictionary)
         {
+            if (cancellationToken.IsCancellationRequested)
+                break;
+
             var word = rawWord.Trim().ToUpperInvariant();
             if (!IsAsciiWord(word) || word.Length < 2 || word.Length > 15)
                 continue;

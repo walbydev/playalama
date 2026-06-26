@@ -103,6 +103,7 @@ public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int S
 public sealed record WebBoardTile(int Row, int Column, char Letter);
 public sealed record WebPlayResponse(string GameId, string MoveId, int Score);
 public sealed record WebCheckResponse(int Score, string Message);
+public sealed record WebSuggestedMove(string Word, string Position, string Direction, int Score, int Length, double BalancedScore, string Category);
 
 public sealed record WebPlayerProfile(string PlayerId, string Username, string? Email, string? CountryCode, DateTimeOffset CreatedAt);
 

@@ -1,4 +1,5 @@
 using Lama.Contracts;
+using Lama.Domain.Engine;
 using Lama.Server.Data;
 using Lama.Server.Endpoints;
 using Lama.Server.Endpoints.Auth;
@@ -20,6 +21,11 @@ builder.Services.AddSingleton<IGameLanguageProvider>(_ =>
 {
     var basePath = Path.Combine(AppContext.BaseDirectory, "assets", "languages", "fr");
     return new FrenchLanguageProvider(basePath);
+});
+builder.Services.AddSingleton<MoveSuggestionEngine>(provider =>
+{
+    var lang = provider.GetRequiredService<IGameLanguageProvider>();
+    return new MoveSuggestionEngine(lang.GetDictionary(), lang.GetLetterScores());
 });
 builder.Services.AddSingleton<GameHubState>();
 

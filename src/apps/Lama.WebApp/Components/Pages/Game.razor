@@ -263,6 +263,90 @@ else
                                     </button>
                                 </EditForm>
                             </div>
+
+                            @* ── Suggestions (Aide-moi) ── *@
+                            <div class="card suggest-panel">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem">
+                                    <h3 style="margin:0">💡 Aide-moi</h3>
+                                    @if (_vm.SuggestPanelOpen)
+                                    {
+                                        <button class="btn-icon-close" @onclick="() => { _vm.CloseSuggestPanel(); StateHasChanged(); }" aria-label="Fermer">✕</button>
+                                    }
+                                </div>
+
+                                @if (!_vm.SuggestPanelOpen)
+                                {
+                                    <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync"
+                                            disabled="@_vm.IsSuggestLoading" style="width:100%">
+                                        @(_vm.IsSuggestLoading ? "⏳ Calcul en cours…" : "🔍 Suggestions de coups")
+                                    </button>
+                                }
+                                else if (_vm.IsSuggestLoading)
+                                {
+                                    <p class="text-dim text-center" style="font-size:.85rem">⏳ Recherche des meilleurs coups…</p>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(_vm.SuggestError))
+                                {
+                                    <p class="form-error" role="alert">⚠️ @_vm.SuggestError</p>
+                                    <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync" style="width:100%">↺ Réessayer</button>
+                                }
+                                else if (_vm.Suggestions.Count == 0)
+                                {
+                                    <p class="text-dim text-center" style="font-size:.85rem">Aucune suggestion trouvée pour ce rack.</p>
+                                    <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync" style="width:100%">↺ Réessayer</button>
+                                }
+                                else
+                                {
+                                    var scoreList = _vm.Suggestions.Where(s => s.Category == "score").ToList();
+                                    var lengthList = _vm.Suggestions.Where(s => s.Category == "length").ToList();
+
+                                    @if (scoreList.Count > 0)
+                                    {
+                                        <div class="suggest-section">
+                                            <p class="suggest-section-title">📊 Meilleurs scores</p>
+                                            @foreach (var s in scoreList)
+                                            {
+                                                <div class="suggest-item">
+                                                    <div class="suggest-item-info">
+                                                        <span class="suggest-word">@s.Word</span>
+                                                        <span class="suggest-meta">@s.Position @(s.Direction == "H" ? "→" : "↓") · @s.Score pts · @s.Length lettres</span>
+                                                    </div>
+                                                    <button class="btn btn-ghost btn-sm suggest-use-btn"
+                                                            @onclick="() => { _vm.UseSuggestion(s); StateHasChanged(); }"
+                                                            title="Pré-remplir le formulaire avec ce mot">
+                                                        ▶ Utiliser
+                                                    </button>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+
+                                    @if (lengthList.Count > 0)
+                                    {
+                                        <div class="suggest-section">
+                                            <p class="suggest-section-title">📏 Mots les plus longs</p>
+                                            @foreach (var s in lengthList)
+                                            {
+                                                <div class="suggest-item">
+                                                    <div class="suggest-item-info">
+                                                        <span class="suggest-word">@s.Word</span>
+                                                        <span class="suggest-meta">@s.Position @(s.Direction == "H" ? "→" : "↓") · @s.Score pts · @s.Length lettres</span>
+                                                    </div>
+                                                    <button class="btn btn-ghost btn-sm suggest-use-btn"
+                                                            @onclick="() => { _vm.UseSuggestion(s); StateHasChanged(); }"
+                                                            title="Pré-remplir le formulaire avec ce mot">
+                                                        ▶ Utiliser
+                                                    </button>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+
+                                    <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync" style="width:100%; margin-top:.5rem; font-size:.8rem">
+                                        ↺ Nouvelles suggestions
+                                    </button>
+                                }
+                            </div>
                         }
                         else if (!_vm.Snapshot.IsGameOver && !_vm.IsAbandoned)
                         {
@@ -580,6 +664,14 @@ else
         var token = await Auth.GetTokenAsync();
         if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
         await _vm.CheckAsync(Api, token);
+        StateHasChanged();
+    }
+
+    private async Task SuggestMovesAsync()
+    {
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+        await _vm.SuggestAsync(Api, token);
         StateHasChanged();
     }
 

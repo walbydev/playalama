@@ -4,6 +4,7 @@ using Lama.Server.Contracts.Api;
 using Lama.Server.Runtime;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace Lama.Server.Endpoints;
 
@@ -360,7 +361,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static IResult PlayMove(HttpContext context, string gameId, PlayMoveRequest request, GameHubState state)
+    private static async Task<IResult> PlayMove(HttpContext context, string gameId, PlayMoveRequest request, GameHubState state, MoveSuggestionEngine suggestionEngine)
     {
         // Vérifier l'authentification
         if (!context.IsAuthenticated())
@@ -376,6 +377,11 @@ public static class GamesCommandEndpoints
             return Results.BadRequest(new { error = "command is required" });
 
         var normalizedCommand = request.Command.Trim().ToLowerInvariant();
+
+        // play.suggest : lecture rapide de l'état puis calcul hors lock avec timeout
+        if (normalizedCommand == "play.suggest")
+            return await HandleSuggestAsync(gameId, request.PlayerId, request.Payload, game, suggestionEngine);
+
         OnlineMove createdMove;
         int score = 0;
         List<char>? newRack = null;
@@ -482,14 +488,6 @@ public static class GamesCommandEndpoints
                             .ToList();
                         newRack = currentState.Players[playerIndex].Rack.ToList();
                         actionMessage = $"Coup valide : {score} pts";
-                        break;
-
-                    case "play.suggest":
-                        // Stub online: aucune mutation de partie, suggestions vides pour l'instant.
-                        score = 0;
-                        newRack = currentState.Players[playerIndex].Rack.ToList();
-                        suggestions = [];
-                        actionMessage = "Aucune suggestion disponible (stub).";
                         break;
 
                     default:
@@ -809,6 +807,131 @@ public static class GamesCommandEndpoints
         }
 
         return false;
+    }
+
+    private static async Task<IResult> HandleSuggestAsync(
+        string gameId,
+        string playerId,
+        JsonElement? payload,
+        OnlineGame game,
+        MoveSuggestionEngine suggestionEngine)
+    {
+        // Lecture de l'état sous lock bref — on relâche avant le calcul
+        GameState currentState;
+        int playerIndex;
+
+        lock (game)
+        {
+            currentState = game.Engine.GetGameState();
+
+            if (currentState.IsGameOver)
+                return Results.BadRequest(new { error = "game is over" });
+
+            if (game.IsClosed)
+                return Results.BadRequest(new { error = "game is closed" });
+
+            if (game.UsesLobby && !game.HasStarted)
+                return Results.BadRequest(new { error = "game has not started yet" });
+
+            if (!game.PlayerIndexById.TryGetValue(playerId, out playerIndex))
+                return Results.BadRequest(new { error = "unknown playerId" });
+
+            if (currentState.CurrentPlayerIndex != playerIndex)
+            {
+                var expected = game.Players.ElementAtOrDefault(currentState.CurrentPlayerIndex);
+                return Results.BadRequest(new
+                {
+                    error = "not your turn",
+                    expectedPlayerId = expected?.PlayerId,
+                    currentPlayerName = expected?.PlayerName
+                });
+            }
+        }
+
+        var currentPlayer = currentState.Players[playerIndex];
+
+        // Paramètres depuis payload
+        var topPerCategory = 2;
+        if (payload is { } p && p.TryGetProperty("top", out var topProp) && topProp.TryGetInt32(out var t))
+            topPerCategory = Math.Clamp(t, 1, 10);
+
+        // Un seul passage du dictionnaire avec pool généreux, timeout 15 s
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        var poolSize = topPerCategory * 2 + 4;
+
+        IReadOnlyList<MoveSuggestion> pool;
+        try
+        {
+            pool = await Task.Run(
+                () => suggestionEngine.SuggestTopMoves(
+                    currentState, currentPlayer, poolSize, MoveSuggestionStrategy.Balanced, cts.Token),
+                cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            pool = [];
+        }
+
+        // Dédoublonnage par clé (word+position+direction) pour les deux catégories
+        var byScore = pool
+            .OrderByDescending(s => s.Score)
+            .ThenByDescending(s => s.Length)
+            .Take(topPerCategory)
+            .ToList();
+
+        var byLengthKeys = new HashSet<string>(byScore.Select(s => s.Word), StringComparer.OrdinalIgnoreCase);
+        var byLength = pool
+            .OrderByDescending(s => s.Length)
+            .ThenByDescending(s => s.Score)
+            .Where(s => !byLengthKeys.Contains(s.Word))
+            .Take(topPerCategory)
+            .ToList();
+
+        var suggestions = byScore.Select(s => MapSuggestion(s, "score"))
+            .Concat(byLength.Select(s => MapSuggestion(s, "length")))
+            .ToList();
+
+        return Results.Ok(new
+        {
+            gameId,
+            suggestions,
+            message = suggestions.Count > 0
+                ? $"{suggestions.Count} suggestion(s) trouvées."
+                : "Aucune suggestion disponible."
+        });
+    }
+
+    private static object MapSuggestion(MoveSuggestion s, string category)
+    {
+        var ordered = s.Placements.Keys.OrderBy(p => p.Row).ThenBy(p => p.Column).ToList();
+        string position;
+        string direction;
+
+        if (ordered.Count == 0)
+        {
+            position = "H8";
+            direction = "H";
+        }
+        else
+        {
+            var isHorizontal = ordered.Select(p => p.Row).Distinct().Count() == 1;
+            var start = isHorizontal
+                ? ordered.OrderBy(p => p.Column).First()
+                : ordered.OrderBy(p => p.Row).First();
+            position = $"{(char)('A' + start.Column)}{start.Row + 1}";
+            direction = isHorizontal ? "H" : "V";
+        }
+
+        return new
+        {
+            word = s.Word,
+            position,
+            direction,
+            score = s.Score,
+            length = s.Length,
+            balancedScore = s.HeuristicScore,
+            category
+        };
     }
 
     private static string GenerateRandomGameName() => $"lama-{Guid.NewGuid().ToString("N")[..8]}";

@@ -266,6 +266,41 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return new WebCheckResponse(score, message);
     }
 
+    public async Task<List<WebSuggestedMove>> SuggestMovesAsync(string gameId, string playerId, int topPerCategory = 2, string? token = null, CancellationToken cancellationToken = default)
+    {
+        var payload = new { top = topPerCategory };
+        var request = new { playerId, command = "play.suggest", payload };
+        using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games/{gameId}/moves", token);
+        httpRequest.Content = JsonContent.Create(request);
+        var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        var root = doc.RootElement;
+        if (!root.TryGetProperty("suggestions", out var sugsElement) || sugsElement.ValueKind != JsonValueKind.Array)
+            return [];
+
+        var result = new List<WebSuggestedMove>();
+        foreach (var item in sugsElement.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+                continue;
+
+            var word = item.TryGetProperty("word", out var w) ? w.GetString() ?? string.Empty : string.Empty;
+            var position = item.TryGetProperty("position", out var pos) ? pos.GetString() ?? "H8" : "H8";
+            var direction = item.TryGetProperty("direction", out var dir) ? dir.GetString() ?? "H" : "H";
+            var score = item.TryGetProperty("score", out var sc) ? sc.GetInt32() : 0;
+            var length = item.TryGetProperty("length", out var len) ? len.GetInt32() : word.Length;
+            var balanced = item.TryGetProperty("balancedScore", out var bs) ? bs.GetDouble() : 0;
+            var category = item.TryGetProperty("category", out var cat) ? cat.GetString() ?? "score" : "score";
+
+            if (!string.IsNullOrWhiteSpace(word))
+                result.Add(new WebSuggestedMove(word, position, direction, score, length, balanced, category));
+        }
+
+        return result;
+    }
+
     public async Task<bool> AbandonAsync(string gameId, string playerId, string? token = null, CancellationToken cancellationToken = default)
     {
         var request = new { playerId };

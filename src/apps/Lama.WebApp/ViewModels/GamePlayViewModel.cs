@@ -63,6 +63,25 @@ public sealed class GamePlayViewModel
     public string? CheckMessage { get; private set; }
     public void ClearCheck() { CheckScore = null; CheckMessage = null; }
 
+    // ── Suggestions (aide-moi) ───────────────────────────────────────────────
+    public bool IsSuggestLoading { get; private set; }
+    public bool SuggestPanelOpen { get; private set; }
+    public List<WebSuggestedMove> Suggestions { get; } = [];
+    public string? SuggestError { get; private set; }
+
+    public void ToggleSuggestPanel() => SuggestPanelOpen = !SuggestPanelOpen;
+    public void CloseSuggestPanel() { SuggestPanelOpen = false; }
+
+    /// <summary>Pré-remplit le formulaire de jeu avec une suggestion.</summary>
+    public void UseSuggestion(WebSuggestedMove s)
+    {
+        Command = "play.move";
+        Position = s.Position;
+        Word = s.Word;
+        Direction = s.Direction;
+        SuggestPanelOpen = false;
+    }
+
     // Placements provisoires (drag-and-drop)
     public List<PendingPlacement> PendingPlacements { get; } = [];
 
@@ -402,6 +421,24 @@ public sealed class GamePlayViewModel
         }
         catch (Exception ex) { Error = ex.Message; return false; }
         finally { IsLoading = false; }
+    }
+
+    public async Task SuggestAsync(LamaApiClient api, string token)
+    {
+        IsSuggestLoading = true;
+        SuggestError = null;
+        Suggestions.Clear();
+        SuggestPanelOpen = true;
+        try
+        {
+            var results = await api.SuggestMovesAsync(GameId, _myPlayerId ?? string.Empty, topPerCategory: 2, token: token);
+            Suggestions.AddRange(results);
+        }
+        catch (Exception ex)
+        {
+            SuggestError = ex.Message;
+        }
+        finally { IsSuggestLoading = false; }
     }
 
     /// <summary>Vérifie et calcule le score du coup en cours sans le jouer.</summary>

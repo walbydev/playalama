@@ -78,6 +78,42 @@ public sealed class MoveSuggestionEngineTests
         suggestions.Should().BeInDescendingOrder(s => s.HeuristicScore);
     }
 
+    [Fact]
+    public void SuggestTopMoves_WithCancelledToken_ReturnsPartialOrEmpty()
+    {
+        // Dictionnaire volumineux simulé pour forcer l'interruption
+        var bigDict = Enumerable.Range(0, 50_000)
+            .Select(i => $"LA{i:D5}") // mots invalides mais nombreux pour solliciter la boucle
+            .Concat(["LA", "LAMA"])
+            .ToHashSet();
+
+        var engine = new MoveSuggestionEngine(bigDict, Scores);
+        var state = CreateState(['L', 'A', 'M', 'A', 'S', 'T', 'O']);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel(); // annulé immédiatement
+
+        var suggestions = engine.SuggestTopMoves(state, state.Players[0], top: 5, MoveSuggestionStrategy.Score, cts.Token);
+
+        // Le token est annulé avant la boucle → résultat vide ou partiel, mais pas d'exception
+        suggestions.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void SuggestTopMoves_WithDefaultToken_StillWorks()
+    {
+        var engine = new MoveSuggestionEngine(
+            new HashSet<string> { "LA", "LAMA" },
+            Scores);
+
+        var state = CreateState(['L', 'A', 'M', 'A', 'S', 'T', 'O']);
+
+        // Sans token explicite, la signature doit rester backward-compatible
+        var suggestions = engine.SuggestTopMoves(state, state.Players[0], top: 2, MoveSuggestionStrategy.Score);
+
+        suggestions.Should().NotBeEmpty();
+    }
+
     private static GameState CreateState(List<char> rack, BoardState? board = null)
     {
         return new GameState

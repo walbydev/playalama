@@ -98,6 +98,51 @@ public sealed class LamaApiClientTests
         response.HostPlayerId.Should().Be("p1");
     }
 
+    [Fact]
+    public async Task SuggestMovesAsync_Should_Parse_Suggestions_From_Api()
+    {
+        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""
+                {
+                  "gameId": "g1",
+                  "suggestions": [
+                    { "word": "LAMA", "position": "H8", "direction": "H", "score": 12, "length": 4, "balancedScore": 13.5, "category": "score" },
+                    { "word": "MALADE", "position": "G4", "direction": "V", "score": 8, "length": 6, "balancedScore": 9.0, "category": "length" }
+                  ],
+                  "message": "2 suggestion(s) trouvées."
+                }
+                """, Encoding.UTF8, "application/json")
+        });
+
+        var client = CreateClient(handler);
+        var suggestions = await client.SuggestMovesAsync("g1", "p1", topPerCategory: 2, token: null);
+
+        suggestions.Should().HaveCount(2);
+        suggestions[0].Word.Should().Be("LAMA");
+        suggestions[0].Score.Should().Be(12);
+        suggestions[0].Category.Should().Be("score");
+        suggestions[1].Word.Should().Be("MALADE");
+        suggestions[1].Length.Should().Be(6);
+        suggestions[1].Category.Should().Be("length");
+    }
+
+    [Fact]
+    public async Task SuggestMovesAsync_Should_Return_Empty_When_No_Suggestions_In_Response()
+    {
+        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                "{\"gameId\":\"g1\",\"suggestions\":[],\"message\":\"Aucune suggestion.\"}",
+                Encoding.UTF8, "application/json")
+        });
+
+        var client = CreateClient(handler);
+        var suggestions = await client.SuggestMovesAsync("g1", "p1");
+
+        suggestions.Should().BeEmpty();
+    }
+
     private static LamaApiClient CreateClient(HttpMessageHandler handler)
     {
         var httpClient = new HttpClient(handler)
