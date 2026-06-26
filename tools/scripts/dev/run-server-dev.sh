@@ -68,12 +68,12 @@ echo ""
 echo "Configuration: $CONFIG"
 echo ""
 echo "Accès:"
-echo "  HTTP   : http://localhost:5000"
-echo "  Santé  : http://localhost:5000/health"
+echo "  HTTP   : http://localhost:5201"
+echo "  Santé  : http://localhost:5201/health"
 echo ""
 echo "Pour tester:"
-echo '  curl -s http://localhost:5000/health | jq'
-echo '  curl -s -X POST http://localhost:5000/api/v1/games \'
+echo '  curl -s http://localhost:5201/health | jq'
+echo '  curl -s -X POST http://localhost:5201/api/v1/games \'
 echo '    -H "Content-Type: application/json" \'
 echo '    -d '"'"'{"hostName":"Alice","gameLevel":"Standard"}'"'"
 echo ""

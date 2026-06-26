@@ -9,9 +9,11 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddHttpClient<LamaApiClient>(client =>
 {
+    // Priorité : LamaApi:BaseUrl (appsettings) > LAMA_SERVER_URL (config/env) > fallback
     var baseUrl = builder.Configuration["LamaApi:BaseUrl"]
+        ?? builder.Configuration["LAMA_SERVER_URL"]
         ?? Environment.GetEnvironmentVariable("LAMA_SERVER_URL")
-        ?? "http://127.0.0.1:5000";
+        ?? "http://127.0.0.1:5201";
     client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
 });
 

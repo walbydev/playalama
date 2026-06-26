@@ -48,8 +48,8 @@ case "$CMD" in
     docker compose -f "$COMPOSE_FILE" up -d --build
     ok "Stack démarrée"
     echo ""
-    echo "  WebApp      : http://localhost:5050"
-    echo "  Server API  : http://localhost:5000/health"
+    echo "  WebApp      : http://localhost:5202"
+    echo "  Server API  : http://localhost:5201/health"
     ;;
 
   rebuild)
@@ -75,8 +75,8 @@ case "$CMD" in
 
   health)
     info "Vérification des endpoints..."
-    curl -fsS http://localhost:5000/health >/dev/null && ok "lama-server : http://localhost:5000/health" || warn "lama-server non disponible"
-    curl -fsS http://localhost:5050/       >/dev/null && ok "lama-webapp : http://localhost:5050/"      || warn "lama-webapp non disponible"
+    curl -fsS http://localhost:5201/health >/dev/null && ok "lama-server : http://localhost:5201/health" || warn "lama-server non disponible"
+    curl -fsS http://localhost:5202/       >/dev/null && ok "lama-webapp : http://localhost:5202/"      || warn "lama-webapp non disponible"
     ;;
 
   *)

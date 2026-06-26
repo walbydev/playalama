@@ -28,13 +28,13 @@ RUN apt-get update \
 
 COPY --from=builder /publish .
 
-EXPOSE 5001
+EXPOSE 5202
 
-ENV ASPNETCORE_URLS="http://+:5001" \
+ENV ASPNETCORE_URLS="http://+:5202" \
     ASPNETCORE_ENVIRONMENT="Production"
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:5001/ || exit 1
+    CMD curl -f http://localhost:5202/ || exit 1
 
 ENTRYPOINT ["dotnet", "Lama.WebApp.dll"]
 

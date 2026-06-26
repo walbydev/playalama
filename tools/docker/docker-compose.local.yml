@@ -37,19 +37,19 @@ services:
     networks:
       - lama-network
     environment:
-      ASPNETCORE_URLS: "http://+:5050"
+      ASPNETCORE_URLS: "http://+:5202"
       ASPNETCORE_ENVIRONMENT: "Development"
-      LamaApi__BaseUrl: "http://lama-server:5000"
-      LAMA_SERVER_URL: "http://lama-server:5000"
+      LamaApi__BaseUrl: "http://lama-server:5201"
+      LAMA_SERVER_URL: "http://lama-server:5201"
       LAMA_ADMIN_SECRET: "dev_admin_secret_change_in_prod"
     ports:
-      - "5050:5050"
+      - "5202:5202"
     depends_on:
       lama-server:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5050/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5202/"]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -63,13 +63,13 @@ services:
     networks:
       - lama-network
     environment:
-      ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_URLS: "http://+:5201"
       ASPNETCORE_ENVIRONMENT: "Development"
       LAMA_SERVER_ALLOW_SHUTDOWN: "true"
       ConnectionStrings__LamaServerDb: "Host=postgres-lama;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;Ssl Mode=Disable;Application Name=LamaServer.Dev;"
       Database__AutoMigrate: "true"
     ports:
-      - "5000:5000"
+      - "5201:5201"
     volumes:
       - ../../assets/languages:/app/assets/languages:ro
       - ../../logs:/app/logs
@@ -78,7 +78,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5201/health"]
       interval: 10s
       timeout: 3s
       retries: 3

@@ -50,7 +50,7 @@ services:
     networks:
       - prod-internal
     environment:
-      ASPNETCORE_URLS: "http://+:5301"
+      ASPNETCORE_URLS: "http://+:5203"
       ASPNETCORE_ENVIRONMENT: "Production"
       LAMA_AI_LANGUAGE: "fr"
       LAMA_AI_MAX_CONCURRENT: "3"
@@ -58,7 +58,7 @@ services:
       - ./assets/languages:/app/assets/languages:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5301/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5203/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -75,15 +75,15 @@ services:
       - traefik-net
     env_file: .env
     environment:
-      ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_URLS: "http://+:5201"
       ASPNETCORE_ENVIRONMENT: "Production"
       LAMA_SERVER_ALLOW_SHUTDOWN: "false"
       LAMA_RUNTIME_MODE: "online"
-      LAMA_AI_SERVER_URL: "http://lama-aiserver-fr-prod:5301"
+      LAMA_AI_SERVER_URL: "http://lama-aiserver-fr-prod:5203"
       Database__AutoMigrate: "true"
       # LAMA_ADMIN_SECRET is read from .env
     expose:
-      - "5000"
+      - "5201"
     volumes:
       - ./assets/languages:/app/assets/languages:ro
       - lama-logs-prod:/app/logs
@@ -94,7 +94,7 @@ services:
       lama-aiserver-fr-prod:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5201/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -113,7 +113,7 @@ services:
       - "traefik.http.routers.server-prod-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.server-prod-api.service=server-prod-svc"
       - "traefik.http.routers.server-prod-api.priority=20"
-      - "traefik.http.services.server-prod-svc.loadbalancer.server.port=5000"
+      - "traefik.http.services.server-prod-svc.loadbalancer.server.port=5201"
 
   # ─────────────────────────────────────────────────────────
   # WebApp unifiée (portail + jeu) — catch-all /
@@ -126,19 +126,19 @@ services:
       - traefik-net
     env_file: .env
     environment:
-      ASPNETCORE_URLS: "http://+:5001"
+      ASPNETCORE_URLS: "http://+:5202"
       ASPNETCORE_ENVIRONMENT: "Production"
-      LamaApi__BaseUrl: "http://lama-server-prod:5000"
-      LAMA_SERVER_URL: "http://lama-server-prod:5000"
+      LamaApi__BaseUrl: "http://lama-server-prod:5201"
+      LAMA_SERVER_URL: "http://lama-server-prod:5201"
       # LAMA_ADMIN_SECRET is read from .env
     expose:
-      - "5001"
+      - "5202"
     restart: unless-stopped
     depends_on:
       lama-server-prod:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5202/"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -151,7 +151,7 @@ services:
       - "traefik.http.routers.webapp-prod.tls.certresolver=letsencrypt"
       - "traefik.http.routers.webapp-prod.service=webapp-prod-svc"
       - "traefik.http.routers.webapp-prod.priority=10"
-      - "traefik.http.services.webapp-prod-svc.loadbalancer.server.port=5001"
+      - "traefik.http.services.webapp-prod-svc.loadbalancer.server.port=5202"
 
   # ─────────────────────────────────────────────────────────
   # Fichiers statiques de téléchargement (/downloads/)

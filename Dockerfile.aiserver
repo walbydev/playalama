@@ -32,13 +32,13 @@ COPY --from=builder /publish .
 # Copier les assets de langues
 COPY assets/languages ./assets/languages
 
-EXPOSE 5301
+EXPOSE 5203
 
-ENV ASPNETCORE_URLS="http://+:5301" \
+ENV ASPNETCORE_URLS="http://+:5203" \
     LAMA_AI_LANGUAGE="fr" \
     LAMA_AI_MAX_CONCURRENT="3"
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:5301/health || exit 1
+    CMD curl -f http://localhost:5203/health || exit 1
 
 ENTRYPOINT ["dotnet", "Lama.AIServer.dll"]

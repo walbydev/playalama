@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres-lama:
     image: postgres:16-alpine
@@ -32,17 +30,17 @@ services:
     networks:
       - lama-network
     environment:
-      ASPNETCORE_URLS: "http://+:5301"
+      ASPNETCORE_URLS: "http://+:5203"
       ASPNETCORE_ENVIRONMENT: "Production"
       LAMA_AI_LANGUAGE: "fr"
       LAMA_AI_MAX_CONCURRENT: "3"
     ports:
-      - "5301:5301"
+      - "5203:5203"
     volumes:
       - ./assets/languages:/app/assets/languages:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5301/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5203/health"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -56,15 +54,15 @@ services:
     networks:
       - lama-network
     environment:
-      ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_URLS: "http://+:5201"
       ASPNETCORE_ENVIRONMENT: "Development"
       LAMA_SERVER_ALLOW_SHUTDOWN: "false"
-      LAMA_AI_SERVER_URL: "http://lama-aiserver-fr:5301"
+      LAMA_AI_SERVER_URL: "http://lama-aiserver-fr:5203"
       LAMA_ADMIN_SECRET: "dev_admin_secret_change_in_prod"
       ConnectionStrings__LamaServerDb: "Host=postgres-lama;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;Ssl Mode=Disable;Application Name=LamaServer;"
       Database__AutoMigrate: "true"
     ports:
-      - "5000:5000"
+      - "5201:5201"
     volumes:
       - ./assets/languages:/app/assets/languages:ro
       - ./logs:/app/logs
@@ -75,7 +73,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5201/health"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -89,18 +87,19 @@ services:
     networks:
       - lama-network
     environment:
-      ASPNETCORE_URLS: "http://+:5001"
+      ASPNETCORE_URLS: "http://+:5202"
       ASPNETCORE_ENVIRONMENT: "Production"
-      LamaApi__BaseUrl: "http://lama-server:5000"
+      LamaApi__BaseUrl: "http://lama-server:5201"
+      LAMA_SERVER_URL: "http://lama-server:5201"
       LAMA_ADMIN_SECRET: "dev_admin_secret_change_in_prod"
     ports:
-      - "5001:5001"
+      - "5202:5202"
     depends_on:
       lama-server:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5202/"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -141,4 +140,3 @@ networks:
 volumes:
   lama-postgres-data:
     driver: local
-

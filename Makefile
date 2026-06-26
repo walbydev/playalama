@@ -51,7 +51,7 @@ dev-local: ## [Cas 1] Lancer le CLI en mode local (debug terminal)
 dev-server: ## [Cas 2] Serveur Lama en mode Development (hot-reload, swagger)
 	ASPNETCORE_ENVIRONMENT=Development \
 	LAMA_SERVER_ALLOW_SHUTDOWN=true \
-	dotnet run --project $(SERVER_PROJECT) --urls http://127.0.0.1:5000
+	dotnet run --project $(SERVER_PROJECT) --urls http://127.0.0.1:5201
 
 # =============================================================================
 # 3. Exécution locale CLI (sans Rider)
@@ -224,7 +224,20 @@ vps-status: ## [VPS] Afficher l'état des containers sur le VPS
 # Dev-debug : PostgreSQL Docker + les 3 apps natives en parallèle
 # =============================================================================
 .PHONY: dev-debug
-dev-debug: ## [Dev] PostgreSQL Docker + Server (5201) + WebApp (5202) + AIServer (5301) en parallèle
+dev-debug: ## [Dev] PostgreSQL Docker + Server (5201) + WebApp (5202) + AIServer (5203) en parallèle
+	@for port in 5201 5202 5203; do \
+	  if ss -tlnp "sport = :$$port" 2>/dev/null | grep -q LISTEN; then \
+	    container=$$(docker ps --format '{{.Names}}\t{{.Ports}}' 2>/dev/null | awk -v p=":$$port" '$$0 ~ p {print $$1}'); \
+	    if [ -n "$$container" ]; then \
+	      echo "⚠️  Port $$port occupé par le conteneur Docker « $$container »."; \
+	      echo "   → Arrêtez-le avec : docker stop $$container"; \
+	    else \
+	      echo "⚠️  Port $$port déjà utilisé par un autre processus."; \
+	      echo "   → Cherchez avec : ss -tlnp 'sport = :$$port'"; \
+	    fi; \
+	    exit 1; \
+	  fi; \
+	done
 	@echo "→ Démarrage de PostgreSQL..."
 	docker compose -f $(DOCKER_DEBUG) up -d
 	@echo "→ Build de la solution..."
@@ -232,8 +245,8 @@ dev-debug: ## [Dev] PostgreSQL Docker + Server (5201) + WebApp (5202) + AIServer
 	@echo "→ Démarrage des apps (Ctrl+C pour tout arrêter)..."
 	@trap 'kill 0' SIGINT; \
 	LAMA_AI_LANGUAGE=fr LAMA_AI_MAX_CONCURRENT=3 \
-	  dotnet run --project $(AISERVER_PROJECT) --no-build --urls http://127.0.0.1:5301 & \
-	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_ALLOW_SHUTDOWN=true LAMA_AI_SERVER_URL=http://127.0.0.1:5301 \
+	  dotnet run --project $(AISERVER_PROJECT) --no-build --urls http://127.0.0.1:5203 & \
+	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_ALLOW_SHUTDOWN=true LAMA_AI_SERVER_URL=http://127.0.0.1:5203 \
 	  dotnet run --project $(SERVER_PROJECT) --no-build --urls http://127.0.0.1:5201 & \
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 \
 	  dotnet run --project $(WEBAPP_PROJECT) --no-build --urls http://127.0.0.1:5202 & \
@@ -242,6 +255,12 @@ dev-debug: ## [Dev] PostgreSQL Docker + Server (5201) + WebApp (5202) + AIServer
 .PHONY: dev-debug-stop
 dev-debug-stop: ## [Dev] Arrêter PostgreSQL Docker (les apps .NET s'arrêtent avec Ctrl+C)
 	docker compose -f $(DOCKER_DEBUG) down
+
+.PHONY: docker-stop-apps
+docker-stop-apps: ## [Dev] Arrêter les conteneurs Docker qui pourraient bloquer les ports 5201/5202/5203
+	@echo "→ Arrêt des conteneurs app Lama..."
+	-docker stop lama-server lama-webapp lama-aiserver-fr lama-server-dev lama-webapp-dev 2>/dev/null
+	@echo "✓ Ports 5201/5202/5203 libérés."
 
 .PHONY: dev-debug-clean
 dev-debug-clean: ## [Dev] Arrêter PostgreSQL et supprimer les volumes (réinitialiser DB)
@@ -290,7 +309,7 @@ health-debug: ## [Dev] Vérifier les endpoints (Server 5201, WebApp 5202, AIServ
 	@docker exec postgres-lama-debug pg_isready -U lama_dev -d lama_dev >/dev/null 2>&1 && echo "✓ PostgreSQL (5200) OK" || echo "✗ PostgreSQL (5200) KO"
 	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO" || true
 	@curl -fsS http://localhost:5202/ >/dev/null && echo "✓ WebApp (5202) OK" || echo "✗ WebApp (5202) KO" || true
-	@curl -fsS http://localhost:5301/health && echo "✓ AIServer-fr (5301) OK" || echo "✗ AIServer-fr (5301) KO" || true
+	@curl -fsS http://localhost:5203/health && echo "✓ AIServer-fr (5203) OK" || echo "✗ AIServer-fr (5203) KO" || true
 
 # =============================================================================
 # Utilitaires
@@ -318,7 +337,7 @@ docker-local-ps: ## État des conteneurs Docker locaux
 
 .PHONY: health-local
 health-local: ## Vérifier les endpoints locaux
-	@curl -fsS http://localhost:5000/health && echo "✓ Server OK" || echo "✗ Server KO"
+	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO"
 
 .PHONY: web-lobby-smoke
 web-lobby-smoke: ## Smoke test Web lobby (register/create/start/my-games)
