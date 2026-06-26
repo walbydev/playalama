@@ -419,6 +419,7 @@ public sealed class GamePlayViewModel
             await LoadAsync(api);
             return isGameOver;
         }
+        catch (UnauthorizedAccessException) { throw; }   // laisse remonter → redirection login
         catch (Exception ex) { Error = ex.Message; return false; }
         finally { IsLoading = false; }
     }

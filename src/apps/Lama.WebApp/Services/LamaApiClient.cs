@@ -320,6 +320,10 @@ public sealed class LamaApiClient(HttpClient httpClient)
         if (response.IsSuccessStatusCode)
             return;
 
+        // 401 → exception dédiée pour que les composants puissent rediriger vers /login
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            throw new UnauthorizedAccessException("Session expirée. Veuillez vous reconnecter.");
+
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         string message;
 

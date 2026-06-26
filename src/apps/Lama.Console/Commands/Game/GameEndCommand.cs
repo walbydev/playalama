@@ -69,6 +69,10 @@ public sealed class GameEndCommand : ICommand
 
             if (_runtimeMode.IsOnline)
             {
+                // Restaure le token sauvegardé en session (comme GameCreateCommand / GameJoinCommand)
+                var existingSession = _sessionService.LoadSession();
+                _onlineGameGateway.SetAuthToken(existingSession?.AuthToken);
+
                 await _onlineGameGateway.EnsureAuthenticatedAsync(
                     context.PlayerName ?? "Joueur",
                     context.PlayerId,
