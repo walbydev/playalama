@@ -1,0 +1,44 @@
+# Stage 1: Builder
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
+
+WORKDIR /build
+
+# Copier la solution et les fichiers de projet
+COPY *.slnx ./
+COPY Directory.Build.props ./
+COPY Directory.Packages.props ./
+COPY NuGet.config ./
+
+# Copier les projets nécessaires
+COPY src/libs ./src/libs
+COPY src/apps/Lama.AIServer ./src/apps/Lama.AIServer
+
+# Restaurer et publier
+RUN dotnet restore src/apps/Lama.AIServer/Lama.AIServer.csproj
+RUN dotnet publish -c Release -o /publish src/apps/Lama.AIServer/Lama.AIServer.csproj
+
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copier les fichiers publiés
+COPY --from=builder /publish .
+
+# Copier les assets de langues
+COPY assets/languages ./assets/languages
+
+EXPOSE 5301
+
+ENV ASPNETCORE_URLS="http://+:5301" \
+    LAMA_AI_LANGUAGE="fr" \
+    LAMA_AI_MAX_CONCURRENT="3"
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:5301/health || exit 1
+
+ENTRYPOINT ["dotnet", "Lama.AIServer.dll"]

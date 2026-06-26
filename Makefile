@@ -32,6 +32,7 @@ CONSOLE_PROJECT := src/apps/Lama.Console/Lama.Console.csproj
 SERVER_PROJECT  := src/apps/Lama.Server/Lama.Server.csproj
 PORTAL_PROJECT  := src/apps/Lama.WebApp/Lama.WebApp.csproj
 WEBAPP_PROJECT  := src/apps/Lama.WebApp/Lama.WebApp.csproj
+AISERVER_PROJECT := src/apps/Lama.AIServer/Lama.AIServer.csproj
 DOCKER_LOCAL    := tools/docker/docker-compose.local.yml
 DOCKER_OPTION_A := tools/docker/docker-compose.local-debug.yml
 
@@ -246,12 +247,18 @@ option-a-start: ## [OPTION A] Démarrer PostgreSQL en Docker (ports 5200/5201/52
 
 .PHONY: option-a-server
 option-a-server: ## [OPTION A] Lancer Lama.Server natif sur port 5201
+	LAMA_AI_SERVER_URL=http://127.0.0.1:5301 \
 	dotnet run --project $(SERVER_PROJECT) --urls http://127.0.0.1:5201
 
 .PHONY: option-a-webapp
 option-a-webapp: ## [OPTION A] Lancer Lama.WebApp natif sur port 5202
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 \
 	dotnet run --project $(WEBAPP_PROJECT) --urls http://127.0.0.1:5202
+
+.PHONY: option-a-aiserver
+option-a-aiserver: ## [OPTION A] Lancer Lama.AIServer natif sur port 5301 (langue française)
+	LAMA_AI_LANGUAGE=fr LAMA_AI_MAX_CONCURRENT=3 \
+	dotnet run --project $(AISERVER_PROJECT) --urls http://127.0.0.1:5301
 
 .PHONY: option-a-stop
 option-a-stop: ## [OPTION A] Arrêter PostgreSQL Docker
@@ -268,13 +275,16 @@ option-a-logs: ## [OPTION A] Suivre les logs PostgreSQL
 # =============================================================================
 # Dev-debug : build + lancer les 3 apps en parallèle
 # =============================================================================
+## [Dev] Build + lancer Server (5201) + WebApp (5202) + AIServer (5301) en parallèle
 .PHONY: dev-debug
-dev-debug: option-a-start ## [Dev] Build + lancer Server (5201) + WebApp (5202) en parallèle
+dev-debug: option-a-start ## [Dev] Build + lancer Server (5201) + WebApp (5202) + AIServer fr (5301) en parallèle
 	@echo "→ Build de la solution..."
 	dotnet build -c Debug --no-restore
 	@echo "→ Démarrage des apps (Ctrl+C pour tout arrêter)..."
 	@trap 'kill 0' SIGINT; \
-	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_ALLOW_SHUTDOWN=true \
+	LAMA_AI_LANGUAGE=fr LAMA_AI_MAX_CONCURRENT=3 \
+	  dotnet run --project $(AISERVER_PROJECT) --no-build --urls http://127.0.0.1:5301 & \
+	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_ALLOW_SHUTDOWN=true LAMA_AI_SERVER_URL=http://127.0.0.1:5301 \
 	  dotnet run --project $(SERVER_PROJECT) --no-build --urls http://127.0.0.1:5201 & \
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 \
 	  dotnet run --project $(WEBAPP_PROJECT) --no-build --urls http://127.0.0.1:5202 & \
@@ -314,6 +324,7 @@ health-option-a: ## [OPTION A] Vérifier les endpoints (PostgreSQL 5200, Server 
 	@docker exec postgres-lama-option-a pg_isready -U lama_dev -d lama_dev >/dev/null 2>&1 && echo "✓ PostgreSQL (5200) OK" || echo "✗ PostgreSQL (5200) KO"
 	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO" || true
 	@curl -fsS http://localhost:5202/ >/dev/null && echo "✓ WebApp (5202) OK" || echo "✗ WebApp (5202) KO" || true
+	@curl -fsS http://localhost:5301/health && echo "✓ AIServer-fr (5301) OK" || echo "✗ AIServer-fr (5301) KO" || true
 
 .PHONY: web-lobby-smoke
 web-lobby-smoke: ## [OPTION A] Smoke test Web lobby (register/create/start/my-games)

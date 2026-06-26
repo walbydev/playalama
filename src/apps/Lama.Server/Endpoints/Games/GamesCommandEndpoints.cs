@@ -1,7 +1,7 @@
 using Lama.Contracts;
-using Lama.Domain.Engine;
 using Lama.Server.Contracts.Api;
 using Lama.Server.Runtime;
+using Lama.Server.Services;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -361,7 +361,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static async Task<IResult> PlayMove(HttpContext context, string gameId, PlayMoveRequest request, GameHubState state, MoveSuggestionEngine suggestionEngine)
+    private static async Task<IResult> PlayMove(HttpContext context, string gameId, PlayMoveRequest request, GameHubState state, IAISuggestionClient aiClient)
     {
         // Vérifier l'authentification
         if (!context.IsAuthenticated())
@@ -380,7 +380,7 @@ public static class GamesCommandEndpoints
 
         // play.suggest : lecture rapide de l'état puis calcul hors lock avec timeout
         if (normalizedCommand == "play.suggest")
-            return await HandleSuggestAsync(gameId, request.PlayerId, request.Payload, game, suggestionEngine);
+            return await HandleSuggestAsync(gameId, request.PlayerId, request.Payload, game, aiClient);
 
         OnlineMove createdMove;
         int score = 0;
@@ -814,11 +814,12 @@ public static class GamesCommandEndpoints
         string playerId,
         JsonElement? payload,
         OnlineGame game,
-        MoveSuggestionEngine suggestionEngine)
+        IAISuggestionClient aiClient)
     {
         // Lecture de l'état sous lock bref — on relâche avant le calcul
         GameState currentState;
         int playerIndex;
+        bool isFirstMove;
 
         lock (game)
         {
@@ -846,91 +847,56 @@ public static class GamesCommandEndpoints
                     currentPlayerName = expected?.PlayerName
                 });
             }
+
+            // Détecter si c'est le premier coup (aucune tuile sur le plateau)
+            isFirstMove = !currentState.Board.Grid.Cast<object?>().Any(t => t is not null);
         }
 
-        var currentPlayer = currentState.Players[playerIndex];
+        var currentPlayer  = currentState.Players[playerIndex];
 
         // Paramètres depuis payload
         var topPerCategory = 2;
         if (payload is { } p && p.TryGetProperty("top", out var topProp) && topProp.TryGetInt32(out var t))
             topPerCategory = Math.Clamp(t, 1, 10);
 
-        // Un seul passage du dictionnaire avec pool généreux, timeout 15 s
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        var poolSize = topPerCategory * 2 + 4;
+        // Déléguer le calcul à Lama.AIServer (isolation CPU)
+        var suggestions = await aiClient.SuggestAsync(
+            currentPlayer.Rack,
+            currentState.Board,
+            isFirstMove,
+            topPerCategory,
+            timeoutSeconds: 15,
+            ct: CancellationToken.None);
 
-        IReadOnlyList<MoveSuggestion> pool;
-        try
-        {
-            pool = await Task.Run(
-                () => suggestionEngine.SuggestTopMoves(
-                    currentState, currentPlayer, poolSize, MoveSuggestionStrategy.Balanced, cts.Token),
-                cts.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            pool = [];
-        }
-
-        // Dédoublonnage par clé (word+position+direction) pour les deux catégories
-        var byScore = pool
-            .OrderByDescending(s => s.Score)
-            .ThenByDescending(s => s.Length)
-            .Take(topPerCategory)
-            .ToList();
-
-        var byLengthKeys = new HashSet<string>(byScore.Select(s => s.Word), StringComparer.OrdinalIgnoreCase);
-        var byLength = pool
-            .OrderByDescending(s => s.Length)
-            .ThenByDescending(s => s.Score)
-            .Where(s => !byLengthKeys.Contains(s.Word))
-            .Take(topPerCategory)
-            .ToList();
-
-        var suggestions = byScore.Select(s => MapSuggestion(s, "score"))
-            .Concat(byLength.Select(s => MapSuggestion(s, "length")))
+        var mapped = suggestions
+            .Select(s => MapAISuggestion(s))
             .ToList();
 
         return Results.Ok(new
         {
             gameId,
-            suggestions,
-            message = suggestions.Count > 0
-                ? $"{suggestions.Count} suggestion(s) trouvées."
+            suggestions = mapped,
+            message = mapped.Count > 0
+                ? $"{mapped.Count} suggestion(s) trouvées."
                 : "Aucune suggestion disponible."
         });
     }
 
-    private static object MapSuggestion(MoveSuggestion s, string category)
+    private static object MapAISuggestion(AISuggestion s)
     {
-        var ordered = s.Placements.Keys.OrderBy(p => p.Row).ThenBy(p => p.Column).ToList();
-        string position;
-        string direction;
-
-        if (ordered.Count == 0)
-        {
-            position = "H8";
-            direction = "H";
-        }
-        else
-        {
-            var isHorizontal = ordered.Select(p => p.Row).Distinct().Count() == 1;
-            var start = isHorizontal
-                ? ordered.OrderBy(p => p.Column).First()
-                : ordered.OrderBy(p => p.Row).First();
-            position = $"{(char)('A' + start.Column)}{start.Row + 1}";
-            direction = isHorizontal ? "H" : "V";
-        }
+        var col       = (char)('A' + s.StartCol);
+        var row       = s.StartRow + 1;
+        var position  = $"{col}{row}";
+        var direction = s.IsHorizontal ? "H" : "V";
 
         return new
         {
-            word = s.Word,
+            word      = s.Word,
             position,
             direction,
-            score = s.Score,
-            length = s.Length,
-            balancedScore = s.HeuristicScore,
-            category
+            score     = s.Score,
+            length    = s.Length,
+            category  = s.Category
         };
     }
 

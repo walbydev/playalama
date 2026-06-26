@@ -3,6 +3,7 @@
     <Project Path="src/apps/Lama.Console/Lama.Console.csproj" />
     <Project Path="src/apps/Lama.Server/Lama.Server.csproj" />
     <Project Path="src/apps/Lama.WebApp/Lama.WebApp.csproj" />
+    <Project Path="src/apps/Lama.AIServer/Lama.AIServer.csproj" />
   </Folder>
   <Folder Name="/Libraries/">
     <File Path="Directory.Build.props" />
@@ -20,6 +21,7 @@
     <Project Path="tests/Lama.Infrastructure.UnitTests/Lama.Infrastructure.UnitTests.csproj" />
     <Project Path="tests/Lama.Languages.fr.UnitTests/Lama.Languages.fr.UnitTests.csproj" />
     <Project Path="tests/Lama.WebApp.UnitTests/Lama.WebApp.UnitTests.csproj" />
+    <Project Path="tests/Lama.Server.UnitTests/Lama.Server.UnitTests.csproj" />
   </Folder>
   <Folder Name="/Tools/">
     <File Path="tools\distribution\README.txt" />

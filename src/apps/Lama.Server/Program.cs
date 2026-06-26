@@ -1,11 +1,11 @@
 using Lama.Contracts;
-using Lama.Domain.Engine;
 using Lama.Server.Data;
 using Lama.Server.Endpoints;
 using Lama.Server.Endpoints.Auth;
 using Lama.Server.Endpoints.Players;
 using Lama.Server.Runtime;
 using Lama.Server.Security;
+using Lama.Server.Services;
 using Lama.Languages.fr;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,12 +22,24 @@ builder.Services.AddSingleton<IGameLanguageProvider>(_ =>
     var basePath = Path.Combine(AppContext.BaseDirectory, "assets", "languages", "fr");
     return new FrenchLanguageProvider(basePath);
 });
-builder.Services.AddSingleton<MoveSuggestionEngine>(provider =>
-{
-    var lang = provider.GetRequiredService<IGameLanguageProvider>();
-    return new MoveSuggestionEngine(lang.GetDictionary(), lang.GetLetterScores());
-});
 builder.Services.AddSingleton<GameHubState>();
+
+// ── Client IA (Lama.AIServer) ─────────────────────────────────────────────
+var aiServerUrl = Environment.GetEnvironmentVariable("LAMA_AI_SERVER_URL")
+               ?? builder.Configuration["LAMA_AI_SERVER_URL"];
+
+if (!string.IsNullOrWhiteSpace(aiServerUrl))
+{
+    builder.Services.AddHttpClient<IAISuggestionClient, HttpAISuggestionClient>(client =>
+    {
+        client.BaseAddress = new Uri(aiServerUrl);
+        client.Timeout     = TimeSpan.FromSeconds(30); // garde-fou global
+    });
+}
+else
+{
+    builder.Services.AddSingleton<IAISuggestionClient, NullAISuggestionClient>();
+}
 
 // JWT Configuration
 var jwtSecret = builder.Configuration["Jwt:Secret"]

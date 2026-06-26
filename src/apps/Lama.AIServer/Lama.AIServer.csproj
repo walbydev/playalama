@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <AssemblyName>Lama.AIServer</AssemblyName>
+    <RootNamespace>Lama.AIServer</RootNamespace>
+    <UseAppHost>true</UseAppHost>
+    <SelfContained>false</SelfContained>
+    <Description>LAMA AI Server — Service de suggestion de coups, isolé par langue</Description>
+    <Product>LAMA AIServer</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\libs\Lama.Contracts\Lama.Contracts.csproj" />
+    <ProjectReference Include="..\..\libs\Lama.Domain\Lama.Domain.csproj" />
+    <ProjectReference Include="..\..\libs\Lama.Languages.fr\Lama.Languages.fr.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -24,6 +24,30 @@ services:
       retries: 10
     restart: unless-stopped
 
+  lama-aiserver-fr:
+    build:
+      context: .
+      dockerfile: Dockerfile.aiserver
+    container_name: lama-aiserver-fr
+    networks:
+      - lama-network
+    environment:
+      ASPNETCORE_URLS: "http://+:5301"
+      ASPNETCORE_ENVIRONMENT: "Production"
+      LAMA_AI_LANGUAGE: "fr"
+      LAMA_AI_MAX_CONCURRENT: "3"
+    ports:
+      - "5301:5301"
+    volumes:
+      - ./assets/languages:/app/assets/languages:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5301/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+
   lama-server:
     build:
       context: .
@@ -35,6 +59,7 @@ services:
       ASPNETCORE_URLS: "http://+:5000"
       ASPNETCORE_ENVIRONMENT: "Development"
       LAMA_SERVER_ALLOW_SHUTDOWN: "false"
+      LAMA_AI_SERVER_URL: "http://lama-aiserver-fr:5301"
       ConnectionStrings__LamaServerDb: "Host=postgres-lama;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;Ssl Mode=Disable;Application Name=LamaServer;"
       Database__AutoMigrate: "true"
     ports:
@@ -44,6 +69,8 @@ services:
       - ./logs:/app/logs
     depends_on:
       postgres-lama:
+        condition: service_healthy
+      lama-aiserver-fr:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
