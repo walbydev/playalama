@@ -25,18 +25,6 @@ else
     <div class="section game-page" style="padding-top: calc(var(--nav-h) + 1rem)">
         <div class="container">
 
-            @if (!string.IsNullOrWhiteSpace(_vm.Error))
-            {
-                <p class="form-error mb-3" role="alert">@_vm.Error</p>
-            }
-            @if (!string.IsNullOrWhiteSpace(_abandonError))
-            {
-                <p class="form-error mb-3" role="alert">
-                    ⚠️ @_abandonError
-                    <button class="abandon-notice-close" @onclick="() => _abandonError = null" aria-label="Fermer">✕</button>
-                </p>
-            }
-
             @if (_vm.Snapshot is not null)
             {
                 @* ── En-tête principal : titre + sac + actions ── *@
@@ -132,23 +120,6 @@ else
                     }
                 </div>
 
-                @if (_turnNotice is not null)
-                {
-                    <div class="abandon-notice" role="status" aria-live="polite">
-                        🔔 @_turnNotice
-                        <button class="abandon-notice-close" @onclick="() => _turnNotice = null" aria-label="Fermer">✕</button>
-                    </div>
-                }
-
-                @* ── Notification abandon ── *@
-                @if (_abandonNotice is not null)
-                {
-                    <div class="abandon-notice" role="alert" aria-live="polite">
-                        ⚠️ @_abandonNotice
-                        <button class="abandon-notice-close" @onclick="() => _abandonNotice = null" aria-label="Fermer">✕</button>
-                    </div>
-                }
-
                 @* ── Bandeau spectateur ── *@
                 @if (_vm.IsAbandoned && !_vm.Snapshot!.IsGameOver)
                 {
@@ -221,20 +192,6 @@ else
                                 {
                                     <p class="form-error mt-1" style="font-size:.8rem">Assignez une lettre à chaque joker (★ → clic)</p>
                                 }
-                                @if (_vm.CheckScore.HasValue)
-                                {
-                                    <div class="move-check-inline" role="status" aria-live="polite">
-                                        ✅ @_vm.CheckMessage
-                                        <button class="btn-icon-close" @onclick="() => { _vm.ClearCheck(); StateHasChanged(); }" aria-label="Fermer">✕</button>
-                                    </div>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(_vm.Error))
-                                {
-                                    <div class="move-error-inline" role="alert" aria-live="assertive">
-                                        ⚠️ @_vm.Error
-                                        <button class="btn-icon-close" @onclick="() => { _vm.ClearError(); StateHasChanged(); }" aria-label="Fermer">✕</button>
-                                    </div>
-                                }
                             </div>
                         }
                     </div>
@@ -249,6 +206,49 @@ else
                                         CurrentPlayerIndex="_vm.Snapshot.CurrentPlayerIndex"
                                         MyPlayerId="@_myPlayerId"
                                         AbandonedPlayerIds="_vm.Snapshot.AbandonedPlayerIds" />
+                        </div>
+
+                        <div class="card game-messages-panel">
+                            <h3 class="mb-2">Messages</h3>
+                            @if (_turnNotice is not null)
+                            {
+                                <div class="abandon-notice" role="status" aria-live="polite">
+                                    🔔 @_turnNotice
+                                    <button class="abandon-notice-close" @onclick="() => _turnNotice = null" aria-label="Fermer">✕</button>
+                                </div>
+                            }
+                            @if (_abandonNotice is not null)
+                            {
+                                <div class="abandon-notice" role="alert" aria-live="polite">
+                                    ⚠️ @_abandonNotice
+                                    <button class="abandon-notice-close" @onclick="() => _abandonNotice = null" aria-label="Fermer">✕</button>
+                                </div>
+                            }
+                            @if (_vm.CheckScore.HasValue)
+                            {
+                                <div class="move-check-inline" role="status" aria-live="polite">
+                                    ✅ @_vm.CheckMessage
+                                    <button class="btn-icon-close" @onclick="() => { _vm.ClearCheck(); StateHasChanged(); }" aria-label="Fermer">✕</button>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_vm.Error))
+                            {
+                                <div class="move-error-inline" role="alert" aria-live="assertive">
+                                    ⚠️ @_vm.Error
+                                    <button class="btn-icon-close" @onclick="() => { _vm.ClearError(); StateHasChanged(); }" aria-label="Fermer">✕</button>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_abandonError))
+                            {
+                                <div class="move-error-inline" role="alert" aria-live="assertive">
+                                    ⚠️ @_abandonError
+                                    <button class="btn-icon-close" @onclick="() => _abandonError = null" aria-label="Fermer">✕</button>
+                                </div>
+                            }
+                            @if (!HasAnyUiMessages)
+                            {
+                                <p class="text-dim" style="font-size:.85rem; margin:0">Aucun message pour le moment.</p>
+                            }
                         </div>
 
                         @* Panneau d'action (masqué en mode spectateur) *@
@@ -506,9 +506,7 @@ else
     private string? _abandonError; // erreur d'abandon persistante (non effacée par le polling)
     private string? _turnNotice;
     private DateTimeOffset _turnNoticeUntilUtc;
-    private int _lastSeenTurnNumber = -1;
-    private int _lastSeenCurrentPlayerIndex = -1;
-    private bool _turnTrackingInitialized;
+    private string? _lastAnnouncedMoveId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -551,31 +549,26 @@ else
 
         if (_vm.Snapshot is not null)
         {
-            if (!_turnTrackingInitialized)
+            if (_lastAnnouncedMoveId is null)
             {
-                _lastSeenTurnNumber = _vm.Snapshot.TurnNumber;
-                _lastSeenCurrentPlayerIndex = _vm.Snapshot.CurrentPlayerIndex;
-                _turnTrackingInitialized = true;
+                _lastAnnouncedMoveId = _vm.Snapshot.LastMoveId;
             }
-            else
+            else if (!string.IsNullOrWhiteSpace(_vm.Snapshot.LastMoveId)
+                     && !string.Equals(_vm.Snapshot.LastMoveId, _lastAnnouncedMoveId, StringComparison.Ordinal)
+                     && !_vm.Snapshot.IsGameOver)
             {
-                var turnChanged = _vm.Snapshot.TurnNumber != _lastSeenTurnNumber
-                                  || _vm.Snapshot.CurrentPlayerIndex != _lastSeenCurrentPlayerIndex;
-                if (turnChanged && !_vm.Snapshot.IsGameOver)
+                var justPlayed = _vm.Snapshot.LastMovePlayerName;
+                var nextPlayer = GetPlayerName(_vm.Snapshot.Players, _vm.Snapshot.CurrentPlayerIndex);
+                if (!string.IsNullOrWhiteSpace(justPlayed) && !string.IsNullOrWhiteSpace(nextPlayer))
                 {
-                    var justPlayed = GetPlayerName(_vm.Snapshot.Players, _lastSeenCurrentPlayerIndex);
-                    var nextPlayer = GetPlayerName(_vm.Snapshot.Players, _vm.Snapshot.CurrentPlayerIndex);
-                    if (!string.IsNullOrWhiteSpace(justPlayed) && !string.IsNullOrWhiteSpace(nextPlayer))
-                    {
-                        ShowTurnNotice(
-                            string.Equals(justPlayed, nextPlayer, StringComparison.Ordinal)
-                                ? $"{justPlayed} vient de jouer. {nextPlayer} rejoue."
-                                : $"{justPlayed} vient de jouer. C'est le tour de {nextPlayer}.");
-                    }
+                    var turnLabel = _vm.Snapshot.LastMoveTurnNumber is { } n ? $"Tour {n} — " : string.Empty;
+                    ShowTurnNotice(
+                        string.Equals(justPlayed, nextPlayer, StringComparison.Ordinal)
+                            ? $"{turnLabel}{justPlayed} vient de jouer. {nextPlayer} rejoue."
+                            : $"{turnLabel}{justPlayed} vient de jouer. C'est le tour de {nextPlayer}.");
                 }
 
-                _lastSeenTurnNumber = _vm.Snapshot.TurnNumber;
-                _lastSeenCurrentPlayerIndex = _vm.Snapshot.CurrentPlayerIndex;
+                _lastAnnouncedMoveId = _vm.Snapshot.LastMoveId;
             }
         }
 
@@ -606,6 +599,13 @@ else
         _turnNotice = message;
         _turnNoticeUntilUtc = DateTimeOffset.UtcNow.AddSeconds(5);
     }
+
+    private bool HasAnyUiMessages =>
+        _turnNotice is not null
+        || _abandonNotice is not null
+        || _vm.CheckScore.HasValue
+        || !string.IsNullOrWhiteSpace(_vm.Error)
+        || !string.IsNullOrWhiteSpace(_abandonError);
 
     private static string? GetPlayerName(IReadOnlyList<WebSnapshotPlayer> players, int index) =>
         index >= 0 && index < players.Count ? players[index].PlayerName : null;

@@ -196,6 +196,9 @@ public sealed class LamaApiClient(HttpClient httpClient)
                 x.PlayerId, x.PlayerName, x.Score, x.IsHost,
                 x.Rack ?? [], x.RackCount, x.IsBot)).ToList(),
             payload.Board.Select(x => new WebBoardTile(x.Row, x.Column, x.Letter)).ToList(),
+            payload.LastMoveId,
+            payload.LastMovePlayerName,
+            payload.LastMoveTurnNumber,
             payload.AbandonedPlayerIds ?? [],
             payload.EndReason,
             payload.AbandonedByName);
@@ -416,6 +419,8 @@ public sealed class LamaApiClient(HttpClient httpClient)
         string Id, string? GameName, bool IsGameOver, bool HasStarted, bool UsesLobby, bool IsClosed,
         int CurrentPlayerIndex, int TurnNumber, int BagCount, int MaxPlayers, int BoardSize, int RackSize, string? Language,
         List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board,
+        string? LastMoveId,
+        string? LastMovePlayerName, int? LastMoveTurnNumber,
         List<string>? AbandonedPlayerIds, string? EndReason, string? AbandonedByName);
     private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost, List<char>? Rack, int RackCount, bool IsBot = false);
     private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);

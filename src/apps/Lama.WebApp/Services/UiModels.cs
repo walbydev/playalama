@@ -97,6 +97,9 @@ public sealed record WebGameSnapshot(
     string Language,
     IReadOnlyList<WebSnapshotPlayer> Players,
     IReadOnlyList<WebBoardTile> Board,
+    string? LastMoveId,
+    string? LastMovePlayerName,
+    int? LastMoveTurnNumber,
     IReadOnlyList<string> AbandonedPlayerIds,
     string? EndReason,
     string? AbandonedByName);

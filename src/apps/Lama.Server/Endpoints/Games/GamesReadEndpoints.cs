@@ -154,6 +154,7 @@ public static class GamesReadEndpoints
             lock (game)
             {
                 var stateSnapshot = game.Engine.GetGameState();
+                var lastMove = game.Moves.LastOrDefault();
                 return Results.Ok(new
                 {
                     game.Id,
@@ -193,6 +194,9 @@ public static class GamesReadEndpoints
                     }),
                     board = GamesEndpointParsers.CaptureBoard(stateSnapshot.Board),
                     moves = game.Moves,
+                    lastMoveId = lastMove?.MoveId,
+                    lastMovePlayerName = lastMove?.PlayerName,
+                    lastMoveTurnNumber = lastMove?.TurnNumber,
                     source = "memory"
                 });
             }
@@ -215,6 +219,9 @@ public static class GamesReadEndpoints
 
         var persistedPlayers = new List<object>();
         var persistedMoves = new List<object>();
+        string? persistedLastMoveId = null;
+        string? persistedLastMovePlayerName = null;
+        int? persistedLastMoveTurnNumber = null;
         IReadOnlyList<OnlineBoardTile> persistedBoard = [];
         var lastTurnNumber = 0;
 
@@ -270,6 +277,15 @@ public static class GamesReadEndpoints
                 })
                 .ToList();
 
+            var lastDbTurn = dbTurns.LastOrDefault();
+            if (lastDbTurn is not null)
+            {
+                persistedLastMoveId = lastDbTurn.TurnId.ToString("N");
+                persistedLastMoveTurnNumber = lastDbTurn.TurnNumber;
+                if (playersBySessionId.TryGetValue(lastDbTurn.PlayerSessionId, out var lastOwner))
+                    persistedLastMovePlayerName = lastOwner.Nickname;
+            }
+
             var dbBoardState = await db.SessionBoardStates
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.GameId == gameGuid, cancellationToken);
@@ -311,6 +327,9 @@ public static class GamesReadEndpoints
             players = persistedPlayers,
             board = persistedBoard,
             moves = persistedMoves,
+            lastMoveId = persistedLastMoveId,
+            lastMovePlayerName = persistedLastMovePlayerName,
+            lastMoveTurnNumber = persistedLastMoveTurnNumber,
             source = "database"
         });
     }
