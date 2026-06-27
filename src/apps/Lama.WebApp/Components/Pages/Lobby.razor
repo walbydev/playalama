@@ -100,15 +100,29 @@
                 @(_busy ? "Démarrage…" : "▶ Démarrer la partie")
             </button>
 
-            <div style="display:flex; align-items:center; gap:.75rem; margin-top:.25rem">
-                <button class="btn btn-force btn-sm"
-                        @onclick="ForceStartAsync"
-                        disabled="@(_busy)"
-                        title="Force le démarrage avec 1 seul joueur — mode test uniquement">
-                    ⚡ Forcer le démarrage
-                </button>
-                <span class="text-dim" style="font-size:.75rem">mode test — 1 joueur</span>
-            </div>
+            @if (!_vm.HasStarted)
+            {
+                @if (_confirmCancel)
+                {
+                    <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-top:.25rem">
+                        <span class="text-dim" style="font-size:.85rem">Annuler définitivement cette partie ?</span>
+                        <button class="btn btn-danger btn-sm" @onclick="CancelGameAsync" disabled="@_busy">
+                            ✔ Oui, abandonner
+                        </button>
+                        <button class="btn btn-ghost btn-sm" @onclick="() => _confirmCancel = false" disabled="@_busy">
+                            Annuler
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn btn-ghost btn-sm" style="color:var(--danger,#e55)"
+                            @onclick="() => _confirmCancel = true" disabled="@_busy"
+                            title="Ferme la partie pour tout le monde et revient à la liste des parties">
+                        🏳 Abandonner la création de la partie
+                    </button>
+                }
+            }
         </div>
     }
     else if (_vm.IsParticipant && !_vm.IsHost)
@@ -125,6 +139,7 @@
     private bool _busy;
     private bool _codeCopied;
     private bool _linkCopied;
+    private bool _confirmCancel;
     private PeriodicTimer? _timer;
     private CancellationTokenSource? _pollingCts;
     private string? _myPlayerId;
@@ -189,17 +204,21 @@
         _busy = false;
     }
 
-    private async Task ForceStartAsync()
+    private async Task CancelGameAsync()
     {
         _busy = true;
         var token = await Auth.GetTokenAsync();
         if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
-        await _vm.ForceStartAsync(Api, token);
-        if (string.IsNullOrWhiteSpace(_vm.Error))
+
+        var cancelled = await _vm.CancelGameAsync(Api, token);
+        if (cancelled)
         {
-            var pid = _myPlayerId is not null ? $"?playerId={Uri.EscapeDataString(_myPlayerId)}" : string.Empty;
-            Navigation.NavigateTo($"/games/{GameId}{pid}");
+            await (_pollingCts?.CancelAsync() ?? Task.CompletedTask);
+            Navigation.NavigateTo("/games");
+            return;
         }
+
+        _confirmCancel = false;
         _busy = false;
     }
 

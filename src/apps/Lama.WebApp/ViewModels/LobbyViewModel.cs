@@ -27,8 +27,6 @@ public sealed class LobbyViewModel
                             && IsHost
                             && Snapshot.Players.Count >= 2;
 
-    public bool CanForceStart => Snapshot is { HasStarted: false, UsesLobby: true } && IsHost;
-
     public bool HasStarted => Snapshot?.HasStarted ?? false;
 
     public void Initialize(string gameId, string? myPlayerId)
@@ -60,12 +58,26 @@ public sealed class LobbyViewModel
         finally { IsLoading = false; }
     }
 
-    public async Task ForceStartAsync(LamaApiClient api, string token)
+    public async Task<bool> CancelGameAsync(LamaApiClient api, string token)
     {
+        if (string.IsNullOrWhiteSpace(_myPlayerId))
+        {
+            Error = "Joueur inconnu.";
+            return false;
+        }
+
         IsLoading = true;
         Error = null;
-        try { await api.ForceStartGameAsync(GameId, token); }
-        catch (Exception ex) { Error = ex.Message; }
+        try
+        {
+            await api.AbandonAsync(GameId, _myPlayerId, token);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+            return false;
+        }
         finally { IsLoading = false; }
     }
 }

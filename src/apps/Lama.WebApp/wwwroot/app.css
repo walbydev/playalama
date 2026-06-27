@@ -1381,6 +1381,16 @@ footer {
 }
 .action-panel .form-field select { cursor: pointer; }
 
+#game-mode,
+#game-mode option {
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+#game-mode {
+    padding-top: .8rem;
+    padding-bottom: .8rem;
+}
+
 #bot-select {
     font-size: 1.2rem;
 }
@@ -1457,20 +1467,6 @@ footer {
     font-weight: 700;
     flex-shrink: 0;
 }
-
-.btn-force {
-    background: #d97706;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    border-radius: var(--radius-sm);
-    padding: .55rem 1rem;
-    font-weight: 600;
-    font-size: .9rem;
-    transition: background .15s;
-}
-.btn-force:hover:not(:disabled) { background: #b45309; }
-.btn-force:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── Utilitaires game ── */
 .fw-600 { font-weight: 600; }

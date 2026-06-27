@@ -162,14 +162,6 @@ public sealed class LamaApiClient(HttpClient httpClient)
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
-    public async Task ForceStartGameAsync(string gameId, string? token = null, CancellationToken cancellationToken = default)
-    {
-        using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games/{gameId}/start", token);
-        httpRequest.Content = JsonContent.Create(new { playerId = (string?)null, force = true });
-        var response = await httpClient.SendAsync(httpRequest, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-    }
-
     public async Task<WebGameSnapshot> GetGameAsync(string gameId, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.GetAsync($"{ApiBase}/games/{gameId}", cancellationToken);
