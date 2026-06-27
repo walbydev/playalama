@@ -239,12 +239,11 @@
         try
         {
             var token = await Auth.GetTokenAsync();
-            // Connexion dev rapide si pas encore connecté
             if (string.IsNullOrWhiteSpace(token))
             {
-                var (ok, err) = await Auth.DevLoginAsync(_joinName.Trim());
-                if (!ok) { _joinError = err ?? "Connexion échouée."; _busy = false; return; }
-                token = await Auth.GetTokenAsync();
+                var returnUrl = $"/games/{GameId}/lobby";
+                Navigation.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
+                return;
             }
 
             var joined = await Api.JoinGameAsync(GameId, _joinName.Trim(), password: null, token);

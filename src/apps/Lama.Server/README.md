@@ -52,9 +52,9 @@ dotnet tool run dotnet-ef database update \
 ## Exemple rapide
 
 ```bash
-curl -s http://localhost:5000/health
+curl -s http://localhost:5201/health
 
-curl -s -X POST http://localhost:5000/api/v1/games \
+curl -s -X POST http://localhost:5201/api/v1/games \
   -H "Content-Type: application/json" \
   -d '{"hostName":"Alice","gameLevel":"Standard"}'
 ```
@@ -64,4 +64,3 @@ curl -s -X POST http://localhost:5000/api/v1/games \
 - Phase 1 EF Core activee: `LamaDbContext` + provider PostgreSQL + endpoint `GET /health/db`.
 - Les endpoints gameplay restent en memoire dans `GameHubState` pour cette etape.
 - Le mode local CLI reste disponible et isole des parties/classements en ligne.
-

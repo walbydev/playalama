@@ -69,21 +69,6 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
         }
     }
 
-    public async Task<(bool Success, string? Error)> DevLoginAsync(string playerName)
-    {
-        try
-        {
-            var result = await api.DevLoginAsync(playerName);
-            await PersistSessionAsync(result);
-            _currentUser = new CurrentUser(result.PlayerId, result.PlayerName, result.Email);
-            return (true, null);
-        }
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
-        }
-    }
-
     public async Task LogoutAsync()
     {
         _currentUser = null;

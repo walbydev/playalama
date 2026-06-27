@@ -4,17 +4,16 @@
     <option name="PROJECT_PATH" value="$PROJECT_DIR$/src/Server/Lama.Server/Lama.Server.csproj" />
     <option name="TARGET_FRAMEWORK" value="" />
     <option name="EXE_PATH" value="" />
-    <option name="PROGRAM_PARAMETERS" value="--urls http://127.0.0.1:5000" />
+    <option name="PROGRAM_PARAMETERS" value="--urls http://127.0.0.1:5201" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <option name="PASS_PARENT_ENVS" value="true" />
     <option name="USE_EXTERNAL_CONSOLE" value="false" />
     <option name="NO_BUILD" value="false" />
     <envs>
       <env name="ASPNETCORE_ENVIRONMENT" value="Development" />
-      <env name="ASPNETCORE_URLS" value="http://127.0.0.1:5000" />
+      <env name="ASPNETCORE_URLS" value="http://127.0.0.1:5201" />
       <env name="LAMA_SERVER_ALLOW_SHUTDOWN" value="true" />
     </envs>
     <method v="2" />
   </configuration>
 </component>
-

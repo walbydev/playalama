@@ -147,7 +147,7 @@ public sealed class LamaApiClientTests
     {
         var httpClient = new HttpClient(handler)
         {
-            BaseAddress = new Uri("http://localhost:5000")
+            BaseAddress = new Uri("http://localhost:5201")
         };
 
         return new LamaApiClient(httpClient);
@@ -161,4 +161,3 @@ public sealed class LamaApiClientTests
         }
     }
 }
-

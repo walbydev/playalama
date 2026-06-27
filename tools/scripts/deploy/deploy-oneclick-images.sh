@@ -253,7 +253,7 @@ fi
 # ── Health checks ─────────────────────────────────────────────────────────────
 if [[ "$SKIP_HEALTHCHECK" != "true" ]]; then
   log "Health checks..."
-  run_cmd "ssh ${SSH_ARGS[*]} '$REMOTE_TARGET' 'docker exec lama-server-prod curl -fsS http://127.0.0.1:5000/health >/dev/null'"
+  run_cmd "ssh ${SSH_ARGS[*]} '$REMOTE_TARGET' 'docker exec lama-server-prod curl -fsS http://127.0.0.1:5201/health >/dev/null'"
   run_cmd "ssh ${SSH_ARGS[*]} '$REMOTE_TARGET' 'docker exec lama-webapp-prod curl -fsS --max-time 10 http://127.0.0.1:5001/ >/dev/null'"
   if [[ "$SKIP_CERTBOT" != "true" ]]; then
     run_cmd "curl -fsS --max-time 15 https://playalama.online/ >/dev/null"

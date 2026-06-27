@@ -248,7 +248,7 @@ dev-debug: ## [Dev] PostgreSQL Docker + Server (5201) + WebApp (5202) + AIServer
 	  dotnet run --project $(AISERVER_PROJECT) --no-build --urls http://127.0.0.1:5203 & \
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_ALLOW_SHUTDOWN=true LAMA_AI_SERVER_URL=http://127.0.0.1:5203 \
 	  dotnet run --project $(SERVER_PROJECT) --no-build --urls http://127.0.0.1:5201 & \
-	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 \
+	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 LamaApi__BaseUrl=http://127.0.0.1:5201 \
 	  dotnet run --project $(WEBAPP_PROJECT) --no-build --urls http://127.0.0.1:5202 & \
 	wait
 
@@ -352,4 +352,3 @@ help: ## Afficher cette aide
 	  awk 'BEGIN {FS = ":.*##"}; {printf "  \033[36m%-28s\033[0m %s\n", $$1, $$2}'
 
 .DEFAULT_GOAL := help
-

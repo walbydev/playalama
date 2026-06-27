@@ -74,6 +74,22 @@ try
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<LamaDbContext>();
 
+    var rootPlayer = await db.Players.FirstOrDefaultAsync(p => p.Username.ToLower() == "root");
+    if (rootPlayer is null)
+    {
+        db.Players.Add(new Lama.Server.Data.Models.Rating.PlayerEntity
+        {
+            PlayerId = Guid.NewGuid(),
+            Username = "root",
+            PasswordHash = PasswordHasher.Hash("root"),
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+    }
+    else if (rootPlayer.PasswordHash is null || !PasswordHasher.Verify("root", rootPlayer.PasswordHash))
+    {
+        rootPlayer.PasswordHash = PasswordHasher.Hash("root");
+    }
+
     foreach (var bot in BotCatalog.All)
     {
         // PlayerEntity

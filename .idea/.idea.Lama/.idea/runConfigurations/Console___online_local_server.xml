@@ -11,10 +11,9 @@
     <option name="NO_BUILD" value="false" />
     <envs>
       <env name="LAMA_RUNTIME_MODE" value="online" />
-      <env name="LAMA_SERVER_URL" value="http://127.0.0.1:5000" />
+      <env name="LAMA_SERVER_URL" value="http://127.0.0.1:5201" />
       <env name="LAMA_SESSION_DIR" value="$PROJECT_DIR$/.dev-session/online-host" />
     </envs>
     <method v="2" />
   </configuration>
 </component>
-

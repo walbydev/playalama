@@ -7,9 +7,6 @@ namespace Lama.Server.Endpoints.Auth;
 
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
-/// <summary>Login CLI legacy: PlayerName + PlayerId optionnel (sans mot de passe).</summary>
-public sealed record LoginRequest(string PlayerName, string? PlayerId = null);
-
 /// <summary>Inscription compte Web.</summary>
 public sealed record RegisterRequest(string Username, string Password, string? Email = null, string? CountryCode = null);
 
@@ -39,27 +36,6 @@ public static class AuthEndpoints
         var logger = app.Logger;
         var group  = app.MapGroup("/api/v1/auth")
             .WithTags("Authentication");
-
-        // CLI legacy — rétrocompatible
-        group.MapPost("/login", async (LoginRequest request) =>
-        {
-            if (string.IsNullOrWhiteSpace(request.PlayerName))
-                return Results.BadRequest(new { error = "PlayerName is required" });
-
-            var playerId = request.PlayerId ?? Guid.NewGuid().ToString("N");
-            var token = tokenService.GenerateToken(playerId, request.PlayerName);
-
-            return Results.Ok(new LoginResponse(
-                Token: token,
-                PlayerId: playerId,
-                PlayerName: request.PlayerName,
-                Email: null,
-                ExpiresAt: DateTime.UtcNow.AddHours(24)));
-        })
-            .WithName("Login")
-            .WithDescription("Login CLI: PlayerName + PlayerId optionnel, retourne JWT.")
-            .Produces<LoginResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest);
 
         // Compte Web — inscription
         group.MapPost("/register", async (RegisterRequest request, LamaDbContext db) =>
@@ -160,5 +136,4 @@ public static class AuthEndpoints
             .Produces<AuthStatusResponse>(StatusCodes.Status200OK);
     }
 }
-
 

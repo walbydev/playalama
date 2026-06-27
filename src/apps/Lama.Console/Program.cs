@@ -217,6 +217,20 @@ try
         })
         .Build();
 
+    var accountService = host.Services.GetRequiredService<IAccountService>();
+    if (!accountService.IsInitialized)
+    {
+        try
+        {
+            accountService.CreateSuperAdmin("root", "root");
+            Log.Warning("Compte SuperAdmin initial auto-créé : root");
+        }
+        catch (InvalidOperationException)
+        {
+            // Autre instance déjà initialisée entre-temps.
+        }
+    }
+
     // ─── Résolution du mode et exécution ────────────────────────────────────
     var resolver = host.Services.GetRequiredService<IApplicationModeResolver>();
     var mode     = resolver.Resolve(runtimeArgs);

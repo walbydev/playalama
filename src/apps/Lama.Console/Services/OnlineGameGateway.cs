@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Lama.Contracts;
 using Microsoft.Extensions.Logging;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace Lama.Console.Services;
 
@@ -11,6 +12,10 @@ namespace Lama.Console.Services;
 public sealed class OnlineGameGateway
 {
     private const string ApiBase = "/api/v1";
+    private const string OnlineUsernameEnvVar = "LAMA_ONLINE_USERNAME";
+    private const string OnlinePasswordEnvVar = "LAMA_ONLINE_PASSWORD";
+    private const string DefaultOnlineUsername = "root";
+    private const string DefaultOnlinePassword = "root";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -281,10 +286,53 @@ public sealed class OnlineGameGateway
         string? playerId,
         CancellationToken cancellationToken)
     {
-        var request = new { playerName, playerId };
-        var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/auth/login", request, cancellationToken);
-        await EnsureSuccessAsync(response, "auth.login", cancellationToken);
+        _ = playerId;
+
+        var (username, password, explicitCredentials) = ResolveCredentials(playerName);
+
+        var request = new { username, password };
+        var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/auth/login/account", request, cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+            return await response.Content.ReadFromJsonAsync<OnlineLoginResponse>(JsonOptions, cancellationToken);
+
+        if (!explicitCredentials && response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            var registerResponse = await _httpClient.PostAsJsonAsync(
+                $"{ApiBase}/auth/register",
+                new { username, password, email = (string?)null, countryCode = (string?)null },
+                cancellationToken);
+
+            if (registerResponse.StatusCode == HttpStatusCode.Conflict)
+            {
+                var retry = await _httpClient.PostAsJsonAsync($"{ApiBase}/auth/login/account", request, cancellationToken);
+                await EnsureSuccessAsync(retry, "auth.login.account.retry", cancellationToken);
+                return await retry.Content.ReadFromJsonAsync<OnlineLoginResponse>(JsonOptions, cancellationToken);
+            }
+
+            await EnsureSuccessAsync(registerResponse, "auth.register", cancellationToken);
+            return await registerResponse.Content.ReadFromJsonAsync<OnlineLoginResponse>(JsonOptions, cancellationToken);
+        }
+
+        await EnsureSuccessAsync(response, "auth.login.account", cancellationToken);
         return await response.Content.ReadFromJsonAsync<OnlineLoginResponse>(JsonOptions, cancellationToken);
+    }
+
+    private static (string Username, string Password, bool ExplicitCredentials) ResolveCredentials(string playerName)
+    {
+        var envUsername = Environment.GetEnvironmentVariable(OnlineUsernameEnvVar);
+        var envPassword = Environment.GetEnvironmentVariable(OnlinePasswordEnvVar);
+        if (!string.IsNullOrWhiteSpace(envUsername) && !string.IsNullOrWhiteSpace(envPassword))
+            return (envUsername.Trim(), envPassword, true);
+
+        if (!string.IsNullOrWhiteSpace(playerName))
+        {
+            var normalized = playerName.Trim();
+            var generatedPassword = $"lama-{normalized}-passwd";
+            return (normalized, generatedPassword, false);
+        }
+
+        return (DefaultOnlineUsername, DefaultOnlinePassword, false);
     }
 }
 
@@ -409,4 +457,3 @@ public sealed record OnlineLoginResponse(
     string PlayerId,
     string PlayerName,
     DateTime ExpiresAt);
-

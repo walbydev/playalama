@@ -34,16 +34,15 @@ COPY --from=builder /publish .
 COPY assets/languages ./assets/languages
 
 # Exposer le port
-EXPOSE 5000
+EXPOSE 5201
 
 # Variables d'environnement
-ENV ASPNETCORE_URLS="http://+:5000" \
+ENV ASPNETCORE_URLS="http://+:5201" \
     ASPNETCORE_ENVIRONMENT="Production"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
+    CMD curl -f http://localhost:5201/health || exit 1
 
 # Point d'entrée
 ENTRYPOINT ["dotnet", "Lama.Server.dll"]
-

