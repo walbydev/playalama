@@ -1,13 +1,45 @@
 @inject ThemeService Theme
+@implements IDisposable
 
-<button class="theme-toggle"
-        type="button"
-        @onclick="ToggleAsync"
-        aria-label="@(Theme.IsDark ? "Passer au thème clair" : "Passer au thème sombre")"
-        title="@(Theme.IsDark ? "Thème clair" : "Thème sombre")">
-    <span aria-hidden="true">@(Theme.IsDark ? "☀" : "☾")</span>
-</button>
+<div class="theme-select-control" title="Thème visuel">
+    <span class="theme-select-icon" aria-hidden="true">🎨</span>
+    <label class="sr-only" for="theme-select">Choisir un thème</label>
+    <select id="theme-select"
+            class="theme-select"
+            value="@Theme.Theme"
+            @onchange="OnThemeChanged"
+            aria-label="Choisir un thème">
+        <option value="light">Clair</option>
+        <option value="dark">Sombre</option>
+        <option value="blue">Bleuté</option>
+        <option value="green">Verdâtre</option>
+        <option value="vermillion">Vermillon</option>
+    </select>
+</div>
 
 @code {
-    private async Task ToggleAsync() => await Theme.ToggleAsync();
+    protected override void OnInitialized()
+    {
+        Theme.ThemeChanged += HandleThemeChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Theme.InitializeAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnThemeChanged(ChangeEventArgs args)
+    {
+        if (args.Value is null) return;
+        await Theme.SetAsync(args.Value.ToString() ?? "dark");
+    }
+
+    private void HandleThemeChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Theme.ThemeChanged -= HandleThemeChanged;
+    }
 }

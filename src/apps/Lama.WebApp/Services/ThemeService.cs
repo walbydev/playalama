@@ -3,11 +3,16 @@ using Microsoft.JSInterop;
 namespace Lama.WebApp.Services;
 
 /// <summary>
-/// Gère le thème dark/light et le persiste en localStorage.
+/// Gère le thème visuel et le persiste en localStorage.
 /// Scoped per-circuit (Blazor Server).
 /// </summary>
 public sealed class ThemeService(IJSRuntime js)
 {
+    private static readonly HashSet<string> AllowedThemes = new(StringComparer.Ordinal)
+    {
+        "dark", "light", "blue", "green", "vermillion"
+    };
+
     private string _theme = "dark";
     private bool _initialized;
 
@@ -24,7 +29,7 @@ public sealed class ThemeService(IJSRuntime js)
         try
         {
             var stored = await js.InvokeAsync<string?>("playalamaTheme.getTheme");
-            if (stored is "dark" or "light")
+            if (stored is not null && AllowedThemes.Contains(stored))
                 _theme = stored;
         }
         catch
@@ -42,7 +47,7 @@ public sealed class ThemeService(IJSRuntime js)
 
     public async Task SetAsync(string theme)
     {
-        _theme = theme is "dark" or "light" ? theme : "dark";
+        _theme = AllowedThemes.Contains(theme) ? theme : "dark";
         await ApplyAsync();
         ThemeChanged?.Invoke();
     }

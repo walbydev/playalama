@@ -3,15 +3,18 @@
    Thème, auth localStorage, animations légères
    ═══════════════════════════════════════════════ */
 
-// ── Thème dark/light ─────────────────────────────────────────────────────────
+// ── Thèmes visuels ───────────────────────────────────────────────────────────
 window.playalamaTheme = {
+    availableThemes: ['dark', 'light', 'blue', 'green', 'vermillion'],
     getTheme() {
-        return localStorage.getItem('playalama-theme') || 'dark';
+        const stored = localStorage.getItem('playalama-theme') || 'dark';
+        return this.availableThemes.includes(stored) ? stored : 'dark';
     },
     setTheme(theme) {
-        localStorage.setItem('playalama-theme', theme);
-        document.documentElement.classList.remove('dark', 'light');
-        document.documentElement.classList.add(theme);
+        const normalized = this.availableThemes.includes(theme) ? theme : 'dark';
+        localStorage.setItem('playalama-theme', normalized);
+        document.documentElement.classList.remove(...this.availableThemes);
+        document.documentElement.classList.add(normalized);
     },
     toggleTheme() {
         const current = this.getTheme();
@@ -44,8 +47,8 @@ window.playalamaBoardZoom = {
 
 // Appliquer le thème immédiatement (évite le flash)
 (function () {
-    const theme = localStorage.getItem('playalama-theme') || 'dark';
-    document.documentElement.classList.remove('dark', 'light');
+    const theme = window.playalamaTheme.getTheme();
+    document.documentElement.classList.remove(...window.playalamaTheme.availableThemes);
     document.documentElement.classList.add(theme);
 })();
 
