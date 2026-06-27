@@ -69,29 +69,47 @@ window.playalamaAuth = {
 };
 
 // ── Lettres flottantes (Hero) ────────────────────────────────────────────────
-(function initFloatingLetters() {
-    const container = document.getElementById('floating-letters');
-    if (!container) return;
+window.playalamaFloatingLetters = (function () {
+    const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const COUNT = 18;
 
-    // Respecter prefers-reduced-motion
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    function populate() {
+        const container = document.getElementById('floating-letters');
+        if (!container || container.children.length > 0) return;
 
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const count = 18;
-    for (let i = 0; i < count; i++) {
-        const el = document.createElement('span');
-        el.className = 'fl';
-        el.textContent = letters[Math.floor(Math.random() * letters.length)];
-        el.style.left = Math.random() * 100 + '%';
-        el.style.animationDelay = -(Math.random() * 18) + 's';
-        el.style.animationDuration = (14 + Math.random() * 10) + 's';
-        el.style.fontSize = (3 + Math.random() * 5) + 'rem';
-        container.appendChild(el);
+        // Respecter prefers-reduced-motion
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        for (let i = 0; i < COUNT; i++) {
+            const el = document.createElement('span');
+            el.className = 'fl';
+            el.textContent = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+            el.style.left = Math.random() * 100 + '%';
+            el.style.animationDelay = -(Math.random() * 18) + 's';
+            el.style.animationDuration = (14 + Math.random() * 10) + 's';
+            el.style.fontSize = (3 + Math.random() * 5) + 'rem';
+            container.appendChild(el);
+        }
     }
 
-    // Re-init si navigation Blazor (SPA)
-    document.addEventListener('blazor:navigated', () => {
-        const c = document.getElementById('floating-letters');
-        if (c && c.children.length === 0) initFloatingLetters();
-    });
+    // Premier rendu (DOM peut ne pas être prêt quand le script se charge)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', populate);
+    } else {
+        populate();
+    }
+
+    // Re-init après navigation Blazor (SPA) — toujours enregistré
+    document.addEventListener('blazor:navigated', populate);
+
+    // Blazor (InteractiveServer) ré-hydrate et remplace le DOM prérendu,
+    // ce qui efface les lettres injectées. On repeuple tant que le hero
+    // est présent mais vide, pendant quelques secondes après chargement.
+    let ticks = 0;
+    const guard = setInterval(() => {
+        populate();
+        if (++ticks >= 20) clearInterval(guard);
+    }, 250);
+
+    return { populate };
 })();

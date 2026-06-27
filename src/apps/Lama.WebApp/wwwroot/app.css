@@ -546,14 +546,14 @@ html.dark .board-zoom-select option {
 
 /* ── HERO ── */
 .hero {
-    min-height: 100vh;
+    min-height: 70vh;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     position: relative;
     overflow: hidden;
-    padding: calc(var(--nav-h) + 3rem) 1.5rem 4rem;
+    padding: calc(var(--nav-h) + 2rem) 1.5rem 3rem;
 }
 
 .hero-bg {
@@ -562,31 +562,52 @@ html.dark .board-zoom-select option {
         radial-gradient(ellipse 80% 60% at 50% 20%, rgba(124,92,252,0.18) 0%, transparent 70%),
         radial-gradient(ellipse 40% 40% at 80% 80%, rgba(192,132,252,0.10) 0%, transparent 60%);
     pointer-events: none;
+    z-index: 0;
 }
 
-.hero-inner { position: relative; z-index: 1; max-width: 820px; width: 100%; }
+.hero-inner { position: relative; max-width: 820px; width: 100%; }
 
-/* Filigranes lettre — grands, accessibles */
+/* Filigranes lettre — grands, accessibles, animation légère et étherée */
 .floating-letters {
     position: absolute; inset: 0;
     overflow: hidden; pointer-events: none;
     user-select: none;
+    z-index: 1;
 }
 .fl {
     position: absolute;
     font-size: clamp(3rem, 8vw, 7rem);
     font-weight: 900;
-    opacity: 0.035;
+    opacity: 0.35;
     animation: floatUp 18s linear infinite;
     color: var(--accent2);
+    filter: blur(0.3px);
 }
-@media (prefers-reduced-motion: reduce) { .fl { animation: none; opacity: 0.025; } }
+.fl:nth-child(3n) { animation-name: floatUpSway; }
+.fl:nth-child(3n+1) { animation-name: floatUpSpin; }
+@media (prefers-reduced-motion: reduce) { .fl { animation: none; opacity: 0.15; filter: none; } }
 
 @keyframes floatUp {
     0%   { transform: translateY(100vh) rotate(-15deg); opacity: 0; }
-    5%   { opacity: 0.035; }
-    90%  { opacity: 0.035; }
+    5%   { opacity: 0.35; }
+    90%  { opacity: 0.35; }
     100% { transform: translateY(-20vh) rotate(15deg); opacity: 0; }
+}
+
+@keyframes floatUpSway {
+    0%   { transform: translateY(100vh) translateX(0) rotate(-15deg); opacity: 0; }
+    5%   { opacity: 0.35; }
+    50%  { transform: translateY(50vh) translateX(50px) rotate(0deg); opacity: 0.35; }
+    90%  { opacity: 0.35; }
+    100% { transform: translateY(-20vh) translateX(0) rotate(15deg); opacity: 0; }
+}
+
+@keyframes floatUpSpin {
+    0%   { transform: translateY(100vh) translateX(0) rotate(-15deg) scale(1); opacity: 0; }
+    5%   { opacity: 0.35; }
+    50%  { transform: translateY(50vh) translateX(-50px) rotate(180deg) scale(1.1); opacity: 0.35; }
+    90%  { opacity: 0.35; }
+    100% { transform: translateY(-20vh) translateX(0) rotate(15deg) scale(1); opacity: 0; }
 }
 
 .hero-eyebrow { display: flex; align-items: center; gap: 1rem; justify-content: center; margin-bottom: 1rem; font-size: .85rem; letter-spacing: 3px; text-transform: uppercase; color: var(--accent2); }
