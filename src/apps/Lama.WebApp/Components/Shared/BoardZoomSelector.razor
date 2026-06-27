@@ -6,12 +6,14 @@
     <label class="sr-only" for="board-zoom-select">Zoom du plateau</label>
     <select id="board-zoom-select"
             class="board-zoom-select"
-            value="@BoardZoom.ZoomPercent"
+            value="@BoardZoom.ZoomMode"
             @onchange="OnZoomChanged"
             aria-label="Zoom du plateau">
+        <option value="auto">Auto (fenêtre)</option>
         <option value="100">100%</option>
         <option value="125">125%</option>
         <option value="150">150%</option>
+        <option value="200">200%</option>
     </select>
 </div>
 
@@ -31,8 +33,7 @@
     private async Task OnZoomChanged(ChangeEventArgs args)
     {
         if (args.Value is null) return;
-        if (!int.TryParse(args.Value.ToString(), out var percent)) return;
-        await BoardZoom.SetAsync(percent);
+        await BoardZoom.SetModeAsync(args.Value.ToString());
     }
 
     private void HandleZoomChanged() => InvokeAsync(StateHasChanged);

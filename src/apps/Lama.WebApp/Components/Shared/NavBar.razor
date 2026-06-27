@@ -3,22 +3,25 @@
 @inject NavigationManager Nav
 @implements IDisposable
 
-<nav class="navbar" role="navigation" aria-label="Navigation principale">
+<nav class="navbar @(CompactMode ? "navbar--compact" : "")" role="navigation" aria-label="Navigation principale">
     <a href="/" class="navbar-logo" aria-label="Playalama — Accueil">
         PLAYALAMA
     </a>
 
-    <ul class="navbar-links @(_menuOpen ? "open" : "")" id="nav-links">
-        <li><a href="/" class="@ActiveClass("/")" @onclick="CloseMenu">Accueil</a></li>
-        <li><a href="/leaderboard" class="@ActiveClass("/leaderboard")" @onclick="CloseMenu">Classements</a></li>
-        <li><a href="/rules" class="@ActiveClass("/rules")" @onclick="CloseMenu">Règles</a></li>
-        <li><a href="/downloads" class="@ActiveClass("/downloads")" @onclick="CloseMenu">Télécharger</a></li>
-        @if (Auth.IsLoggedIn)
-        {
-            <li><a href="/games" class="@ActiveClass("/games")" @onclick="CloseMenu">Jouer</a></li>
-            <li><a href="/my-games" class="@ActiveClass("/my-games")" @onclick="CloseMenu">Mes parties</a></li>
-        }
-    </ul>
+    @if (!CompactMode)
+    {
+        <ul class="navbar-links @(_menuOpen ? "open" : "")" id="nav-links">
+            <li><a href="/" class="@ActiveClass("/")" @onclick="CloseMenu">Accueil</a></li>
+            <li><a href="/leaderboard" class="@ActiveClass("/leaderboard")" @onclick="CloseMenu">Classements</a></li>
+            <li><a href="/rules" class="@ActiveClass("/rules")" @onclick="CloseMenu">Règles</a></li>
+            <li><a href="/downloads" class="@ActiveClass("/downloads")" @onclick="CloseMenu">Télécharger</a></li>
+            @if (Auth.IsLoggedIn)
+            {
+                <li><a href="/games" class="@ActiveClass("/games")" @onclick="CloseMenu">Jouer</a></li>
+                <li><a href="/my-games" class="@ActiveClass("/my-games")" @onclick="CloseMenu">Mes parties</a></li>
+            }
+        </ul>
+    }
 
     <div class="navbar-actions">
         <BoardZoomSelector />
@@ -30,26 +33,41 @@
         else if (Auth.IsLoggedIn)
         {
             <a href="/profile" class="btn btn-ghost btn-sm">@Auth.CurrentUser!.Username</a>
-            <button class="btn btn-outline btn-sm" type="button" @onclick="LogoutAsync">Déconnexion</button>
+            @if (!CompactMode)
+            {
+                <button class="btn btn-outline btn-sm" type="button" @onclick="LogoutAsync">Déconnexion</button>
+            }
         }
         else
         {
             <a href="/login"    class="btn btn-ghost btn-sm">Connexion</a>
-            <a href="/register" class="btn btn-primary btn-sm">Jouer →</a>
+            @if (!CompactMode)
+            {
+                <a href="/register" class="btn btn-primary btn-sm">Jouer →</a>
+            }
         }
-        <button class="navbar-burger" type="button" @onclick="ToggleMenu"
-                aria-expanded="@_menuOpen" aria-controls="nav-links"
-                aria-label="Menu">
-            @(_menuOpen ? "✕" : "☰")
-        </button>
+        @if (!CompactMode)
+        {
+            <button class="navbar-burger" type="button" @onclick="ToggleMenu"
+                    aria-expanded="@_menuOpen" aria-controls="nav-links"
+                    aria-label="Menu">
+                @(_menuOpen ? "✕" : "☰")
+            </button>
+        }
     </div>
 </nav>
 
 <!-- Spacer pour compenser la navbar fixe + la bannière dev -->
-<div style="height: calc(var(--nav-h) + var(--banner-h));" aria-hidden="true"></div>
+<div style="height: @SpacerHeight" aria-hidden="true"></div>
 
 @code {
+    [Parameter] public bool CompactMode { get; set; }
+    [Parameter] public bool ShowDevBanner { get; set; } = true;
+
     private bool _menuOpen;
+    private string SpacerHeight => CompactMode
+        ? "56px"
+        : (ShowDevBanner ? "calc(var(--nav-h) + var(--banner-h))" : "var(--nav-h)");
 
     protected override void OnInitialized()
     {

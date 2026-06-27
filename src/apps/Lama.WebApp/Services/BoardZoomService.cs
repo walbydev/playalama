@@ -9,13 +9,18 @@ namespace Lama.WebApp.Services;
 /// </summary>
 public sealed class BoardZoomService(IJSRuntime js)
 {
-    private static readonly int[] AllowedZoomPercents = [100, 125, 150];
+    private static readonly int[] AllowedZoomPercents = [100, 125, 150, 200];
 
+    private string _zoomMode = "100";
     private int _zoomPercent = 100;
     private bool _initialized;
 
     public int ZoomPercent => _zoomPercent;
-    public string ZoomFactorCss => (_zoomPercent / 100d).ToString("0.##", CultureInfo.InvariantCulture);
+    public bool IsAutoFit => string.Equals(_zoomMode, "auto", StringComparison.Ordinal);
+    public string ZoomMode => _zoomMode;
+    public string ZoomFactorCss => IsAutoFit
+        ? "var(--board-auto-zoom, 1)"
+        : (_zoomPercent / 100d).ToString("0.##", CultureInfo.InvariantCulture);
 
     public event Action? ZoomChanged;
 
@@ -25,29 +30,35 @@ public sealed class BoardZoomService(IJSRuntime js)
 
         try
         {
-            var stored = await js.InvokeAsync<int?>("playalamaBoardZoom.getZoom");
-            if (stored.HasValue)
-                _zoomPercent = NormalizeZoom(stored.Value);
+            var stored = await js.InvokeAsync<string?>("playalamaBoardZoom.getZoom");
+            ApplyMode(stored);
 
             _initialized = true;
         }
         catch
         {
+            _zoomMode = "100";
             _zoomPercent = 100;
         }
     }
 
     public async Task SetAsync(int zoomPercent)
     {
-        var normalized = NormalizeZoom(zoomPercent);
-        if (_zoomPercent == normalized)
+        await SetModeAsync(zoomPercent.ToString(CultureInfo.InvariantCulture));
+    }
+
+    public async Task SetModeAsync(string? mode)
+    {
+        var normalizedMode = NormalizeMode(mode);
+        if (_zoomMode == normalizedMode)
             return;
 
-        _zoomPercent = normalized;
+        _zoomMode = normalizedMode;
+        _zoomPercent = ParsePercentFromMode(_zoomMode);
 
         try
         {
-            await js.InvokeVoidAsync("playalamaBoardZoom.setZoom", _zoomPercent);
+            await js.InvokeVoidAsync("playalamaBoardZoom.setZoom", _zoomMode);
         }
         catch
         {
@@ -55,6 +66,33 @@ public sealed class BoardZoomService(IJSRuntime js)
         }
 
         ZoomChanged?.Invoke();
+    }
+
+    private void ApplyMode(string? mode)
+    {
+        _zoomMode = NormalizeMode(mode);
+        _zoomPercent = ParsePercentFromMode(_zoomMode);
+    }
+
+    private static string NormalizeMode(string? mode)
+    {
+        if (string.Equals(mode, "auto", StringComparison.OrdinalIgnoreCase))
+            return "auto";
+
+        if (int.TryParse(mode, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
+            return NormalizeZoom(parsed).ToString(CultureInfo.InvariantCulture);
+
+        return "100";
+    }
+
+    private static int ParsePercentFromMode(string mode)
+    {
+        if (string.Equals(mode, "auto", StringComparison.OrdinalIgnoreCase))
+            return 100;
+
+        return int.TryParse(mode, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+            ? NormalizeZoom(parsed)
+            : 100;
     }
 
     private static int NormalizeZoom(int value)

@@ -24,13 +24,20 @@ window.playalamaTheme = {
 window.playalamaBoardZoom = {
     getZoom() {
         const raw = localStorage.getItem('playalama-board-zoom');
-        const value = raw ? Number.parseInt(raw, 10) : 100;
-        return value === 125 || value === 150 ? value : 100;
+        if (!raw) return '100';
+        if (raw === 'auto') return 'auto';
+
+        const value = Number.parseInt(raw, 10);
+        if (value === 100 || value === 125 || value === 150 || value === 200) return String(value);
+        return '100';
     },
-    setZoom(zoomPercent) {
-        const value = Number.parseInt(zoomPercent, 10);
-        const normalized = value === 125 || value === 150 ? value : 100;
-        localStorage.setItem('playalama-board-zoom', String(normalized));
+    setZoom(zoomMode) {
+        const raw = String(zoomMode || '100');
+        const value = Number.parseInt(raw, 10);
+        const normalized = raw === 'auto'
+            ? 'auto'
+            : (value === 125 || value === 150 || value === 200 ? String(value) : '100');
+        localStorage.setItem('playalama-board-zoom', normalized);
         return normalized;
     }
 };

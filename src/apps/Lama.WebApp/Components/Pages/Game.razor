@@ -22,7 +22,7 @@ else if (_vm.Snapshot is { UsesLobby: true, HasStarted: false })
 }
 else
 {
-    <div class="section" style="padding-top: calc(var(--nav-h) + 1rem)">
+    <div class="section game-page" style="padding-top: calc(var(--nav-h) + 1rem)">
         <div class="container">
 
             @if (!string.IsNullOrWhiteSpace(_vm.Error))
@@ -728,4 +728,3 @@ else
         _timer?.Dispose();
     }
 }
-
