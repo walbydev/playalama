@@ -1226,6 +1226,15 @@ footer {
     gap: .75rem;
 }
 
+.game-focus-actions {
+    display: none;
+    margin-bottom: .75rem;
+    padding: .55rem .7rem !important;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
 /* ── Mode focus (auto-fit) : exploiter l'espace de la fenêtre ── */
 .page-wrapper--game-focus .main-content--game-focus {
     min-height: calc(100vh - 56px);
@@ -1242,6 +1251,10 @@ footer {
 
 .page-wrapper--game-focus .game-page .game-header {
     display: none;
+}
+
+.page-wrapper--game-focus .game-focus-actions {
+    display: flex;
 }
 
 .page-wrapper--game-focus .game-layout {

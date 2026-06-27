@@ -96,6 +96,37 @@ else
                     </div>
                 </div>
 
+                @* ── Actions compactes (mode focus / auto) ── *@
+                <div class="card game-focus-actions">
+                    <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
+                        Rafraîchir
+                    </button>
+
+                    @if (_vm.IsAbandoned)
+                    {
+                        <a href="/games" class="btn btn-ghost btn-sm">← Quitter</a>
+                    }
+                    else if (!_vm.Snapshot!.IsGameOver && _vm.Snapshot.HasStarted)
+                    {
+                        @if (_confirmAbandon)
+                        {
+                            <span class="text-dim" style="font-size:.85rem">Confirmer ?</span>
+                            <button class="btn btn-danger btn-sm" @onclick="AbandonAsync" disabled="@_vm.IsLoading">
+                                ✔ Oui, abandonner
+                            </button>
+                            <button class="btn btn-ghost btn-sm" @onclick="() => _confirmAbandon = false">
+                                Annuler
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-ghost btn-sm" style="color:var(--danger,#e55)" @onclick="() => _confirmAbandon = true">
+                                🏳 Abandonner
+                            </button>
+                        }
+                    }
+                </div>
+
                 @* ── Notification abandon ── *@
                 @if (_abandonNotice is not null)
                 {
