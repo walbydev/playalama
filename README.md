@@ -393,3 +393,33 @@ curl -s http://localhost:5201/health
 - AI Server (suggestions): `5203`
 
 Cette convention est utilisee en local, staging et production dans les stacks Docker compose du projet.
+
+---
+
+## Versioning et build info
+
+LAMA utilise un système de versioning centralisé via le fichier `.build-info` (JSON) qui est synchronisé vers `BuildInfoConstants.cs` à chaque build.
+
+### Consulter les infos de build
+
+La WebApp affiche un bandeau en développement (🚧 En développement) avec :
+- Version (v0.1.0)
+- Build number (#5)
+- Timestamp du build (27/06/2026 13:04)
+
+Le composant `DevBanner.razor` utilise la classe statique `BuildInfoConstants` pour afficher les infos sans appels HTTP.
+
+### Make targets de versioning
+
+```bash
+# Générer un nouveau build timestamp et synchroniser vers C#
+make build-generate
+
+# Incrémenter le numéro de build et synchroniser vers C#
+make build-increment
+
+# Fixer une version spécifique et synchroniser vers C#
+make version-set VERSION=1.2.3
+```
+
+Chaque make target met à jour `.build-info` ET `src/apps/Lama.WebApp/Services/BuildInfoConstants.cs`.

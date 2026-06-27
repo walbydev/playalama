@@ -52,6 +52,135 @@ Journal unique de progression du projet LAMA.
 
 ---
 
+## [2026-06-27 15:04:00 UTC] - Refactorisation DevBanner: BuildInfoConstants statique au lieu de HTTP
+
+### Contexte
+- Le DevBanner initial chargeait via HTTP/StateHasChanged() mais le binding Razor n'affichait pas les valeurs.
+- Problème: composant prérendu avant `OnInitializedAsync()`, ou chemin HTTP inaccessible en développement.
+- Solution: embarquer les infos en classe statique `BuildInfoConstants.cs` synchronisée depuis `.build-info`.
+
+### Fait
+- **Création BuildInfoConstants.cs**
+  - Classe statique avec constantes: `Version`, `BuildNumber`, `BuildTimestamp`.
+  - Remplace l'approche asynchrone par des valeurs compilées.
+
+- **Script de synchronisation**
+  - Créé `tools/scripts/version/sync-to-csharp.sh` qui parse `.build-info` et génère `BuildInfoConstants.cs`.
+  - Script appelé par chaque make target (build-generate, build-increment, version-set).
+
+- **Simplification DevBanner.razor**
+  - Plus d'HttpClient, plus d'OnInitializedAsync().
+  - Binding direct: `v@BuildInfoConstants.Version`, `#@BuildInfoConstants.BuildNumber`, etc.
+  - Composant simple et performant.
+
+- **Nettoyage .csproj**
+  - Retrait de la directive Copy pour `.build-info` → `wwwroot/build-info.json` (non nécessaire).
+  - WebApp.csproj restauré à la forme simple.
+
+- **Make targets mis à jour**
+  - Chaque target appelle à la fois `.build-info` update ET `sync-to-csharp.sh`.
+  - Workflow fluide: `make build-increment` → fichiers `.build-info` et `BuildInfoConstants.cs` synchronisés.
+
+- **Tests**
+  - Build Release: succès.
+  - 679 tests unitaires: ✅
+  - Make targets testés: fonctionnels.
+
+### Résultat final
+- Bandeau affiche: **🚧 En développement | v0.1.0 | #5 | Build: 27/06/2026 13:04**
+- Approche robuste, sans dépendance HTTP, binding Razor direct.
+
+### En cours / A faire
+- Tester en mode `dev-debug` pour vérifier le rendu réel en local.
+
+### References
+- `src/apps/Lama.WebApp/Services/BuildInfoConstants.cs` (nouvelle classe statique)
+- `tools/scripts/version/sync-to-csharp.sh` (script de synchro)
+- `src/apps/Lama.WebApp/Components/Shared/DevBanner.razor` (simplifiée)
+- `Makefile` (make targets mis à jour)
+- `README.md`, `AGENTS.md` (docs)
+
+---
+
+## [2026-06-27 14:58:00 UTC] - Fix DevBanner data binding (build-info.json loading)
+
+### Contexte
+- Le DevBanner n'affichait pas les données de build correctement (affichait `v@BuildInfo.BuildInfo.Version` etc.)
+- BuildInfoService initialisé dans MainLayout ne chargeait pas le fichier asynchrone à temps pour le composant DevBanner.
+- Solution: charger directement dans DevBanner en OnInitializedAsync plutôt que via service centralisé.
+
+### Fait
+- Refactorisé `DevBanner.razor` pour charger `build-info.json` directement via `@inject HttpClient`.
+- Ajout de `OnInitializedAsync()` qui charge et parse le JSON en trois champs privés (Version, BuildNumber, BuildTime).
+- Suppression de `BuildInfoService` (complexité inutile pour ce cas simple).
+- Mise à jour de `Program.cs` et `MainLayout.razor` (retrait du service).
+- Binding en composant Razor correctement remplacé: `v@Version`, `#@BuildNumber`, etc.
+- Tests: suite complète passe (679 tests ✅).
+
+### Résultat attendu
+- Bandeau affiche maintenant: **🚧 En développement | v0.1.0 | #3 | Build: 27/06/2026 12:52**
+
+### En cours / A faire
+- Tester en mode `dev-debug` (lancement en local) pour vérifier le rendu réel.
+
+### References
+- `src/apps/Lama.WebApp/Components/Shared/DevBanner.razor` (refactorisé)
+- `src/apps/Lama.WebApp/Program.cs` (nettoyé)
+- `src/apps/Lama.WebApp/Components/Layout/MainLayout.razor` (nettoyé)
+- `.build-info`, `Makefile`, `README.md`, `AGENTS.md` (docs mises à jour)
+
+---
+
+## [2026-06-27 12:55:00 UTC] - Système de versioning et bandeaudev build-time
+
+### Contexte
+- Demande utilisateur: le bandeau de développement n'affichait plus les bonnes heures de build/lancement.
+- Besoin d'un système de versioning centralisé + make targets pour incrémenter et fixer les versions.
+
+### Fait
+- **Système de versioning centralisé**
+  - Création d'un fichier `.build-info` (JSON) à la racine avec `version`, `buildNumber` et `buildTimestamp`.
+  - Script `tools/scripts/version/update-build-info.sh` pour gérer les opérations: `generate`, `increment`, `set-version`.
+  
+- **Intégration au build .NET**
+  - `.csproj` WebApp configuré pour copier `.build-info` → `wwwroot/build-info.json` à chaque build.
+  - Fichier statique et accessible via HTTP en tant que ressource de la WebApp.
+
+- **Refactorisation DevBanner.razor (première itération)**
+  - Créé service `BuildInfoService` qui charge `build-info.json` via HTTP dans la WebApp.
+  - Initialisé dans `MainLayout.razor` après render pour charger les infos asynchrones.
+  - [Ultérieurement remplacé par une approche plus simple]
+
+- **Make targets ajoutés (Makefile)**
+  - `make build-increment` — Incrémenter `buildNumber`.
+  - `make version-set VERSION=x.y.z` — Fixer la version.
+  - `make build-generate` — Générer un nouveau timestamp (appelé à chaque build).
+
+- **Documentation mise à jour**
+  - `README.md`: ajout d'une section "Versioning et build info" avec les make targets et le workflow.
+  - `AGENTS.md`: note sur le système centralisé de versioning.
+
+- **Tests**
+  - Script testé: `generate`, `increment`, `set-version` fonctionnent correctement.
+  - Build Release: succès; `build-info.json` présent dans `wwwroot/`.
+  - Suite unitaire complète: 679 tests ✅
+
+### Risques / Ecarts
+- Première version du service was over-engineered; simplifiée dans le checkpoint suivant.
+
+### Prochaines etapes
+1. [Réalisé] Corriger la problématique de chargement du DevBanner.
+2. Tester en mode `dev-debug` pour vérifier l'affichage du bandeau en local.
+3. Valider le comportement en production: le fichier build-info.json doit être accessible.
+
+### References
+- `.build-info` (fichier de config)
+- `tools/scripts/version/update-build-info.sh` (script de gestion)
+- `src/apps/Lama.WebApp/Lama.WebApp.csproj` (integration build)
+- `Makefile` (make targets)
+
+---
+
 ## [2026-06-27 12:30:00 UTC] - Cohérence runtime, messages de jeu et couverture des nouveautés
 
 ### Contexte
@@ -60,28 +189,28 @@ Journal unique de progression du projet LAMA.
 
 ### Fait
 - **Cohérence des ports**
-  - Convention opérationnelle retenue et appliquée pour l’online/container: `5201` (Server), `5202` (WebApp), `5203` (AIServer), y compris en staging/prod via compose.
+  - Convention opérationnelle retenue et appliquée pour l'online/container: `5201` (Server), `5202` (WebApp), `5203` (AIServer), y compris en staging/prod via compose.
   - Correction des références incohérentes dans:
     - `Makefile` (`health-debug`)
     - `tests/Lama.Server.UnitTests/HttpAISuggestionClientTests.cs`
     - `tests/Lama.WebApp.UnitTests/LamaApiBaseUrlResolverTests.cs`
 - **Annonce de tour fiabilisée**
   - Le snapshot serveur expose désormais `lastMoveId`, `lastMovePlayerName`, `lastMoveTurnNumber`.
-  - La WebApp déclenche les notifications de tour sur **nouveau coup réel** (ID de coup), plus sur simple variation d’index/tour.
+  - La WebApp déclenche les notifications de tour sur **nouveau coup réel** (ID de coup), plus sur simple variation d'index/tour.
 - **Messages UI unifiés**
   - Centralisation de tous les messages de partie dans une zone dédiée (`game-messages-panel`) entre **Scores** et **Autres actions**.
-  - Retrait des doublons d’affichage hors zone (haut de page / sous le rack) pour limiter les sauts visuels.
+  - Retrait des doublons d'affichage hors zone (haut de page / sous le rack) pour limiter les sauts visuels.
 - **Nettoyage code**
   - Suppression de reliquats non utilisés autour du clavier désactivé dans `Game.razor`.
 - **Couverture tests**
-  - Ajout d’un test WebApp API client: mapping de `lastMoveId`, `lastMovePlayerName`, `lastMoveTurnNumber` et `IsBot`.
+  - Ajout d'un test WebApp API client: mapping de `lastMoveId`, `lastMovePlayerName`, `lastMoveTurnNumber` et `IsBot`.
   - Exécution complète des suites unitaires WebApp/Server après changements.
 
 ### Risques / Ecarts
-- Les entrées historiques de progression antérieures conservent des références de ports (`53xx/54xx`) à valeur historique; elles ne reflètent plus l’état courant.
+- Les entrées historiques de progression antérieures conservent des références de ports (`53xx/54xx`) à valeur historique; elles ne reflètent plus l'état courant.
 
 ### Prochaines etapes
-1. Ajouter des tests d’intégration UI (bUnit) dédiés à la zone messages si la page Game devient plus interactive.
+1. Ajouter des tests d'intégration UI (bUnit) dédiés à la zone messages si la page Game devient plus interactive.
 2. Continuer la convergence des docs techniques annexes vers la convention `5201/5202/5203`.
 
 ### References

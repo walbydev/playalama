@@ -1,39 +1,20 @@
-@using System.Reflection
-@using System.Diagnostics
+@using Lama.WebApp.Services
 
 <div class="dev-banner" role="alert" aria-label="Mode développement">
     <span>🚧 En développement</span>
     <span class="dev-banner-sep">|</span>
-    <span>v@_version</span>
+    <span>v@BuildInfoConstants.Version</span>
     <span class="dev-banner-sep">|</span>
-    <span>Build : @_buildDate</span>
+    <span>#@BuildInfoConstants.BuildNumber</span>
     <span class="dev-banner-sep">|</span>
-    <span>Lancé : @_startTime</span>
+    <span>Build : @FormatTime(BuildInfoConstants.BuildTimestamp)</span>
 </div>
 
 @code {
-    private string _version  = "";
-    private string _buildDate = "";
-    private string _startTime = "";
-
-    protected override void OnInitialized()
+    private static string FormatTime(string timestamp)
     {
-        var asm = Assembly.GetExecutingAssembly();
-
-        // Version depuis le fichier .csproj (<Version>)
-        _version = asm.GetName().Version?.ToString(3) ?? "–";
-
-        // Date de build = date de dernière écriture de l'assembly
-        var asmPath = asm.Location;
-        var buildDt = !string.IsNullOrEmpty(asmPath)
-            ? File.GetLastWriteTime(asmPath)
-            : DateTime.MinValue;
-        _buildDate = buildDt == DateTime.MinValue
-            ? "–"
-            : buildDt.ToString("dd/MM/yyyy HH:mm");
-
-        // Date/heure de lancement du processus
-        _startTime = Process.GetCurrentProcess().StartTime
-                           .ToString("dd/MM/yyyy HH:mm");
+        if (DateTime.TryParse(timestamp, out var dt))
+            return dt.ToString("dd/MM/yyyy HH:mm");
+        return "–";
     }
 }

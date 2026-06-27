@@ -44,6 +44,7 @@
 - `FrenchLanguageProvider` charge les assets depuis `assets/languages/fr`.
 - `src/apps/Lama.Server/Program.cs` est monolithique : changements minimaux, couverts par tests.
 - Convention de ports online/compose : Server `5201`, WebApp `5202`, AIServer `5203` (dev/staging/prod).
+- **Versioning et build**: `.build-info` (JSON) sync via script vers `BuildInfoConstants.cs` ; make targets: `build-increment`, `version-set VERSION=x.y.z`, `build-generate`. `DevBanner.razor` utilise la classe statique sans HTTP.
 
 ## Fichiers d’entrée prioritaires
 - `src/apps/Lama.Console/Program.cs`

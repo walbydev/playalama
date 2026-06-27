@@ -13,9 +13,4 @@
     <ProjectReference Include="..\..\libs\Lama.Contracts\Lama.Contracts.csproj" />
   </ItemGroup>
 
-  <!-- Copier .build-info dans wwwroot à la compilation -->
-  <ItemGroup>
-    <Content Include="..\..\..\.build-info" CopyToOutputDirectory="PreserveNewest" Link="wwwroot/build-info.json" />
-  </ItemGroup>
-
 </Project>

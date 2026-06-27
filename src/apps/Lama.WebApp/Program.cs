@@ -17,7 +17,6 @@ builder.Services.AddHttpClient<LamaApiClient>(client =>
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<BoardZoomService>();
-builder.Services.AddScoped<BuildInfoService>();
 
 // ViewModels (MVVM léger)
 builder.Services.AddScoped<HomeViewModel>();

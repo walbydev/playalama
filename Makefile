@@ -331,6 +331,22 @@ clean: ## Nettoyer les artefacts de build
 	dotnet clean
 	rm -rf .deploy/stage
 
+.PHONY: build-increment
+build-increment: ## Incrémenter le numéro de build
+	@bash tools/scripts/version/update-build-info.sh .build-info increment
+	@bash tools/scripts/version/sync-to-csharp.sh .build-info
+
+.PHONY: version-set
+version-set: ## Fixer la version (usage : make version-set VERSION=1.2.3)
+	@test -n "$(VERSION)" || (echo "❌ Usage : make version-set VERSION=1.2.3" && exit 1)
+	@bash tools/scripts/version/update-build-info.sh .build-info set-version "$(VERSION)"
+	@bash tools/scripts/version/sync-to-csharp.sh .build-info
+
+.PHONY: build-generate
+build-generate: ## Générer les infos de build (timestamp) — appelé automatiquement à chaque build
+	@bash tools/scripts/version/update-build-info.sh .build-info generate
+	@bash tools/scripts/version/sync-to-csharp.sh .build-info
+
 .PHONY: docker-local-ps
 docker-local-ps: ## État des conteneurs Docker locaux
 	docker compose -f $(DOCKER_LOCAL) ps
