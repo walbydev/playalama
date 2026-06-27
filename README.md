@@ -3,6 +3,14 @@
 LAMA est un jeu de mots inspiré du Scrabble, développé en C# / .NET 10.
 Les joueurs posent des mots sur un plateau en grille, accumulent des points selon la valeur des lettres et les cases bonus, et s'affrontent jusqu'à épuisement du sac de lettres.
 
+## Licence
+
+Ce projet est distribué sous **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)**.
+
+- Le fichier de référence est `LICENSE` à la racine du dépôt.
+- L'AGPL garantit que les forks et versions modifiées exposées en réseau restent libres.
+- Les dons pour financer l'infrastructure sont compatibles avec cette licence.
+
 Le jeu est d'abord disponible en console, avec deux modes d'utilisation :
 
 - un mode **commande par commande**, adapté aux actions ponctuelles, aux scripts et aux tests ;
@@ -377,4 +385,3 @@ dotnet run --project src/apps/Lama.Server
 ```bash
 curl -s http://localhost:5201/health
 ```
-
