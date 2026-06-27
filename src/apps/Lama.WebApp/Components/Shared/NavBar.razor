@@ -22,7 +22,11 @@
 
     <div class="navbar-actions">
         <ThemeToggle />
-        @if (Auth.IsLoggedIn)
+        @if (!Auth.IsInitialized)
+        {
+            <span class="text-muted" style="font-size:.9rem" aria-live="polite">Chargement…</span>
+        }
+        else if (Auth.IsLoggedIn)
         {
             <a href="/profile" class="btn btn-ghost btn-sm">@Auth.CurrentUser!.Username</a>
             <button class="btn btn-outline btn-sm" type="button" @onclick="LogoutAsync">Déconnexion</button>

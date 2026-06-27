@@ -1,5 +1,7 @@
 using Lama.Server.Data;
+using Lama.Server.Runtime;
 using Lama.Server.Security;
+using Lama.Contracts;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -149,9 +151,9 @@ public static class PlayerEndpoints
         };
     }
 
-    private static Func<HttpContext, LamaDbContext, Task<IResult>> GetMyGames()
+    private static Func<HttpContext, LamaDbContext, GameHubState, Task<IResult>> GetMyGames()
     {
-        return async (context, db) =>
+        return async (context, db, state) =>
         {
             var playerId = ExtractPlayerId(context);
             if (playerId is null)
@@ -159,7 +161,62 @@ public static class PlayerEndpoints
 
             try
             {
-                // Historique depuis CompletedGames via SessionPlayerInGame
+                var playerKey = playerId.Value.ToString("N");
+                var mergedGames = new Dictionary<Guid, PlayerGameHistoryItem>();
+
+                foreach (var game in state.ListGames())
+                {
+                    if (!Guid.TryParse(game.Id, out var gameGuid))
+                        continue;
+
+                    lock (game)
+                    {
+                        if (!game.PlayerIndexById.TryGetValue(playerKey, out var playerIndex))
+                            continue;
+
+                        var snapshot = game.Engine.GetGameState();
+                        var participant = snapshot.Players.ElementAtOrDefault(playerIndex);
+                        if (participant is null)
+                            continue;
+
+                        var isActive = !game.IsClosed && !snapshot.IsGameOver;
+                        var playerScore = participant.Score;
+                        var topScore = snapshot.Players.Count == 0 ? 0 : snapshot.Players.Max(p => p.Score);
+                        var hasSingleWinner = snapshot.Players.Count(p => p.Score == topScore) == 1;
+                        var isWinner = snapshot.IsGameOver && hasSingleWinner && playerScore == topScore;
+                        var hasAbandoned = game.AbandonedPlayerIds.Contains(playerKey);
+
+                        var status = hasAbandoned
+                            ? "abandoned"
+                            : isActive
+                                ? (game.UsesLobby && !game.HasStarted ? "waiting" : "active")
+                                : string.Equals(game.EndReason, "abandoned", StringComparison.OrdinalIgnoreCase)
+                                    ? "abandoned"
+                                    : "ended";
+
+                        var queueToken = game.Queue switch
+                        {
+                            RankingQueue.CasualUnranked => "casual",
+                            RankingQueue.Tournament => "tournament",
+                            RankingQueue.GlobalPrestige => "global",
+                            _ => "open"
+                        };
+
+                        var historyTimestamp = isActive ? DateTimeOffset.UtcNow : game.UpdatedAt;
+                        var durationSeconds = Math.Max(0, (int)((historyTimestamp - game.CreatedAt).TotalSeconds));
+
+                        mergedGames[gameGuid] = new PlayerGameHistoryItem(
+                            gameGuid.ToString("N"),
+                            game.GameLevel.ToString(),
+                            queueToken,
+                            status,
+                            historyTimestamp,
+                            durationSeconds,
+                            isWinner);
+                    }
+                }
+
+                // Historique terminé depuis CompletedGames via SessionPlayerInGame
                 var rows = await db.SessionPlayersInGame
                     .Where(p => p.PlayerId == playerId.Value)
                     .Join(db.CompletedGames,
@@ -179,15 +236,21 @@ public static class PlayerEndpoints
                     .Take(50)
                     .ToListAsync();
 
-                var games = rows
-                    .Select(x => new PlayerGameHistoryItem(
+                foreach (var x in rows)
+                {
+                    mergedGames[x.GameId] = new PlayerGameHistoryItem(
                         x.GameId.ToString("N"),
                         x.GameLevel,
                         x.Queue,
                         x.Status,
                         x.EndedAt,
                         x.DurationSeconds,
-                        x.IsWinner))
+                        x.IsWinner);
+                }
+
+                var games = mergedGames.Values
+                    .OrderByDescending(x => x.EndedAt)
+                    .Take(100)
                     .ToList();
 
                 return Results.Ok(games);
@@ -207,5 +270,3 @@ public static class PlayerEndpoints
         return raw is not null && Guid.TryParse(raw, out var id) ? id : null;
     }
 }
-
-

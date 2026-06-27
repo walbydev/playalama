@@ -6,7 +6,16 @@
 
 <PageTitle>Mon profil — Playalama</PageTitle>
 
-@if (!Auth.IsLoggedIn)
+@if (!Auth.IsInitialized)
+{
+    <div class="auth-page">
+        <div class="auth-card text-center">
+            <h1>Profil</h1>
+            <p class="text-muted mt-2" aria-live="polite">Chargement de votre session…</p>
+        </div>
+    </div>
+}
+else if (!Auth.IsLoggedIn)
 {
     <div class="auth-page">
         <div class="auth-card text-center">

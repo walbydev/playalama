@@ -15,6 +15,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
 
     public CurrentUser? CurrentUser => _currentUser;
     public bool IsLoggedIn => _currentUser is not null;
+    public bool IsInitialized => _initialized;
 
     /// <summary>Notifie les composants abonnés d'un changement d'état d'authentification.</summary>
     public event Action? OnAuthStateChanged;

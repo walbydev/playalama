@@ -6,7 +6,16 @@
 
 <PageTitle>Mes parties — Playalama</PageTitle>
 
-@if (!Auth.IsLoggedIn)
+@if (!Auth.IsInitialized)
+{
+    <div class="auth-page">
+        <div class="auth-card text-center">
+            <h1>Mes parties</h1>
+            <p class="text-muted mt-2" aria-live="polite">Chargement de votre session…</p>
+        </div>
+    </div>
+}
+else if (!Auth.IsLoggedIn)
 {
     <div class="auth-page">
         <div class="auth-card text-center">
@@ -42,7 +51,7 @@ else
             {
                 <div class="empty-state">
                     <span class="empty-state-icon" aria-hidden="true">🎮</span>
-                    <p>Aucune partie terminée pour le moment.</p>
+                    <p>Aucune partie pour le moment.</p>
                     <a href="/games" class="btn btn-primary mt-2">Rejoindre une partie</a>
                 </div>
             }
@@ -54,12 +63,16 @@ else
                         <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Parties</div>
                     </div>
                     <div class="card" style="text-align:center; min-width:120px">
-                        <div style="font-size:1.5rem; font-weight:900; color:var(--success)">@_games.Count(g => g.IsWinner)</div>
-                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Victoires</div>
+                        <div style="font-size:1.5rem; font-weight:900; color:var(--accent2)">@_games.Count(g => IsActiveStatus(g.Status))</div>
+                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">En cours</div>
                     </div>
                     <div class="card" style="text-align:center; min-width:120px">
-                        <div style="font-size:1.5rem; font-weight:900; color:var(--gold)">@WinRate()</div>
-                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Ratio V/D</div>
+                        <div style="font-size:1.5rem; font-weight:900; color:var(--gold)">@_games.Count(g => IsAbandonedStatus(g.Status))</div>
+                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Abandonnées</div>
+                    </div>
+                    <div class="card" style="text-align:center; min-width:120px">
+                        <div style="font-size:1.5rem; font-weight:900; color:var(--success)">@_games.Count(g => g.IsWinner)</div>
+                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Victoires</div>
                     </div>
                 </div>
 
@@ -71,6 +84,7 @@ else
                                 <th scope="col">Niveau</th>
                                 <th scope="col">Mode</th>
                                 <th scope="col">Durée</th>
+                                <th scope="col">Statut</th>
                                 <th scope="col">Résultat</th>
                                 <th scope="col"></th>
                             </tr>
@@ -83,11 +97,16 @@ else
                                     <td>@g.GameLevel</td>
                                     <td>@g.Queue</td>
                                     <td>@FormatDuration(g.DurationSeconds)</td>
+                                    <td><span class="chip chip-muted">@StatusLabel(g.Status)</span></td>
                                     <td>
-                                        @if (g.IsWinner)
+                                        @if (IsActiveStatus(g.Status))
+                                            { <span class="chip chip-accent">En cours</span> }
+                                        else if (g.IsWinner)
                                             { <span class="chip chip-success">Victoire 🏆</span> }
+                                        else if (IsAbandonedStatus(g.Status))
+                                            { <span class="chip chip-muted">Abandonnée</span> }
                                         else
-                                            { <span class="chip chip-muted">@g.Status</span> }
+                                            { <span class="chip chip-muted">Défaite</span> }
                                     </td>
                                     <td><a href="/games/@g.GameId" class="btn btn-ghost btn-sm">Voir</a></td>
                                 </tr>
@@ -129,9 +148,23 @@ else
         finally { _busy = false; StateHasChanged(); }
     }
 
-    private string WinRate() =>
-        _games.Count == 0 ? "—" : $"{(double)_games.Count(g => g.IsWinner) / _games.Count * 100:F0}%";
-
     private static string FormatDuration(int s) =>
         s < 60 ? $"{s}s" : s < 3600 ? $"{s / 60}m{s % 60:D2}s" : $"{s / 3600}h{(s % 3600) / 60:D2}m";
+
+    private static bool IsActiveStatus(string status) =>
+        string.Equals(status, "active", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, "waiting", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsAbandonedStatus(string status) =>
+        string.Equals(status, "abandoned", StringComparison.OrdinalIgnoreCase);
+
+    private static string StatusLabel(string status) => status.ToLowerInvariant() switch
+    {
+        "active" => "En cours",
+        "waiting" => "En attente",
+        "abandoned" => "Abandonnée",
+        "ended" => "Terminée",
+        "finished_normal" => "Terminée",
+        _ => status
+    };
 }
