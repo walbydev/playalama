@@ -126,10 +126,10 @@ app.MapAuthEndpoints(jwtService);
 
 // Player profile endpoints
 app.MapPlayerEndpoints();
-app.MapBotsEndpoints();
 
 var api = app.MapGroup("/api/v1");
 api.MapGamesReadEndpoints();
 api.MapGamesCommandEndpoints();
+api.MapBotsEndpoints();
 
 app.Run();

@@ -187,7 +187,10 @@
             if (_bots.Count > 0 && _createForm.AiBotId is null)
                 _createForm.AiBotId = _bots[0].BotId;
         }
-        catch { /* bots non critiques */ }
+        catch (Exception ex)
+        {
+            _createError = $"Impossible de charger les bots : {ex.Message}";
+        }
     }
 
     private void OnModeChanged()
