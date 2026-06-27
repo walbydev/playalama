@@ -385,3 +385,11 @@ dotnet run --project src/apps/Lama.Server
 ```bash
 curl -s http://localhost:5201/health
 ```
+
+### Convention de ports online (compose)
+
+- API Server: `5201`
+- WebApp: `5202`
+- AI Server (suggestions): `5203`
+
+Cette convention est utilisee en local, staging et production dans les stacks Docker compose du projet.

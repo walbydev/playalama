@@ -43,6 +43,7 @@
 - `LAMA_SESSION_DIR` est clé pour l’isolation des tests.
 - `FrenchLanguageProvider` charge les assets depuis `assets/languages/fr`.
 - `src/apps/Lama.Server/Program.cs` est monolithique : changements minimaux, couverts par tests.
+- Convention de ports online/compose : Server `5201`, WebApp `5202`, AIServer `5203` (dev/staging/prod).
 
 ## Fichiers d’entrée prioritaires
 - `src/apps/Lama.Console/Program.cs`
@@ -63,4 +64,4 @@
 - Les ViewModels dépendent de `LamaApiClient` — jamais de `IJSRuntime`.
 - `ThemeService` gère dark/light et persiste en localStorage.
 - `AuthService` gère le JWT en localStorage via les fonctions JS `playalamaAuth.*`.
-
+- Page de jeu : messages utilisateur centralisés dans la zone dédiée de la colonne droite (`game-messages-panel`).

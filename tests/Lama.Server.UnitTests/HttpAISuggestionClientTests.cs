@@ -21,7 +21,7 @@ public sealed class HttpAISuggestionClientTests
     private static HttpAISuggestionClient BuildClient(HttpResponseMessage response)
     {
         var handler = new StubHandler(_ => response);
-        var http    = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:5301") };
+        var http    = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:5203") };
         return new HttpAISuggestionClient(http, NullLogger<HttpAISuggestionClient>.Instance);
     }
 
@@ -74,7 +74,7 @@ public sealed class HttpAISuggestionClientTests
     public async Task SuggestAsync_Returns_Empty_On_Network_Error()
     {
         var handler = new ThrowingHandler(new HttpRequestException("Connection refused"));
-        var http    = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:5301") };
+        var http    = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:5203") };
         var sut     = new HttpAISuggestionClient(http, NullLogger<HttpAISuggestionClient>.Instance);
 
         var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, CancellationToken.None);

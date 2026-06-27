@@ -24,12 +24,12 @@ public sealed class LamaApiBaseUrlResolverTests
     {
         var configuration = BuildConfiguration(new Dictionary<string, string?>
         {
-            ["LamaApi:BaseUrl"] = "http://127.0.0.1:5301"
+            ["LamaApi:BaseUrl"] = "http://127.0.0.1:5201"
         });
 
         var resolved = LamaApiBaseUrlResolver.Resolve(configuration);
 
-        resolved.Should().Be("http://127.0.0.1:5301");
+        resolved.Should().Be("http://127.0.0.1:5201");
     }
 
     [Fact]

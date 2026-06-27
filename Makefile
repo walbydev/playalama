@@ -305,7 +305,7 @@ db-delete-game: ## [Dev] Supprimer une partie précise (usage : make db-delete-g
 	@echo "✅ Partie $(GAME_ID) supprimée."
 
 .PHONY: health-debug
-health-debug: ## [Dev] Vérifier les endpoints (Server 5201, WebApp 5202, AIServer 5301)
+health-debug: ## [Dev] Vérifier les endpoints (Server 5201, WebApp 5202, AIServer 5203)
 	@docker exec postgres-lama-debug pg_isready -U lama_dev -d lama_dev >/dev/null 2>&1 && echo "✓ PostgreSQL (5200) OK" || echo "✗ PostgreSQL (5200) KO"
 	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO" || true
 	@curl -fsS http://localhost:5202/ >/dev/null && echo "✓ WebApp (5202) OK" || echo "✗ WebApp (5202) KO" || true

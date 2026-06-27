@@ -52,6 +52,48 @@ Journal unique de progression du projet LAMA.
 
 ---
 
+## [2026-06-27 12:30:00 UTC] - Cohérence runtime, messages de jeu et couverture des nouveautés
+
+### Contexte
+- Demande: revue de cohérence (code/doc/tests), nettoyage des incohérences et vérification de la couverture des évolutions récentes WebApp/Server.
+- Symptômes observés: références de ports contradictoires dans la doc/tests, annonce de tour parfois fausse, messages UI dispersés.
+
+### Fait
+- **Cohérence des ports**
+  - Convention opérationnelle retenue et appliquée pour l’online/container: `5201` (Server), `5202` (WebApp), `5203` (AIServer), y compris en staging/prod via compose.
+  - Correction des références incohérentes dans:
+    - `Makefile` (`health-debug`)
+    - `tests/Lama.Server.UnitTests/HttpAISuggestionClientTests.cs`
+    - `tests/Lama.WebApp.UnitTests/LamaApiBaseUrlResolverTests.cs`
+- **Annonce de tour fiabilisée**
+  - Le snapshot serveur expose désormais `lastMoveId`, `lastMovePlayerName`, `lastMoveTurnNumber`.
+  - La WebApp déclenche les notifications de tour sur **nouveau coup réel** (ID de coup), plus sur simple variation d’index/tour.
+- **Messages UI unifiés**
+  - Centralisation de tous les messages de partie dans une zone dédiée (`game-messages-panel`) entre **Scores** et **Autres actions**.
+  - Retrait des doublons d’affichage hors zone (haut de page / sous le rack) pour limiter les sauts visuels.
+- **Nettoyage code**
+  - Suppression de reliquats non utilisés autour du clavier désactivé dans `Game.razor`.
+- **Couverture tests**
+  - Ajout d’un test WebApp API client: mapping de `lastMoveId`, `lastMovePlayerName`, `lastMoveTurnNumber` et `IsBot`.
+  - Exécution complète des suites unitaires WebApp/Server après changements.
+
+### Risques / Ecarts
+- Les entrées historiques de progression antérieures conservent des références de ports (`53xx/54xx`) à valeur historique; elles ne reflètent plus l’état courant.
+
+### Prochaines etapes
+1. Ajouter des tests d’intégration UI (bUnit) dédiés à la zone messages si la page Game devient plus interactive.
+2. Continuer la convergence des docs techniques annexes vers la convention `5201/5202/5203`.
+
+### References
+- `src/apps/Lama.Server/Endpoints/Games/GamesReadEndpoints.cs`
+- `src/apps/Lama.WebApp/Components/Pages/Game.razor`
+- `src/apps/Lama.WebApp/Services/LamaApiClient.cs`
+- `src/apps/Lama.WebApp/Services/UiModels.cs`
+- `tests/Lama.WebApp.UnitTests/LamaApiClientTests.cs`
+- `Makefile`
+
+---
+
 ## [2026-06-27 08:00:00 UTC] - Reorganisation appsettings multi-environnements + etat des lieux
 
 ### Contexte

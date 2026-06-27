@@ -152,8 +152,6 @@ else
                         @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
                         {
                             <div class="card rack-below-board">
-                                @* Input clavier caché — mode clavier désactivé temporairement *@
-
                                 <div class="rack-below-header">
                                     <div class="rack-title-row">
                                         <h3>Mes tuiles</h3>
@@ -693,19 +691,9 @@ else
         StateHasChanged();
     }
 
-    // _keyboardInput gardé pour réactivation future du mode clavier
-    // private ElementReference _keyboardInput;
-
     private async Task HandleKeyboardActivate((int Row, int Col) cell)
     {
         // Mode clavier désactivé temporairement
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleKeyDown(KeyboardEventArgs e)
-    {
-        // Mode clavier désactivé temporairement — méthode conservée pour réactivation future
-        if (!_vm.KeyboardModeActive) return;
         await Task.CompletedTask;
     }
 

@@ -99,6 +99,51 @@ public sealed class LamaApiClientTests
     }
 
     [Fact]
+    public async Task GetGameAsync_Should_Map_Last_Move_And_Bot_Flag()
+    {
+        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""
+                {
+                  "id": "g1",
+                  "gameName": "Partie test",
+                  "isGameOver": false,
+                  "hasStarted": true,
+                  "usesLobby": false,
+                  "isClosed": false,
+                  "currentPlayerIndex": 1,
+                  "turnNumber": 4,
+                  "bagCount": 67,
+                  "maxPlayers": 2,
+                  "boardSize": 15,
+                  "rackSize": 7,
+                  "language": "fr",
+                  "players": [
+                    { "playerId": "p1", "playerName": "Mathias", "score": 12, "isHost": true, "isBot": false, "rack": ["A"], "rackCount": 1 },
+                    { "playerId": "bot-karim", "playerName": "B'Karim", "score": 9, "isHost": false, "isBot": true, "rack": ["B"], "rackCount": 1 }
+                  ],
+                  "board": [],
+                  "lastMoveId": "m3",
+                  "lastMovePlayerName": "B'Karim",
+                  "lastMoveTurnNumber": 3,
+                  "abandonedPlayerIds": [],
+                  "endReason": null,
+                  "abandonedByName": null
+                }
+                """, Encoding.UTF8, "application/json")
+        });
+
+        var client = CreateClient(handler);
+        var snapshot = await client.GetGameAsync("g1");
+
+        snapshot.LastMoveId.Should().Be("m3");
+        snapshot.LastMovePlayerName.Should().Be("B'Karim");
+        snapshot.LastMoveTurnNumber.Should().Be(3);
+        snapshot.Players.Should().HaveCount(2);
+        snapshot.Players[1].IsBot.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task SuggestMovesAsync_Should_Parse_Suggestions_From_Api()
     {
         var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
