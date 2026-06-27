@@ -20,6 +20,21 @@ window.playalamaTheme = {
     }
 };
 
+// ── Zoom du plateau ────────────────────────────────────────────────────────────
+window.playalamaBoardZoom = {
+    getZoom() {
+        const raw = localStorage.getItem('playalama-board-zoom');
+        const value = raw ? Number.parseInt(raw, 10) : 100;
+        return value === 125 || value === 150 ? value : 100;
+    },
+    setZoom(zoomPercent) {
+        const value = Number.parseInt(zoomPercent, 10);
+        const normalized = value === 125 || value === 150 ? value : 100;
+        localStorage.setItem('playalama-board-zoom', String(normalized));
+        return normalized;
+    }
+};
+
 // Appliquer le thème immédiatement (évite le flash)
 (function () {
     const theme = localStorage.getItem('playalama-theme') || 'dark';

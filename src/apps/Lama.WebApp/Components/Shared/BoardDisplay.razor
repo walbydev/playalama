@@ -1,9 +1,11 @@
 @using Lama.WebApp.Services
 @using Lama.WebApp.ViewModels
+@inject BoardZoomService BoardZoom
+@implements IDisposable
 
 @* Plateau de jeu 15×15 avec cases bonus colorées, tuiles posées et placements provisoires. *@
 
-<div class="board-container" role="region" aria-label="Plateau de jeu">
+<div class="board-container" role="region" aria-label="Plateau de jeu" style="--board-zoom:@BoardZoom.ZoomFactorCss;">
     <div class="board-grid" role="grid">
         @* En-tête colonnes *@
         <div class="board-header-cell" aria-hidden="true"></div>
@@ -116,6 +118,18 @@
 
     private bool _draggingFromBoard => DraggingFromBoard;
 
+    protected override void OnInitialized()
+    {
+        BoardZoom.ZoomChanged += HandleZoomChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await BoardZoom.InitializeAsync();
+        StateHasChanged();
+    }
+
     // ── Détection double-tap tactile ─────────────────────────────────────────
 
     private long _lastTapMs;
@@ -171,4 +185,11 @@
         "st" => " — Départ",
         _ => string.Empty
     };
+
+    private void HandleZoomChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        BoardZoom.ZoomChanged -= HandleZoomChanged;
+    }
 }

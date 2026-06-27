@@ -1,0 +1,44 @@
+@inject BoardZoomService BoardZoom
+@implements IDisposable
+
+<div class="board-zoom-control" title="Zoom du plateau">
+    <span class="board-zoom-icon" aria-hidden="true">🔎</span>
+    <label class="sr-only" for="board-zoom-select">Zoom du plateau</label>
+    <select id="board-zoom-select"
+            class="board-zoom-select"
+            value="@BoardZoom.ZoomPercent"
+            @onchange="OnZoomChanged"
+            aria-label="Zoom du plateau">
+        <option value="100">100%</option>
+        <option value="125">125%</option>
+        <option value="150">150%</option>
+    </select>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        BoardZoom.ZoomChanged += HandleZoomChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await BoardZoom.InitializeAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnZoomChanged(ChangeEventArgs args)
+    {
+        if (args.Value is null) return;
+        if (!int.TryParse(args.Value.ToString(), out var percent)) return;
+        await BoardZoom.SetAsync(percent);
+    }
+
+    private void HandleZoomChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        BoardZoom.ZoomChanged -= HandleZoomChanged;
+    }
+}
