@@ -56,8 +56,8 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
             timeoutSeconds: 5,
             ct);
 
-        // Meilleur coup disponible
-        var best = suggestions.OrderByDescending(s => s.Score).FirstOrDefault();
+        // Sélection du coup selon le profil du bot (potentiellement sous-optimal).
+        var chosen = SelectSuggestion(suggestions, bot);
 
         // ── Jeu du coup (sous le verrou) ─────────────────────────────────────
         lock (game)
@@ -72,7 +72,7 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
                 return (null, null);
 
             // Passe intentionnelle (difficulté) ou absence de suggestion
-            if (best is null || Rng.NextDouble() < bot.PassRate)
+            if (chosen is null || Rng.NextDouble() < bot.PassRate)
             {
                 game.Engine.PassTurn();
                 var passedState = game.Engine.GetGameState();
@@ -81,7 +81,7 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
             }
 
             // Reconstruction des placements (lettres nouvelles seulement, hors plateau)
-            var placements = BuildPlacements(best, board);
+            var placements = BuildPlacements(chosen, board);
 
             if (placements.Count == 0)
             {
@@ -96,7 +96,7 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
             if (!validation.IsValid)
             {
                 logger.LogWarning("Bot {BotId} suggestion invalide ({Word}) : {Error}",
-                    bot.BotId, best.Word, validation.ErrorMessage);
+                    bot.BotId, chosen.Word, validation.ErrorMessage);
 
                 game.Engine.PassTurn();
                 var passedState = game.Engine.GetGameState();
@@ -172,5 +172,34 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
         for (var c = 0; c < cols; c++)
             if (board.Grid[r, c] is not null) return true;
         return false;
+    }
+
+    private static AISuggestion? SelectSuggestion(IReadOnlyList<AISuggestion> suggestions, BotProfile bot)
+    {
+        if (suggestions.Count == 0)
+            return null;
+
+        var ranked = suggestions
+            .OrderByDescending(s => s.Score)
+            .ThenByDescending(s => s.Length)
+            .ToList();
+
+        var windowSize = Math.Clamp(bot.CandidateWindow, 1, ranked.Count);
+        var candidates = ranked.Take(windowSize).ToList();
+
+        // Bot "humain": choisit parfois un coup moins rentable et plus court.
+        if (bot.WeakMoveRate > 0 && Rng.NextDouble() < bot.WeakMoveRate)
+        {
+            var weakPoolSize = Math.Clamp(bot.WeakPoolSize, 1, candidates.Count);
+            var weakerPool = candidates
+                .OrderBy(s => s.Length)
+                .ThenBy(s => s.Score)
+                .Take(weakPoolSize)
+                .ToList();
+
+            return weakerPool[Rng.Next(weakerPool.Count)];
+        }
+
+        return candidates[0];
     }
 }

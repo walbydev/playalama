@@ -12,7 +12,7 @@
         <div class="scoreboard-row @(isActive && !isAbandoned ? "scoreboard-row--active" : "") @(isAbandoned ? "scoreboard-row--abandoned" : "")"
              role="listitem"
              aria-current="@(isActive && !isAbandoned ? "true" : "false")">
-            <div class="scoreboard-avatar" aria-hidden="true">@player.PlayerName[0]</div>
+            <div class="scoreboard-avatar" aria-hidden="true">@(player.IsBot ? "🤖" : GetInitial(player.PlayerName))</div>
             <div style="flex:1; min-width:0">
                 <div class="scoreboard-name">
                     @if (isAbandoned) { <s>@player.PlayerName</s> }
@@ -37,4 +37,7 @@
     [Parameter] public int CurrentPlayerIndex { get; set; }
     [Parameter] public string? MyPlayerId { get; set; }
     [Parameter] public IReadOnlyList<string> AbandonedPlayerIds { get; set; } = [];
+
+    private static char GetInitial(string name) =>
+        string.IsNullOrWhiteSpace(name) ? '?' : name.Trim()[0];
 }

@@ -194,7 +194,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
             payload.Language ?? "fr",
             payload.Players.Select(x => new WebSnapshotPlayer(
                 x.PlayerId, x.PlayerName, x.Score, x.IsHost,
-                x.Rack ?? [], x.RackCount)).ToList(),
+                x.Rack ?? [], x.RackCount, x.IsBot)).ToList(),
             payload.Board.Select(x => new WebBoardTile(x.Row, x.Column, x.Letter)).ToList(),
             payload.AbandonedPlayerIds ?? [],
             payload.EndReason,
@@ -417,7 +417,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
         int CurrentPlayerIndex, int TurnNumber, int BagCount, int MaxPlayers, int BoardSize, int RackSize, string? Language,
         List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board,
         List<string>? AbandonedPlayerIds, string? EndReason, string? AbandonedByName);
-    private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost, List<char>? Rack, int RackCount);
+    private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost, List<char>? Rack, int RackCount, bool IsBot = false);
     private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);
     private sealed record PlayEnvelope(string GameId, string MoveId, int Score);
     private sealed record LeaderboardEntryEnvelope(string PlayerId, string Username, string? CountryCode, int Level, int Elo, int Wins, int Games);

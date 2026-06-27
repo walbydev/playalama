@@ -186,6 +186,7 @@ public static class GamesReadEndpoints
                         player.PlayerId,
                         player.PlayerName,
                         player.IsHost,
+                        player.IsBot,
                         Score = stateSnapshot.Players[index].Score,
                         Rack = stateSnapshot.Players[index].Rack,
                         RackCount = stateSnapshot.Players[index].Rack.Count
@@ -232,6 +233,7 @@ public static class GamesReadEndpoints
                     PlayerId = x.PlayerId.ToString("N"),
                     PlayerName = x.Nickname,
                     x.IsHost,
+                    IsBot = false,
                     Score = 0,
                     Rack = Array.Empty<char>(),
                     RackCount = 0

@@ -101,7 +101,7 @@ public sealed record WebGameSnapshot(
     string? EndReason,
     string? AbandonedByName);
 
-public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int Score, bool IsHost, IReadOnlyList<char> Rack, int RackCount);
+public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int Score, bool IsHost, IReadOnlyList<char> Rack, int RackCount, bool IsBot = false);
 public sealed record WebBoardTile(int Row, int Column, char Letter);
 public sealed record WebPlayResponse(string GameId, string MoveId, int Score);
 public sealed record WebCheckResponse(int Score, string Message);
