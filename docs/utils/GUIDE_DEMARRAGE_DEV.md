@@ -61,7 +61,7 @@ make dev-local ARGS="game show"
 Rider (debug)              Rider (debug)
 ┌─────────────┐   HTTP    ┌──────────────────┐
 │ Console     │ ────────► │  Lama.Server     │
-│ online mode │  :5000    │  Development     │
+│ online mode │  :5201    │  Development     │
 └─────────────┘           └──────────────────┘
 ```
 
@@ -80,9 +80,9 @@ make dev-server
 # Terminal 2 — Console (une fois le server démarré)
 make dev-local ARGS="game create Alice --level casual"
 # Puis adapter LAMA_RUNTIME_MODE=online manuellement, ou :
-LAMA_RUNTIME_MODE=online LAMA_SERVER_URL=http://127.0.0.1:5000 \
+LAMA_RUNTIME_MODE=online LAMA_SERVER_URL=http://127.0.0.1:5201 \
   LAMA_SESSION_DIR=/tmp/lama-debug-host \
-  dotnet run --project src/Console/Lama.Console -- game create Alice --level casual
+  dotnet run --project src/apps/Lama.Console -- game create Alice --level casual
 ```
 
 ### Debug avec infrastructure Docker (nginx autour du serveur Rider)
@@ -91,7 +91,7 @@ Pour tester nginx en local **sans mettre le serveur dans Docker** :
 
 ```bash
 tools/scripts/docker-local.sh nginx-only
-# → nginx démarre sur :80, proxifie vers :5000
+# → nginx démarre sur :80, proxifie vers :5201
 # → démarrer Lama.Server depuis Rider (config Server - dev)
 ```
 
@@ -144,7 +144,7 @@ make docker-local
 make docker-local-ps
 make health-local
 # → http://localhost/         site
-# → http://localhost:5000/health   serveur
+# → http://localhost:5201/health   serveur
 
 # Rebuild après modification
 make docker-local-rebuild
@@ -266,4 +266,3 @@ Cas 7 — Deploy serveur VPS      →  make deploy-server-prod SSH_KEY=~/.ssh/..
 - `tools/deployments/deploy-vps.sh` — script déploiement serveur
 - `tools/deployments/deploy-static-site.sh` — script déploiement site
 - `docs/utils/ALIAS_LAMA_CONFIG.md` — configuration des alias CLI
-

@@ -1,6 +1,6 @@
 # Progression du projet
 
-**Date** : 2026-06-19
+**Date** : 2026-06-27
 **Statut** : En cours
 
 ---
@@ -51,6 +51,50 @@ Journal unique de progression du projet LAMA.
 ```
 
 ---
+
+## [2026-06-27 08:00:00 UTC] - Reorganisation appsettings multi-environnements + etat des lieux
+
+### Contexte
+- Demande utilisateur: reorganiser les `appsettings` pour `Development`, `Staging` et `Production`, puis harmoniser les ports.
+- Objectif secondaire: remettre la documentation d'exploitation en coherence avec la configuration reelle.
+
+### Fait
+- **Couverture appsettings completee sur les 3 apps**
+  - `Lama.Server`: `appsettings.Development.json`, `appsettings.Staging.json`, `appsettings.Production.json`.
+  - `Lama.WebApp`: `appsettings.Development.json`, `appsettings.Staging.json`, `appsettings.Production.json`.
+  - `Lama.AIServer`: `appsettings.Development.json`, `appsettings.Staging.json`, `appsettings.Production.json`.
+- **Harmonisation des plages de ports par environnement**
+  - Development: Server `5201`, WebApp `5202`, AIServer `5203`.
+  - Staging: Server `5301`, WebApp `5302`, AIServer `5303`.
+  - Production: Server `5401`, WebApp `5402`, AIServer `5403`.
+- **Wiring inter-services explicite par environnement**
+  - `Lama.WebApp` utilise `LamaApi:BaseUrl` coherent avec le port serveur de l'environnement.
+  - `Lama.Server` utilise `LAMA_AI_SERVER_URL` coherent avec le port AI de l'environnement.
+- **Nettoyage des fichiers racine `appsettings.json`**
+  - Conservation des cles communes uniquement, sans valeurs d'URL/ports environment-specific.
+- **Documentation corrigee**
+  - `README.md`: chemin projet serveur modernise (`src/apps/...`) + healthcheck `:5201`.
+  - `docs/utils/GUIDE_DEMARRAGE_DEV.md`: alignement debug online/local Docker sur `:5201` et chemin `src/apps/Lama.Console`.
+
+### Etat des lieux (synthese operationnelle)
+- La convention de ports est maintenant stable et lisible:
+  - `52xx` = Development, `53xx` = Staging, `54xx` = Production.
+  - `x01` = API Server, `x02` = WebApp, `x03` = AI Server.
+- Les fichiers de configuration couvrent desormais explicitement les 3 environnements pour chaque app runtime.
+
+### Risques / Ecarts
+- Plusieurs anciennes entrees historiques de ce journal referencent encore les anciens chemins (`src/Server`, `src/Console`) et d'anciens ports; ces references restent valides historiquement mais ne decrivent plus l'etat courant.
+
+### Prochaines etapes
+1. Aligner, dans une passe dediee, les documents roadmap historiques les plus consultes qui mentionnent encore des ports pre-harmonisation.
+2. Garder la regle de mise a jour documentaire a chaque changement de config environnementale.
+
+### References
+- `src/apps/Lama.Server/appsettings.*.json`
+- `src/apps/Lama.WebApp/appsettings.*.json`
+- `src/apps/Lama.AIServer/appsettings.*.json`
+- `README.md`
+- `docs/utils/GUIDE_DEMARRAGE_DEV.md`
 
 ## [2026-06-17 20:50:57 UTC] - Etat global initial (phase console)
 

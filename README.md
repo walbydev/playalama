@@ -369,13 +369,12 @@ Voir le plan de migration detaille : [`docs/PLAN_MIGRATION_MULTIJOUEUR.md`](docs
 ### Demarrer le serveur central alpha
 
 ```bash
-dotnet run --project src/Server/Lama.Server
+dotnet run --project src/apps/Lama.Server
 ```
 
 ### Verifier la sante du serveur
 
 ```bash
-curl -s http://localhost:5000/health
+curl -s http://localhost:5201/health
 ```
-
 
