@@ -1,8 +1,12 @@
 using Lama.Contracts;
 using Lama.Server.Bots;
+using Lama.Server.Data;
+using Lama.Server.Data.Models.History;
+using Lama.Server.Data.Models.Sessions;
 using Lama.Server.Contracts.Api;
 using Lama.Server.Runtime;
 using Lama.Server.Services;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -639,7 +643,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static IResult AbandonGame(HttpContext context, string gameId, AbandonGameRequest request, GameHubState state)
+    private static async Task<IResult> AbandonGame(HttpContext context, string gameId, AbandonGameRequest request, GameHubState state, LamaDbContext db)
     {
         if (!context.IsAuthenticated())
             return Results.Unauthorized();
@@ -746,10 +750,27 @@ public static class GamesCommandEndpoints
             var releasedPlayerIds = game.Players.Select(p => p.PlayerId).ToList();
             state.ReleaseAllPlayerReservations(gameId, releasedPlayerIds);
 
+            var endedAt = DateTimeOffset.UtcNow;
+            try
+            {
+                await PersistCompletedGameSnapshotAsync(
+                    db,
+                    game,
+                    endedAt,
+                    status: "abandoned",
+                    winnerPlayerName: winner,
+                    context.RequestAborted);
+            }
+            catch (Exception ex)
+            {
+                var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning(ex, "Impossible de persister la partie abandonnée {GameId}", gameId);
+            }
+
             state.Publish(gameId, new ServerEvent("game.ended", new
             {
                 gameId,
-                endedAt = DateTimeOffset.UtcNow,
+                endedAt,
                 reason = "abandoned",
                 abandonedBy = abandonedPlayerName,
                 scores,
@@ -778,7 +799,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static async Task<IResult> EndGame(HttpContext context, string gameId, EndGameRequest request, GameHubState state, IPlayerRatingService ratingService)
+    private static async Task<IResult> EndGame(HttpContext context, string gameId, EndGameRequest request, GameHubState state, IPlayerRatingService ratingService, LamaDbContext db)
     {
         // Vérifier l'authentification
         if (!context.IsAuthenticated())
@@ -881,6 +902,22 @@ public static class GamesCommandEndpoints
             }
         }
 
+        try
+        {
+            await PersistCompletedGameSnapshotAsync(
+                db,
+                game,
+                endedAt,
+                status: "finished_normal",
+                winnerPlayerName: winner,
+                context.RequestAborted);
+        }
+        catch (Exception ex)
+        {
+            var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning(ex, "Impossible de persister la partie terminée {GameId}", gameId);
+        }
+
         state.Publish(gameId, new ServerEvent("game.ended", new
         {
             gameId,
@@ -898,6 +935,129 @@ public static class GamesCommandEndpoints
             scores,
             endedAt
         });
+    }
+
+    private static async Task PersistCompletedGameSnapshotAsync(
+        LamaDbContext db,
+        OnlineGame game,
+        DateTimeOffset endedAt,
+        string status,
+        string? winnerPlayerName,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(game.Id, out var gameGuid))
+            return;
+
+        var queueToken = game.Queue switch
+        {
+            RankingQueue.CasualUnranked => "casual",
+            RankingQueue.Tournament => "tournament",
+            RankingQueue.GlobalPrestige => "global",
+            _ => "open"
+        };
+
+        var winnerPlayerId = ResolveWinnerPlayerId(game, winnerPlayerName);
+        var durationSeconds = Math.Max(0, (int)(endedAt - game.CreatedAt).TotalSeconds);
+
+        var completed = await db.CompletedGames.FirstOrDefaultAsync(x => x.GameId == gameGuid, cancellationToken);
+        if (completed is null)
+        {
+            completed = new CompletedGameEntity { GameId = gameGuid };
+            db.CompletedGames.Add(completed);
+        }
+
+        completed.GameLevel = game.GameLevel.ToString();
+        completed.BoardSize = game.BoardSize;
+        completed.RackSize = game.RackSize;
+        completed.MinWordLength = game.MinWordLength;
+        completed.Language = game.Language;
+        completed.Queue = queueToken;
+        completed.Status = status;
+        completed.CreatedAt = game.CreatedAt;
+        completed.EndedAt = endedAt;
+        completed.DurationSeconds = durationSeconds;
+        completed.WinningPlayerId = winnerPlayerId;
+
+        var sessionGame = await db.SessionGames.FirstOrDefaultAsync(x => x.GameId == gameGuid, cancellationToken);
+        if (sessionGame is null)
+        {
+            sessionGame = new SessionGameEntity { GameId = gameGuid };
+            db.SessionGames.Add(sessionGame);
+        }
+
+        sessionGame.GameLevel = game.GameLevel.ToString();
+        sessionGame.BoardSize = game.BoardSize;
+        sessionGame.RackSize = game.RackSize;
+        sessionGame.MinWordLength = game.MinWordLength;
+        sessionGame.Language = game.Language;
+        sessionGame.Queue = queueToken;
+        sessionGame.Status = string.Equals(status, "abandoned", StringComparison.OrdinalIgnoreCase) ? "abandoned" : "ended";
+        sessionGame.CreatedAt = game.CreatedAt;
+        sessionGame.UpdatedAt = endedAt;
+        sessionGame.EndedAt = endedAt;
+
+        var existingPlayerIds = await db.SessionPlayersInGame
+            .Where(x => x.GameId == gameGuid)
+            .Select(x => x.PlayerId)
+            .ToListAsync(cancellationToken);
+        var existingSet = existingPlayerIds.ToHashSet();
+
+        for (var i = 0; i < game.Players.Count; i++)
+        {
+            var player = game.Players[i];
+            if (!TryResolvePersistentPlayerId(player, out var persistentPlayerId))
+                continue;
+            if (existingSet.Contains(persistentPlayerId))
+                continue;
+
+            db.SessionPlayersInGame.Add(new SessionPlayerInGameEntity
+            {
+                PlayerSessionId = Guid.NewGuid(),
+                GameId = gameGuid,
+                PlayerId = persistentPlayerId,
+                Nickname = player.PlayerName,
+                IsHost = player.IsHost,
+                PlayerIndex = i,
+                JoinedAt = game.CreatedAt
+            });
+            existingSet.Add(persistentPlayerId);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static Guid? ResolveWinnerPlayerId(OnlineGame game, string? winnerPlayerName)
+    {
+        if (string.IsNullOrWhiteSpace(winnerPlayerName))
+            return null;
+
+        var winner = game.Players.FirstOrDefault(p =>
+            string.Equals(p.PlayerName, winnerPlayerName, StringComparison.Ordinal));
+        if (winner is null)
+            return null;
+
+        return TryResolvePersistentPlayerId(winner, out var winnerId)
+            ? winnerId
+            : null;
+    }
+
+    private static bool TryResolvePersistentPlayerId(OnlinePlayer player, out Guid playerId)
+    {
+        if (Guid.TryParse(player.PlayerId, out playerId))
+            return true;
+
+        if (player.IsBot)
+        {
+            var bot = BotCatalog.Find(player.PlayerId);
+            if (bot is not null)
+            {
+                playerId = bot.BotGuid;
+                return true;
+            }
+        }
+
+        playerId = Guid.Empty;
+        return false;
     }
 
     private static async Task StreamEventsAsync(string gameId, GameHubState state, HttpContext httpContext)
@@ -1064,4 +1224,3 @@ public static class GamesCommandEndpoints
         return string.Equals(ComputePasswordHash(password), expectedHash, StringComparison.Ordinal);
     }
 }
-

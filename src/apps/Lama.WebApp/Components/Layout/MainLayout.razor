@@ -32,11 +32,17 @@
         {
             Nav.LocationChanged += HandleLocationChanged;
             BoardZoom.ZoomChanged += HandleZoomChanged;
-            await Auth.InitializeAsync();
-            await Theme.InitializeAsync();
-            await BoardZoom.InitializeAsync();
-            StateHasChanged();
         }
+
+        // Retry tant que JS n'est pas encore disponible (prerender/interactivité)
+        if (!Auth.IsInitialized)
+            await Auth.InitializeAsync();
+
+        await Theme.InitializeAsync();
+        await BoardZoom.InitializeAsync();
+
+        if (firstRender || !Auth.IsInitialized)
+            StateHasChanged();
     }
 
     private bool IsInGamePage()

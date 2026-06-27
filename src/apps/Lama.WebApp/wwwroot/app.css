@@ -123,7 +123,7 @@ html.vermillion {
 }
 
 /* ── BASE ── */
-html { scroll-behavior: smooth; font-size: 16px; }
+html { scroll-behavior: smooth; font-size: 17px; }
 
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -256,7 +256,7 @@ h4 { font-size: 1.05rem; font-weight: 600; }
 }
 
 .navbar-logo {
-    font-size: 1.35rem;
+    font-size: 1.75rem;
     font-weight: 900;
     letter-spacing: 2px;
     background: linear-gradient(90deg, var(--accent), var(--accent2));
@@ -302,8 +302,8 @@ h4 { font-size: 1.05rem; font-weight: 600; }
 
 .navbar-links a {
     color: var(--text-muted);
-    font-weight: 500;
-    font-size: .95rem;
+    font-weight: 600;
+    font-size: 1.05rem;
     transition: color .15s;
     text-decoration: none;
 }
@@ -390,7 +390,7 @@ h4 { font-size: 1.05rem; font-weight: 600; }
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text);
-    font-size: .85rem;
+    font-size: .95rem;
     font-weight: 600;
     line-height: 1;
     cursor: pointer;
@@ -423,7 +423,7 @@ h4 { font-size: 1.05rem; font-weight: 600; }
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text);
-    font-size: .85rem;
+    font-size: .95rem;
     font-weight: 600;
     line-height: 1;
     cursor: pointer;
@@ -459,7 +459,7 @@ html.dark .board-zoom-select option {
 }
 
 .navbar--compact .board-zoom-select {
-    font-size: .8rem;
+    font-size: .9rem;
 }
 
 .navbar--compact .theme-select-control {
@@ -467,7 +467,7 @@ html.dark .board-zoom-select option {
 }
 
 .navbar--compact .theme-select {
-    font-size: .8rem;
+    font-size: .9rem;
 }
 
 /* ── SECTION HEADER ── */
@@ -678,10 +678,10 @@ footer {
 @media (max-width: 768px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { .footer-grid { grid-template-columns: 1fr; } }
 
-.footer-brand p { color: var(--text-muted); font-size: .9rem; margin-top: .75rem; max-width: 280px; }
-.footer-col h4  { font-size: .85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: .75rem; }
+.footer-brand p { color: var(--text-muted); font-size: 1rem; margin-top: .75rem; max-width: 320px; }
+.footer-col h4  { font-size: .95rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: .75rem; }
 .footer-col ul  { list-style: none; display: flex; flex-direction: column; gap: .4rem; }
-.footer-col a   { color: var(--text-muted); font-size: .9rem; }
+.footer-col a   { color: var(--text-muted); font-size: 1rem; }
 .footer-col a:hover { color: var(--text); text-decoration: none; }
 
 .footer-bottom {
@@ -690,7 +690,7 @@ footer {
     padding-top: 1.5rem;
     border-top: 1px solid var(--border);
     color: var(--text-dim);
-    font-size: .85rem;
+    font-size: .95rem;
     flex-wrap: wrap; gap: .75rem;
 }
 
@@ -988,7 +988,7 @@ footer {
     transform: translate(-50%, -50%);
     color: var(--accent);
     font-weight: 800;
-    font-size: 1.1rem;
+    font-size: 1.35rem;
     animation: cursorBlink .7s step-end infinite;
     pointer-events: none;
 }

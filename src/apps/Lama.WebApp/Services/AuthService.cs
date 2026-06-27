@@ -47,6 +47,8 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             var result = await api.AccountLoginAsync(username, password);
             await PersistSessionAsync(result);
             _currentUser = new CurrentUser(result.PlayerId, result.PlayerName, result.Email);
+            _initialized = true;
+            OnAuthStateChanged?.Invoke();
             return (true, null);
         }
         catch (Exception ex)
@@ -62,6 +64,8 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             var result = await api.RegisterAsync(username, password, email, countryCode);
             await PersistSessionAsync(result);
             _currentUser = new CurrentUser(result.PlayerId, result.PlayerName, result.Email);
+            _initialized = true;
+            OnAuthStateChanged?.Invoke();
             return (true, null);
         }
         catch (Exception ex)

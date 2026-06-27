@@ -1,5 +1,6 @@
 @page "/my-games"
 @layout MainLayout
+@implements IDisposable
 @inject AuthService Auth
 @inject LamaApiClient Api
 @inject NavigationManager Navigation
@@ -127,10 +128,24 @@ else
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
+        Auth.OnAuthStateChanged += HandleAuthChanged;
         await Auth.InitializeAsync();
         if (!Auth.IsLoggedIn) { StateHasChanged(); return; }
         await LoadAsync();
         StateHasChanged();
+    }
+
+    private async void HandleAuthChanged()
+    {
+        if (!Auth.IsLoggedIn)
+        {
+            _games.Clear();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if (_busy) return;
+        await LoadAsync();
     }
 
     private async Task LoadAsync()
@@ -167,4 +182,9 @@ else
         "finished_normal" => "Terminée",
         _ => status
     };
+
+    public void Dispose()
+    {
+        Auth.OnAuthStateChanged -= HandleAuthChanged;
+    }
 }
