@@ -14,6 +14,7 @@ Usage:
     --dev-connection-string "Host=...;..." \
     --staging-connection-string "Host=...;..." \
     --prod-connection-string "Host=...;..." \
+    [--keep-language-data] \
     [--dry-run]
 
 This executes the same import sequentially on: dev -> staging -> prod.
@@ -30,6 +31,7 @@ DEV_CONNECTION_STRING=""
 STAGING_CONNECTION_STRING=""
 PROD_CONNECTION_STRING=""
 DRY_RUN=false
+KEEP_LANGUAGE_DATA=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -39,6 +41,7 @@ while [[ $# -gt 0 ]]; do
     --dev-connection-string) DEV_CONNECTION_STRING="${2:-}"; shift 2 ;;
     --staging-connection-string) STAGING_CONNECTION_STRING="${2:-}"; shift 2 ;;
     --prod-connection-string) PROD_CONNECTION_STRING="${2:-}"; shift 2 ;;
+    --keep-language-data) KEEP_LANGUAGE_DATA=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) err "Unknown option: $1" ;;
@@ -62,6 +65,9 @@ run_env() {
   local -a extra_args=()
   if [[ "$DRY_RUN" == "true" ]]; then
     extra_args+=(--dry-run)
+  fi
+  if [[ "$KEEP_LANGUAGE_DATA" == "true" ]]; then
+    extra_args+=(--keep-language-data)
   fi
 
   log "Running env=$env_name"

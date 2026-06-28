@@ -17,7 +17,8 @@ var importOptionsJson = JsonSerializer.Serialize(new
 {
     includeDefinitions = options.IncludeDefinitions,
     includeSynonyms = options.IncludeSynonyms,
-    scrabbleOnly = options.ScrabbleOnly
+    scrabbleOnly = options.ScrabbleOnly,
+    clearLanguageBeforeImport = options.ClearLanguageBeforeImport
 });
 
 await using var connection = new NpgsqlConnection(options.ConnectionString);
@@ -25,7 +26,14 @@ await connection.OpenAsync();
 
 if (!options.DryRun)
 {
-    await EnsureNoCompletedRunForSameFingerprintAsync(connection, options, fileSha256, importOptionsJson);
+    if (options.ClearLanguageBeforeImport)
+    {
+        await ClearLanguageDataAsync(connection, options);
+    }
+    else
+    {
+        await EnsureNoCompletedRunForSameFingerprintAsync(connection, options, fileSha256, importOptionsJson);
+    }
 }
 
 var runId = Guid.NewGuid();
@@ -280,6 +288,22 @@ static async Task EnsureNoCompletedRunForSameFingerprintAsync(
         throw new InvalidOperationException(
             $"Import already completed for env={options.Environment} lang={options.LanguageCode} sha256={sha256}.");
     }
+}
+
+static async Task ClearLanguageDataAsync(NpgsqlConnection connection, ImportOptions options)
+{
+    const string sql = """
+        DELETE FROM lexicon.import_runs
+        WHERE environment = @environment AND language_code = @language_code;
+
+        DELETE FROM lexicon.words
+        WHERE language_code = @language_code;
+        """;
+
+    await using var command = new NpgsqlCommand(sql, connection);
+    command.Parameters.AddWithValue("environment", options.Environment);
+    command.Parameters.AddWithValue("language_code", options.LanguageCode);
+    await command.ExecuteNonQueryAsync();
 }
 
 static async Task InsertRunAsync(
@@ -658,6 +682,7 @@ sealed class ImportOptions
     public bool IncludeDefinitions { get; init; }
     public bool IncludeSynonyms { get; init; }
     public bool ScrabbleOnly { get; init; }
+    public bool ClearLanguageBeforeImport { get; init; }
     public bool DryRun { get; init; }
     public bool FailOnError { get; init; }
     public int BatchSize { get; init; }
@@ -672,6 +697,7 @@ sealed class ImportOptions
         var includeDefinitions = false;
         var includeSynonyms = false;
         var scrabbleOnly = true;
+        var clearLanguageBeforeImport = true;
         var dryRun = false;
         var failOnError = true;
         var batchSize = 5000;
@@ -704,6 +730,9 @@ sealed class ImportOptions
                     break;
                 case "--dry-run":
                     dryRun = true;
+                    break;
+                case "--keep-language-data":
+                    clearLanguageBeforeImport = false;
                     break;
                 case "--allow-non-scrabble":
                     scrabbleOnly = false;
@@ -760,6 +789,7 @@ sealed class ImportOptions
             IncludeDefinitions = includeDefinitions,
             IncludeSynonyms = includeSynonyms,
             ScrabbleOnly = scrabbleOnly,
+            ClearLanguageBeforeImport = clearLanguageBeforeImport,
             DryRun = dryRun,
             FailOnError = failOnError,
             BatchSize = batchSize
@@ -790,6 +820,7 @@ sealed class ImportOptions
                 [--source kaikki] \
                 [--include-definitions] \
                 [--include-synonyms] \
+                [--keep-language-data] \
                 [--allow-non-scrabble] \
                 [--batch-size 5000] \
                 [--continue-on-error] \

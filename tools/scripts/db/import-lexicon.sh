@@ -14,6 +14,7 @@ Usage:
     --fr /path/fr.jsonl \
     --en /path/en.jsonl \
     --de /path/de.jsonl \
+    [--keep-language-data] \
     [--dry-run]
 
 Notes:
@@ -32,6 +33,7 @@ FR_PATH=""
 EN_PATH=""
 DE_PATH=""
 DRY_RUN=false
+KEEP_LANGUAGE_DATA=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -40,6 +42,7 @@ while [[ $# -gt 0 ]]; do
     --fr) FR_PATH="${2:-}"; shift 2 ;;
     --en) EN_PATH="${2:-}"; shift 2 ;;
     --de) DE_PATH="${2:-}"; shift 2 ;;
+    --keep-language-data) KEEP_LANGUAGE_DATA=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) err "Unknown option: $1" ;;
@@ -73,6 +76,9 @@ run_import() {
   local -a extra_args=()
   if [[ "$DRY_RUN" == "true" ]]; then
     extra_args+=(--dry-run)
+  fi
+  if [[ "$KEEP_LANGUAGE_DATA" == "true" ]]; then
+    extra_args+=(--keep-language-data)
   fi
   log "Importing language=$lang file=$file"
   dotnet run --project "$IMPORTER_PROJECT" -- \
