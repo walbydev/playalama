@@ -498,56 +498,79 @@ static List<string> ExtractDefinitions(JsonElement root)
 
 static List<(int SenseIndex, List<string> Synonyms)> ExtractSynonymsBySense(JsonElement root)
 {
-    var result = new List<(int SenseIndex, List<string> Synonyms)>();
-    if (!root.TryGetProperty("senses", out var senses) || senses.ValueKind != JsonValueKind.Array)
-    {
-        return result;
-    }
+    var result = new Dictionary<int, List<string>>();
+    var dedupeBySense = new Dictionary<int, HashSet<string>>();
 
-    var senseIndex = 0;
-    foreach (var sense in senses.EnumerateArray())
+    if (root.TryGetProperty("senses", out var senses) && senses.ValueKind == JsonValueKind.Array)
     {
-        var synonyms = new List<string>();
-        var dedupe = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (sense.TryGetProperty("synonyms", out var synonymsElement) && synonymsElement.ValueKind == JsonValueKind.Array)
+        var senseIndex = 0;
+        foreach (var sense in senses.EnumerateArray())
         {
-            foreach (var synonymElement in synonymsElement.EnumerateArray())
+            if (sense.TryGetProperty("synonyms", out var synonymsElement) && synonymsElement.ValueKind == JsonValueKind.Array)
             {
-                switch (synonymElement.ValueKind)
-                {
-                    case JsonValueKind.String:
-                    {
-                        var value = synonymElement.GetString();
-                        if (!string.IsNullOrWhiteSpace(value) && dedupe.Add(value))
-                        {
-                            synonyms.Add(value);
-                        }
-
-                        break;
-                    }
-                    case JsonValueKind.Object:
-                    {
-                        var value = TryGetString(synonymElement, "word");
-                        if (!string.IsNullOrWhiteSpace(value) && dedupe.Add(value))
-                        {
-                            synonyms.Add(value);
-                        }
-
-                        break;
-                    }
-                }
+                AddSynonymsFromArray(synonymsElement, senseIndex, result, dedupeBySense);
             }
-        }
 
-        if (synonyms.Count > 0)
-        {
-            result.Add((senseIndex, synonyms));
+            senseIndex++;
         }
-
-        senseIndex++;
     }
 
-    return result;
+    // Kaikki FR often provides synonyms at the top-level field "synonyms".
+    if (root.TryGetProperty("synonyms", out var topLevelSynonyms) && topLevelSynonyms.ValueKind == JsonValueKind.Array)
+    {
+        AddSynonymsFromArray(topLevelSynonyms, null, result, dedupeBySense);
+    }
+
+    return result
+        .OrderBy(kv => kv.Key)
+        .Select(kv => (kv.Key, kv.Value))
+        .ToList();
+}
+
+static void AddSynonymsFromArray(
+    JsonElement synonymsArray,
+    int? fallbackSenseIndex,
+    Dictionary<int, List<string>> result,
+    Dictionary<int, HashSet<string>> dedupeBySense)
+{
+    foreach (var synonymElement in synonymsArray.EnumerateArray())
+    {
+        var resolvedSenseIndex = fallbackSenseIndex ?? 0;
+        string? synonymValue = null;
+
+        switch (synonymElement.ValueKind)
+        {
+            case JsonValueKind.String:
+                synonymValue = synonymElement.GetString();
+                break;
+            case JsonValueKind.Object:
+                synonymValue = TryGetString(synonymElement, "word");
+                if (synonymElement.TryGetProperty("sense_index", out var senseIndexElement) &&
+                    senseIndexElement.ValueKind == JsonValueKind.Number &&
+                    senseIndexElement.TryGetInt32(out var parsedSenseIndex))
+                {
+                    resolvedSenseIndex = parsedSenseIndex;
+                }
+                break;
+        }
+
+        if (string.IsNullOrWhiteSpace(synonymValue))
+        {
+            continue;
+        }
+
+        if (!result.TryGetValue(resolvedSenseIndex, out var synonyms))
+        {
+            synonyms = [];
+            result[resolvedSenseIndex] = synonyms;
+            dedupeBySense[resolvedSenseIndex] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        if (dedupeBySense[resolvedSenseIndex].Add(synonymValue))
+        {
+            synonyms.Add(synonymValue);
+        }
+    }
 }
 
 static void ExtractStringsFromSense(
