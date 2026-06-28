@@ -26,6 +26,7 @@
   </Folder>
   <Folder Name="/Tools/">
     <File Path="tools\distribution\README.txt" />
+    <Project Path="tools/importers/Lama.DictionaryImporter/Lama.DictionaryImporter.csproj" />
     <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
   </Folder>
   <Folder Name="/Root/">

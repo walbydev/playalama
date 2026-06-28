@@ -359,6 +359,14 @@ health-local: ## Vérifier les endpoints locaux
 web-lobby-smoke: ## Smoke test Web lobby (register/create/start/my-games)
 	bash tools/scripts/e2e/e2e-web-lobby-smoke.sh
 
+.PHONY: import-lexicon
+import-lexicon: ## Import Kaikki JSONL into PostgreSQL lexicon schema (usage in script help)
+	bash tools/scripts/db/import-lexicon.sh $(ARGS)
+
+.PHONY: import-lexicon-all
+import-lexicon-all: ## Import Kaikki JSONL on dev->staging->prod (usage in script help)
+	bash tools/scripts/db/import-lexicon-all.sh $(ARGS)
+
 # =============================================================================
 # Aide
 # =============================================================================
