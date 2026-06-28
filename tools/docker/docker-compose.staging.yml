@@ -42,6 +42,29 @@ services:
       start_period: 10s
 
   # ─────────────────────────────────────────────────────────
+  # Service IA — Suggestions de mots (français)
+  # ─────────────────────────────────────────────────────────
+  lama-aiserver-fr-staging:
+    image: lama-aiserver:${DEPLOY_TAG:-latest}
+    container_name: lama-aiserver-fr-staging
+    networks:
+      - staging-internal
+    environment:
+      ASPNETCORE_URLS: "http://+:5203"
+      ASPNETCORE_ENVIRONMENT: "Staging"
+      LAMA_AI_LANGUAGE: "fr"
+      LAMA_AI_MAX_CONCURRENT: "3"
+    volumes:
+      - ./assets/languages:/app/assets/languages:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5203/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ─────────────────────────────────────────────────────────
   # API Jeu + SignalR/SSE
   # ─────────────────────────────────────────────────────────
   lama-server-staging:
@@ -56,6 +79,7 @@ services:
       ASPNETCORE_ENVIRONMENT: "Staging"
       LAMA_SERVER_ALLOW_SHUTDOWN: "true"
       LAMA_RUNTIME_MODE: "online"
+      LAMA_AI_SERVER_URL: "http://lama-aiserver-fr-staging:5203"
       Database__AutoMigrate: "true"
     expose:
       - "5201"
@@ -65,6 +89,8 @@ services:
     restart: unless-stopped
     depends_on:
       postgres-lama-staging:
+        condition: service_healthy
+      lama-aiserver-fr-staging:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5201/health"]

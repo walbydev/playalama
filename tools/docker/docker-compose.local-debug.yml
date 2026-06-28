@@ -1,5 +1,3 @@
-version: '3.8'
-
 name: "lama-local-debug-a"
 
 services:
