@@ -50,6 +50,7 @@ var skippedCount = 0L;
 var parseErrorCount = 0L;
 var lineNumber = 0;
 var processedSinceLastCommit = 0;
+var lastHeartbeatLine = 0;
 
 NpgsqlTransaction? transaction = null;
 var wordCommand = default(NpgsqlCommand);
@@ -70,6 +71,16 @@ try
     while (await reader.ReadLineAsync() is { } line)
     {
         lineNumber++;
+        if (options.ProgressEveryLines > 0 &&
+            lineNumber - lastHeartbeatLine >= options.ProgressEveryLines)
+        {
+            var elapsedSeconds = Math.Max(1.0, stopwatch.Elapsed.TotalSeconds);
+            var linesPerSecond = lineNumber / elapsedSeconds;
+            Console.WriteLine(
+                $"Heartbeat line={lineNumber} words={wordsCount} definitions={definitionsCount} synonyms={synonymsCount} skipped={skippedCount} rate={linesPerSecond:F0} lines/s");
+            lastHeartbeatLine = lineNumber;
+        }
+
         if (string.IsNullOrWhiteSpace(line))
         {
             skippedCount++;
@@ -301,6 +312,7 @@ static async Task ClearLanguageDataAsync(NpgsqlConnection connection, ImportOpti
         """;
 
     await using var command = new NpgsqlCommand(sql, connection);
+    command.CommandTimeout = 0;
     command.Parameters.AddWithValue("environment", options.Environment);
     command.Parameters.AddWithValue("language_code", options.LanguageCode);
     await command.ExecuteNonQueryAsync();
@@ -686,6 +698,7 @@ sealed class ImportOptions
     public bool DryRun { get; init; }
     public bool FailOnError { get; init; }
     public int BatchSize { get; init; }
+    public int ProgressEveryLines { get; init; }
 
     public static ImportOptions Parse(string[] args)
     {
@@ -701,6 +714,7 @@ sealed class ImportOptions
         var dryRun = false;
         var failOnError = true;
         var batchSize = 5000;
+        var progressEveryLines = 50_000;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -750,6 +764,16 @@ sealed class ImportOptions
 
                     break;
                 }
+                case "--progress-every-lines":
+                {
+                    var value = ReadValue(args, ref i, arg);
+                    if (!int.TryParse(value, out progressEveryLines) || progressEveryLines <= 0)
+                    {
+                        throw new ArgumentException($"Invalid --progress-every-lines value: {value}");
+                    }
+
+                    break;
+                }
                 case "--help":
                 case "-h":
                     PrintHelpAndExit();
@@ -792,7 +816,8 @@ sealed class ImportOptions
             ClearLanguageBeforeImport = clearLanguageBeforeImport,
             DryRun = dryRun,
             FailOnError = failOnError,
-            BatchSize = batchSize
+            BatchSize = batchSize,
+            ProgressEveryLines = progressEveryLines
         };
     }
 
@@ -823,6 +848,7 @@ sealed class ImportOptions
                 [--keep-language-data] \
                 [--allow-non-scrabble] \
                 [--batch-size 5000] \
+                [--progress-every-lines 50000] \
                 [--continue-on-error] \
                 [--dry-run]
             """);
