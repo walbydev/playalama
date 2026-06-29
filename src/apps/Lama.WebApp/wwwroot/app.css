@@ -1520,6 +1520,25 @@ footer {
 }
 .suggest-meta { font-size: .75rem; color: var(--text-dim); white-space: nowrap; }
 .suggest-use-btn { flex-shrink: 0; font-size: .75rem; padding: .3rem .6rem; }
+.dictionary-search { border-top: 1px solid var(--border); padding-top: .75rem; margin-top: .85rem; }
+.dictionary-search-form { display: flex; gap: .5rem; margin-bottom: .45rem; }
+.dictionary-search-input {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .45rem .55rem;
+    background: var(--surface);
+    color: var(--text);
+}
+.dictionary-search-results {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    max-height: 8.5rem;
+    overflow: auto;
+}
+.dictionary-word-btn { padding: .3rem .55rem; font-size: .78rem; }
 
 /* ── STATUS DASHBOARD ──────────────────────────────────────────────────────── */
 .status-toolbar {

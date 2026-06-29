@@ -423,6 +423,40 @@ else
                                         ↺ Nouvelles suggestions
                                     </button>
                                 }
+
+                                <div class="suggest-section dictionary-search">
+                                    <p class="suggest-section-title">📚 Interrogateur de dictionnaire</p>
+                                    <form class="dictionary-search-form" @onsubmit="SearchDictionaryAsync" @onsubmit:preventDefault="true">
+                                        <InputText @bind-Value="_dictionaryQuery"
+                                                   placeholder="Mot complet ou début de mot"
+                                                   class="dictionary-search-input" />
+                                        <button type="submit" class="btn btn-ghost btn-sm" disabled="@_dictionarySearchLoading">
+                                            @(_dictionarySearchLoading ? "…" : "Rechercher")
+                                        </button>
+                                    </form>
+
+                                    @if (!string.IsNullOrWhiteSpace(_dictionarySearchError))
+                                    {
+                                        <p class="form-error" role="alert">⚠️ @_dictionarySearchError</p>
+                                    }
+                                    else if (_dictionarySearchDone && _dictionaryResults.Count == 0)
+                                    {
+                                        <p class="text-dim" style="font-size:.8rem">Aucun mot trouvé.</p>
+                                    }
+                                    else if (_dictionaryResults.Count > 0)
+                                    {
+                                        <div class="dictionary-search-results">
+                                            @foreach (var word in _dictionaryResults)
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-ghost btn-sm dictionary-word-btn"
+                                                        @onclick="() => ShowWordInfoAsync(word)">
+                                                    @word
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         }
                         else if (!_vm.Snapshot.IsGameOver && !_vm.IsAbandoned)
@@ -728,6 +762,11 @@ else
 
     private WebWordInfo? _wordInfo;
     private string? _wordInfoNotFound;
+    private string _dictionaryQuery = string.Empty;
+    private List<string> _dictionaryResults = [];
+    private bool _dictionarySearchLoading;
+    private bool _dictionarySearchDone;
+    private string? _dictionarySearchError;
 
     private async Task HandleTileClick((int Row, int Col) cell)
     {
@@ -737,13 +776,49 @@ else
         var word = ExtractWordAt(board, cell.Row, cell.Col);
         if (word.Length < 2) return;
 
-        var lang = string.IsNullOrWhiteSpace(_vm.Snapshot?.Language) ? "fr" : _vm.Snapshot!.Language;
+        await ShowWordInfoAsync(word);
+    }
+
+    private async Task SearchDictionaryAsync()
+    {
+        var query = _dictionaryQuery.Trim();
+        _dictionarySearchError = null;
+        _dictionarySearchDone = false;
+        _dictionaryResults = [];
+
+        if (query.Length < 2)
+        {
+            _dictionarySearchError = "Saisissez au moins 2 lettres.";
+            StateHasChanged();
+            return;
+        }
+
+        _dictionarySearchLoading = true;
+        StateHasChanged();
+
+        var lang = GetLexiconLanguage();
+        var results = await Api.SearchWordsAsync(lang, query, limit: 20);
+        _dictionaryResults = results.ToList();
+        _dictionarySearchDone = true;
+        _dictionarySearchLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task ShowWordInfoAsync(string word)
+    {
+        var lang = GetLexiconLanguage();
         _wordInfo = null;
         _wordInfoNotFound = null;
         var info = await Api.GetWordInfoAsync(lang, word);
         if (info is null) _wordInfoNotFound = word;
         else _wordInfo = info;
         StateHasChanged();
+    }
+
+    private string GetLexiconLanguage()
+    {
+        var lang = _vm.Snapshot?.Language;
+        return string.IsNullOrWhiteSpace(lang) ? "fr" : lang.Trim().ToLowerInvariant();
     }
 
     private static string ExtractWordAt(IReadOnlyList<WebBoardTile> board, int row, int col)

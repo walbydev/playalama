@@ -188,6 +188,38 @@ public sealed class LamaApiClientTests
         suggestions.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task SearchWordsAsync_Should_Return_Words_From_Lexicon_Endpoint()
+    {
+        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                """
+                {
+                  "lang": "fr",
+                  "query": "LAM",
+                  "words": ["LAMA", "LAMAIRE", "LAMANEUR"]
+                }
+                """, Encoding.UTF8, "application/json")
+        });
+
+        var client = CreateClient(handler);
+        var words = await client.SearchWordsAsync("fr", "lam", 20);
+
+        words.Should().Equal("LAMA", "LAMAIRE", "LAMANEUR");
+    }
+
+    [Fact]
+    public async Task SearchWordsAsync_Should_Return_Empty_When_Endpoint_Fails()
+    {
+        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.BadRequest));
+
+        var client = CreateClient(handler);
+        var words = await client.SearchWordsAsync("fr", "l");
+
+        words.Should().BeEmpty();
+    }
+
     private static LamaApiClient CreateClient(HttpMessageHandler handler)
     {
         var httpClient = new HttpClient(handler)

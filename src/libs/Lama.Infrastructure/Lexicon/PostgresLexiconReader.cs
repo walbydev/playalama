@@ -86,4 +86,34 @@ public sealed partial class PostgresLexiconReader(string connectionString, ILogg
 
         return new WordInfo(lemma, languageCode, url, defs, syns);
     }
+
+    public async Task<IReadOnlyList<string>> SearchWordsAsync(string languageCode, string query, int limit = 20, CancellationToken cancellationToken = default)
+    {
+        var normalized = query.Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(normalized))
+            return [];
+        if (!normalized.All(c => c is >= 'A' and <= 'Z'))
+            return [];
+
+        var safeLimit = Math.Clamp(limit, 1, 100);
+        var words = new List<string>(safeLimit);
+
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var cmd = new NpgsqlCommand(
+            "SELECT lemma FROM lexicon.words " +
+            "WHERE language_code = @lang AND lemma_normalized LIKE @prefix " +
+            "ORDER BY char_length(lemma_normalized), lemma_normalized " +
+            "LIMIT @limit", connection);
+        cmd.Parameters.AddWithValue("lang", languageCode);
+        cmd.Parameters.AddWithValue("prefix", normalized + "%");
+        cmd.Parameters.AddWithValue("limit", safeLimit);
+
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+            words.Add(reader.GetString(0));
+
+        return words;
+    }
 }

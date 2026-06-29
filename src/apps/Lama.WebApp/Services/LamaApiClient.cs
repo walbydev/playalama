@@ -24,6 +24,19 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<WebWordInfo>(JsonOptions, cancellationToken);
     }
 
+    /// <summary>Recherche des mots (préfixe) dans une langue du lexique.</summary>
+    public async Task<IReadOnlyList<string>> SearchWordsAsync(string lang, string query, int limit = 20, CancellationToken cancellationToken = default)
+    {
+        var safeLimit = Math.Clamp(limit, 1, 100);
+        var response = await httpClient.GetAsync(
+            $"{ApiBase}/lexicon/{lang}/search?q={Uri.EscapeDataString(query)}&limit={safeLimit}",
+            cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return [];
+        var payload = await response.Content.ReadFromJsonAsync<LexiconSearchEnvelope>(JsonOptions, cancellationToken);
+        return payload?.Words ?? [];
+    }
+
     // ── Auth ─────────────────────────────────────────────────────────────────
 
     public async Task<WebAuthResponse> RegisterAsync(string username, string password, string? email, string? countryCode = null, CancellationToken cancellationToken = default)
@@ -430,6 +443,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
     private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost, List<char>? Rack, int RackCount, bool IsBot = false);
     private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);
     private sealed record PlayEnvelope(string GameId, string MoveId, int Score);
+    private sealed record LexiconSearchEnvelope(List<string> Words);
     private sealed record LeaderboardEntryEnvelope(string PlayerId, string Username, string? CountryCode, int Level, int Elo, int Wins, int Games);
     private sealed record BotListEnvelope(List<BotItemEnvelope> Bots);
     private sealed record BotItemEnvelope(string BotId, string Name, int Level, int InitialElo);

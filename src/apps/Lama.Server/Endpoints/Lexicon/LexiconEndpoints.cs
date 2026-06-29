@@ -10,8 +10,24 @@ public static class LexiconEndpoints
 {
     public static IEndpointRouteBuilder MapLexiconEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapGet("/lexicon/{lang}/search", SearchWordsAsync);
         app.MapGet("/lexicon/{lang}/{word}", GetWordInfoAsync);
         return app;
+    }
+
+    private static async Task<IResult> SearchWordsAsync(
+        string lang, string? q, int? limit, ILexiconReader reader, ILanguageProviderRegistry registry,
+        CancellationToken cancellationToken)
+    {
+        var code = lang.Trim().ToLowerInvariant();
+        if (!registry.IsSupported(code))
+            return Results.BadRequest(new { error = $"unsupported language: '{lang}'" });
+
+        if (string.IsNullOrWhiteSpace(q))
+            return Results.BadRequest(new { error = "q is required" });
+
+        var words = await reader.SearchWordsAsync(code, q, limit ?? 20, cancellationToken);
+        return Results.Ok(new { lang = code, query = q.Trim(), words });
     }
 
     private static async Task<IResult> GetWordInfoAsync(
