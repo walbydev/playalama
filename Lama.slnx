@@ -27,7 +27,7 @@
     <Project Path="tests/Lama.Server.UnitTests/Lama.Server.UnitTests.csproj" />
   </Folder>
   <Folder Name="/Tools/">
-    <File Path="tools\distribution\README.txt" />
+    <File Path="tools/distribution/README.txt" />
     <Project Path="tools/importers/Lama.DictionaryImporter/Lama.DictionaryImporter.csproj" />
     <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
   </Folder>
@@ -56,7 +56,7 @@
     <File Path="site/static/assets/js/status.js" />
     <File Path="site/static/assets/js/theme.js" />
     <File Path="site/static/download/index.html" />
-    <File Path="site\static\new_home_page_design.html" />
+    <File Path="site/static/new_home_page_design.html" />
   </Folder>
   <Folder Name="/Docs/">
     <File Path="AGENTS.md" />
@@ -115,6 +115,6 @@
     <File Path="docs/utils/POSTGRESQL_QUICKSTART.md" />
     <File Path="docs/utils/START_INFRA_README.md" />
     <File Path="docs/utils/tools.md" />
-    <File Path="docs\utils\GIT_WORKFLOW.md" />
+    <File Path="docs/utils/GIT_WORKFLOW.md" />
   </Folder>
 </Solution>
