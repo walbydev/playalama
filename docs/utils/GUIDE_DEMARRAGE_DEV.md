@@ -18,6 +18,13 @@ Chaque cas dispose d'une **cible Makefile** et, pour les cas de debug, d'une **c
 | make | GNU make | raccourcis Makefile |
 | Rider | 2024.x+ | cas 1, 2 (debug) |
 
+> ⚠️ **SDK pinning (`global.json`)**  
+> Le Makefile utilise désormais un `dotnet` résolu intelligemment : `~/.dotnet/dotnet` si présent, sinon `dotnet` du `PATH`.  
+> Vérifiez le binaire réellement utilisé avec :
+> ```bash
+> make dotnet-info
+> ```
+
 Clé SSH configurée vers le VPS pour les cas 6 et 7 :
 
 ```bash

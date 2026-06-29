@@ -7,7 +7,7 @@ namespace Lama.Server.Bots;
 /// <summary>
 /// Orchestre le tour automatique d'un joueur IA :
 /// interroge le moteur de suggestions, choisit le meilleur coup
-/// (ou passe selon le taux configuré), et retourne le move créé.
+/// (ou échange/passe selon le profil configuré), et retourne le move créé.
 /// </summary>
 public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
 {
@@ -71,8 +71,33 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
             if (state.CurrentPlayerIndex != botIndex)
                 return (null, null);
 
-            // Passe intentionnelle (difficulté) ou absence de suggestion
-            if (chosen is null || Rng.NextDouble() < bot.PassRate)
+            var bagCount = game.Engine.GetBagCount();
+            var rackNow = state.Players[botIndex].Rack.ToList();
+
+            // Aucune suggestion jouable : le bot peut privilégier un échange.
+            if (chosen is null)
+            {
+                if (ShouldAttemptSwapWhenNoSuggestion(bot) &&
+                    TrySwap(game, bot, botIndex, turnNumber, rackNow, bagCount, out var swapMove, out var swapRack))
+                {
+                    return (swapMove, swapRack);
+                }
+
+                game.Engine.PassTurn();
+                var passedState = game.Engine.GetGameState();
+                var passRack    = passedState.Players[botIndex].Rack.ToList();
+                return (BuildMove(game, bot, "play.pass", [], 0, turnNumber), passRack);
+            }
+
+            // Coup faible : selon le niveau, le bot peut échanger au lieu de poser.
+            if (ShouldAttemptSwapForWeakMove(chosen, bot) &&
+                TrySwap(game, bot, botIndex, turnNumber, rackNow, bagCount, out var weakSwapMove, out var weakSwapRack))
+            {
+                return (weakSwapMove, weakSwapRack);
+            }
+
+            // Passe intentionnelle (difficulté)
+            if (Rng.NextDouble() < bot.PassRate)
             {
                 game.Engine.PassTurn();
                 var passedState = game.Engine.GetGameState();
@@ -85,7 +110,13 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
 
             if (placements.Count == 0)
             {
-                // Coup vide après exclusion des lettres déjà posées → passer
+                // Coup vide après exclusion des lettres déjà posées : échange possible sinon passe.
+                if (ShouldAttemptSwapWhenNoSuggestion(bot) &&
+                    TrySwap(game, bot, botIndex, turnNumber, rackNow, bagCount, out var emptySwapMove, out var emptySwapRack))
+                {
+                    return (emptySwapMove, emptySwapRack);
+                }
+
                 game.Engine.PassTurn();
                 var passedState = game.Engine.GetGameState();
                 var passRack    = passedState.Players[botIndex].Rack.ToList();
@@ -97,6 +128,12 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
             {
                 logger.LogWarning("Bot {BotId} suggestion invalide ({Word}) : {Error}",
                     bot.BotId, chosen.Word, validation.ErrorMessage);
+
+                if (ShouldAttemptSwapWhenNoSuggestion(bot) &&
+                    TrySwap(game, bot, botIndex, turnNumber, rackNow, bagCount, out var invalidSwapMove, out var invalidSwapRack))
+                {
+                    return (invalidSwapMove, invalidSwapRack);
+                }
 
                 game.Engine.PassTurn();
                 var passedState = game.Engine.GetGameState();
@@ -201,5 +238,85 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
         }
 
         return candidates[0];
+    }
+
+    private static bool ShouldAttemptSwapWhenNoSuggestion(BotProfile bot) =>
+        bot.SwapOnNoSuggestionRate > 0 && Rng.NextDouble() < bot.SwapOnNoSuggestionRate;
+
+    private static bool ShouldAttemptSwapForWeakMove(AISuggestion suggestion, BotProfile bot) =>
+        bot.SwapOnWeakMoveRate > 0
+        && suggestion.Score <= bot.WeakMoveScoreThreshold
+        && Rng.NextDouble() < bot.SwapOnWeakMoveRate;
+
+    private bool TrySwap(
+        OnlineGame game,
+        BotProfile bot,
+        int botIndex,
+        int turnNumber,
+        IReadOnlyList<char> rack,
+        int bagCount,
+        out OnlineMove? move,
+        out List<char>? newRack)
+    {
+        move = null;
+        newRack = null;
+
+        if (bagCount <= 0 || rack.Count == 0 || bot.SwapMaxLetters <= 0)
+            return false;
+
+        var lettersToSwap = SelectLettersToSwap(rack, bagCount, bot.SwapMaxLetters);
+        if (lettersToSwap.Count == 0)
+            return false;
+
+        try
+        {
+            game.Engine.SwapLetters(lettersToSwap);
+            var swappedState = game.Engine.GetGameState();
+            newRack = swappedState.Players[botIndex].Rack.ToList();
+            move = BuildMove(game, bot, "play.swap", [], 0, turnNumber);
+            return true;
+        }
+        catch (GameException ex)
+        {
+            logger.LogDebug(ex, "Swap impossible pour le bot {BotId}", bot.BotId);
+            return false;
+        }
+    }
+
+    private static List<char> SelectLettersToSwap(
+        IReadOnlyList<char> rack,
+        int bagCount,
+        int maxLetters)
+    {
+        var cap = Math.Min(Math.Min(maxLetters, rack.Count), bagCount);
+        if (cap <= 0)
+            return [];
+
+        var count = cap == 1 ? 1 : Rng.Next(1, cap + 1);
+
+        return rack
+            .Select(letter => new { letter, priority = GetSwapPriority(letter) })
+            .Where(x => x.priority > int.MinValue)
+            .OrderByDescending(x => x.priority)
+            .ThenBy(_ => Rng.Next())
+            .Take(count)
+            .Select(x => x.letter)
+            .ToList();
+    }
+
+    private static int GetSwapPriority(char letter)
+    {
+        var upper = char.ToUpperInvariant(letter);
+        if (upper == '*')
+            return int.MinValue;
+        if ("JQKWXYZ".Contains(upper))
+            return 100;
+        if ("VFHBGMP".Contains(upper))
+            return 70;
+        if ("DC".Contains(upper))
+            return 55;
+        if ("RSTLNEAIOU".Contains(upper))
+            return 20;
+        return 35;
     }
 }

@@ -26,7 +26,7 @@
 
                     <div class="form-field">
                         <label for="game-mode">@L["CreateGame.Mode"]</label>
-                        <InputSelect id="game-mode" @bind-Value="_createForm.Mode" @bind-Value:after="OnModeChanged">
+                        <InputSelect id="game-mode" class="ui-control ui-control-lg" @bind-Value="_createForm.Mode" @bind-Value:after="OnModeChanged">
                             <option value="multi">@L["CreateGame.Multiplayer"]</option>
                             <option value="solo">@L["CreateGame.Solo"]</option>
                             @if (_isAdmin)
@@ -38,7 +38,7 @@
 
                     <div class="form-field">
                         <label for="game-name">@L["CreateGame.Name"] <small class="text-dim">@L["Common.Optional"]</small></label>
-                        <InputText id="game-name" @bind-Value="_createForm.GameName" placeholder="@L["Games.GameNamePlaceholder"]" />
+                        <InputText id="game-name" class="ui-control" @bind-Value="_createForm.GameName" placeholder="@L["Games.GameNamePlaceholder"]" />
                     </div>
                     @if (_isSolo)
                     {
@@ -50,7 +50,7 @@
                             }
                             else
                             {
-                                <select id="bot-slot-solo"
+                                <select id="bot-slot-solo" class="ui-control"
                                         value="@(_createForm.AiBotIds[0] ?? string.Empty)"
                                         @onchange="e => OnAiBotSlotChanged(0, e.Value?.ToString())">
                                     <option value="">@L["CreateGame.AiChooseBot"]</option>
@@ -79,7 +79,7 @@
                                 }
                                 else
                                 {
-                                    <select id="bot-slot-@slot"
+                                    <select id="bot-slot-@slot" class="ui-control"
                                             value="@(_createForm.AiBotIds[slot] ?? string.Empty)"
                                             @onchange="e => OnAiBotSlotChanged(slot, e.Value?.ToString())">
                                         <option value="">@L["CreateGame.AiChooseBot"]</option>
@@ -96,7 +96,7 @@
                     {
                         <div class="form-field">
                             <label for="game-max">@L["CreateGame.MaxPlayers"]</label>
-                            <InputNumber id="game-max" @bind-Value="_createForm.MaxPlayers" @bind-Value:after="OnMaxPlayersChanged" min="2" max="4" />
+                            <InputNumber id="game-max" class="ui-control" @bind-Value="_createForm.MaxPlayers" @bind-Value:after="OnMaxPlayersChanged" min="2" max="4" />
                         </div>
                     }
 
@@ -111,7 +111,7 @@
                             @foreach (var (code, label) in _gameLanguages)
                             {
                                 <label class="lang-choice">
-                                    <input type="checkbox" checked="@_createForm.Languages.Contains(code)"
+                                    <input class="ui-checkbox" type="checkbox" checked="@_createForm.Languages.Contains(code)"
                                            @onchange="e => ToggleLanguage(code, (bool)e.Value!)" />
                                     <span>@label</span>
                                 </label>

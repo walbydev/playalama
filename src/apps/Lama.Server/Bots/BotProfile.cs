@@ -19,7 +19,15 @@ public sealed record BotProfile(
     /// <summary>Taille du sous-ensemble "faible" (petits scores/mots courts) pour les coups dégradés.</summary>
     int WeakPoolSize = 3,
     /// <summary>Probabilité de choisir un coup volontairement sous-optimal.</summary>
-    double WeakMoveRate = 0.0)
+    double WeakMoveRate = 0.0,
+    /// <summary>Probabilité de tenter un échange quand aucune suggestion jouable n'existe.</summary>
+    double SwapOnNoSuggestionRate = 0.0,
+    /// <summary>Probabilité de préférer un échange à un coup jugé trop faible.</summary>
+    double SwapOnWeakMoveRate = 0.0,
+    /// <summary>Score max d'un coup considéré "faible" pour déclencher un échange.</summary>
+    int WeakMoveScoreThreshold = 0,
+    /// <summary>Nombre max de lettres à échanger lors d'un tour.</summary>
+    int SwapMaxLetters = 3)
 {
     /// <summary>Identifiant persistant au format N (sans tirets) pour le mapping joueur↔moteur.</summary>
     public string PersistentPlayerId => BotGuid.ToString("N");

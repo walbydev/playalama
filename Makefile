@@ -28,6 +28,7 @@ WEBAPP_PROJECT  := src/apps/Lama.WebApp/Lama.WebApp.csproj
 AISERVER_PROJECT := src/apps/Lama.AIServer/Lama.AIServer.csproj
 DOCKER_LOCAL    := tools/docker/docker-compose.local.yml
 DOCKER_DEBUG    := tools/docker/docker-compose.local-debug.yml
+DOTNET          ?= $(if $(wildcard $(HOME)/.dotnet/dotnet),$(HOME)/.dotnet/dotnet,dotnet)
 
 # SSH_KEY peut être surchargé : make deploy-server-prod SSH_KEY=~/.ssh/machines/playalama.key
 SSH_KEY         ?= $(LAMA_DEPLOY_SSH_KEY)
@@ -36,30 +37,51 @@ SSH_KEY         ?= $(LAMA_DEPLOY_SSH_KEY)
 ARGS            ?= game create Alice
 
 # =============================================================================
+# Dotnet SDK resolution (global.json-compatible)
+# =============================================================================
+.PHONY: ensure-dotnet
+ensure-dotnet:
+	@$(DOTNET) --info >/dev/null 2>&1 || { \
+	  echo "❌ Impossible d'exécuter '$(DOTNET)' avec le SDK requis par global.json."; \
+	  echo "   DOTNET utilisé : $(DOTNET)"; \
+	  echo "   Astuce : installez le SDK demandé (ex: ~/.dotnet) ou lancez 'make dotnet-info'."; \
+	  exit 155; \
+	}
+
+.PHONY: dotnet-info
+dotnet-info: ## Afficher le dotnet réellement utilisé par le Makefile
+	@echo "DOTNET utilisé : $(DOTNET)"
+	@$(DOTNET) --version || true
+	@$(DOTNET) --list-sdks || true
+
+# =============================================================================
 # 1. Debug CLI en local (même PC)
 # =============================================================================
 .PHONY: dev-local
 dev-local: ## [Cas 1] Lancer le CLI en mode local (debug terminal)
+	@$(MAKE) --no-print-directory ensure-dotnet
 	LAMA_RUNTIME_MODE=local \
 	LAMA_SESSION_DIR=/tmp/lama-dev-session \
-	dotnet run --project $(CONSOLE_PROJECT) -- $(ARGS)
+	$(DOTNET) run --project $(CONSOLE_PROJECT) -- $(ARGS)
 
 # =============================================================================
 # 2. Serveur ASP.NET en développement
 # =============================================================================
 .PHONY: dev-server
 dev-server: ## [Cas 2] Serveur Lama en mode Development (hot-reload, swagger)
+	@$(MAKE) --no-print-directory ensure-dotnet
 	ASPNETCORE_ENVIRONMENT=Development \
 	LAMA_SERVER_ALLOW_SHUTDOWN=true \
-	dotnet run --project $(SERVER_PROJECT) --urls http://127.0.0.1:5201
+	$(DOTNET) run --project $(SERVER_PROJECT) --urls http://127.0.0.1:5201
 
 # =============================================================================
 # 3. Exécution locale CLI (sans Rider)
 # =============================================================================
 .PHONY: run-local
 run-local: ## [Cas 3] Exécuter une commande CLI locale  →  make run-local ARGS="game create Alice"
+	@$(MAKE) --no-print-directory ensure-dotnet
 	LAMA_RUNTIME_MODE=local \
-	dotnet run --project $(CONSOLE_PROJECT) -- $(ARGS)
+	$(DOTNET) run --project $(CONSOLE_PROJECT) -- $(ARGS)
 
 # =============================================================================
 # 4. Stack Docker locale complète (serveur + webapp)
@@ -225,6 +247,7 @@ vps-status: ## [VPS] Afficher l'état des containers sur le VPS
 # =============================================================================
 .PHONY: dev-debug
 dev-debug: ## [Dev] PostgreSQL Docker + Server (5201) + WebApp (5202) + AIServer (5203) en parallèle
+	@$(MAKE) --no-print-directory ensure-dotnet
 	@for port in 5201 5202 5203; do \
 	  if ss -tlnp "sport = :$$port" 2>/dev/null | grep -q LISTEN; then \
 	    container=$$(docker ps --format '{{.Names}}\t{{.Ports}}' 2>/dev/null | awk -v p=":$$port" '$$0 ~ p {print $$1}'); \
@@ -241,15 +264,15 @@ dev-debug: ## [Dev] PostgreSQL Docker + Server (5201) + WebApp (5202) + AIServer
 	@echo "→ Démarrage de PostgreSQL..."
 	docker compose -f $(DOCKER_DEBUG) up -d
 	@echo "→ Build de la solution..."
-	dotnet build -c Debug --no-restore
+	$(DOTNET) build -c Debug --no-restore
 	@echo "→ Démarrage des apps (Ctrl+C pour tout arrêter)..."
 	@trap 'kill 0' SIGINT; \
 	LAMA_AI_LANGUAGE=fr LAMA_AI_MAX_CONCURRENT=3 \
-	  dotnet run --project $(AISERVER_PROJECT) --no-build --urls http://127.0.0.1:5203 & \
+	  $(DOTNET) run --project $(AISERVER_PROJECT) --no-build --urls http://127.0.0.1:5203 & \
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_ALLOW_SHUTDOWN=true LAMA_AI_SERVER_URL=http://127.0.0.1:5203 \
-	  dotnet run --project $(SERVER_PROJECT) --no-build --urls http://127.0.0.1:5201 & \
+	  $(DOTNET) run --project $(SERVER_PROJECT) --no-build --urls http://127.0.0.1:5201 & \
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_URL=http://127.0.0.1:5201 LamaApi__BaseUrl=http://127.0.0.1:5201 \
-	  dotnet run --project $(WEBAPP_PROJECT) --no-build --urls http://127.0.0.1:5202 & \
+	  $(DOTNET) run --project $(WEBAPP_PROJECT) --no-build --urls http://127.0.0.1:5202 & \
 	wait
 
 .PHONY: dev-debug-stop
@@ -316,19 +339,23 @@ health-debug: ## [Dev] Vérifier les endpoints (Server 5201, WebApp 5202, AIServ
 # =============================================================================
 .PHONY: build
 build: ## Compiler toute la solution
-	dotnet build -c Release
+	@$(MAKE) --no-print-directory ensure-dotnet
+	$(DOTNET) build -c Release
 
 .PHONY: test
 test: ## Lancer tous les tests
-	dotnet test -v minimal
+	@$(MAKE) --no-print-directory ensure-dotnet
+	$(DOTNET) test -v minimal
 
 .PHONY: test-watch
 test-watch: ## Tests en mode watch (relance automatique)
-	dotnet watch test --project tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj
+	@$(MAKE) --no-print-directory ensure-dotnet
+	$(DOTNET) watch test --project tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj
 
 .PHONY: clean
 clean: ## Nettoyer les artefacts de build
-	dotnet clean
+	@$(MAKE) --no-print-directory ensure-dotnet
+	$(DOTNET) clean
 	rm -rf .deploy/stage
 
 .PHONY: build-increment

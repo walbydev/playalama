@@ -62,12 +62,12 @@ else
 
                     <div class="form-field">
                         <label for="upd-email">@L["Auth.Email"] <small class="text-dim">@L["Common.Optional"]</small></label>
-                        <InputText id="upd-email" type="email" @bind-Value="_updateForm.Email" placeholder="@L["Auth.EmailPlaceholder"]" />
+                        <InputText id="upd-email" class="ui-control" type="email" @bind-Value="_updateForm.Email" placeholder="@L["Auth.EmailPlaceholder"]" />
                     </div>
 
                     <div class="form-field">
                         <label for="upd-country">@L["Auth.Country"] <small class="text-dim">@L["Common.Optional"]</small></label>
-                        <InputSelect id="upd-country" @bind-Value="_updateForm.CountryCode" class="form-select">
+                        <InputSelect id="upd-country" @bind-Value="_updateForm.CountryCode" class="ui-control form-select">
                             <option value="">@L["Auth.Country.Unspecified"]</option>
                             @foreach (var (code, name) in _countries)
                             {
@@ -80,16 +80,16 @@ else
 
                     <div class="form-field">
                         <label for="upd-pwd">@L["Profile.CurrentPassword"]</label>
-                        <InputText id="upd-pwd" type="password" @bind-Value="_updateForm.CurrentPassword" />
+                        <InputText id="upd-pwd" class="ui-control" type="password" @bind-Value="_updateForm.CurrentPassword" />
                     </div>
                     <div class="form-field">
                         <label for="upd-pwd2">@L["Profile.NewPassword"]</label>
-                        <InputText id="upd-pwd2" type="password" @bind-Value="_updateForm.NewPassword" />
+                        <InputText id="upd-pwd2" class="ui-control" type="password" @bind-Value="_updateForm.NewPassword" />
                         <ValidationMessage For="() => _updateForm.NewPassword" class="form-error" />
                     </div>
                     <div class="form-field">
                         <label for="upd-pwd3">@L["Profile.ConfirmNewPassword"]</label>
-                        <InputText id="upd-pwd3" type="password" @bind-Value="_updateForm.NewPasswordConfirm" />
+                        <InputText id="upd-pwd3" class="ui-control" type="password" @bind-Value="_updateForm.NewPasswordConfirm" />
                         <ValidationMessage For="() => _updateForm.NewPasswordConfirm" class="form-error" />
                     </div>
 

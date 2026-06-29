@@ -19,20 +19,20 @@
 
             <div class="form-field">
                 <label for="reg-username">@L["Auth.Username"] <small class="text-dim">@L["Register.UsernameHint"]</small></label>
-                <InputText id="reg-username" @bind-Value="form.Username"
+                <InputText id="reg-username" class="ui-control" @bind-Value="form.Username"
                            autocomplete="username" placeholder="@L["Auth.UsernamePlaceholder"]" />
                 <ValidationMessage For="() => form.Username" class="form-error" />
             </div>
 
             <div class="form-field">
                 <label for="reg-email">@L["Auth.Email"] <small class="text-dim">@L["Common.Optional"]</small></label>
-                <InputText id="reg-email" type="email" @bind-Value="form.Email"
+                <InputText id="reg-email" class="ui-control" type="email" @bind-Value="form.Email"
                            autocomplete="email" placeholder="@L["Auth.EmailPlaceholder"]" />
             </div>
 
             <div class="form-field">
                 <label for="reg-country">@L["Auth.Country"] <small class="text-dim">@L["Common.Optional"]</small></label>
-                <InputSelect id="reg-country" @bind-Value="form.CountryCode" class="form-select">
+                <InputSelect id="reg-country" @bind-Value="form.CountryCode" class="ui-control form-select">
                     <option value="">@L["Auth.Country.Unspecified"]</option>
                     @foreach (var (code, name) in _countries)
                     {
@@ -43,14 +43,14 @@
 
             <div class="form-field">
                 <label for="reg-pwd">@L["Auth.Password"] <small class="text-dim">@L["Register.PasswordHint"]</small></label>
-                <InputText id="reg-pwd" type="password" @bind-Value="form.Password"
+                <InputText id="reg-pwd" class="ui-control" type="password" @bind-Value="form.Password"
                            autocomplete="new-password" placeholder="••••••" />
                 <ValidationMessage For="() => form.Password" class="form-error" />
             </div>
 
             <div class="form-field">
                 <label for="reg-pwd2">@L["Register.ConfirmPassword"]</label>
-                <InputText id="reg-pwd2" type="password" @bind-Value="form.PasswordConfirm"
+                <InputText id="reg-pwd2" class="ui-control" type="password" @bind-Value="form.PasswordConfirm"
                            autocomplete="new-password" placeholder="••••••" />
                 <ValidationMessage For="() => form.PasswordConfirm" class="form-error" />
             </div>

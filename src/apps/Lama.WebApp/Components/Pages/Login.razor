@@ -19,14 +19,14 @@
 
             <div class="form-field">
                 <label for="username">@L["Auth.Username"]</label>
-                <InputText id="username" class="form-field input" @bind-Value="form.Username"
+                <InputText id="username" class="ui-control" @bind-Value="form.Username"
                            autocomplete="username" placeholder="@L["Auth.UsernamePlaceholder"]" />
                 <ValidationMessage For="() => form.Username" class="form-error" />
             </div>
 
             <div class="form-field">
                 <label for="password">@L["Auth.Password"]</label>
-                <InputText id="password" type="password" @bind-Value="form.Password"
+                <InputText id="password" class="ui-control" type="password" @bind-Value="form.Password"
                            autocomplete="current-password" placeholder="••••••" />
                 <ValidationMessage For="() => form.Password" class="form-error" />
             </div>
