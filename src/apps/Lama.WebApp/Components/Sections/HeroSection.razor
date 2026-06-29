@@ -1,4 +1,5 @@
 @inject IStringLocalizer<SharedResource> L
+@inject LamaApiClient Api
 
 <section class="hero" id="hero" aria-label="@L["Home.Hero.Aria"]">
     <div class="hero-bg" aria-hidden="true"></div>
@@ -28,17 +29,29 @@
 
         <div class="hero-stats" role="list" aria-label="@L["Home.Hero.StatsAria"]">
             <div role="listitem">
-                <div class="hero-stat-val" data-count="12" aria-label="@L["Home.Hero.ActivePlayersAria"]">12</div>
+                <div class="hero-stat-val" aria-label="@L["Home.Hero.ActivePlayersAria"]">@(_stats?.ActivePlayers ?? 0)</div>
                 <div class="hero-stat-lab">@L["Home.Hero.ActivePlayers"]</div>
             </div>
             <div role="listitem">
-                <div class="hero-stat-val" data-count="000088" aria-label="@L["Home.Hero.GamesPlayedAria"]">88</div>
+                <div class="hero-stat-val" aria-label="@L["Home.Hero.GamesPlayedAria"]">@(_stats?.GamesPlayed ?? 0)</div>
                 <div class="hero-stat-lab">@L["Home.Hero.GamesPlayed"]</div>
             </div>
             <div role="listitem">
-                <div class="hero-stat-val" aria-label="@L["Home.Hero.LanguagesAria"]">3</div>
+                <div class="hero-stat-val" aria-label="@L["Home.Hero.LanguagesAria"]">@(_stats?.Languages ?? 0)</div>
                 <div class="hero-stat-lab">@L["Home.Hero.Languages"]</div>
             </div>
         </div>
     </div>
 </section>
+
+@code {
+    private WebStatsDto? _stats;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _stats = await Api.GetStatsAsync();
+        if (_stats is not null)
+            StateHasChanged();
+    }
+}

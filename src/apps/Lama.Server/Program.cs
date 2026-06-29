@@ -174,5 +174,6 @@ api.MapGamesReadEndpoints();
 api.MapGamesCommandEndpoints();
 api.MapBotsEndpoints();
 api.MapLexiconEndpoints();
+api.MapStatsEndpoints();
 
 app.Run();

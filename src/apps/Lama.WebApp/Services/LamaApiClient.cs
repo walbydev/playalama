@@ -424,6 +424,24 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return payload?.Bots?.Select(b => new WebBotDto(b.BotId, b.Name, b.Level, b.InitialElo)).ToList() ?? [];
     }
 
+    // ── Statistiques publiques ────────────────────────────────────────────────
+
+    public async Task<WebStatsDto?> GetStatsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await httpClient.GetAsync($"{ApiBase}/stats", cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            return await response.Content.ReadFromJsonAsync<WebStatsDto>(JsonOptions, cancellationToken);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     // ── Enveloppes API (privées) ──────────────────────────────────────────────
 
     private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, DateTime ExpiresAt);

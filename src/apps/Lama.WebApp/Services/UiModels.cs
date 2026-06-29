@@ -127,6 +127,8 @@ public sealed record WebGameHistoryItem(
 
 // ── Bots IA ───────────────────────────────────────────────────────────────────
 
+public sealed record WebStatsDto(int ActivePlayers, int GamesPlayed, int Languages);
+
 public sealed record WebBotDto(string BotId, string Name, int Level, int InitialElo)
 {
     public string LevelLabel => Level switch
