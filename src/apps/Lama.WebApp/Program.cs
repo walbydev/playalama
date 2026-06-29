@@ -26,7 +26,7 @@ builder.Services.AddHttpClient<LamaApiClient>(client =>
 // Services scoped par circuit Blazor (une instance par connexion navigateur)
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ThemeService>();
-builder.Services.AddScoped<BoardZoomService>();
+builder.Services.AddScoped<GameLayoutService>();
 builder.Services.AddScoped<LanguageService>();
 
 // ViewModels (MVVM léger)

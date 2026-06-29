@@ -22,9 +22,12 @@
   <data name="Board.CellAria"><value>Spalte {0} Zeile {1}{2}</value></data>
   <data name="Board.PendingTileAria"><value>Spalte {0} Zeile {1}: {2} (vorläufig, zum Zurücknehmen klicken)</value></data>
   <data name="Board.TileAria"><value>Spalte {0} Zeile {1}: {2}</value></data>
-  <data name="BoardZoom.Auto"><value>Auto</value></data>
-  <data name="BoardZoom.Label"><value>Brett-Zoom</value></data>
-  <data name="BoardZoom.Title"><value>Brett-Zoom</value></data>
+  <data name="BoardDensity.Label"><value>Plateau-Größe</value></data>
+  <data name="BoardDensity.Title"><value>Plateau-Größe</value></data>
+  <data name="BoardDensity.Small"><value>Klein</value></data>
+  <data name="BoardDensity.Medium"><value>Mittel</value></data>
+  <data name="BoardDensity.Large"><value>Groß</value></data>
+  <data name="BoardDensity.Fullscreen"><value>Vollbild</value></data>
   <data name="Common.Close"><value>Schließen</value></data>
   <data name="Common.LiveUpdated"><value>Live aktualisiert</value></data>
   <data name="Common.Loading"><value>Wird geladen…</value></data>

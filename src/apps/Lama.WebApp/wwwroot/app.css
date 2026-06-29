@@ -404,62 +404,60 @@ h4 { font-size: 1.05rem; font-weight: 600; }
     border-color: var(--accent2);
 }
 
-.board-zoom-control {
+.board-density-control {
     display: inline-flex;
     align-items: center;
-    gap: .35rem;
-    padding: .2rem .45rem;
+    gap: .2rem;
+    padding: .2rem .3rem;
     border-radius: 999px;
     border: 1px solid var(--border);
     background: var(--surface);
 }
 
-.board-zoom-icon {
-    font-size: .85rem;
-    line-height: 1;
-}
-
-.board-zoom-select {
-    border: 1px solid var(--border);
-    background: var(--surface);
+.board-density-btn {
+    border: 1px solid transparent;
+    background: transparent;
     color: var(--text);
-    font-size: .95rem;
-    font-weight: 600;
+    font-size: .9rem;
+    font-weight: 700;
     line-height: 1;
     cursor: pointer;
     padding: .28rem .5rem;
     border-radius: 7px;
+    min-width: 1.9rem;
     min-height: 1.9rem;
 }
 
-.board-zoom-select:focus {
-    outline: none;
-    border-color: var(--accent2);
+.board-density-btn:hover { background: var(--bg2); }
+
+.board-density-btn.is-active {
+    background: var(--accent);
+    color: #fff;
 }
 
-.theme-select option,
-.board-zoom-select option {
+.board-fullscreen-btn { font-size: 1rem; }
+
+.theme-select option {
     background: #ffffff;
     color: #111827;
 }
 
-html.dark .theme-select,
-html.dark .board-zoom-select {
+html.dark .theme-select {
     color-scheme: dark;
 }
 
-html.dark .theme-select option,
-html.dark .board-zoom-select option {
+html.dark .theme-select option {
     background: #0f172a;
     color: #f8fafc;
 }
 
-.navbar--compact .board-zoom-control {
-    padding: .18rem .4rem;
+.navbar--compact .board-density-control {
+    padding: .18rem .25rem;
 }
 
-.navbar--compact .board-zoom-select {
-    font-size: .9rem;
+.navbar--compact .board-density-btn {
+    font-size: .85rem;
+    padding: .22rem .42rem;
 }
 
 .navbar--compact .theme-select-control {
@@ -771,18 +769,21 @@ footer {
 
 .board-container {
     overflow-x: auto;
-    --board-zoom: 1;
+    /* Densité S/M/L appliquée au plateau ; auto-fit proportionnel via vmin. */
+    --board-scale: 1;
+    --board-max: calc(var(--board-scale) * min(672px, 92vmin));
 }
 
 .board-grid {
     display: grid;
-    grid-template-columns: calc(28px * var(--board-zoom)) repeat(15, 1fr);
+    grid-template-columns: calc(28px * var(--board-scale)) repeat(15, 1fr);
     gap: 1px;
-    min-width: calc(432px * var(--board-zoom));
-    max-width: calc(672px * var(--board-zoom));
+    min-width: calc(360px * var(--board-scale));
+    max-width: var(--board-max);
+    width: 100%;
     margin: 0 auto;
     background: var(--board-grid-line);
-    border-radius: calc(6px * var(--board-zoom));
+    border-radius: calc(6px * var(--board-scale));
     padding: 1px;
     box-shadow: inset 0 0 0 1px var(--board-grid-outline);
 }
@@ -791,11 +792,11 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(.65rem * var(--board-zoom));
+    font-size: calc(.65rem * var(--board-scale));
     font-weight: 700;
     color: var(--text-dim);
     text-transform: uppercase;
-    height: calc(24px * var(--board-zoom));
+    height: calc(24px * var(--board-scale));
 }
 
 .board-cell {
@@ -804,8 +805,8 @@ footer {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: calc(3px * var(--board-zoom));
-    font-size: calc(.75rem * var(--board-zoom));
+    border-radius: calc(3px * var(--board-scale));
+    font-size: calc(.75rem * var(--board-scale));
     font-weight: 700;
     text-align: center;
     line-height: 1;
@@ -821,7 +822,7 @@ footer {
 .board-cell--dw { background: #db2777; color: #fff; }
 .board-cell--tl { background: #1d4ed8; color: #fff; }
 .board-cell--dl { background: #3b82f6; color: #fff; }
-.board-cell--st { background: var(--accent); color: #fff; font-size: calc(1.1rem * var(--board-zoom)); }
+.board-cell--st { background: var(--accent); color: #fff; font-size: calc(1.1rem * var(--board-scale)); }
 
 /* Tuile posée — couleur bois */
 .board-cell--tile {
@@ -830,8 +831,8 @@ footer {
     border: 2px solid #fbbf24;
     z-index: 1;
 }
-.tile-letter { font-size: calc(1.05rem * var(--board-zoom)); font-weight: 800; line-height: 1; }
-.tile-val { font-size: calc(.6rem * var(--board-zoom)); position: absolute; bottom: calc(2px * var(--board-zoom)); right: calc(3px * var(--board-zoom)); font-weight: 700; opacity: 1; }
+.tile-letter { font-size: calc(1.05rem * var(--board-scale)); font-weight: 800; line-height: 1; }
+.tile-val { font-size: calc(.6rem * var(--board-scale)); position: absolute; bottom: calc(2px * var(--board-scale)); right: calc(3px * var(--board-scale)); font-weight: 700; opacity: 1; }
 
 /* Tuile provisoire (drag-and-drop, non encore soumise) */
 .board-cell--pending {
@@ -1047,7 +1048,7 @@ footer {
     border-left: 3px solid var(--accent);
 }
 
-.board-label { font-size: calc(.6rem * var(--board-zoom)); text-transform: uppercase; letter-spacing: .5px; opacity: .9; }
+.board-label { font-size: calc(.6rem * var(--board-scale)); text-transform: uppercase; letter-spacing: .5px; opacity: .9; }
 
 /* ════════════════════════════════════════════════════════
    RACK — Tuiles du joueur
@@ -1284,8 +1285,12 @@ footer {
     align-items: start;
 }
 
-.page-wrapper--game-focus .board-container {
-    --board-auto-zoom: clamp(0.85, calc((100vw - 420px) / 650px), 1.55);
+/* Plein écran : sidebar plus étroite, plateau maxi */
+.page-wrapper--fullscreen .game-layout {
+    grid-template-columns: minmax(0, 1fr) 280px;
+}
+.page-wrapper--fullscreen .board-container {
+    --board-max: calc(var(--board-scale) * min(900px, 96vmin));
 }
 
 .page-wrapper--game-focus .rack-below-board,
@@ -1298,17 +1303,15 @@ footer {
         grid-template-columns: minmax(0, 1fr) 270px;
         gap: .65rem;
     }
-    .page-wrapper--game-focus .board-container {
-        --board-auto-zoom: clamp(0.85, calc((100vw - 340px) / 610px), 1.45);
-    }
 }
 
+/* Portrait / fenêtre étroite : mono-colonne, plateau pleine largeur */
 @media (max-width: 800px) {
     .page-wrapper--game-focus .game-layout {
         grid-template-columns: 1fr;
     }
     .page-wrapper--game-focus .board-container {
-        --board-auto-zoom: clamp(0.9, calc((100vw - 20px) / 470px), 1.5);
+        --board-max: calc(var(--board-scale) * min(672px, 96vw));
     }
     .page-wrapper--game-focus .game-page {
         padding: .25rem .25rem .85rem !important;

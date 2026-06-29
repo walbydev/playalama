@@ -22,9 +22,12 @@
   <data name="Board.CellAria"><value>Colonne {0} ligne {1}{2}</value></data>
   <data name="Board.PendingTileAria"><value>Colonne {0} ligne {1} : {2} (provisoire, cliquez pour rappeler)</value></data>
   <data name="Board.TileAria"><value>Colonne {0} ligne {1} : {2}</value></data>
-  <data name="BoardZoom.Auto"><value>Auto</value></data>
-  <data name="BoardZoom.Label"><value>Zoom du plateau</value></data>
-  <data name="BoardZoom.Title"><value>Zoom du plateau</value></data>
+  <data name="BoardDensity.Label"><value>Taille du plateau</value></data>
+  <data name="BoardDensity.Title"><value>Taille du plateau</value></data>
+  <data name="BoardDensity.Small"><value>Petit</value></data>
+  <data name="BoardDensity.Medium"><value>Moyen</value></data>
+  <data name="BoardDensity.Large"><value>Grand</value></data>
+  <data name="BoardDensity.Fullscreen"><value>Plein écran</value></data>
   <data name="Common.Close"><value>Fermer</value></data>
   <data name="Common.LiveUpdated"><value>Mis à jour en direct</value></data>
   <data name="Common.Loading"><value>Chargement…</value></data>

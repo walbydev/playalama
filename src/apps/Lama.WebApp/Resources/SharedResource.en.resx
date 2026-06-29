@@ -22,9 +22,12 @@
   <data name="Board.CellAria"><value>Column {0} row {1}{2}</value></data>
   <data name="Board.PendingTileAria"><value>Column {0} row {1}: {2} (pending, click to recall)</value></data>
   <data name="Board.TileAria"><value>Column {0} row {1}: {2}</value></data>
-  <data name="BoardZoom.Auto"><value>Auto</value></data>
-  <data name="BoardZoom.Label"><value>Board zoom</value></data>
-  <data name="BoardZoom.Title"><value>Board zoom</value></data>
+  <data name="BoardDensity.Label"><value>Board size</value></data>
+  <data name="BoardDensity.Title"><value>Board size</value></data>
+  <data name="BoardDensity.Small"><value>Small</value></data>
+  <data name="BoardDensity.Medium"><value>Medium</value></data>
+  <data name="BoardDensity.Large"><value>Large</value></data>
+  <data name="BoardDensity.Fullscreen"><value>Fullscreen</value></data>
   <data name="Common.Close"><value>Close</value></data>
   <data name="Common.LiveUpdated"><value>Live updated</value></data>
   <data name="Common.Loading"><value>Loading…</value></data>

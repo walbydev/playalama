@@ -2,10 +2,10 @@
 @inject NavigationManager Nav
 @inject AuthService Auth
 @inject ThemeService Theme
-@inject BoardZoomService BoardZoom
+@inject GameLayoutService Layout
 @implements IDisposable
 
-<div class="page-wrapper @(IsGameFocusMode ? "page-wrapper--game-focus" : "")">
+<div class="page-wrapper @(IsGameFocusMode ? "page-wrapper--game-focus" : "") @(IsGameFocusMode && Layout.IsFullscreen ? "page-wrapper--fullscreen" : "")">
     @if (!IsGameFocusMode)
     {
         <DevBanner />
@@ -23,15 +23,14 @@
 </div>
 
 @code {
-    private bool IsGameFocusMode =>
-        BoardZoom.IsAutoFit && IsInGamePage();
+    private bool IsGameFocusMode => IsInGamePage();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             Nav.LocationChanged += HandleLocationChanged;
-            BoardZoom.ZoomChanged += HandleZoomChanged;
+            Layout.Changed += HandleZoomChanged;
         }
 
         // Retry tant que JS n'est pas encore disponible (prerender/interactivité)
@@ -39,7 +38,7 @@
             await Auth.InitializeAsync();
 
         await Theme.InitializeAsync();
-        await BoardZoom.InitializeAsync();
+        await Layout.InitializeAsync();
 
         if (firstRender || !Auth.IsInitialized)
             StateHasChanged();
@@ -64,6 +63,6 @@
     public void Dispose()
     {
         Nav.LocationChanged -= HandleLocationChanged;
-        BoardZoom.ZoomChanged -= HandleZoomChanged;
+        Layout.Changed -= HandleZoomChanged;
     }
 }

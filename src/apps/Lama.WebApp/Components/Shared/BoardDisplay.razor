@@ -1,12 +1,12 @@
 @using Lama.WebApp.Services
 @using Lama.WebApp.ViewModels
-@inject BoardZoomService BoardZoom
+@inject GameLayoutService Layout
 @inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
 @* Plateau de jeu 15×15 avec cases bonus colorées, tuiles posées et placements provisoires. *@
 
-<div class="board-container" role="region" aria-label="@L["Board.Aria"]" style="--board-zoom:@BoardZoom.ZoomFactorCss;">
+<div class="board-container" role="region" aria-label="@L["Board.Aria"]" style="--board-scale:@Layout.ScaleCss;">
     <div class="board-grid" role="grid">
         @* En-tête colonnes *@
         <div class="board-header-cell" aria-hidden="true"></div>
@@ -122,13 +122,13 @@
 
     protected override void OnInitialized()
     {
-        BoardZoom.ZoomChanged += HandleZoomChanged;
+        Layout.Changed += HandleZoomChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        await BoardZoom.InitializeAsync();
+        await Layout.InitializeAsync();
         StateHasChanged();
     }
 
@@ -192,6 +192,6 @@
 
     public void Dispose()
     {
-        BoardZoom.ZoomChanged -= HandleZoomChanged;
+        Layout.Changed -= HandleZoomChanged;
     }
 }

@@ -23,25 +23,31 @@ window.playalamaTheme = {
     }
 };
 
-// ── Zoom du plateau ────────────────────────────────────────────────────────────
-window.playalamaBoardZoom = {
-    getZoom() {
-        const raw = localStorage.getItem('playalama-board-zoom');
-        if (!raw) return '100';
-        if (raw === 'auto') return 'auto';
-
-        const value = Number.parseInt(raw, 10);
-        if (value === 100 || value === 125 || value === 150 || value === 200) return String(value);
-        return '100';
+// ── Disposition du plateau (densité S/M/L, plein écran, panneaux) ───────────────
+window.playalamaGameLayout = {
+    get() {
+        try {
+            const raw = localStorage.getItem('playalama-game-layout');
+            if (!raw) return { density: 'm', fullscreen: false, collapsed: [] };
+            const parsed = JSON.parse(raw);
+            return {
+                density: ['s', 'm', 'l'].includes(parsed.density) ? parsed.density : 'm',
+                fullscreen: !!parsed.fullscreen,
+                collapsed: Array.isArray(parsed.collapsed) ? parsed.collapsed : []
+            };
+        } catch { return { density: 'm', fullscreen: false, collapsed: [] }; }
     },
-    setZoom(zoomMode) {
-        const raw = String(zoomMode || '100');
-        const value = Number.parseInt(raw, 10);
-        const normalized = raw === 'auto'
-            ? 'auto'
-            : (value === 125 || value === 150 || value === 200 ? String(value) : '100');
-        localStorage.setItem('playalama-board-zoom', normalized);
-        return normalized;
+    set(state) {
+        try { localStorage.setItem('playalama-game-layout', JSON.stringify(state)); } catch { }
+    },
+    setFullscreen(on) {
+        try {
+            if (on && document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => { });
+            } else if (!on && document.fullscreenElement && document.exitFullscreen) {
+                document.exitFullscreen().catch(() => { });
+            }
+        } catch { }
     }
 };
 
