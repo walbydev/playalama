@@ -4,8 +4,8 @@
 @inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
-<nav class="navbar @(CompactMode ? "navbar--compact" : "")" role="navigation" aria-label="Navigation principale">
-    <a href="/" class="navbar-logo" aria-label="Playalama — Accueil">
+<nav class="navbar @(CompactMode ? "navbar--compact" : "")" role="navigation" aria-label="@L["Nav.Aria"]">
+    <a href="/" class="navbar-logo" aria-label="@L["Nav.LogoAria"]">
         PLAYALAMA
     </a>
 
@@ -15,12 +15,12 @@
             <li><a href="/" class="@ActiveClass("/")" @onclick="CloseMenu">@L["Nav.Home"]</a></li>
             <li><a href="/leaderboard" class="@ActiveClass("/leaderboard")" @onclick="CloseMenu">@L["Nav.Leaderboard"]</a></li>
             <li><a href="/rules" class="@ActiveClass("/rules")" @onclick="CloseMenu">@L["Nav.Rules"]</a></li>
-            <li><a href="/license" class="@ActiveClass("/license")" @onclick="CloseMenu">Licence</a></li>
+            <li><a href="/license" class="@ActiveClass("/license")" @onclick="CloseMenu">@L["Nav.License"]</a></li>
             <li><a href="/downloads" class="@ActiveClass("/downloads")" @onclick="CloseMenu">@L["Nav.Downloads"]</a></li>
             @if (Auth.IsLoggedIn)
             {
                 <li><a href="/games" class="@ActiveClass("/games")" @onclick="CloseMenu">@L["Nav.Games"]</a></li>
-                <li><a href="/my-games" class="@ActiveClass("/my-games")" @onclick="CloseMenu">Mes parties</a></li>
+                <li><a href="/my-games" class="@ActiveClass("/my-games")" @onclick="CloseMenu">@L["Nav.MyGames"]</a></li>
             }
         </ul>
     }
@@ -31,29 +31,29 @@
         <ThemeToggle />
         @if (!Auth.IsInitialized)
         {
-            <span class="text-muted" style="font-size:.9rem" aria-live="polite">Chargement…</span>
+            <span class="text-muted" style="font-size:.9rem" aria-live="polite">@L["Common.Loading"]</span>
         }
         else if (Auth.IsLoggedIn)
         {
             <a href="/profile" class="btn btn-ghost btn-sm">@Auth.CurrentUser!.Username</a>
             @if (!CompactMode)
             {
-                <button class="btn btn-outline btn-sm" type="button" @onclick="LogoutAsync">Déconnexion</button>
+                <button class="btn btn-outline btn-sm" type="button" @onclick="LogoutAsync">@L["Nav.Logout"]</button>
             }
         }
         else
         {
-            <a href="/login"    class="btn btn-ghost btn-sm">Connexion</a>
+            <a href="/login"    class="btn btn-ghost btn-sm">@L["Nav.Login"]</a>
             @if (!CompactMode)
             {
-                <a href="/register" class="btn btn-primary btn-sm">Jouer →</a>
+                <a href="/register" class="btn btn-primary btn-sm">@L["Nav.PlayNow"] →</a>
             }
         }
         @if (!CompactMode)
         {
             <button class="navbar-burger" type="button" @onclick="ToggleMenu"
                     aria-expanded="@_menuOpen" aria-controls="nav-links"
-                    aria-label="Menu">
+                    aria-label="@L["Nav.Menu"]">
                 @(_menuOpen ? "✕" : "☰")
             </button>
         }

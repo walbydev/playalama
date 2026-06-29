@@ -2,37 +2,38 @@
 @layout MainLayout
 @inject AuthService Auth
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Inscription — Playalama</PageTitle>
+<PageTitle>@L["Register.PageTitle"]</PageTitle>
 
 <div class="auth-page">
     <div class="auth-card">
         <div class="text-center mb-3">
             <span style="font-size:2.5rem" aria-hidden="true">🦙</span>
-            <h1 class="mt-1">Créer un compte</h1>
-            <p class="text-muted mt-1">L'email est optionnel — il ne sert pas à se connecter.</p>
+            <h1 class="mt-1">@L["Register.Title"]</h1>
+            <p class="text-muted mt-1">@L["Register.Subtitle"]</p>
         </div>
 
         <EditForm Model="form" OnValidSubmit="SubmitAsync">
             <DataAnnotationsValidator />
 
             <div class="form-field">
-                <label for="reg-username">Pseudo <small class="text-dim">(min. 2 caractères)</small></label>
+                <label for="reg-username">@L["Auth.Username"] <small class="text-dim">@L["Register.UsernameHint"]</small></label>
                 <InputText id="reg-username" @bind-Value="form.Username"
-                           autocomplete="username" placeholder="VotreAlias" />
+                           autocomplete="username" placeholder="@L["Auth.UsernamePlaceholder"]" />
                 <ValidationMessage For="() => form.Username" class="form-error" />
             </div>
 
             <div class="form-field">
-                <label for="reg-email">Email <small class="text-dim">(optionnel)</small></label>
+                <label for="reg-email">@L["Auth.Email"] <small class="text-dim">@L["Common.Optional"]</small></label>
                 <InputText id="reg-email" type="email" @bind-Value="form.Email"
-                           autocomplete="email" placeholder="vous@exemple.fr" />
+                           autocomplete="email" placeholder="@L["Auth.EmailPlaceholder"]" />
             </div>
 
             <div class="form-field">
-                <label for="reg-country">Pays <small class="text-dim">(optionnel)</small></label>
+                <label for="reg-country">@L["Auth.Country"] <small class="text-dim">@L["Common.Optional"]</small></label>
                 <InputSelect id="reg-country" @bind-Value="form.CountryCode" class="form-select">
-                    <option value="">— Non spécifié —</option>
+                    <option value="">@L["Auth.Country.Unspecified"]</option>
                     @foreach (var (code, name) in _countries)
                     {
                         <option value="@(code)">@(name)</option>
@@ -41,14 +42,14 @@
             </div>
 
             <div class="form-field">
-                <label for="reg-pwd">Mot de passe <small class="text-dim">(min. 6 caractères)</small></label>
+                <label for="reg-pwd">@L["Auth.Password"] <small class="text-dim">@L["Register.PasswordHint"]</small></label>
                 <InputText id="reg-pwd" type="password" @bind-Value="form.Password"
                            autocomplete="new-password" placeholder="••••••" />
                 <ValidationMessage For="() => form.Password" class="form-error" />
             </div>
 
             <div class="form-field">
-                <label for="reg-pwd2">Confirmer le mot de passe</label>
+                <label for="reg-pwd2">@L["Register.ConfirmPassword"]</label>
                 <InputText id="reg-pwd2" type="password" @bind-Value="form.PasswordConfirm"
                            autocomplete="new-password" placeholder="••••••" />
                 <ValidationMessage For="() => form.PasswordConfirm" class="form-error" />
@@ -60,12 +61,12 @@
             }
 
             <button class="btn btn-primary" type="submit" style="width:100%" disabled="@_busy">
-                @(_busy ? "Inscription…" : "Créer mon compte")
+                @(_busy ? L["Register.Busy"] : L["Register.Submit"])
             </button>
         </EditForm>
 
         <p class="text-center text-muted mt-3" style="font-size:.9rem">
-            Déjà un compte ? <a href="/login">Se connecter</a>
+            @L["Register.HasAccount"] <a href="/login">@L["Login.Submit"]</a>
         </p>
     </div>
 </div>
@@ -126,7 +127,7 @@
         if (success)
             Navigation.NavigateTo("/games");
         else
-            _error = err ?? "Inscription échouée.";
+            _error = err ?? L["Register.Failed"];
 
         _busy = false;
     }

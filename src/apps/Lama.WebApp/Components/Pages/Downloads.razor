@@ -2,15 +2,15 @@
 @layout MainLayout
 @inject DownloadsViewModel VM
 @inject IJSRuntime JS
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Téléchargements — Playalama CLI</PageTitle>
+<PageTitle>@L["Downloads.PageTitle"]</PageTitle>
 
 <div class="page-hero">
-    <div class="eyebrow">Ligne de commande</div>
-    <h1>⬇ Télécharger Playalama CLI</h1>
+    <div class="eyebrow">@L["Downloads.Eyebrow"]</div>
+    <h1>⬇ @L["Downloads.Title"]</h1>
     <p class="text-muted mt-2">
-        Un client natif ultra-léger pour Windows, Linux et macOS. Jouez en local ou connecté
-        au serveur en ligne — sans navigateur.
+        @L["Downloads.Subtitle"]
     </p>
 </div>
 
@@ -19,18 +19,18 @@
 
         <!-- Présentation du mode CLI -->
         <div class="card mb-4" style="max-width:780px; margin:0 auto 2.5rem">
-            <h2 class="mb-2">Pourquoi le mode CLI ?</h2>
+            <h2 class="mb-2">@L["Downloads.WhyCli"]</h2>
             <ul style="list-style:none; display:flex; flex-direction:column; gap:.75rem">
-                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">⚡</span><span><strong>Ultra-rapide</strong> — Aucune interface graphique, zéro latence.</span></li>
-                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🔒</span><span><strong>Hors ligne</strong> — Jouez sans connexion en mode local (JSON).</span></li>
-                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🌐</span><span><strong>En ligne</strong> — Connectez-vous au serveur avec <code>LAMA_RUNTIME_MODE=online</code>.</span></li>
-                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🔧</span><span><strong>Scriptable</strong> — Intégrable dans vos scripts shell, CI, automatisations.</span></li>
-                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🖥️</span><span><strong>Multiplateforme</strong> — Linux (x64/ARM64), Windows x64, macOS Intel & Apple Silicon.</span></li>
+                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">⚡</span><span>@L["Downloads.Why.Fast"]</span></li>
+                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🔒</span><span>@L["Downloads.Why.Offline"]</span></li>
+                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🌐</span><span>@L["Downloads.Why.Online"] <code>LAMA_RUNTIME_MODE=online</code>.</span></li>
+                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🔧</span><span>@L["Downloads.Why.Scriptable"]</span></li>
+                <li style="display:flex; gap:.75rem"><span aria-hidden="true" style="color:var(--accent2)">🖥️</span><span>@L["Downloads.Why.CrossPlatform"]</span></li>
             </ul>
         </div>
 
         <!-- Blocs téléchargements -->
-        <h2 class="mb-3">Téléchargements</h2>
+        <h2 class="mb-3">@L["Nav.Downloads"]</h2>
         <div class="dl-grid">
             @foreach (var platform in VM.Platforms)
             {
@@ -51,12 +51,12 @@
                                 <button class="dl-copy"
                                         type="button"
                                         @onclick="() => CopyAsync(item.Label, item.InstallCmd)"
-                                        aria-label="Copier la commande @item.Label"
-                                        title="Copier">
+                                        aria-label="@L["Downloads.CopyCommandAria", item.Label]"
+                                        title="@L["Downloads.Copy"]">
                                     @(VM.IsCopied(item.Label) ? "✓" : "📋")
                                 </button>
                             </div>
-                            <a href="@item.ZipUrl" class="btn btn-ghost btn-sm" download aria-label="Télécharger @item.Label (.zip)">ZIP</a>
+                            <a href="@item.ZipUrl" class="btn btn-ghost btn-sm" download aria-label="@L["Downloads.ZipAria", item.Label]">ZIP</a>
                         </div>
                     }
                 </div>
@@ -65,8 +65,8 @@
 
         <!-- Commandes principales -->
         <div class="cli-commands mt-4">
-            <h2>Commandes principales</h2>
-            <p class="text-muted mt-1 mb-3">Les commandes essentielles pour commencer à jouer.</p>
+            <h2>@L["Downloads.MainCommands"]</h2>
+            <p class="text-muted mt-1 mb-3">@L["Downloads.MainCommandsSubtitle"]</p>
             <div class="cli-cmd-list" role="list">
                 @foreach (var cmd in VM.MainCommands)
                 {
@@ -76,8 +76,8 @@
                         <button class="dl-copy"
                                 type="button"
                                 @onclick="() => CopyAsync(cmd.Command, cmd.Command)"
-                                aria-label="Copier : @cmd.Command"
-                                title="Copier">
+                                aria-label="@L["Downloads.CopyAria", cmd.Command]"
+                                title="@L["Downloads.Copy"]">
                             @(VM.IsCopied(cmd.Command) ? "✓" : "📋")
                         </button>
                     </div>

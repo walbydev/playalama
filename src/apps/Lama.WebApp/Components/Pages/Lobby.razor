@@ -5,24 +5,25 @@
 @inject AuthService Auth
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Salle d'attente — Playalama</PageTitle>
+<PageTitle>@L["Lobby.PageTitle"]</PageTitle>
 
 <div class="lobby-page">
 
-    <div class="eyebrow">Multijoueur</div>
-    <h1 class="mb-1">@(_vm.GameName ?? "Partie en cours de préparation")</h1>
-    <p class="text-muted mb-3">Partagez le code ci-dessous pour inviter des joueurs.</p>
+    <div class="eyebrow">@L["CreateGame.Multiplayer"]</div>
+    <h1 class="mb-1">@(_vm.GameName ?? L["Lobby.PreparingGame"])</h1>
+    <p class="text-muted mb-3">@L["Lobby.ShareCode"]</p>
 
     @* Code de la partie *@
-    <div class="lobby-code" aria-label="Code de la partie">
+    <div class="lobby-code" aria-label="@L["Lobby.GameCode"]">
         <span class="lobby-code-value" id="lobby-code-val">@GameId</span>
-        <button class="btn btn-ghost btn-sm" @onclick="CopyCodeAsync" aria-label="Copier le code">
-            @(_codeCopied ? "✓ Copié !" : "📋 Copier")
+        <button class="btn btn-ghost btn-sm" @onclick="CopyCodeAsync" aria-label="@L["Lobby.CopyCodeAria"]">
+            @(_codeCopied ? $"✓ {L["Lobby.Copied"]}" : $"📋 {L["Downloads.Copy"]}")
         </button>
-        <button class="btn btn-ghost btn-sm" @onclick="CopyLinkAsync" aria-label="Copier le lien d'invitation"
-                title="Copie l'URL du lobby pour inviter des joueurs">
-            @(_linkCopied ? "✓ Lien copié !" : "🔗 Partager")
+        <button class="btn btn-ghost btn-sm" @onclick="CopyLinkAsync" aria-label="@L["Lobby.CopyInviteAria"]"
+                title="@L["Lobby.CopyInviteTitle"]">
+            @(_linkCopied ? $"✓ {L["Lobby.LinkCopied"]}" : $"🔗 {L["Lobby.Share"]}")
         </button>
     </div>
 
@@ -30,20 +31,20 @@
     @if (_vm.Snapshot is not null)
     {
         <p class="lobby-slots">
-            @_vm.Snapshot.Players.Count / @_vm.MaxPlayers joueur@(_vm.Snapshot.Players.Count > 1 ? "s" : "") · @(_vm.MaxPlayers - _vm.Snapshot.Players.Count) slot@(_vm.MaxPlayers - _vm.Snapshot.Players.Count > 1 ? "s" : "") libre@(_vm.MaxPlayers - _vm.Snapshot.Players.Count > 1 ? "s" : "")
+            @L["Lobby.SlotsLine", _vm.Snapshot.Players.Count, _vm.MaxPlayers, (_vm.MaxPlayers - _vm.Snapshot.Players.Count)]
         </p>
 
         @* Liste des joueurs *@
-        <div class="lobby-player-list" role="list" aria-label="Joueurs présents">
+        <div class="lobby-player-list" role="list" aria-label="@L["Lobby.PlayersPresent"]">
             @foreach (var player in _vm.Snapshot.Players)
             {
                 <div class="lobby-player-row" role="listitem">
                     <div class="lobby-player-avatar" aria-hidden="true">@player.PlayerName[0]</div>
                     <div style="flex:1">
                         <span class="fw-600">@player.PlayerName</span>
-                        @if (player.IsHost) { <span aria-label="hôte" title="Hôte"> 👑</span> }
+                        @if (player.IsHost) { <span aria-label="@L["Game.Host"]" title="@L["Game.Host"]"> 👑</span> }
                     </div>
-                    <span class="chip chip-success">Connecté</span>
+                    <span class="chip chip-success">@L["Lobby.Connected"]</span>
                 </div>
             }
             @* Slots vides *@
@@ -51,14 +52,14 @@
             {
                 <div class="lobby-player-row" role="listitem" style="opacity:.4">
                     <div class="lobby-player-avatar" style="background:var(--bg3); color:var(--text-dim)" aria-hidden="true">?</div>
-                    <span class="text-dim">En attente d'un joueur…</span>
+                    <span class="text-dim">@L["Lobby.WaitingPlayer"]</span>
                 </div>
             }
         </div>
     }
     else if (_vm.IsLoading)
     {
-        <p class="text-muted" aria-live="polite">Chargement…</p>
+        <p class="text-muted" aria-live="polite">@L["Common.Loading"]</p>
     }
 
     @if (!string.IsNullOrWhiteSpace(_vm.Error))
@@ -70,12 +71,12 @@
     @if (_vm.Snapshot is not null && !_vm.IsParticipant && !_vm.HasStarted)
     {
         <div class="card mt-3" style="border-color:var(--accent); background:var(--bg2)">
-            <h3 class="mb-2" style="font-size:1.1rem">🎮 Rejoindre cette partie</h3>
-            <p class="text-muted mb-2" style="font-size:.9rem">Vous n'êtes pas encore inscrit dans cette partie.</p>
+            <h3 class="mb-2" style="font-size:1.1rem">🎮 @L["Lobby.JoinThisGame"]</h3>
+            <p class="text-muted mb-2" style="font-size:.9rem">@L["Lobby.NotJoined"]</p>
             <div class="form-field mb-2">
-                <label for="join-name" style="font-size:.85rem">Votre pseudo</label>
+                <label for="join-name" style="font-size:.85rem">@L["Auth.Username"]</label>
                 <input id="join-name" class="form-field" type="text" @bind="_joinName" @bind:event="oninput"
-                       placeholder="Alice, Bob…" style="font-size:.9rem" />
+                       placeholder="@L["Lobby.JoinNamePlaceholder"]" style="font-size:.9rem" />
             </div>
             @if (!string.IsNullOrWhiteSpace(_joinError))
             {
@@ -84,7 +85,7 @@
             <button class="btn btn-primary" style="width:100%"
                     @onclick="JoinFromLobbyAsync"
                     disabled="@(_busy || string.IsNullOrWhiteSpace(_joinName))">
-                @(_busy ? "Rejoindre…" : "▶ Rejoindre la partie")
+                @(_busy ? L["Lobby.Joining"] : $"▶ {L["Lobby.JoinGame"]}")
             </button>
         </div>
     }
@@ -97,7 +98,7 @@
                     @onclick="StartAsync"
                     disabled="@(!_vm.CanStart || _busy)"
                     aria-disabled="@(!_vm.CanStart)">
-                @(_busy ? "Démarrage…" : "▶ Démarrer la partie")
+                @(_busy ? L["Lobby.Starting"] : $"▶ {L["Lobby.StartGame"]}")
             </button>
 
             @if (!_vm.HasStarted)
@@ -105,12 +106,12 @@
                 @if (_confirmCancel)
                 {
                     <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-top:.25rem">
-                        <span class="text-dim" style="font-size:.85rem">Annuler définitivement cette partie ?</span>
+                        <span class="text-dim" style="font-size:.85rem">@L["Lobby.CancelConfirm"]</span>
                         <button class="btn btn-danger btn-sm" @onclick="CancelGameAsync" disabled="@_busy">
-                            ✔ Oui, abandonner
+                            ✔ @L["Game.AbandonConfirmYes"]
                         </button>
                         <button class="btn btn-ghost btn-sm" @onclick="() => _confirmCancel = false" disabled="@_busy">
-                            Annuler
+                            @L["Game.Cancel"]
                         </button>
                     </div>
                 }
@@ -118,8 +119,8 @@
                 {
                     <button class="btn btn-ghost btn-sm" style="color:var(--danger,#e55)"
                             @onclick="() => _confirmCancel = true" disabled="@_busy"
-                            title="Ferme la partie pour tout le monde et revient à la liste des parties">
-                        🏳 Abandonner la création de la partie
+                            title="@L["Lobby.CancelTitle"]">
+                        🏳 @L["Lobby.AbandonCreation"]
                     </button>
                 }
             }
@@ -127,7 +128,7 @@
     }
     else if (_vm.IsParticipant && !_vm.IsHost)
     {
-        <p class="text-muted mt-3">En attente que l'hôte démarre la partie…</p>
+        <p class="text-muted mt-3">@L["Lobby.WaitHostStart"]</p>
     }
 
 </div>

@@ -3,15 +3,16 @@
 @inject AuthService Auth
 @inject LamaApiClient Api
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Mon profil — Playalama</PageTitle>
+<PageTitle>@L["Profile.PageTitle"]</PageTitle>
 
 @if (!Auth.IsInitialized)
 {
     <div class="auth-page">
         <div class="auth-card text-center">
-            <h1>Profil</h1>
-            <p class="text-muted mt-2" aria-live="polite">Chargement de votre session…</p>
+            <h1>@L["Profile.Title"]</h1>
+            <p class="text-muted mt-2" aria-live="polite">@L["Profile.LoadingSession"]</p>
         </div>
     </div>
 }
@@ -19,17 +20,17 @@ else if (!Auth.IsLoggedIn)
 {
     <div class="auth-page">
         <div class="auth-card text-center">
-            <h1>Profil</h1>
-            <p class="text-muted mt-2">Vous devez être connecté pour accéder à cette page.</p>
-            <a href="/login" class="btn btn-primary mt-3">Se connecter</a>
+            <h1>@L["Profile.Title"]</h1>
+            <p class="text-muted mt-2">@L["Profile.LoginRequired"]</p>
+            <a href="/login" class="btn btn-primary mt-3">@L["Login.Submit"]</a>
         </div>
     </div>
 }
 else
 {
     <div class="page-hero">
-        <div class="eyebrow">Compte</div>
-        <h1>Mon profil</h1>
+        <div class="eyebrow">@L["Profile.Account"]</div>
+        <h1>@L["Profile.Title"]</h1>
     </div>
 
     <div class="section">
@@ -38,36 +39,36 @@ else
             @if (_profile is not null)
             {
                 <div class="card mb-4">
-                    <h2 class="mb-3">Informations</h2>
+                    <h2 class="mb-3">@L["Profile.Information"]</h2>
                     <div style="display:flex; flex-direction:column; gap:.75rem">
-                        <div class="flex justify-between"><span class="text-muted">Pseudo</span><strong>@_profile.Username</strong></div>
+                        <div class="flex justify-between"><span class="text-muted">@L["Auth.Username"]</span><strong>@_profile.Username</strong></div>
                         @if (!string.IsNullOrWhiteSpace(_profile.Email))
                         {
-                            <div class="flex justify-between"><span class="text-muted">Email</span><strong>@_profile.Email</strong></div>
+                            <div class="flex justify-between"><span class="text-muted">@L["Auth.Email"]</span><strong>@_profile.Email</strong></div>
                         }
                         @if (!string.IsNullOrWhiteSpace(_profile.CountryCode))
                         {
-                            <div class="flex justify-between"><span class="text-muted">Pays</span><strong>@GetCountryDisplay(_profile.CountryCode)</strong></div>
+                            <div class="flex justify-between"><span class="text-muted">@L["Auth.Country"]</span><strong>@GetCountryDisplay(_profile.CountryCode)</strong></div>
                         }
-                        <div class="flex justify-between"><span class="text-muted">Membre depuis</span><strong>@_profile.CreatedAt.ToString("dd/MM/yyyy")</strong></div>
+                        <div class="flex justify-between"><span class="text-muted">@L["Profile.MemberSince"]</span><strong>@_profile.CreatedAt.ToString("dd/MM/yyyy")</strong></div>
                     </div>
                 </div>
             }
 
             <div class="card">
-                <h2 class="mb-3">Modifier mon profil</h2>
+                <h2 class="mb-3">@L["Profile.Edit"]</h2>
                 <EditForm Model="_updateForm" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
 
                     <div class="form-field">
-                        <label for="upd-email">Email <small class="text-dim">(optionnel)</small></label>
-                        <InputText id="upd-email" type="email" @bind-Value="_updateForm.Email" placeholder="vous@exemple.fr" />
+                        <label for="upd-email">@L["Auth.Email"] <small class="text-dim">@L["Common.Optional"]</small></label>
+                        <InputText id="upd-email" type="email" @bind-Value="_updateForm.Email" placeholder="@L["Auth.EmailPlaceholder"]" />
                     </div>
 
                     <div class="form-field">
-                        <label for="upd-country">Pays <small class="text-dim">(optionnel)</small></label>
+                        <label for="upd-country">@L["Auth.Country"] <small class="text-dim">@L["Common.Optional"]</small></label>
                         <InputSelect id="upd-country" @bind-Value="_updateForm.CountryCode" class="form-select">
-                            <option value="">— Non spécifié —</option>
+                            <option value="">@L["Auth.Country.Unspecified"]</option>
                             @foreach (var (code, name) in _countries)
                             {
                                 <option value="@(code)">@(name)</option>
@@ -75,19 +76,19 @@ else
                         </InputSelect>
                     </div>
 
-                    <h3 class="mt-3 mb-2">Changer le mot de passe</h3>
+                    <h3 class="mt-3 mb-2">@L["Profile.ChangePassword"]</h3>
 
                     <div class="form-field">
-                        <label for="upd-pwd">Mot de passe actuel</label>
+                        <label for="upd-pwd">@L["Profile.CurrentPassword"]</label>
                         <InputText id="upd-pwd" type="password" @bind-Value="_updateForm.CurrentPassword" />
                     </div>
                     <div class="form-field">
-                        <label for="upd-pwd2">Nouveau mot de passe</label>
+                        <label for="upd-pwd2">@L["Profile.NewPassword"]</label>
                         <InputText id="upd-pwd2" type="password" @bind-Value="_updateForm.NewPassword" />
                         <ValidationMessage For="() => _updateForm.NewPassword" class="form-error" />
                     </div>
                     <div class="form-field">
-                        <label for="upd-pwd3">Confirmer le nouveau mot de passe</label>
+                        <label for="upd-pwd3">@L["Profile.ConfirmNewPassword"]</label>
                         <InputText id="upd-pwd3" type="password" @bind-Value="_updateForm.NewPasswordConfirm" />
                         <ValidationMessage For="() => _updateForm.NewPasswordConfirm" class="form-error" />
                     </div>
@@ -96,7 +97,7 @@ else
                     @if (!string.IsNullOrWhiteSpace(_success)) { <p class="form-success mb-2" role="status">@_success</p> }
 
                     <button class="btn btn-primary" type="submit" disabled="@_busy">
-                        @(_busy ? "Sauvegarde…" : "Enregistrer")
+                        @(_busy ? L["Profile.Saving"] : L["Profile.Save"])
                     </button>
                 </EditForm>
             </div>
@@ -182,7 +183,7 @@ else
         try
         {
             var token = await Auth.GetTokenAsync();
-            if (token is null) { _error = "Session expirée."; return; }
+            if (token is null) { _error = L["Auth.SessionExpired"]; return; }
 
             var countryCode = string.IsNullOrWhiteSpace(_updateForm.CountryCode) ? null : _updateForm.CountryCode;
 
@@ -191,7 +192,7 @@ else
                 string.IsNullOrWhiteSpace(_updateForm.NewPassword) ? null : _updateForm.NewPassword,
                 countryCode);
 
-            _success = "Profil mis à jour.";
+            _success = L["Profile.Updated"];
             _updateForm.CurrentPassword = null;
             _updateForm.NewPassword = null;
             _updateForm.NewPasswordConfirm = null;

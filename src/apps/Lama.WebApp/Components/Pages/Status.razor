@@ -2,14 +2,15 @@
 @layout MainLayout
 @inject StatusViewModel VM
 @inject AuthService Auth
+@inject IStringLocalizer<SharedResource> L
 @implements IAsyncDisposable
 
-<PageTitle>Monitoring — Playalama</PageTitle>
+<PageTitle>@L["Status.PageTitle"]</PageTitle>
 
 <div class="page-hero">
-    <div class="eyebrow">Administration</div>
-    <h1>📊 Tableau de bord</h1>
-    <p class="text-muted mt-2">Santé et statistiques de la pile Lama en temps réel.</p>
+    <div class="eyebrow">@L["Status.Admin"]</div>
+    <h1>📊 @L["Status.Title"]</h1>
+    <p class="text-muted mt-2">@L["Status.Subtitle"]</p>
 </div>
 
 <div class="section">
@@ -19,9 +20,9 @@
         {
             <div class="card" style="max-width:480px; margin:0 auto; text-align:center">
                 <span style="font-size:3rem">⏳</span>
-                <h3 style="margin:1rem 0 .5rem">Chargement</h3>
+                <h3 style="margin:1rem 0 .5rem">@L["Common.Loading"]</h3>
                 <p class="text-muted" style="margin-bottom:1.5rem" aria-live="polite">
-                    Vérification de votre session…
+                    @L["Status.CheckingSession"]
                 </p>
             </div>
         }
@@ -29,31 +30,30 @@
         {
             <div class="card" style="max-width:480px; margin:0 auto; text-align:center">
                 <span style="font-size:3rem">🔐</span>
-                <h3 style="margin:1rem 0 .5rem">Connexion requise</h3>
+                <h3 style="margin:1rem 0 .5rem">@L["Status.LoginRequired"]</h3>
                 <p class="text-muted" style="margin-bottom:1.5rem">
-                    Connectez-vous pour accéder au panneau d'administration.
+                    @L["Status.LoginText"]
                 </p>
-                <a class="btn btn-primary" href="/login">Se connecter</a>
+                <a class="btn btn-primary" href="/login">@L["Login.Submit"]</a>
             </div>
         }
         else if (VM.IsLoading && VM.Snapshot is null)
         {
-            <p class="text-muted text-center" style="padding:3rem">⏳ Chargement…</p>
+            <p class="text-muted text-center" style="padding:3rem">⏳ @L["Common.Loading"]</p>
         }
         else if (!VM.IsAuthenticated)
         {
             <div class="card" style="max-width:480px; margin:0 auto; text-align:center">
                 <span style="font-size:3rem">🚫</span>
-                <h3 style="margin:1rem 0 .5rem">Accès refusé</h3>
+                <h3 style="margin:1rem 0 .5rem">@L["Status.AccessDenied"]</h3>
                 <p class="text-muted" style="margin-bottom:.5rem">
-                    Votre compte ne dispose pas des droits administrateur,
-                    ou votre session a expiré.
+                    @L["Status.AccessDeniedText"]
                 </p>
                 @if (!string.IsNullOrEmpty(VM.ErrorMessage))
                 {
                     <p class="form-error mt-2" role="alert">@VM.ErrorMessage</p>
                 }
-                <button class="btn btn-ghost btn-sm mt-3" @onclick="RefreshAsync">🔄 Réessayer</button>
+                <button class="btn btn-ghost btn-sm mt-3" @onclick="RefreshAsync">🔄 @L["Game.Retry"]</button>
             </div>
         }
         else
@@ -63,16 +63,16 @@
                     @if (VM.LastRefreshed.HasValue)
                     {
                         <span class="text-muted" style="font-size:.85rem">
-                            Mis à jour : @VM.LastRefreshed.Value.LocalDateTime.ToString("HH:mm:ss")
+                            @L["Status.UpdatedAt"] @VM.LastRefreshed.Value.LocalDateTime.ToString("HH:mm:ss")
                         </span>
                     }
                     <div class="live-indicator">
                         <div class="live-dot"></div>
-                        Auto-refresh 30s
+                        @L["Status.AutoRefresh"]
                     </div>
                 </div>
                 <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@VM.IsLoading">
-                    @(VM.IsLoading ? "⏳" : "🔄 Actualiser")
+                    @(VM.IsLoading ? "⏳" : $"🔄 {L["Game.Refresh"]}")
                 </button>
             </div>
 
@@ -93,8 +93,8 @@
                     <div class="card status-card">
                         <div class="status-card-header">
                             <span class="status-card-icon">🖥️</span>
-                            <h3>Serveur</h3>
-                            <span class="chip chip-success">OK</span>
+                            <h3>@L["Status.Server"]</h3>
+                            <span class="chip chip-success">@L["Status.Ok"]</span>
                         </div>
                         <div class="status-metrics">
                             <div class="metric"><span class="metric-label">Version</span><span class="metric-value">@s.Server.Version</span></div>
@@ -109,7 +109,7 @@
                     <div class="card status-card">
                         <div class="status-card-header">
                             <span class="status-card-icon">🎮</span>
-                            <h3>Parties</h3>
+                            <h3>@L["Nav.Games"]</h3>
                         </div>
                         <div class="status-metrics">
                             <div class="metric highlight"><span class="metric-label">En cours</span><span class="metric-value big">@s.Games.ActiveCount</span></div>
@@ -125,7 +125,7 @@
                     <div class="card status-card">
                         <div class="status-card-header">
                             <span class="status-card-icon">👥</span>
-                            <h3>Joueurs</h3>
+                            <h3>@L["Status.Players"]</h3>
                         </div>
                         <div class="status-metrics">
                             <div class="metric highlight"><span class="metric-label">Inscrits (total)</span><span class="metric-value big">@s.Players.TotalRegistered</span></div>
@@ -137,12 +137,12 @@
                     <div class="card status-card">
                         <div class="status-card-header">
                             <span class="status-card-icon">🗄️</span>
-                            <h3>Base de données</h3>
+                            <h3>@L["Status.Database"]</h3>
                             <span class="chip @DbStatusClass(s.Database.Status)">@s.Database.Status</span>
                         </div>
                         <div class="status-metrics">
                             <div class="metric"><span class="metric-label">Fournisseur</span><span class="metric-value">@s.Database.Provider</span></div>
-                            <div class="metric"><span class="metric-label">Migrations en attente</span>
+                            <div class="metric"><span class="metric-label">@L["Status.PendingMigrations"]</span>
                                 <span class="metric-value @(s.Database.MigrationPending ? "text-error" : "")">
                                     @(s.Database.MigrationPending ? "⚠️ Oui" : "✅ Non")
                                 </span>
@@ -154,7 +154,7 @@
                     <div class="card status-card">
                         <div class="status-card-header">
                             <span class="status-card-icon">🤖</span>
-                            <h3>AIServer</h3>
+                            <h3>@L["Status.AiServer"]</h3>
                             <span class="chip @AiStatusClass(s.AiServer.Status)">@s.AiServer.Status</span>
                         </div>
                         <div class="status-metrics">
@@ -172,7 +172,7 @@
                             }
                             @if (s.AiServer.Status == "not_configured")
                             {
-                                <p class="text-muted" style="font-size:.85rem">LAMA_AI_SERVER_URL non configurée.</p>
+                                <p class="text-muted" style="font-size:.85rem">@L["Status.AiNotConfigured"]</p>
                             }
                         </div>
                     </div>
@@ -181,7 +181,7 @@
                     <div class="card status-card">
                         <div class="status-card-header">
                             <span class="status-card-icon">⚙️</span>
-                            <h3>Actions admin</h3>
+                            <h3>@L["Status.AdminActions"]</h3>
                         </div>
                         <div class="status-metrics" style="gap:1rem">
                             <div style="display:flex; flex-direction:column; gap:.5rem">
@@ -194,7 +194,7 @@
                                         disabled="@(VM.IsTerminating || s.Games.ActiveCount == 0)">
                                     @if (VM.IsTerminating)
                                     {
-                                        <span>⏳ Terminaison…</span>
+                                        <span>⏳ @L["Status.Terminating"]</span>
                                     }
                                     else
                                     {

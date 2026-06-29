@@ -1,21 +1,22 @@
 @page "/leaderboard"
 @layout MainLayout
 @inject LeaderboardViewModel VM
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Classements — Playalama</PageTitle>
+<PageTitle>@L["Leaderboard.PageTitle"]</PageTitle>
 
 <div class="page-hero">
-    <div class="eyebrow">Classements</div>
-    <h1>🏆 Classements complets</h1>
-    <p class="text-muted mt-2">Retrouvez le palmarès de tous les joueurs sur l'ensemble des parties jouées.</p>
+    <div class="eyebrow">@L["Leaderboard.Eyebrow"]</div>
+    <h1>🏆 @L["Leaderboard.Title"]</h1>
+    <p class="text-muted mt-2">@L["Leaderboard.Subtitle"]</p>
 </div>
 
 <div class="section">
     <div class="container">
 
         <!-- Filtres -->
-        <div class="lb-filter" role="group" aria-label="Filtres du classement">
-            <div class="lb-tabs" role="tablist" aria-label="Mode de jeu">
+        <div class="lb-filter" role="group" aria-label="@L["Leaderboard.FiltersAria"]">
+            <div class="lb-tabs" role="tablist" aria-label="@L["Leaderboard.ModeAria"]">
                 @foreach (var modeEntry in LeaderboardViewModel.Modes)
                 {
                     <button class="lb-tab @(VM.SelectedMode == modeEntry.Mode ? "active" : "")"
@@ -27,10 +28,10 @@
                 }
             </div>
 
-            <label class="sr-only" for="country-filter">Filtrer par pays</label>
+            <label class="sr-only" for="country-filter">@L["Leaderboard.FilterCountry"]</label>
             <select id="country-filter"
                     @onchange="OnCountryChangeAsync"
-                    aria-label="Filtrer par pays">
+                    aria-label="@L["Leaderboard.FilterCountry"]">
                 @foreach (var countryEntry in LeaderboardViewModel.Countries)
                 {
                     <option value="@countryEntry.Code" selected="@(VM.SelectedCountry == countryEntry.Code)">@countryEntry.Label</option>
@@ -40,7 +41,7 @@
 
         @if (VM.IsLoading)
         {
-            <p class="text-muted text-center" aria-live="polite" style="padding:3rem">Chargement…</p>
+            <p class="text-muted text-center" aria-live="polite" style="padding:3rem">@L["Common.Loading"]</p>
         }
         else if (!string.IsNullOrEmpty(VM.Error))
         {
@@ -54,7 +55,7 @@
         <div class="flex items-center mt-3 gap-2">
             <div class="live-indicator" aria-live="polite">
                 <div class="live-dot" aria-hidden="true"></div>
-                Mis à jour en direct
+                @L["Common.LiveUpdated"]
             </div>
         </div>
     </div>

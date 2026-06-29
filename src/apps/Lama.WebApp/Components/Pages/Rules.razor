@@ -1,13 +1,14 @@
 @page "/rules"
 @layout MainLayout
 @inject RulesViewModel VM
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Règles du jeu — Playalama</PageTitle>
+<PageTitle>@L["Rules.PageTitle"]</PageTitle>
 
 <div class="page-hero">
-    <div class="eyebrow">Règles</div>
-    <h1>📖 Règles du jeu</h1>
-    <p class="text-muted mt-2">Toutes les règles par mode de jeu. Cliquez sur un mode dans la navigation pour y accéder directement.</p>
+    <div class="eyebrow">@L["Nav.Rules"]</div>
+    <h1>📖 @L["Rules.Title"]</h1>
+    <p class="text-muted mt-2">@L["Rules.Subtitle"]</p>
 </div>
 
 <div class="section">
@@ -15,7 +16,7 @@
         <div class="rules-layout">
 
             <!-- Navigation sticky -->
-            <nav class="rules-nav" aria-label="Navigation des sections de règles">
+            <nav class="rules-nav" aria-label="@L["Rules.NavAria"]">
                 @foreach (var ruleSection in VM.Sections)
                 {
                     <a href="#@ruleSection.Id"
@@ -48,7 +49,7 @@
                         {
                             <div class="mt-3">
                                 <a href="/modes/@ruleSection.Id" class="btn btn-outline btn-sm">
-                                    Jouer en @ruleSection.Title.Split(' ').Last() →
+                                    @L["Rules.PlayMode", ruleSection.Title.Split(' ').Last()] →
                                 </a>
                             </div>
                         }

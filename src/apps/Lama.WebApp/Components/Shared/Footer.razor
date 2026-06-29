@@ -1,41 +1,43 @@
+@inject IStringLocalizer<SharedResource> L
+
 <footer role="contentinfo">
     <div class="footer-grid">
         <div class="footer-brand">
             <div class="navbar-logo" style="font-size:2rem" aria-label="Playalama">PLAYALAMA</div>
-            <p>Le jeu de mots tactique libre et multiplateforme. Joue sur le Web ou en ligne de commande.</p>
+            <p>@L["Footer.Tagline"]</p>
         </div>
         <div class="footer-col">
-            <h4>Jeu</h4>
+            <h4>@L["Footer.Game"]</h4>
             <ul>
-                <li><a href="/games">Jouer en ligne</a></li>
-                <li><a href="/downloads">Télécharger</a></li>
-                <li><a href="/#modes">Modes de jeu</a></li>
-                <li><a href="/leaderboard">Classements</a></li>
+                <li><a href="/games">@L["Footer.PlayOnline"]</a></li>
+                <li><a href="/downloads">@L["Footer.Download"]</a></li>
+                <li><a href="/#modes">@L["Footer.GameModes"]</a></li>
+                <li><a href="/leaderboard">@L["Footer.Leaderboards"]</a></li>
             </ul>
         </div>
         <div class="footer-col">
-            <h4>Règles</h4>
+            <h4>@L["Nav.Rules"]</h4>
             <ul>
-                <li><a href="/rules">Règles communes</a></li>
-                <li><a href="/rules#classique">Mode Classique</a></li>
-                <li><a href="/rules#blitz">Mode Blitz</a></li>
-                <li><a href="/rules#chaos">Mode Chaos</a></li>
+                <li><a href="/rules">@L["Footer.CommonRules"]</a></li>
+                <li><a href="/rules#classique">@L["Footer.ModeClassic"]</a></li>
+                <li><a href="/rules#blitz">@L["Footer.ModeBlitz"]</a></li>
+                <li><a href="/rules#chaos">@L["Footer.ModeChaos"]</a></li>
             </ul>
         </div>
         <div class="footer-col">
-            <h4>Projet</h4>
+            <h4>@L["Footer.Project"]</h4>
             <ul>
                 <li><a href="#">GitHub</a></li>
-                <li><a href="#">Documentation</a></li>
-                <li><a href="#">Contact</a></li>
-                <li><a href="/license">Licence AGPLv3</a></li>
-                <li><a href="/status" style="opacity:.7;font-size:.95rem">Admin</a></li>
+                <li><a href="#">@L["Footer.Documentation"]</a></li>
+                <li><a href="#">@L["Footer.Contact"]</a></li>
+                <li><a href="/license">@L["Footer.License"]</a></li>
+                <li><a href="/status" style="opacity:.7;font-size:.95rem">@L["Footer.Admin"]</a></li>
             </ul>
         </div>
     </div>
     <div class="footer-bottom">
-        <span>© 2026 Playalama — Open Source AGPLv3</span>
-        <div class="footer-socials" aria-label="Réseaux sociaux">
+        <span>@L["Footer.Copyright"]</span>
+        <div class="footer-socials" aria-label="@L["Footer.Social"]">
             <a href="#" title="Discord" aria-label="Discord">💬</a>
             <a href="#" title="GitHub"  aria-label="GitHub">🐙</a>
             <a href="#" title="Twitter" aria-label="Twitter">🐦</a>

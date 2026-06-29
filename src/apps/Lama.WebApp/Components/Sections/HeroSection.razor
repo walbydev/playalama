@@ -1,42 +1,43 @@
-<section class="hero" id="hero" aria-label="Accroche principale">
+@inject IStringLocalizer<SharedResource> L
+
+<section class="hero" id="hero" aria-label="@L["Home.Hero.Aria"]">
     <div class="hero-bg" aria-hidden="true"></div>
     <div class="floating-letters" aria-hidden="true" id="floating-letters"></div>
 
     <div class="hero-inner">
         <div class="hero-eyebrow">
             <span aria-hidden="true"></span>
-            Jeu de mots tactique
+            @L["Home.Hero.Eyebrow"]
             <span aria-hidden="true"></span>
         </div>
 
         <h1 class="hero-title">
-            Joue.<br />
-            Combine.<br />
-            <span class="gradient-text">Domine.</span>
+            @L["Home.Hero.Line1"]<br />
+            @L["Home.Hero.Line2"]<br />
+            <span class="gradient-text">@L["Home.Hero.Line3"]</span>
         </h1>
 
         <p class="hero-sub">
-            Playalama réinvente le jeu de mots : plateau modulable, tuiles bonus/malus,
-            multijoueur en ligne et même en ligne de commande. Web, Windows, Linux, Mac.
+            @L["Home.Hero.Subtitle"]
         </p>
 
         <div class="hero-btns">
-            <a href="/games"     class="btn btn-primary btn-lg">🎮 Jouer maintenant</a>
-            <a href="/downloads" class="btn btn-outline btn-lg">⬇ Télécharger</a>
+            <a href="/games"     class="btn btn-primary btn-lg">🎮 @L["Home.Hero.PlayNow"]</a>
+            <a href="/downloads" class="btn btn-outline btn-lg">⬇ @L["Home.Hero.Download"]</a>
         </div>
 
-        <div class="hero-stats" role="list" aria-label="Statistiques de la communauté">
+        <div class="hero-stats" role="list" aria-label="@L["Home.Hero.StatsAria"]">
             <div role="listitem">
-                <div class="hero-stat-val" data-count="12" aria-label="12 joueurs actifs">12</div>
-                <div class="hero-stat-lab">Joueurs actifs</div>
+                <div class="hero-stat-val" data-count="12" aria-label="@L["Home.Hero.ActivePlayersAria"]">12</div>
+                <div class="hero-stat-lab">@L["Home.Hero.ActivePlayers"]</div>
             </div>
             <div role="listitem">
-                <div class="hero-stat-val" data-count="000088" aria-label="000 088 parties jouées">88</div>
-                <div class="hero-stat-lab">Parties jouées</div>
+                <div class="hero-stat-val" data-count="000088" aria-label="@L["Home.Hero.GamesPlayedAria"]">88</div>
+                <div class="hero-stat-lab">@L["Home.Hero.GamesPlayed"]</div>
             </div>
             <div role="listitem">
-                <div class="hero-stat-val" aria-label="3 langues disponibles">3</div>
-                <div class="hero-stat-lab">Langues</div>
+                <div class="hero-stat-val" aria-label="@L["Home.Hero.LanguagesAria"]">3</div>
+                <div class="hero-stat-lab">@L["Home.Hero.Languages"]</div>
             </div>
         </div>
     </div>

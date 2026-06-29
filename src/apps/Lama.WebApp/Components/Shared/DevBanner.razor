@@ -1,13 +1,14 @@
 @using Lama.WebApp.Services
+@inject IStringLocalizer<SharedResource> L
 
-<div class="dev-banner" role="alert" aria-label="Mode développement">
-    <span>🚧 En développement</span>
+<div class="dev-banner" role="alert" aria-label="@L["DevBanner.Aria"]">
+    <span>🚧 @L["DevBanner.InDevelopment"]</span>
     <span class="dev-banner-sep">|</span>
     <span>v&nbsp;@BuildInfoConstants.Version</span>
     <span class="dev-banner-sep">|</span>
     <span>#@BuildInfoConstants.BuildNumber</span>
     <span class="dev-banner-sep">|</span>
-    <span>Build : @FormatTime(BuildInfoConstants.BuildTimestamp)</span>
+    <span>@L["DevBanner.Build"] @FormatTime(BuildInfoConstants.BuildTimestamp)</span>
 </div>
 
 @code {

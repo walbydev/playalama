@@ -2,29 +2,30 @@
 @layout MainLayout
 @inject AuthService Auth
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Connexion — Playalama</PageTitle>
+<PageTitle>@L["Login.PageTitle"]</PageTitle>
 
 <div class="auth-page">
     <div class="auth-card">
         <div class="text-center mb-3">
             <span style="font-size:2.5rem" aria-hidden="true">🦙</span>
-            <h1 class="mt-1">Connexion</h1>
-            <p class="text-muted mt-1">Retrouvez vos parties et votre classement.</p>
+            <h1 class="mt-1">@L["Login.Title"]</h1>
+            <p class="text-muted mt-1">@L["Login.Subtitle"]</p>
         </div>
 
         <EditForm Model="form" OnValidSubmit="SubmitAsync">
             <DataAnnotationsValidator />
 
             <div class="form-field">
-                <label for="username">Pseudo</label>
+                <label for="username">@L["Auth.Username"]</label>
                 <InputText id="username" class="form-field input" @bind-Value="form.Username"
-                           autocomplete="username" placeholder="VotreAlias" />
+                           autocomplete="username" placeholder="@L["Auth.UsernamePlaceholder"]" />
                 <ValidationMessage For="() => form.Username" class="form-error" />
             </div>
 
             <div class="form-field">
-                <label for="password">Mot de passe</label>
+                <label for="password">@L["Auth.Password"]</label>
                 <InputText id="password" type="password" @bind-Value="form.Password"
                            autocomplete="current-password" placeholder="••••••" />
                 <ValidationMessage For="() => form.Password" class="form-error" />
@@ -36,12 +37,12 @@
             }
 
             <button class="btn btn-primary" type="submit" style="width:100%" disabled="@_busy">
-                @(_busy ? "Connexion…" : "Se connecter")
+                @(_busy ? L["Login.Busy"] : L["Login.Submit"])
             </button>
         </EditForm>
 
         <p class="text-center text-muted mt-3" style="font-size:.9rem">
-            Pas encore de compte ? <a href="/register">S'inscrire</a>
+            @L["Login.NoAccount"] <a href="/register">@L["Login.Register"]</a>
         </p>
 
     </div>
@@ -79,7 +80,7 @@
         if (success)
             Navigation.NavigateTo(_returnUrl);
         else
-            _error = err ?? "Connexion échouée.";
+            _error = err ?? L["Login.Failed"];
 
         _busy = false;
     }

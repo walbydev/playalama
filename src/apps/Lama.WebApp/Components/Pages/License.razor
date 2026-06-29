@@ -1,20 +1,21 @@
 @page "/license"
 @layout MainLayout
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Licence & crédits — Playalama</PageTitle>
+<PageTitle>@L["License.PageTitle"]</PageTitle>
 
 <div class="page-hero">
-    <div class="eyebrow">Projet</div>
-    <h1>⚖️ Licence & crédits</h1>
+    <div class="eyebrow">@L["Footer.Project"]</div>
+    <h1>⚖️ @L["License.Title"]</h1>
     <p class="text-muted mt-2">
-        Playalama est distribué sous licence libre AGPLv3 pour garantir que les forks restent libres.
+        @L["License.Subtitle"]
     </p>
 </div>
 
 <div class="section">
     <div class="container" style="max-width:1000px">
         <div class="card mb-4">
-            <h2 class="mb-2">Licence du projet</h2>
+            <h2 class="mb-2">@L["License.ProjectLicense"]</h2>
             <p>
                 Le code source de <strong>Playalama</strong> est sous
                 <strong>GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)</strong>.
@@ -29,7 +30,7 @@
         </div>
 
         <div class="card mb-4">
-            <h2 class="mb-2">Dons & gratuité</h2>
+            <h2 class="mb-2">@L["License.Donations"]</h2>
             <p>
                 Les dons pour financer l’infrastructure sont compatibles avec l’AGPLv3.
                 La licence ne bloque pas la monétisation, mais impose que les versions modifiées
@@ -38,7 +39,7 @@
         </div>
 
         <div class="card mb-4">
-            <h2 class="mb-2">Outils de développement</h2>
+            <h2 class="mb-2">@L["License.DevTools"]</h2>
             <p>
                 L’utilisation de <strong>JetBrains Rider Community</strong> (ou de tout autre IDE)
                 n’affecte pas la licence AGPL du code produit. La licence de l’IDE est indépendante.
@@ -46,19 +47,19 @@
         </div>
 
         <div class="card">
-            <h2 class="mb-3">Dépendances tierces principales</h2>
+            <h2 class="mb-3">@L["License.Dependencies"]</h2>
             <p class="text-muted mb-3">
                 Inventaire basé sur les dépendances NuGet du dépôt. Vérifier les notices officielles
                 de chaque projet en cas d’audit juridique.
             </p>
 
             <div style="overflow-x:auto">
-                <table class="lb-table" aria-label="Licences des dépendances">
+                <table class="lb-table" aria-label="@L["License.DependenciesAria"]">
                     <thead>
                         <tr>
-                            <th scope="col">Dépendance</th>
-                            <th scope="col">Licence (courante)</th>
-                            <th scope="col">Usage</th>
+                            <th scope="col">@L["License.Dependency"]</th>
+                            <th scope="col">@L["License.License"]</th>
+                            <th scope="col">@L["License.Usage"]</th>
                         </tr>
                     </thead>
                     <tbody>

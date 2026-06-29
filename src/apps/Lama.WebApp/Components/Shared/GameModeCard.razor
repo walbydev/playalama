@@ -1,18 +1,30 @@
 @* Carte d'un mode de jeu — utilisée sur Home et Rules *@
+@inject IStringLocalizer<SharedResource> L
 
 <a href="/modes/@Mode.Slug"
    class="mode-card"
    style="--card-color: @Mode.Color"
-   aria-label="@Mode.Name — @Mode.ShortDesc">
+   aria-label="@ModeName — @ModeShortDesc">
     <span class="mode-card-icon" aria-hidden="true">@Mode.Icon</span>
     <div class="mode-card-head">
-        <h3>@Mode.Name</h3>
-        <span class="badge">@Mode.Badge</span>
+        <h3>@ModeName</h3>
+        <span class="badge">@ModeBadge</span>
     </div>
-    <p>@Mode.ShortDesc</p>
-    <span class="btn btn-ghost btn-sm" style="align-self: flex-start; margin-top: auto;">Voir les règles →</span>
+    <p>@ModeShortDesc</p>
+    <span class="btn btn-ghost btn-sm" style="align-self: flex-start; margin-top: auto;">@L["GameModeCard.ViewRules"] →</span>
 </a>
 
 @code {
     [Parameter, EditorRequired] public GameModeViewModel Mode { get; set; } = null!;
+
+    private string ModeName => Translate("Name", Mode.Name);
+    private string ModeShortDesc => Translate("ShortDesc", Mode.ShortDesc);
+    private string ModeBadge => Translate("Badge", Mode.Badge);
+
+    private string Translate(string suffix, string fallback)
+    {
+        var key = $"Modes.{Mode.Slug}.{suffix}";
+        var value = L[key];
+        return value.ResourceNotFound ? fallback : value.Value;
+    }
 }

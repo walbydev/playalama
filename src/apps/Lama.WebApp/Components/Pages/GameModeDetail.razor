@@ -1,32 +1,33 @@
 @page "/modes/{Slug}"
 @layout MainLayout
 @inject NavigationManager Nav
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>@(_mode?.Name ?? "Mode de jeu") — Playalama</PageTitle>
+<PageTitle>@(ModeName(_mode) ?? L["GameModes.Mode"]) — Playalama</PageTitle>
 
 @if (_mode is null)
 {
     <div class="page-hero">
         <div class="empty-state">
             <span class="empty-state-icon" aria-hidden="true">🎮</span>
-            <p>Mode de jeu introuvable.</p>
-            <a href="/#modes" class="btn btn-outline mt-2">← Retour aux modes</a>
+            <p>@L["GameModes.NotFound"]</p>
+            <a href="/#modes" class="btn btn-outline mt-2">← @L["GameModes.BackToModes"]</a>
         </div>
     </div>
 }
 else
 {
     <div class="page-hero">
-        <div class="eyebrow">Mode de jeu</div>
+        <div class="eyebrow">@L["GameModes.Mode"]</div>
         <h1 style="--card-color: @_mode.Color">
             <span aria-hidden="true">@_mode.Icon</span>
-            @_mode.Name
-            <span class="badge">@_mode.Badge</span>
+            @ModeName(_mode)
+            <span class="badge">@ModeBadge(_mode)</span>
         </h1>
-        <p class="text-muted mt-2" style="max-width:680px; font-size:1.1rem">@_mode.FullDesc</p>
+        <p class="text-muted mt-2" style="max-width:680px; font-size:1.1rem">@ModeFullDesc(_mode)</p>
         <div class="hero-btns mt-3">
-            <a href="/games" class="btn btn-primary">🎮 Jouer en @_mode.Name</a>
-            <a href="/#modes" class="btn btn-ghost">← Tous les modes</a>
+            <a href="/games" class="btn btn-primary">🎮 @L["GameModes.PlayIn", ModeName(_mode)]</a>
+            <a href="/#modes" class="btn btn-ghost">← @L["GameModes.AllModes"]</a>
         </div>
     </div>
 
@@ -35,9 +36,9 @@ else
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items:start">
 
                 <section aria-labelledby="rules-title-@_mode.Slug">
-                    <h2 id="rules-title-@_mode.Slug" class="mb-3">📖 Règles</h2>
+                    <h2 id="rules-title-@_mode.Slug" class="mb-3">📖 @L["Nav.Rules"]</h2>
                     <ul style="list-style:none; display:flex; flex-direction:column; gap:.75rem">
-                        @foreach (var rule in _mode.Rules)
+                        @foreach (var rule in ModeRules(_mode))
                         {
                             <li class="rules-rule" style="display:flex; align-items:baseline; gap:.75rem">
                                 <span aria-hidden="true" style="color:var(--accent2); font-size:1.1rem">•</span>
@@ -48,9 +49,9 @@ else
                 </section>
 
                 <section aria-labelledby="options-title-@_mode.Slug">
-                    <h2 id="options-title-@_mode.Slug" class="mb-3">⚙️ Options disponibles</h2>
+                    <h2 id="options-title-@_mode.Slug" class="mb-3">⚙️ @L["GameModes.Options"]</h2>
                     <ul style="list-style:none; display:flex; flex-direction:column; gap:.75rem">
-                        @foreach (var opt in _mode.Options)
+                        @foreach (var opt in ModeOptions(_mode))
                         {
                             <li class="rules-rule" style="display:flex; align-items:baseline; gap:.75rem">
                                 <span aria-hidden="true" style="color:var(--gold); font-size:1.1rem">✦</span>
@@ -65,11 +66,11 @@ else
 
     <div class="section bg2 text-center">
         <div class="container">
-            <h2>Prêt à jouer en mode @_mode.Name ?</h2>
-            <p class="text-muted mt-2">Lance une partie maintenant ou télécharge le client CLI pour jouer hors ligne.</p>
+            <h2>@L["GameModes.Ready", ModeName(_mode)]</h2>
+            <p class="text-muted mt-2">@L["GameModes.ReadySubtitle"]</p>
             <div class="hero-btns mt-3">
-                <a href="/games"     class="btn btn-primary btn-lg">🎮 Jouer maintenant</a>
-                <a href="/downloads" class="btn btn-outline btn-lg">⬇ Télécharger le CLI</a>
+                <a href="/games"     class="btn btn-primary btn-lg">🎮 @L["Home.Hero.PlayNow"]</a>
+                <a href="/downloads" class="btn btn-outline btn-lg">⬇ @L["Downloads.CliDownload"]</a>
             </div>
         </div>
     </div>
@@ -81,4 +82,37 @@ else
 
     protected override void OnParametersSet()
         => _mode = GameModes.FindBySlug(Slug);
+
+    private string ModeName(GameModeViewModel? mode) => mode is null ? string.Empty : Translate(mode, "Name", mode.Name);
+    private string ModeBadge(GameModeViewModel? mode) => mode is null ? string.Empty : Translate(mode, "Badge", mode.Badge);
+    private string ModeFullDesc(GameModeViewModel? mode) => mode is null ? string.Empty : Translate(mode, "FullDesc", mode.FullDesc);
+
+    private IReadOnlyList<string> ModeRules(GameModeViewModel mode)
+    {
+        var values = new List<string>();
+        for (var i = 0; i < mode.Rules.Length; i++)
+        {
+            values.Add(Translate(mode, $"Rules.{i + 1}", mode.Rules[i]));
+        }
+
+        return values;
+    }
+
+    private IReadOnlyList<string> ModeOptions(GameModeViewModel mode)
+    {
+        var values = new List<string>();
+        for (var i = 0; i < mode.Options.Length; i++)
+        {
+            values.Add(Translate(mode, $"Options.{i + 1}", mode.Options[i]));
+        }
+
+        return values;
+    }
+
+    private string Translate(GameModeViewModel mode, string suffix, string fallback)
+    {
+        var key = $"Modes.{mode.Slug}.{suffix}";
+        var value = L[key];
+        return value.ResourceNotFound ? fallback : value.Value;
+    }
 }

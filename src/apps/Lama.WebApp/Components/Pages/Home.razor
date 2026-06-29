@@ -2,8 +2,9 @@
 @layout MainLayout
 @using Lama.WebApp.Components.Sections
 @inject HomeViewModel VM
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Playalama — Le jeu de mots tactique</PageTitle>
+<PageTitle>@L["Home.PageTitle"]</PageTitle>
 
 <HeroSection />
 
@@ -16,14 +17,14 @@
 <!-- CTA final -->
 <section class="section text-center" aria-labelledby="cta-title">
     <div class="container">
-        <h2 id="cta-title">Prêt à poser ta première tuile ?</h2>
-        <p class="text-muted mt-2">Gratuit (Sauf si tu es prêt à effectuer une donation), sans publicité et sans tracking. Lance une partie en moins de 10 secondes.</p>
+        <h2 id="cta-title">@L["Home.Cta.Title"]</h2>
+        <p class="text-muted mt-2">@L["Home.Cta.Subtitle"]</p>
         <div class="hero-btns mt-3">
-            <a href="/games"     class="btn btn-primary btn-lg">🎮 Jouer maintenant — c'est gratuit</a>
-            <a href="/downloads" class="btn btn-outline btn-lg">⬇ Télécharger le client</a>
+            <a href="/games"     class="btn btn-primary btn-lg">🎮 @L["Home.Cta.PlayNow"]</a>
+            <a href="/downloads" class="btn btn-outline btn-lg">⬇ @L["Home.Cta.Download"]</a>
         </div>
         <p class="text-dim mt-2" style="font-size:.9rem">
-            ✓ Gratuit &nbsp;·&nbsp; ✓ Sans pub &nbsp;·&nbsp; ✓ Open source &nbsp;·&nbsp; ✓ Multiplateforme
+            @L["Home.Cta.Badges"]
         </p>
     </div>
 </section>

@@ -1,11 +1,12 @@
 @using Lama.WebApp.Services
 @using Lama.WebApp.ViewModels
 @inject BoardZoomService BoardZoom
+@inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
 @* Plateau de jeu 15×15 avec cases bonus colorées, tuiles posées et placements provisoires. *@
 
-<div class="board-container" role="region" aria-label="Plateau de jeu" style="--board-zoom:@BoardZoom.ZoomFactorCss;">
+<div class="board-container" role="region" aria-label="@L["Board.Aria"]" style="--board-zoom:@BoardZoom.ZoomFactorCss;">
     <div class="board-grid" role="grid">
         @* En-tête colonnes *@
         <div class="board-header-cell" aria-hidden="true"></div>
@@ -36,18 +37,18 @@
                 if (tile.HasValue)
                 {
                     cssClass = "board-cell board-cell--tile";
-                    ariaLabel = $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}: {char.ToUpperInvariant(tile.Value)}";
+                    ariaLabel = L["Board.TileAria", GamePlayViewModel.ColLabel(c), r + 1, char.ToUpperInvariant(tile.Value)].Value;
                 }
                 else if (pending is not null)
                 {
                     cssClass = "board-cell board-cell--pending";
-                    ariaLabel = $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}: {char.ToUpperInvariant(pending.Letter)} (provisoire, clic pour rappeler)";
+                    ariaLabel = L["Board.PendingTileAria", GamePlayViewModel.ColLabel(c), r + 1, char.ToUpperInvariant(pending.Letter)].Value;
                 }
                 else
                 {
                     var cursorClass = isKeyboardCursor ? " board-cell--kbd-cursor" : "";
                     cssClass = $"board-cell{cursorClass}{(string.IsNullOrEmpty(bonus) ? "" : $" board-cell--{bonus}")}";
-                    ariaLabel = $"Colonne {GamePlayViewModel.ColLabel(c)} ligne {r + 1}{GetBonusAriaLabel(bonus)}";
+                    ariaLabel = L["Board.CellAria", GamePlayViewModel.ColLabel(c), r + 1, GetBonusAriaLabel(bonus)].Value;
                 }
 
                 <div class="@cssClass"
@@ -177,13 +178,13 @@
         _ => string.Empty
     };
 
-    private static string GetBonusAriaLabel(string bonus) => bonus switch
+    private string GetBonusAriaLabel(string bonus) => bonus switch
     {
-        "tw" => " — Triple Mot",
-        "dw" => " — Double Mot",
-        "tl" => " — Triple Lettre",
-        "dl" => " — Double Lettre",
-        "st" => " — Départ",
+        "tw" => " — " + L["Board.Bonus.TripleWord"].Value,
+        "dw" => " — " + L["Board.Bonus.DoubleWord"].Value,
+        "tl" => " — " + L["Board.Bonus.TripleLetter"].Value,
+        "dl" => " — " + L["Board.Bonus.DoubleLetter"].Value,
+        "st" => " — " + L["Board.Bonus.Start"].Value,
         _ => string.Empty
     };
 

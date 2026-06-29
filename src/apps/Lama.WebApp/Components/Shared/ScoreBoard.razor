@@ -1,8 +1,9 @@
 @using Lama.WebApp.Services
+@inject IStringLocalizer<SharedResource> L
 
 @* Tableau des scores avec indicateur du joueur actif. *@
 
-<div class="scoreboard" role="list" aria-label="Scores">
+<div class="scoreboard" role="list" aria-label="@L["Game.Scores"]">
     @for (var i = 0; i < Players.Count; i++)
     {
         var player = Players[i];
@@ -17,16 +18,16 @@
                 <div class="scoreboard-name">
                     @if (isAbandoned) { <s>@player.PlayerName</s> }
                     else { @player.PlayerName }
-                    @if (player.IsHost) { <span aria-label="hôte" title="Hôte">👑</span> }
-                    @if (isMe) { <span class="chip chip-accent" style="font-size:.65rem; margin-left:.3rem">Vous</span> }
-                    @if (isAbandoned) { <span class="chip chip-muted" style="font-size:.6rem; margin-left:.3rem" aria-label="Abandonné">Abandonné</span> }
+                    @if (player.IsHost) { <span aria-label="@L["Game.Host"]" title="@L["Game.Host"]">👑</span> }
+                    @if (isMe) { <span class="chip chip-accent" style="font-size:.65rem; margin-left:.3rem">@L["Game.You"]</span> }
+                    @if (isAbandoned) { <span class="chip chip-muted" style="font-size:.6rem; margin-left:.3rem" aria-label="@L["Game.Abandoned"]">@L["Game.Abandoned"]</span> }
                 </div>
-                <div class="scoreboard-rack-count">@player.RackCount tuile@(player.RackCount > 1 ? "s" : "") en main</div>
+                <div class="scoreboard-rack-count">@L["Game.RackCount", player.RackCount, (player.RackCount > 1 ? L["Game.Tiles.Plural"].Value : L["Game.Tiles.Singular"].Value)]</div>
             </div>
-            <div class="scoreboard-score" aria-label="@player.Score points">@player.Score <small>pts</small></div>
+            <div class="scoreboard-score" aria-label="@L["Game.PointsLabel", player.Score]">@player.Score <small>@L["Game.PointsShort"]</small></div>
             @if (isActive && !isAbandoned)
             {
-                <span class="chip chip-accent" style="font-size:.7rem" aria-label="Tour actif">▶</span>
+                <span class="chip chip-accent" style="font-size:.7rem" aria-label="@L["Game.ActiveTurn"]">▶</span>
             }
         </div>
     }

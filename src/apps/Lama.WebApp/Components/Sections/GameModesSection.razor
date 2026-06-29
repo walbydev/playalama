@@ -1,14 +1,15 @@
 @inject HomeViewModel VM
+@inject IStringLocalizer<SharedResource> L
 
 <section id="modes" class="section bg2" aria-labelledby="modes-title">
     <div class="container">
         <div class="section-header">
-            <div class="eyebrow">Modes de jeu</div>
-            <h2 id="modes-title">Un jeu, mille façons de jouer</h2>
-            <p>Du classique épuré aux variantes les plus folles — chaque partie est unique.</p>
+            <div class="eyebrow">@L["Home.Modes.Eyebrow"]</div>
+            <h2 id="modes-title">@L["Home.Modes.Title"]</h2>
+            <p>@L["Home.Modes.Subtitle"]</p>
         </div>
 
-        <div class="modes-grid" role="list" aria-label="Modes de jeu disponibles">
+        <div class="modes-grid" role="list" aria-label="@L["Home.Modes.Aria"]">
             @foreach (var mode in VM.Modes)
             {
                 <div role="listitem">

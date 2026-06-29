@@ -1,13 +1,14 @@
 @using Lama.WebApp.ViewModels
+@inject IStringLocalizer<SharedResource> L
 
 @* Rack du joueur courant : tuiles avec lettre + valeur, joker en blanc.
    IsMyTurn → les tuiles sont draggables vers le plateau.
    DisplayOrder → indices dans Rack, permet de réordonner par drag. *@
 
-<div class="rack-container" role="list" aria-label="Vos tuiles @(IsMyTurn ? "(c'est votre tour)" : "")">
+<div class="rack-container" role="list" aria-label="@L["Rack.Aria", IsMyTurn ? L["Game.Status.YourTurn"].Value : string.Empty]">
     @if (Rack.Count == 0)
     {
-        <span class="text-dim" style="font-size:.85rem">Rack vide</span>
+        <span class="text-dim" style="font-size:.85rem">@L["Rack.Empty"]</span>
     }
     else
     {
@@ -25,7 +26,7 @@
 
             <div class="rack-tile @(isJoker ? "rack-tile--joker" : "") @(used ? "rack-tile--used" : "")"
                  role="listitem"
-                 aria-label="@(isJoker ? "Joker" : $"Lettre {upper} valant {val} point{(val > 1 ? "s" : "")}")"
+                 aria-label="@(isJoker ? L["Rack.Joker"].Value : L["Rack.TileAria", upper, val, (val > 1 ? "s" : "")].Value)"
                  aria-disabled="@(used ? "true" : null)"
                  draggable="true"
                  @ondragstart="@(() => HandleDragStart(dp, rackIdx, letter, used))"

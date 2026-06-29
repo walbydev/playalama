@@ -1,8 +1,9 @@
 @inject LanguageService Lang
 @using Lama.WebApp.Services
+@inject IStringLocalizer<SharedResource> L
 
-<select class="lang-selector" aria-label="Langue / Language" value="@Lang.Current"
-        @onchange="OnChange" title="Langue">
+<select class="lang-selector" aria-label="@L["Language.Label"]" value="@Lang.Current"
+        @onchange="OnChange" title="@L["Language.Label"]">
     @foreach (var item in LanguageService.Available)
     {
         <option value="@item.Code">@item.Label</option>

@@ -1,21 +1,33 @@
-@inject HomeViewModel VM
+@inject IStringLocalizer<SharedResource> L
 
 <section id="why" class="section" aria-labelledby="why-title">
     <div class="container">
         <div class="section-header">
-            <div class="eyebrow">Pourquoi PLAYLAMA ?</div>
-            <h2 id="why-title">Pensé pour les vrais joueurs</h2>
+            <div class="eyebrow">@L["Home.Why.Eyebrow"]</div>
+            <h2 id="why-title">@L["Home.Why.Title"]</h2>
         </div>
 
-        <div class="why-grid" role="list" aria-label="Arguments pour jouer à Playalama">
-            @foreach (var arg in VM.WhyArguments)
+        <div class="why-grid" role="list" aria-label="@L["Home.Why.Aria"]">
+            @foreach (var arg in _items)
             {
                 <article class="why-card" role="listitem">
                     <span class="why-icon" aria-hidden="true">@arg.Icon</span>
-                    <h3>@arg.Title</h3>
-                    <p>@arg.Text</p>
+                    <h3>@L[$"Home.Why.{arg.Key}.Title"]</h3>
+                    <p>@L[$"Home.Why.{arg.Key}.Text"]</p>
                 </article>
             }
         </div>
     </div>
 </section>
+
+@code {
+    private static readonly IReadOnlyList<(string Key, string Icon)> _items =
+    [
+        ("WebCli", "🌐"),
+        ("OpenSource", "⚙️"),
+        ("NoTracking", "🔒"),
+        ("Languages", "🌍"),
+        ("Responsive", "📱"),
+        ("Elo", "🏆"),
+    ];
+}

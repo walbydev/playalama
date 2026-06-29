@@ -4,15 +4,16 @@
 @inject AuthService Auth
 @inject LamaApiClient Api
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Mes parties — Playalama</PageTitle>
+<PageTitle>@L["MyGames.PageTitle"]</PageTitle>
 
 @if (!Auth.IsInitialized)
 {
     <div class="auth-page">
         <div class="auth-card text-center">
-            <h1>Mes parties</h1>
-            <p class="text-muted mt-2" aria-live="polite">Chargement de votre session…</p>
+            <h1>@L["MyGames.Title"]</h1>
+            <p class="text-muted mt-2" aria-live="polite">@L["Profile.LoadingSession"]</p>
         </div>
     </div>
 }
@@ -20,19 +21,19 @@ else if (!Auth.IsLoggedIn)
 {
     <div class="auth-page">
         <div class="auth-card text-center">
-            <h1>Mes parties</h1>
-            <p class="text-muted mt-2">Vous devez être connecté pour voir votre historique.</p>
-            <a href="/login" class="btn btn-primary mt-3">Se connecter</a>
+            <h1>@L["MyGames.Title"]</h1>
+            <p class="text-muted mt-2">@L["MyGames.LoginRequired"]</p>
+            <a href="/login" class="btn btn-primary mt-3">@L["Login.Submit"]</a>
         </div>
     </div>
 }
 else
 {
     <div class="page-hero">
-        <div class="eyebrow">Historique</div>
+        <div class="eyebrow">@L["MyGames.History"]</div>
         <div class="flex items-center justify-between flex-wrap gap-2">
-            <h1>Mes parties</h1>
-            <button class="btn btn-ghost btn-sm" type="button" @onclick="LoadAsync" disabled="@_busy">Rafraîchir</button>
+            <h1>@L["MyGames.Title"]</h1>
+            <button class="btn btn-ghost btn-sm" type="button" @onclick="LoadAsync" disabled="@_busy">@L["Game.Refresh"]</button>
         </div>
     </div>
 
@@ -46,14 +47,14 @@ else
 
             @if (_busy)
             {
-                <p class="text-muted text-center" aria-live="polite">Chargement…</p>
+                <p class="text-muted text-center" aria-live="polite">@L["Common.Loading"]</p>
             }
             else if (_games.Count == 0)
             {
                 <div class="empty-state">
                     <span class="empty-state-icon" aria-hidden="true">🎮</span>
-                    <p>Aucune partie pour le moment.</p>
-                    <a href="/games" class="btn btn-primary mt-2">Rejoindre une partie</a>
+                    <p>@L["MyGames.Empty"]</p>
+                    <a href="/games" class="btn btn-primary mt-2">@L["MyGames.JoinGame"]</a>
                 </div>
             }
             else
@@ -61,32 +62,32 @@ else
                 <div class="flex gap-3 mb-4 flex-wrap">
                     <div class="card" style="text-align:center; min-width:120px">
                         <div style="font-size:1.5rem; font-weight:900; color:var(--accent2)">@_games.Count</div>
-                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Parties</div>
+                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">@L["Leaderboard.Games"]</div>
                     </div>
                     <div class="card" style="text-align:center; min-width:120px">
                         <div style="font-size:1.5rem; font-weight:900; color:var(--accent2)">@_games.Count(g => IsActiveStatus(g.Status))</div>
-                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">En cours</div>
+                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">@L["MyGames.Active"]</div>
                     </div>
                     <div class="card" style="text-align:center; min-width:120px">
                         <div style="font-size:1.5rem; font-weight:900; color:var(--gold)">@_games.Count(g => IsAbandonedStatus(g.Status))</div>
-                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Abandonnées</div>
+                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">@L["MyGames.Abandoned"]</div>
                     </div>
                     <div class="card" style="text-align:center; min-width:120px">
                         <div style="font-size:1.5rem; font-weight:900; color:var(--success)">@_games.Count(g => g.IsWinner)</div>
-                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">Victoires</div>
+                        <div class="text-dim" style="font-size:.8rem; text-transform:uppercase; letter-spacing:1px">@L["Leaderboard.Wins"]</div>
                     </div>
                 </div>
 
                 <div style="overflow-x:auto">
-                    <table class="lb-table" aria-label="Historique des parties">
+                    <table class="lb-table" aria-label="@L["MyGames.TableAria"]">
                         <thead>
                             <tr>
-                                <th scope="col">Date</th>
-                                <th scope="col">Niveau</th>
-                                <th scope="col">Mode</th>
-                                <th scope="col">Durée</th>
-                                <th scope="col">Statut</th>
-                                <th scope="col">Résultat</th>
+                                <th scope="col">@L["MyGames.Date"]</th>
+                                <th scope="col">@L["Leaderboard.Level"]</th>
+                                <th scope="col">@L["CreateGame.Mode"]</th>
+                                <th scope="col">@L["MyGames.Duration"]</th>
+                                <th scope="col">@L["MyGames.Status"]</th>
+                                <th scope="col">@L["MyGames.Result"]</th>
                                 <th scope="col"></th>
                             </tr>
                         </thead>
@@ -101,15 +102,15 @@ else
                                     <td><span class="chip chip-muted">@StatusLabel(g.Status)</span></td>
                                     <td>
                                         @if (IsActiveStatus(g.Status))
-                                            { <span class="chip chip-accent">En cours</span> }
+                                            { <span class="chip chip-accent">@L["MyGames.Active"]</span> }
                                         else if (g.IsWinner)
-                                            { <span class="chip chip-success">Victoire 🏆</span> }
+                                            { <span class="chip chip-success">@L["MyGames.Victory"] 🏆</span> }
                                         else if (IsAbandonedStatus(g.Status))
-                                            { <span class="chip chip-muted">Abandonnée</span> }
+                                            { <span class="chip chip-muted">@L["MyGames.AbandonedOne"]</span> }
                                         else
-                                            { <span class="chip chip-muted">Défaite</span> }
+                                            { <span class="chip chip-muted">@L["MyGames.Defeat"]</span> }
                                     </td>
-                                    <td><a href="/games/@g.GameId" class="btn btn-ghost btn-sm">Voir</a></td>
+                                    <td><a href="/games/@g.GameId" class="btn btn-ghost btn-sm">@L["MyGames.View"]</a></td>
                                 </tr>
                             }
                         </tbody>
@@ -155,7 +156,7 @@ else
         try
         {
             var token = await Auth.GetTokenAsync();
-            if (token is null) { _error = "Session expirée."; return; }
+            if (token is null) { _error = L["Auth.SessionExpired"]; return; }
             _games.Clear();
             _games.AddRange(await Api.GetMyGamesAsync(token));
         }
@@ -173,13 +174,13 @@ else
     private static bool IsAbandonedStatus(string status) =>
         string.Equals(status, "abandoned", StringComparison.OrdinalIgnoreCase);
 
-    private static string StatusLabel(string status) => status.ToLowerInvariant() switch
+    private string StatusLabel(string status) => status.ToLowerInvariant() switch
     {
-        "active" => "En cours",
-        "waiting" => "En attente",
-        "abandoned" => "Abandonnée",
-        "ended" => "Terminée",
-        "finished_normal" => "Terminée",
+        "active" => L["MyGames.Active"],
+        "waiting" => L["MyGames.Waiting"],
+        "abandoned" => L["MyGames.AbandonedOne"],
+        "ended" => L["Game.Status.Finished"],
+        "finished_normal" => L["Game.Status.Finished"],
         _ => status
     };
 

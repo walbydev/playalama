@@ -1,19 +1,20 @@
 @inject ThemeService Theme
+@inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
-<div class="theme-select-control" title="Thème visuel">
+<div class="theme-select-control" title="@L["Theme.Title"]">
     <span class="theme-select-icon" aria-hidden="true">🎨</span>
-    <label class="sr-only" for="theme-select">Choisir un thème</label>
+    <label class="sr-only" for="theme-select">@L["Theme.Choose"]</label>
     <select id="theme-select"
             class="theme-select"
             value="@Theme.Theme"
             @onchange="OnThemeChanged"
-            aria-label="Choisir un thème">
-        <option value="light">Clair</option>
-        <option value="dark">Sombre</option>
-        <option value="blue">Bleuté</option>
-        <option value="green">Verdâtre</option>
-        <option value="vermillion">Vermillon</option>
+            aria-label="@L["Theme.Choose"]">
+        <option value="light">@L["Theme.Light"]</option>
+        <option value="dark">@L["Theme.Dark"]</option>
+        <option value="blue">@L["Theme.Blue"]</option>
+        <option value="green">@L["Theme.Green"]</option>
+        <option value="vermillion">@L["Theme.Vermillion"]</option>
     </select>
 </div>
 

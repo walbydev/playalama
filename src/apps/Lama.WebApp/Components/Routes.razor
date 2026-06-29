@@ -1,3 +1,5 @@
+@inject IStringLocalizer<SharedResource> L
+
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
@@ -6,9 +8,9 @@
     <NotFound>
         <LayoutView Layout="typeof(Layout.MainLayout)">
             <section class="card section">
-                <h1>Page introuvable</h1>
-                <p>La route demandée n'existe pas.</p>
-                <a class="btn btn-outline" href="/">← Accueil</a>
+                <h1>@L["Routes.NotFound.Title"]</h1>
+                <p>@L["Routes.NotFound.Text"]</p>
+                <a class="btn btn-outline" href="/">← @L["Nav.Home"]</a>
             </section>
         </LayoutView>
     </NotFound>

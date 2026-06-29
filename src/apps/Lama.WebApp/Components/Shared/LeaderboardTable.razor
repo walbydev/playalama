@@ -1,17 +1,18 @@
 @* Tableau de classement réutilisable (Home preview + page Leaderboard) *@
+@inject IStringLocalizer<SharedResource> L
 
-<table class="lb-table" aria-label="Classement des joueurs">
+<table class="lb-table" aria-label="@L["Leaderboard.Table.Aria"]">
     <thead>
         <tr>
             <th scope="col">#</th>
-            <th scope="col">Joueur</th>
-            <th scope="col">Pays</th>
-            <th scope="col" style="text-align:right">Niveau</th>
+            <th scope="col">@L["Leaderboard.Player"]</th>
+            <th scope="col">@L["Leaderboard.Country"]</th>
+            <th scope="col" style="text-align:right">@L["Leaderboard.Level"]</th>
             <th scope="col" style="text-align:right">ELO</th>
-            <th scope="col" style="text-align:right">Victoires</th>
+            <th scope="col" style="text-align:right">@L["Leaderboard.Wins"]</th>
             @if (!Compact)
             {
-                <th scope="col" style="text-align:right">Parties</th>
+                <th scope="col" style="text-align:right">@L["Leaderboard.Games"]</th>
             }
         </tr>
     </thead>
@@ -20,7 +21,7 @@
         {
             <tr class="@(entry.PlayerId == CurrentPlayerId ? "me" : "")">
                 <td>
-                    <span class="lb-rank @RankClass(entry.Rank)" aria-label="Rang @entry.Rank">
+                    <span class="lb-rank @RankClass(entry.Rank)" aria-label="@L["Leaderboard.RankAria", entry.Rank]">
                         @RankLabel(entry.Rank)
                     </span>
                 </td>
@@ -29,7 +30,7 @@
                         <div class="lb-avatar" aria-hidden="true">@entry.Username[0]</div>
                         <div>
                             <div class="lb-name">@entry.Username</div>
-                            <div class="lb-level text-dim">Niv. @entry.Level</div>
+                            <div class="lb-level text-dim">@L["Leaderboard.LevelShort", entry.Level]</div>
                         </div>
                     </div>
                 </td>
@@ -47,7 +48,7 @@
         {
             <tr>
                 <td colspan="@(Compact ? 6 : 7)" style="text-align:center; padding:2rem; color:var(--text-dim)">
-                    Aucune donnée disponible
+                    @L["Leaderboard.NoData"]
                 </td>
             </tr>
         }
