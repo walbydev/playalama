@@ -4,20 +4,21 @@
 @inject LamaApiClient Api
 @inject AuthService Auth
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Partie @GameId — Playalama</PageTitle>
+<PageTitle>@L["Game.PageTitle", GameId]</PageTitle>
 
 @if (_vm.Snapshot is null && _vm.IsLoading)
 {
     <div class="page-hero">
-        <p class="text-muted" aria-live="polite">Chargement de la partie…</p>
+        <p class="text-muted" aria-live="polite">@L["Game.Loading"]</p>
     </div>
 }
 else if (_vm.Snapshot is { UsesLobby: true, HasStarted: false })
 {
     @* Redirige vers le lobby si la partie n'a pas encore démarré *@
     <div class="page-hero">
-        <p class="text-muted">La partie n'a pas encore démarré. Redirection vers la salle d'attente…</p>
+        <p class="text-muted">@L["Game.RedirectLobby"]</p>
     </div>
 }
 else
@@ -32,52 +33,52 @@ else
                     <div class="game-header-left">
                         <div class="game-title">@(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")</div>
                         <div class="game-subtitle flex items-center gap-2 flex-wrap">
-                            <span>Tour @_vm.Snapshot.TurnNumber</span>
+                            <span>@L["Game.Turn", _vm.Snapshot.TurnNumber]</span>
                             @if (_vm.Snapshot.IsGameOver)
                             {
-                                <span class="chip chip-muted">Terminée</span>
+                                <span class="chip chip-muted">@L["Game.Status.Finished"]</span>
                             }
                             else if (_vm.IsAbandoned)
                             {
-                                <span class="chip" style="background:rgba(120,120,120,.18); color:var(--text-dim)">Observateur</span>
+                                <span class="chip" style="background:rgba(120,120,120,.18); color:var(--text-dim)">@L["Game.Status.Observer"]</span>
                             }
                             else if (_vm.IsMyTurn)
                             {
-                                <span class="chip chip-accent">Votre tour !</span>
+                                <span class="chip chip-accent">@L["Game.Status.YourTurn"]</span>
                             }
                         </div>
                     </div>
 
-                    <div class="letter-bag-display" title="Lettres restantes dans le sac">
+                    <div class="letter-bag-display" title="@L["Game.BagTitle"]">
                         <span class="letter-bag-icon">🎒</span>
                         <span class="letter-bag-count">@_vm.Snapshot.BagCount</span>
-                        <span class="letter-bag-label">lettre@(_vm.Snapshot.BagCount > 1 ? "s" : "")</span>
+                        <span class="letter-bag-label">@(_vm.Snapshot.BagCount > 1 ? L["Game.Letters.Plural"] : L["Game.Letters.Singular"])</span>
                     </div>
 
                     <div class="game-header-right">
                         <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
-                            Rafraîchir
+                            @L["Game.Refresh"]
                         </button>
                         @if (_vm.IsAbandoned)
                         {
-                            <a href="/games" class="btn btn-ghost btn-sm">← Quitter</a>
+                            <a href="/games" class="btn btn-ghost btn-sm">← @L["Game.Leave"]</a>
                         }
                         else if (!_vm.Snapshot!.IsGameOver && _vm.Snapshot.HasStarted)
                         {
                             @if (_confirmAbandon)
                             {
-                                <span class="text-dim" style="font-size:.85rem">Confirmer ?</span>
+                                <span class="text-dim" style="font-size:.85rem">@L["Game.Confirm"]</span>
                                 <button class="btn btn-danger btn-sm" @onclick="AbandonAsync" disabled="@_vm.IsLoading">
-                                    ✔ Oui, abandonner
+                                    ✔ @L["Game.AbandonConfirmYes"]
                                 </button>
                                 <button class="btn btn-ghost btn-sm" @onclick="() => _confirmAbandon = false">
-                                    Annuler
+                                    @L["Game.Cancel"]
                                 </button>
                             }
                             else
                             {
                                 <button class="btn btn-ghost btn-sm" style="color:var(--danger,#e55)" @onclick="() => _confirmAbandon = true">
-                                    🏳 Abandonner
+                                    🏳 @L["Game.Abandon"]
                                 </button>
                             }
                         }
@@ -87,34 +88,34 @@ else
                 @* ── Actions compactes (mode focus / auto) ── *@
                 <div class="card game-focus-actions">
                     <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
-                        Rafraîchir
+                        @L["Game.Refresh"]
                     </button>
-                    <div class="letter-bag-display letter-bag-display--compact" title="Lettres restantes dans le sac">
+                    <div class="letter-bag-display letter-bag-display--compact" title="@L["Game.BagTitle"]">
                         <span class="letter-bag-icon">🎒</span>
                         <span class="letter-bag-count">@_vm.Snapshot.BagCount</span>
-                        <span class="letter-bag-label">lettre@(_vm.Snapshot.BagCount > 1 ? "s" : "")</span>
+                        <span class="letter-bag-label">@(_vm.Snapshot.BagCount > 1 ? L["Game.Letters.Plural"] : L["Game.Letters.Singular"])</span>
                     </div>
 
                     @if (_vm.IsAbandoned)
                     {
-                        <a href="/games" class="btn btn-ghost btn-sm">← Quitter</a>
+                        <a href="/games" class="btn btn-ghost btn-sm">← @L["Game.Leave"]</a>
                     }
                     else if (!_vm.Snapshot!.IsGameOver && _vm.Snapshot.HasStarted)
                     {
                         @if (_confirmAbandon)
                         {
-                            <span class="text-dim" style="font-size:.85rem">Confirmer ?</span>
+                            <span class="text-dim" style="font-size:.85rem">@L["Game.Confirm"]</span>
                             <button class="btn btn-danger btn-sm" @onclick="AbandonAsync" disabled="@_vm.IsLoading">
-                                ✔ Oui, abandonner
+                                ✔ @L["Game.AbandonConfirmYes"]
                             </button>
                             <button class="btn btn-ghost btn-sm" @onclick="() => _confirmAbandon = false">
-                                Annuler
+                                @L["Game.Cancel"]
                             </button>
                         }
                         else
                         {
                             <button class="btn btn-ghost btn-sm" style="color:var(--danger,#e55)" @onclick="() => _confirmAbandon = true">
-                                🏳 Abandonner
+                                🏳 @L["Game.Abandon"]
                             </button>
                         }
                     }
@@ -124,7 +125,7 @@ else
                 @if (_vm.IsAbandoned && !_vm.Snapshot!.IsGameOver)
                 {
                     <div class="spectator-banner" role="status" aria-live="polite">
-                        🔍 Vous observez la partie. <a href="/games">Quitter →</a>
+                        🔍 @L["Game.SpectatorBanner"] <a href="/games">@L["Game.Leave"] →</a>
                     </div>
                 }
 
@@ -151,12 +152,12 @@ else
 
                         @if (_wordInfo is not null)
                         {
-                            <div class="word-info-popup" role="dialog" aria-label="Définition">
+                            <div class="word-info-popup" role="dialog" aria-label="@L["WordInfo.DialogLabel"]">
                                 <div class="word-info-header">
                                     <strong>@_wordInfo.Word</strong>
                                     @if (!string.IsNullOrWhiteSpace(_wordInfo.WiktionaryUrl))
                                     {
-                                        <a href="@_wordInfo.WiktionaryUrl" target="_blank" rel="noopener" class="word-info-link">Wiktionnaire ↗</a>
+                                        <a href="@_wordInfo.WiktionaryUrl" target="_blank" rel="noopener" class="word-info-link">@L["WordInfo.Wiktionary"]</a>
                                     }
                                     <button class="btn btn-ghost btn-sm" @onclick="() => _wordInfo = null">✕</button>
                                 </div>
@@ -171,14 +172,14 @@ else
                                 }
                                 @if (_wordInfo.Synonyms.Count > 0)
                                 {
-                                    <p class="word-info-syns"><em>Synonymes :</em> @string.Join(", ", _wordInfo.Synonyms.Take(10))</p>
+                                    <p class="word-info-syns"><em>@L["WordInfo.Synonyms"]</em> @string.Join(", ", _wordInfo.Synonyms.Take(10))</p>
                                 }
                             </div>
                         }
                         else if (_wordInfoNotFound is not null)
                         {
                             <div class="word-info-popup" role="dialog">
-                                <span>Aucune définition pour « @_wordInfoNotFound ».</span>
+                                <span>@L["WordInfo.NotFoundSentence", _wordInfoNotFound]</span>
                                 <button class="btn btn-ghost btn-sm" @onclick="() => _wordInfoNotFound = null">✕</button>
                             </div>
                         }
@@ -189,13 +190,13 @@ else
                             <div class="card rack-below-board">
                                 <div class="rack-below-header">
                                     <div class="rack-title-row">
-                                        <h3>Mes tuiles</h3>
+                                        <h3>@L["Game.MyTiles"]</h3>
                                         @if (_vm.IsMyTurn && _vm.PendingPlacements.Count > 0)
                                         {
                                             <button class="btn btn-ghost btn-sm rack-recall-btn"
                                                     @onclick="() => { _vm.RecallAll(); StateHasChanged(); }"
-                                                    title="Récupérer toutes les tuiles posées">
-                                                ↩ Tout récupérer
+                                                    title="@L["Game.RecallAll.Title"]">
+                                                ↩ @L["Game.RecallAll"]
                                             </button>
                                         }
                                     </div>
@@ -205,12 +206,12 @@ else
                                             <button class="btn btn-ghost btn-sm"
                                                     @onclick="CheckMoveAsync"
                                                     disabled="@(_vm.IsCheckLoading || _vm.IsLoading)"
-                                                    title="Vérifier le mot et calculer son score sans le jouer">
-                                                @(_vm.IsCheckLoading ? "…" : "🔍 Tester")
+                                                    title="@L["Game.Check.Title"]">
+                                                @(_vm.IsCheckLoading ? "…" : $"🔍 {L["Game.Check"]}")
                                             </button>
                                             <button class="btn btn-primary btn-sm" @onclick="PlayDragMoveAsync"
                                                     disabled="@(_vm.IsLoading || _vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))">
-                                                ✔ Valider (@_vm.PendingPlacements.Count tuile@(_vm.PendingPlacements.Count > 1 ? "s" : ""))
+                                                ✔ @L["Game.Validate"] (@_vm.PendingPlacements.Count @(_vm.PendingPlacements.Count > 1 ? L["Game.Tiles.Plural"] : L["Game.Tiles.Singular"]))
                                             </button>
                                         </div>
                                     }
@@ -223,7 +224,7 @@ else
                                              OnRackReorder="HandleRackReorder" />
                                 @if (_vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))
                                 {
-                                    <p class="form-error mt-1" style="font-size:.8rem">Assignez une lettre à chaque joker (★ → clic)</p>
+                                    <p class="form-error mt-1" style="font-size:.8rem">@L["Game.JokerAssignHint"]</p>
                                 }
                             </div>
                         }
@@ -234,7 +235,7 @@ else
 
                         @* Scores *@
                         <div class="card">
-                            <h3 class="mb-2">Scores</h3>
+                            <h3 class="mb-2">@L["Game.Scores"]</h3>
                             <ScoreBoard Players="_vm.Snapshot.Players"
                                         CurrentPlayerIndex="_vm.Snapshot.CurrentPlayerIndex"
                                         MyPlayerId="@_myPlayerId"
@@ -242,45 +243,45 @@ else
                         </div>
 
                         <div class="card game-messages-panel">
-                            <h3 class="mb-2">Messages</h3>
+                            <h3 class="mb-2">@L["Game.Messages"]</h3>
                             @if (_turnNotice is not null)
                             {
                                 <div class="abandon-notice" role="status" aria-live="polite">
                                     🔔 @_turnNotice
-                                    <button class="abandon-notice-close" @onclick="() => _turnNotice = null" aria-label="Fermer">✕</button>
+                                    <button class="abandon-notice-close" @onclick="() => _turnNotice = null" aria-label="@L["Common.Close"]">✕</button>
                                 </div>
                             }
                             @if (_abandonNotice is not null)
                             {
                                 <div class="abandon-notice" role="alert" aria-live="polite">
                                     ⚠️ @_abandonNotice
-                                    <button class="abandon-notice-close" @onclick="() => _abandonNotice = null" aria-label="Fermer">✕</button>
+                                    <button class="abandon-notice-close" @onclick="() => _abandonNotice = null" aria-label="@L["Common.Close"]">✕</button>
                                 </div>
                             }
                             @if (_vm.CheckScore.HasValue)
                             {
                                 <div class="move-check-inline" role="status" aria-live="polite">
                                     ✅ @_vm.CheckMessage
-                                    <button class="btn-icon-close" @onclick="() => { _vm.ClearCheck(); StateHasChanged(); }" aria-label="Fermer">✕</button>
+                                    <button class="btn-icon-close" @onclick="() => { _vm.ClearCheck(); StateHasChanged(); }" aria-label="@L["Common.Close"]">✕</button>
                                 </div>
                             }
                             @if (!string.IsNullOrWhiteSpace(_vm.Error))
                             {
                                 <div class="move-error-inline" role="alert" aria-live="assertive">
                                     ⚠️ @_vm.Error
-                                    <button class="btn-icon-close" @onclick="() => { _vm.ClearError(); StateHasChanged(); }" aria-label="Fermer">✕</button>
+                                    <button class="btn-icon-close" @onclick="() => { _vm.ClearError(); StateHasChanged(); }" aria-label="@L["Common.Close"]">✕</button>
                                 </div>
                             }
                             @if (!string.IsNullOrWhiteSpace(_abandonError))
                             {
                                 <div class="move-error-inline" role="alert" aria-live="assertive">
                                     ⚠️ @_abandonError
-                                    <button class="btn-icon-close" @onclick="() => _abandonError = null" aria-label="Fermer">✕</button>
+                                    <button class="btn-icon-close" @onclick="() => _abandonError = null" aria-label="@L["Common.Close"]">✕</button>
                                 </div>
                             }
                             @if (!HasAnyUiMessages)
                             {
-                                <p class="text-dim" style="font-size:.85rem; margin:0">Aucun message pour le moment.</p>
+                                <p class="text-dim" style="font-size:.85rem; margin:0">@L["Game.NoMessages"]</p>
                             }
                         </div>
 
@@ -288,32 +289,32 @@ else
                         @if (!_vm.Snapshot.IsGameOver && _vm.IsMyTurn && !_vm.IsAbandoned)
                         {
                             <div class="card action-panel">
-                                <h3 class="mb-2">Autres actions</h3>
+                                <h3 class="mb-2">@L["Game.OtherActions"]</h3>
                                 <EditForm Model="_vm" OnValidSubmit="PlayAsync">
                                     <div class="form-field">
-                                        <label for="play-cmd">Commande</label>
+                                        <label for="play-cmd">@L["Game.Command"]</label>
                                         <InputSelect id="play-cmd" @bind-Value="_vm.Command">
-                                            <option value="play.pass">Passer mon tour</option>
-                                            <option value="play.move">Poser un mot (saisie)</option>
-                                            <option value="play.swap">Échanger des lettres</option>
+                                            <option value="play.pass">@L["Game.Command.Pass"]</option>
+                                            <option value="play.move">@L["Game.Command.Move"]</option>
+                                            <option value="play.swap">@L["Game.Command.Swap"]</option>
                                         </InputSelect>
                                     </div>
 
                                     @if (_vm.Command == "play.move")
                                     {
                                         <div class="form-field">
-                                            <label for="play-pos">Position <small class="text-dim">(ex: H8)</small></label>
+                                            <label for="play-pos">@L["Game.Position"] <small class="text-dim">@L["Game.Example.H8"]</small></label>
                                             <InputText id="play-pos" @bind-Value="_vm.Position" placeholder="H8" />
                                         </div>
                                         <div class="form-field">
-                                            <label for="play-word">Mot <small class="text-dim">(minuscule = joker)</small></label>
-                                            <InputText id="play-word" @bind-Value="_vm.Word" placeholder="BONJOUR" />
+                                            <label for="play-word">@L["Game.Word"] <small class="text-dim">@L["Game.Word.Hint"]</small></label>
+                                            <InputText id="play-word" @bind-Value="_vm.Word" placeholder="@L["Game.Example.Word"]" />
                                         </div>
                                         <div class="form-field">
-                                            <label for="play-dir">Direction</label>
+                                            <label for="play-dir">@L["Game.Direction"]</label>
                                             <InputSelect id="play-dir" @bind-Value="_vm.Direction">
-                                                <option value="H">Horizontal →</option>
-                                                <option value="V">Vertical ↓</option>
+                                                <option value="H">@L["Game.Direction.Horizontal"] →</option>
+                                                <option value="V">@L["Game.Direction.Vertical"] ↓</option>
                                             </InputSelect>
                                         </div>
                                     }
@@ -323,20 +324,20 @@ else
                                         <div class="form-field">
                                             <label style="display:flex; align-items:center; gap:.5rem; cursor:pointer">
                                                 <input type="checkbox" @bind="_swapAll" style="width:1rem;height:1rem" />
-                                                <span>Tout échanger</span>
+                                                <span>@L["Game.SwapAll"]</span>
                                             </label>
                                         </div>
                                         @if (!_swapAll)
                                         {
                                             <div class="form-field">
-                                                <label for="play-letters">Lettres à échanger <small class="text-dim">(ex: ABC)</small></label>
+                                                <label for="play-letters">@L["Game.SwapLetters"] <small class="text-dim">@L["Game.Example.ABC"]</small></label>
                                                 <InputText id="play-letters" @bind-Value="_vm.Word" placeholder="ABC" />
                                             </div>
                                         }
                                     }
 
                                     <button class="btn btn-primary" type="submit" disabled="@_vm.IsLoading" style="width:100%">
-                                        @(_vm.IsLoading ? "Envoi…" : "Jouer")
+                                        @(_vm.IsLoading ? L["Game.Submitting"] : L["Game.Play"])
                                     </button>
                                 </EditForm>
                             </div>
@@ -344,10 +345,10 @@ else
                             @* ── Suggestions (Aide-moi) ── *@
                             <div class="card suggest-panel">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem">
-                                    <h3 style="margin:0">💡 Aide-moi</h3>
+                                    <h3 style="margin:0">💡 @L["Game.HelpMe"]</h3>
                                     @if (_vm.SuggestPanelOpen)
                                     {
-                                        <button class="btn-icon-close" @onclick="() => { _vm.CloseSuggestPanel(); StateHasChanged(); }" aria-label="Fermer">✕</button>
+                                        <button class="btn-icon-close" @onclick="() => { _vm.CloseSuggestPanel(); StateHasChanged(); }" aria-label="@L["Common.Close"]">✕</button>
                                     }
                                 </div>
 
@@ -355,22 +356,22 @@ else
                                 {
                                     <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync"
                                             disabled="@_vm.IsSuggestLoading" style="width:100%">
-                                        @(_vm.IsSuggestLoading ? "⏳ Calcul en cours…" : "🔍 Suggestions de coups")
+                                        @(_vm.IsSuggestLoading ? $"⏳ {L["Game.Suggest.Calculating"]}" : $"🔍 {L["Game.Suggest.Button"]}")
                                     </button>
                                 }
                                 else if (_vm.IsSuggestLoading)
                                 {
-                                    <p class="text-dim text-center" style="font-size:.85rem">⏳ Recherche des meilleurs coups…</p>
+                                    <p class="text-dim text-center" style="font-size:.85rem">⏳ @L["Game.Suggest.Searching"]</p>
                                 }
                                 else if (!string.IsNullOrWhiteSpace(_vm.SuggestError))
                                 {
                                     <p class="form-error" role="alert">⚠️ @_vm.SuggestError</p>
-                                    <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync" style="width:100%">↺ Réessayer</button>
+                                    <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync" style="width:100%">↺ @L["Game.Retry"]</button>
                                 }
                                 else if (_vm.Suggestions.Count == 0)
                                 {
-                                    <p class="text-dim text-center" style="font-size:.85rem">Aucune suggestion trouvée pour ce rack.</p>
-                                    <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync" style="width:100%">↺ Réessayer</button>
+                                    <p class="text-dim text-center" style="font-size:.85rem">@L["Game.Suggest.None"]</p>
+                                    <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync" style="width:100%">↺ @L["Game.Retry"]</button>
                                 }
                                 else
                                 {
@@ -380,18 +381,18 @@ else
                                     @if (scoreList.Count > 0)
                                     {
                                         <div class="suggest-section">
-                                            <p class="suggest-section-title">📊 Meilleurs scores</p>
+                                            <p class="suggest-section-title">📊 @L["Game.Suggest.BestScores"]</p>
                                             @foreach (var s in scoreList)
                                             {
                                                 <div class="suggest-item">
                                                     <div class="suggest-item-info">
                                                         <span class="suggest-word">@s.Word</span>
-                                                        <span class="suggest-meta">@s.Position @(s.Direction == "H" ? "→" : "↓") · @s.Score pts · @s.Length lettres</span>
+                                                        <span class="suggest-meta">@L["Game.Suggest.Meta", s.Position, (s.Direction == "H" ? "→" : "↓"), s.Score, s.Length]</span>
                                                     </div>
                                                     <button class="btn btn-ghost btn-sm suggest-use-btn"
                                                             @onclick="() => { _vm.UseSuggestion(s); StateHasChanged(); }"
-                                                            title="Pré-remplir le formulaire avec ce mot">
-                                                        ▶ Utiliser
+                                                            title="@L["Game.Suggest.Use.Title"]">
+                                                        ▶ @L["Game.Suggest.Use"]
                                                     </button>
                                                 </div>
                                             }
@@ -401,18 +402,18 @@ else
                                     @if (lengthList.Count > 0)
                                     {
                                         <div class="suggest-section">
-                                            <p class="suggest-section-title">📏 Mots les plus longs</p>
+                                            <p class="suggest-section-title">📏 @L["Game.Suggest.LongestWords"]</p>
                                             @foreach (var s in lengthList)
                                             {
                                                 <div class="suggest-item">
                                                     <div class="suggest-item-info">
                                                         <span class="suggest-word">@s.Word</span>
-                                                        <span class="suggest-meta">@s.Position @(s.Direction == "H" ? "→" : "↓") · @s.Score pts · @s.Length lettres</span>
+                                                        <span class="suggest-meta">@L["Game.Suggest.Meta", s.Position, (s.Direction == "H" ? "→" : "↓"), s.Score, s.Length]</span>
                                                     </div>
                                                     <button class="btn btn-ghost btn-sm suggest-use-btn"
                                                             @onclick="() => { _vm.UseSuggestion(s); StateHasChanged(); }"
-                                                            title="Pré-remplir le formulaire avec ce mot">
-                                                        ▶ Utiliser
+                                                            title="@L["Game.Suggest.Use.Title"]">
+                                                        ▶ @L["Game.Suggest.Use"]
                                                     </button>
                                                 </div>
                                             }
@@ -420,18 +421,18 @@ else
                                     }
 
                                     <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync" style="width:100%; margin-top:.5rem; font-size:.8rem">
-                                        ↺ Nouvelles suggestions
+                                        ↺ @L["Game.Suggest.Refresh"]
                                     </button>
                                 }
 
                                 <div class="suggest-section dictionary-search">
-                                    <p class="suggest-section-title">📚 Interrogateur de dictionnaire</p>
+                                    <p class="suggest-section-title">📚 @L["Game.Dictionary.Title"]</p>
                                     <form class="dictionary-search-form" @onsubmit="SearchDictionaryAsync" @onsubmit:preventDefault="true">
                                         <InputText @bind-Value="_dictionaryQuery"
-                                                   placeholder="Mot complet ou début de mot"
+                                                   placeholder="@L["Game.Dictionary.Placeholder"]"
                                                    class="dictionary-search-input" />
                                         <button type="submit" class="btn btn-ghost btn-sm" disabled="@_dictionarySearchLoading">
-                                            @(_dictionarySearchLoading ? "…" : "Rechercher")
+                                            @(_dictionarySearchLoading ? "…" : L["Game.Dictionary.Search"])
                                         </button>
                                     </form>
 
@@ -441,7 +442,7 @@ else
                                     }
                                     else if (_dictionarySearchDone && _dictionaryResults.Count == 0)
                                     {
-                                        <p class="text-dim" style="font-size:.8rem">Aucun mot trouvé.</p>
+                                        <p class="text-dim" style="font-size:.8rem">@L["Game.Dictionary.None"]</p>
                                     }
                                     else if (_dictionaryResults.Count > 0)
                                     {
@@ -463,7 +464,7 @@ else
                         {
                             <div class="card">
                                 <p class="text-muted text-center" aria-live="polite">
-                                    ⏳ Tour de <strong>@(_vm.Snapshot.Players.ElementAtOrDefault(_vm.Snapshot.CurrentPlayerIndex)?.PlayerName ?? "…")</strong>
+                                    ⏳ @L["Game.WaitingTurn", (_vm.Snapshot.Players.ElementAtOrDefault(_vm.Snapshot.CurrentPlayerIndex)?.PlayerName ?? "…")]
                                 </p>
                             </div>
                         }
@@ -473,16 +474,16 @@ else
                             <div class="card text-center">
                                 @if (string.Equals(_vm.Snapshot.EndReason, "abandoned", StringComparison.Ordinal))
                                 {
-                                    <h3 class="mb-1">🏳 Partie abandonnée</h3>
-                                    <p class="text-dim mb-3" style="font-size:.9rem">@(_vm.Snapshot.AbandonedByName) a mis fin à la partie</p>
+                                    <h3 class="mb-1">🏳 @L["Game.End.AbandonedTitle"]</h3>
+                                    <p class="text-dim mb-3" style="font-size:.9rem">@L["Game.End.AbandonedBy", _vm.Snapshot.AbandonedByName ?? L["Game.UnknownPlayer"].Value]</p>
                                     @if (_abandonRedirectCountdown > 0)
                                     {
-                                        <p class="text-dim" style="font-size:.85rem">Redirection dans @_abandonRedirectCountdown s…</p>
+                                        <p class="text-dim" style="font-size:.85rem">@L["Game.End.RedirectIn", _abandonRedirectCountdown]</p>
                                     }
                                 }
                                 else
                                 {
-                                    <h3 class="mb-3">🏆 Partie terminée !</h3>
+                                    <h3 class="mb-3">🏆 @L["Game.End.FinishedTitle"]</h3>
                                 }
                                 @{
                                     var ranked = _vm.Snapshot.Players.OrderByDescending(p => p.Score).ToList();
@@ -491,9 +492,9 @@ else
                                 <table style="width:100%; border-collapse:collapse; margin-bottom:1rem">
                                     <thead>
                                         <tr style="border-bottom:1px solid var(--border); color:var(--text-dim); font-size:.8rem">
-                                            <th style="padding:.4rem; text-align:left">Rang</th>
-                                            <th style="padding:.4rem; text-align:left">Joueur</th>
-                                            <th style="padding:.4rem; text-align:right">Score</th>
+                                            <th style="padding:.4rem; text-align:left">@L["Game.Rank"]</th>
+                                            <th style="padding:.4rem; text-align:left">@L["Game.Player"]</th>
+                                            <th style="padding:.4rem; text-align:right">@L["Game.Score"]</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -504,13 +505,13 @@ else
                                             var isMe = string.Equals(p.PlayerId, _vm.MyPlayerId, StringComparison.Ordinal);
                                             <tr style="border-bottom:1px solid var(--border); @(isMe ? "background:var(--bg2); font-weight:600" : "")">
                                                 <td style="padding:.5rem">@medal</td>
-                                                <td style="padding:.5rem; text-align:left">@p.PlayerName @(isMe ? "(vous)" : "")</td>
-                                                <td style="padding:.5rem; text-align:right; font-variant-numeric:tabular-nums">@p.Score pts</td>
+                                                <td style="padding:.5rem; text-align:left">@p.PlayerName @(isMe ? $"({L["Game.You"]})" : "")</td>
+                                                <td style="padding:.5rem; text-align:right; font-variant-numeric:tabular-nums">@L["Game.Points", p.Score]</td>
                                             </tr>
                                         }
                                     </tbody>
                                 </table>
-                                <a href="/games" class="btn btn-primary">Nouvelle partie</a>
+                                <a href="/games" class="btn btn-primary">@L["Game.NewGame"]</a>
                             </div>
                         }
 
@@ -524,9 +525,9 @@ else
 @* ── Modal joker : assignation de la lettre ── *@
 @if (_jokerRow >= 0)
 {
-    <div class="joker-overlay" role="dialog" aria-modal="true" aria-label="Choisir la lettre du joker">
+    <div class="joker-overlay" role="dialog" aria-modal="true" aria-label="@L["Game.Joker.DialogLabel"]">
         <div class="joker-picker">
-            <h4 class="mb-2">★ Quel lettre pour ce joker ?</h4>
+            <h4 class="mb-2">★ @L["Game.Joker.Title"]</h4>
             <div class="joker-grid">
                 @foreach (var ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
                 {
@@ -534,7 +535,7 @@ else
                     <button class="joker-btn" @onclick="() => AssignJoker(letter)" aria-label="@letter">@letter</button>
                 }
             </div>
-            <button class="btn btn-ghost btn-sm mt-2" @onclick="CancelJoker">Annuler</button>
+            <button class="btn btn-ghost btn-sm mt-2" @onclick="CancelJoker">@L["Game.Cancel"]</button>
         </div>
     </div>
 }
@@ -628,11 +629,11 @@ else
                 var nextPlayer = GetPlayerName(_vm.Snapshot.Players, _vm.Snapshot.CurrentPlayerIndex);
                 if (!string.IsNullOrWhiteSpace(justPlayed) && !string.IsNullOrWhiteSpace(nextPlayer))
                 {
-                    var turnLabel = _vm.Snapshot.LastMoveTurnNumber is { } n ? $"Tour {n} — " : string.Empty;
+                    var turnLabel = _vm.Snapshot.LastMoveTurnNumber is { } n ? L["Game.TurnLabel", n].Value : string.Empty;
                     ShowTurnNotice(
                         string.Equals(justPlayed, nextPlayer, StringComparison.Ordinal)
-                            ? $"{turnLabel}{justPlayed} vient de jouer. {nextPlayer} rejoue."
-                            : $"{turnLabel}{justPlayed} vient de jouer. C'est le tour de {nextPlayer}.");
+                            ? L["Game.TurnNotice.Replay", turnLabel, justPlayed, nextPlayer]
+                            : L["Game.TurnNotice.Next", turnLabel, justPlayed, nextPlayer]);
                 }
 
                 _lastAnnouncedMoveId = _vm.Snapshot.LastMoveId;
@@ -648,7 +649,7 @@ else
                 .Where(n => !string.Equals(n, _vm.Snapshot.AbandonedByName, StringComparison.Ordinal) || _previousAbandonedCount == 0)
                 .ToList();
             if (newlyAbandonedNames.Count > 0 && !_vm.IsAbandoned)
-                _abandonNotice = $"{newlyAbandonedNames[^1]} a abandonné la partie";
+                _abandonNotice = L["Game.AbandonNotice", newlyAbandonedNames[^1]];
             _previousAbandonedCount = abandonedCount;
         }
 
@@ -788,7 +789,7 @@ else
 
         if (query.Length < 2)
         {
-            _dictionarySearchError = "Saisissez au moins 2 lettres.";
+            _dictionarySearchError = L["Game.Dictionary.MinChars"];
             StateHasChanged();
             return;
         }
