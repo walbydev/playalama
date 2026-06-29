@@ -17,15 +17,22 @@ public sealed class GameLayoutService(IJSRuntime js)
     public const string TabPlay = "play";
     public const string TabMessages = "messages";
 
+    public const string VariantA = "a";
+    public const string VariantB = "b";
+    public const string VariantC = "c";
+    public const string VariantD = "d";
+
     private string _density = Medium;
     private bool _fullscreen;
     private string _activeTab = TabPlay;
+    private string _variant = VariantA;
     private readonly HashSet<string> _collapsedPanels = new(StringComparer.Ordinal);
     private bool _initialized;
 
     public string Density => _density;
     public bool IsFullscreen => _fullscreen;
     public string ActiveTab => _activeTab;
+    public string Variant => _variant;
 
     /// <summary>Multiplicateur appliqué au clamp d'auto-fit (S/M/L).</summary>
     public string ScaleCss => _density switch
@@ -50,6 +57,7 @@ public sealed class GameLayoutService(IJSRuntime js)
                 _density = Normalize(state.Density);
                 _fullscreen = state.Fullscreen;
                 _activeTab = NormalizeTab(state.ActiveTab);
+                _variant = NormalizeVariant(state.Variant);
                 _collapsedPanels.Clear();
                 foreach (var p in state.Collapsed ?? [])
                     _collapsedPanels.Add(p);
@@ -97,12 +105,21 @@ public sealed class GameLayoutService(IJSRuntime js)
         Changed?.Invoke();
     }
 
+    public async Task SetVariantAsync(string variant)
+    {
+        var v = NormalizeVariant(variant);
+        if (v == _variant) return;
+        _variant = v;
+        await PersistAsync();
+        Changed?.Invoke();
+    }
+
     private async Task PersistAsync()
     {
         try
         {
             await js.InvokeVoidAsync("playalamaGameLayout.set",
-                new LayoutState(_density, _fullscreen, _collapsedPanels.ToArray(), _activeTab));
+                new LayoutState(_density, _fullscreen, _collapsedPanels.ToArray(), _activeTab, _variant));
         }
         catch { /* prerender */ }
     }
@@ -121,5 +138,13 @@ public sealed class GameLayoutService(IJSRuntime js)
         _ => TabPlay,
     };
 
-    public sealed record LayoutState(string Density, bool Fullscreen, string[]? Collapsed, string? ActiveTab);
+    private static string NormalizeVariant(string? v) => v?.ToLowerInvariant() switch
+    {
+        VariantB => VariantB,
+        VariantC => VariantC,
+        VariantD => VariantD,
+        _ => VariantA,
+    };
+
+    public sealed record LayoutState(string Density, bool Fullscreen, string[]? Collapsed, string? ActiveTab, string? Variant);
 }

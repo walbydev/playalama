@@ -32,6 +32,12 @@
   <data name="GameTabs.Play"><value>Jouer</value></data>
   <data name="GameTabs.Scores"><value>Scores</value></data>
   <data name="GameTabs.Messages"><value>Messages</value></data>
+  <data name="Layout.Label"><value>Disposition</value></data>
+  <data name="Layout.Title"><value>Disposition du plateau</value></data>
+  <data name="Layout.A"><value>Plateau à gauche, rack en bas</value></data>
+  <data name="Layout.B"><value>Plateau à droite, rack en bas</value></data>
+  <data name="Layout.C"><value>Rack en haut</value></data>
+  <data name="Layout.D"><value>Rack sous les infos</value></data>
   <data name="Common.Close"><value>Fermer</value></data>
   <data name="Common.LiveUpdated"><value>Mis à jour en direct</value></data>
   <data name="Common.Loading"><value>Chargement…</value></data>

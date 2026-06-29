@@ -1,0 +1,31 @@
+@inject GameLayoutService Layout
+@inject IStringLocalizer<SharedResource> L
+@implements IDisposable
+
+<div class="layout-variant-control" title="@L["Layout.Title"]" role="group" aria-label="@L["Layout.Label"]">
+    <button class="layout-variant-btn @(Layout.Variant == GameLayoutService.VariantA ? "is-active" : "")"
+            @onclick="() => SetAsync(GameLayoutService.VariantA)" title="@L["Layout.A"]" aria-label="@L["Layout.A"]">⬛▦</button>
+    <button class="layout-variant-btn @(Layout.Variant == GameLayoutService.VariantB ? "is-active" : "")"
+            @onclick="() => SetAsync(GameLayoutService.VariantB)" title="@L["Layout.B"]" aria-label="@L["Layout.B"]">▦⬛</button>
+    <button class="layout-variant-btn @(Layout.Variant == GameLayoutService.VariantC ? "is-active" : "")"
+            @onclick="() => SetAsync(GameLayoutService.VariantC)" title="@L["Layout.C"]" aria-label="@L["Layout.C"]">⬒</button>
+    <button class="layout-variant-btn @(Layout.Variant == GameLayoutService.VariantD ? "is-active" : "")"
+            @onclick="() => SetAsync(GameLayoutService.VariantD)" title="@L["Layout.D"]" aria-label="@L["Layout.D"]">⬓</button>
+</div>
+
+@code {
+    protected override void OnInitialized() => Layout.Changed += HandleChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Layout.InitializeAsync();
+        StateHasChanged();
+    }
+
+    private async Task SetAsync(string v) => await Layout.SetVariantAsync(v);
+
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Layout.Changed -= HandleChanged;
+}

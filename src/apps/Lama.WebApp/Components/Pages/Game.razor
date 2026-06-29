@@ -130,9 +130,9 @@ else
                     </div>
                 }
 
-                <div class="game-layout">
+                <div class="game-layout" data-variant="@Layout.Variant">
 
-                    @* ── Colonne gauche : plateau + rack ── *@
+                    @* ── Zone plateau (+ rack selon variante D) ── *@
                     <div class="game-board-area">
 
                         <BoardDisplay Board="_vm.Snapshot.Board"
@@ -184,8 +184,11 @@ else
                                 <button class="btn btn-ghost btn-sm" @onclick="() => _wordInfoNotFound = null">✕</button>
                             </div>
                         }
+                    </div>
 
-                        @* Rack sous le plateau — ligne unique *@
+                    @* ── Zone rack (positionnée selon la variante) ── *@
+                    <div class="game-rack-area">
+                        @* Rack — ligne unique *@
                         @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
                         {
                             <div class="card rack-below-board">
