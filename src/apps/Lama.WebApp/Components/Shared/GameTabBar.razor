@@ -1,0 +1,35 @@
+@inject GameLayoutService Layout
+@inject IStringLocalizer<SharedResource> L
+@implements IDisposable
+
+@* Barre d'onglets fixe en bas — visible uniquement en mono-colonne (CSS). *@
+<div class="game-tabbar" role="tablist" aria-label="@L["GameTabs.Aria"]">
+    <button class="game-tab @(Layout.ActiveTab == GameLayoutService.TabPlay ? "is-active" : "")"
+            role="tab" aria-selected="@(Layout.ActiveTab == GameLayoutService.TabPlay)"
+            @onclick="() => SetAsync(GameLayoutService.TabPlay)">
+        <span class="game-tab-icon" aria-hidden="true">🎯</span>
+        <span class="game-tab-label">@L["GameTabs.Play"]</span>
+    </button>
+    <button class="game-tab @(Layout.ActiveTab == GameLayoutService.TabScores ? "is-active" : "")"
+            role="tab" aria-selected="@(Layout.ActiveTab == GameLayoutService.TabScores)"
+            @onclick="() => SetAsync(GameLayoutService.TabScores)">
+        <span class="game-tab-icon" aria-hidden="true">🏆</span>
+        <span class="game-tab-label">@L["GameTabs.Scores"]</span>
+    </button>
+    <button class="game-tab @(Layout.ActiveTab == GameLayoutService.TabMessages ? "is-active" : "")"
+            role="tab" aria-selected="@(Layout.ActiveTab == GameLayoutService.TabMessages)"
+            @onclick="() => SetAsync(GameLayoutService.TabMessages)">
+        <span class="game-tab-icon" aria-hidden="true">💬</span>
+        <span class="game-tab-label">@L["GameTabs.Messages"]</span>
+    </button>
+</div>
+
+@code {
+    protected override void OnInitialized() => Layout.Changed += HandleChanged;
+
+    private async Task SetAsync(string tab) => await Layout.SetActiveTabAsync(tab);
+
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Layout.Changed -= HandleChanged;
+}

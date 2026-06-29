@@ -4,6 +4,7 @@
 @inject LamaApiClient Api
 @inject AuthService Auth
 @inject NavigationManager Navigation
+@inject GameLayoutService Layout
 @inject IStringLocalizer<SharedResource> L
 
 <PageTitle>@L["Game.PageTitle", GameId]</PageTitle>
@@ -231,10 +232,10 @@ else
                     </div>
 
                     @* ── Colonne droite : sidebar (scores + actions) ── *@
-                    <div style="display:flex; flex-direction:column; gap:1.25rem">
+                    <div class="game-sidebar" data-active-tab="@Layout.ActiveTab">
 
                         @* Scores *@
-                        <div class="card">
+                        <div class="card sidebar-panel" data-tab="scores">
                             <h3 class="mb-2">@L["Game.Scores"]</h3>
                             <ScoreBoard Players="_vm.Snapshot.Players"
                                         CurrentPlayerIndex="_vm.Snapshot.CurrentPlayerIndex"
@@ -242,7 +243,7 @@ else
                                         AbandonedPlayerIds="_vm.Snapshot.AbandonedPlayerIds" />
                         </div>
 
-                        <div class="card game-messages-panel">
+                        <div class="card game-messages-panel sidebar-panel" data-tab="messages">
                             <h3 class="mb-2">@L["Game.Messages"]</h3>
                             @if (_turnNotice is not null)
                             {
@@ -288,7 +289,7 @@ else
                         @* Panneau d'action (masqué en mode spectateur) *@
                         @if (!_vm.Snapshot.IsGameOver && _vm.IsMyTurn && !_vm.IsAbandoned)
                         {
-                            <div class="card action-panel">
+                            <div class="card action-panel sidebar-panel" data-tab="play">
                                 <h3 class="mb-2">@L["Game.OtherActions"]</h3>
                                 <EditForm Model="_vm" OnValidSubmit="PlayAsync">
                                     <div class="form-field">
@@ -343,7 +344,7 @@ else
                             </div>
 
                             @* ── Suggestions (Aide-moi) ── *@
-                            <div class="card suggest-panel">
+                            <div class="card suggest-panel sidebar-panel" data-tab="play">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem">
                                     <h3 style="margin:0">💡 @L["Game.HelpMe"]</h3>
                                     @if (_vm.SuggestPanelOpen)
@@ -462,7 +463,7 @@ else
                         }
                         else if (!_vm.Snapshot.IsGameOver && !_vm.IsAbandoned)
                         {
-                            <div class="card">
+                            <div class="card sidebar-panel" data-tab="play">
                                 <p class="text-muted text-center" aria-live="polite">
                                     ⏳ @L["Game.WaitingTurn", (_vm.Snapshot.Players.ElementAtOrDefault(_vm.Snapshot.CurrentPlayerIndex)?.PlayerName ?? "…")]
                                 </p>
@@ -471,7 +472,7 @@ else
                         else if (_vm.Snapshot.IsGameOver)
                         {
                             @* ── Écran de fin de partie ── *@
-                            <div class="card text-center">
+                            <div class="card text-center sidebar-panel" data-tab="play">
                                 @if (string.Equals(_vm.Snapshot.EndReason, "abandoned", StringComparison.Ordinal))
                                 {
                                     <h3 class="mb-1">🏳 @L["Game.End.AbandonedTitle"]</h3>
@@ -517,6 +518,9 @@ else
 
                     </div>
                 </div>
+
+                @* Barre d'onglets escamotable — mono-colonne uniquement (CSS) *@
+                <GameTabBar />
             }
         </div>
     </div>
@@ -599,7 +603,10 @@ else
         }
 
         StartPolling();
+        Layout.Changed += HandleLayoutChanged;
     }
+
+    private void HandleLayoutChanged() => InvokeAsync(StateHasChanged);
 
     /// <summary>Réinitialise l'ordre du rack uniquement quand la taille change (nouveau tirage).
     /// Détecte aussi les nouveaux abandons pour notifier les autres joueurs.</summary>
@@ -952,6 +959,7 @@ else
 
     public async ValueTask DisposeAsync()
     {
+        Layout.Changed -= HandleLayoutChanged;
         if (_pollingCts is not null) { await _pollingCts.CancelAsync(); _pollingCts.Dispose(); }
         _timer?.Dispose();
     }

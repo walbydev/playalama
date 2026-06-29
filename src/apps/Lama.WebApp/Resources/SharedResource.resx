@@ -28,6 +28,10 @@
   <data name="BoardDensity.Medium"><value>Moyen</value></data>
   <data name="BoardDensity.Large"><value>Grand</value></data>
   <data name="BoardDensity.Fullscreen"><value>Plein écran</value></data>
+  <data name="GameTabs.Aria"><value>Espaces de jeu</value></data>
+  <data name="GameTabs.Play"><value>Jouer</value></data>
+  <data name="GameTabs.Scores"><value>Scores</value></data>
+  <data name="GameTabs.Messages"><value>Messages</value></data>
   <data name="Common.Close"><value>Fermer</value></data>
   <data name="Common.LiveUpdated"><value>Mis à jour en direct</value></data>
   <data name="Common.Loading"><value>Chargement…</value></data>

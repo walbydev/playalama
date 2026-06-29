@@ -28,14 +28,15 @@ window.playalamaGameLayout = {
     get() {
         try {
             const raw = localStorage.getItem('playalama-game-layout');
-            if (!raw) return { density: 'm', fullscreen: false, collapsed: [] };
+            if (!raw) return { density: 'm', fullscreen: false, collapsed: [], activeTab: 'play' };
             const parsed = JSON.parse(raw);
             return {
                 density: ['s', 'm', 'l'].includes(parsed.density) ? parsed.density : 'm',
                 fullscreen: !!parsed.fullscreen,
-                collapsed: Array.isArray(parsed.collapsed) ? parsed.collapsed : []
+                collapsed: Array.isArray(parsed.collapsed) ? parsed.collapsed : [],
+                activeTab: ['scores', 'play', 'messages'].includes(parsed.activeTab) ? parsed.activeTab : 'play'
             };
-        } catch { return { density: 'm', fullscreen: false, collapsed: [] }; }
+        } catch { return { density: 'm', fullscreen: false, collapsed: [], activeTab: 'play' }; }
     },
     set(state) {
         try { localStorage.setItem('playalama-game-layout', JSON.stringify(state)); } catch { }

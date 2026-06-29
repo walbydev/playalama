@@ -13,13 +13,19 @@ public sealed class GameLayoutService(IJSRuntime js)
     public const string Medium = "m";
     public const string Large = "l";
 
+    public const string TabScores = "scores";
+    public const string TabPlay = "play";
+    public const string TabMessages = "messages";
+
     private string _density = Medium;
     private bool _fullscreen;
+    private string _activeTab = TabPlay;
     private readonly HashSet<string> _collapsedPanels = new(StringComparer.Ordinal);
     private bool _initialized;
 
     public string Density => _density;
     public bool IsFullscreen => _fullscreen;
+    public string ActiveTab => _activeTab;
 
     /// <summary>Multiplicateur appliqué au clamp d'auto-fit (S/M/L).</summary>
     public string ScaleCss => _density switch
@@ -43,6 +49,7 @@ public sealed class GameLayoutService(IJSRuntime js)
             {
                 _density = Normalize(state.Density);
                 _fullscreen = state.Fullscreen;
+                _activeTab = NormalizeTab(state.ActiveTab);
                 _collapsedPanels.Clear();
                 foreach (var p in state.Collapsed ?? [])
                     _collapsedPanels.Add(p);
@@ -81,12 +88,21 @@ public sealed class GameLayoutService(IJSRuntime js)
         Changed?.Invoke();
     }
 
+    public async Task SetActiveTabAsync(string tab)
+    {
+        var t = NormalizeTab(tab);
+        if (t == _activeTab) return;
+        _activeTab = t;
+        await PersistAsync();
+        Changed?.Invoke();
+    }
+
     private async Task PersistAsync()
     {
         try
         {
             await js.InvokeVoidAsync("playalamaGameLayout.set",
-                new LayoutState(_density, _fullscreen, _collapsedPanels.ToArray()));
+                new LayoutState(_density, _fullscreen, _collapsedPanels.ToArray(), _activeTab));
         }
         catch { /* prerender */ }
     }
@@ -98,5 +114,12 @@ public sealed class GameLayoutService(IJSRuntime js)
         _ => Medium,
     };
 
-    public sealed record LayoutState(string Density, bool Fullscreen, string[]? Collapsed);
+    private static string NormalizeTab(string? t) => t?.ToLowerInvariant() switch
+    {
+        TabScores => TabScores,
+        TabMessages => TabMessages,
+        _ => TabPlay,
+    };
+
+    public sealed record LayoutState(string Density, bool Fullscreen, string[]? Collapsed, string? ActiveTab);
 }

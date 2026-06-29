@@ -1305,6 +1305,16 @@ footer {
     }
 }
 
+/* Sidebar : pile verticale (paysage) */
+.game-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Barre d'onglets : cachée hors mono-colonne */
+.game-tabbar { display: none; }
+
 /* Portrait / fenêtre étroite : mono-colonne, plateau pleine largeur */
 @media (max-width: 800px) {
     .page-wrapper--game-focus .game-layout {
@@ -1314,8 +1324,49 @@ footer {
         --board-max: calc(var(--board-scale) * min(672px, 96vw));
     }
     .page-wrapper--game-focus .game-page {
-        padding: .25rem .25rem .85rem !important;
+        padding: .25rem .25rem 4.5rem !important;
     }
+
+    /* Onglets escamotables : un seul panneau visible à la fois */
+    .page-wrapper--game-focus .game-sidebar { gap: .75rem; }
+    .page-wrapper--game-focus .game-sidebar .sidebar-panel { display: none; }
+    .page-wrapper--game-focus .game-sidebar[data-active-tab="play"] .sidebar-panel[data-tab="play"],
+    .page-wrapper--game-focus .game-sidebar[data-active-tab="scores"] .sidebar-panel[data-tab="scores"],
+    .page-wrapper--game-focus .game-sidebar[data-active-tab="messages"] .sidebar-panel[data-tab="messages"] {
+        display: block;
+    }
+
+    /* Barre d'onglets fixe en bas */
+    .page-wrapper--game-focus .game-tabbar {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 40;
+        gap: .25rem;
+        padding: .35rem .4rem calc(.35rem + env(safe-area-inset-bottom, 0px));
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, .12);
+    }
+    .game-tab {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .1rem;
+        padding: .35rem .25rem;
+        border: none;
+        background: transparent;
+        color: var(--text-dim);
+        font-size: .72rem;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 8px;
+    }
+    .game-tab-icon { font-size: 1.15rem; line-height: 1; }
+    .game-tab.is-active { background: var(--bg2); color: var(--accent); }
 }
 
 .letter-bag-display--compact {
