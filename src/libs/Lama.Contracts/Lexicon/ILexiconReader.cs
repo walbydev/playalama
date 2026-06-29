@@ -6,6 +6,11 @@ namespace Lama.Contracts.Lexicon;
 public interface ILexiconReader
 {
     /// <summary>
+    /// Crée le schéma lexicon (tables/index) s'il n'existe pas. Idempotent.
+    /// </summary>
+    Task EnsureSchemaAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Charge l'ensemble des lemmes (en majuscules, A-Z) d'une langue.
     /// </summary>
     IReadOnlySet<string> LoadDictionary(string languageCode);

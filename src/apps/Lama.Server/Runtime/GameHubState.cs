@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using Lama.Contracts;
 using Lama.Domain.Engine;
 using Lama.Server.Contracts.Api;
+using Microsoft.Extensions.Logging;
 
 namespace Lama.Server.Runtime;
 
@@ -10,21 +11,40 @@ public sealed class GameHubState
 {
     private readonly IGameLanguageProvider _languageProvider;
     private readonly ILanguageProviderRegistry? _registry;
+    private readonly ILogger<GameHubState>? _logger;
     private readonly ConcurrentDictionary<string, OnlineGame> _games = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, EventSubscribers> _subscribers = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _activeGameByPlayerId = new(StringComparer.Ordinal);
 
-    public GameHubState(IGameLanguageProvider languageProvider, ILanguageProviderRegistry? registry = null)
+    public GameHubState(IGameLanguageProvider languageProvider, ILanguageProviderRegistry? registry = null, ILogger<GameHubState>? logger = null)
     {
         _languageProvider = languageProvider;
         _registry = registry;
+        _logger = logger;
     }
 
     public IGameEngine CreateEngine(TileDistributionProfile? profile = null, IReadOnlyList<string>? languages = null)
     {
-        var provider = languages is { Count: > 0 } && _registry is not null
-            ? _registry.GetProvider(languages)
-            : _languageProvider;
+        IGameLanguageProvider provider;
+        if (languages is { Count: > 0 } && _registry is not null)
+        {
+            try
+            {
+                provider = _registry.GetProvider(languages);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex,
+                    "Lexicon provider unavailable for languages [{Languages}], falling back to embedded dictionary.",
+                    string.Join(",", languages));
+                provider = _languageProvider;
+            }
+        }
+        else
+        {
+            provider = _languageProvider;
+        }
+
         return new GameEngine(
             provider.GetDictionary(),
             provider.GetLetterScores(),

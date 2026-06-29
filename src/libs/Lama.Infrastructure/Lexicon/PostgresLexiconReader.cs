@@ -17,6 +17,28 @@ public sealed partial class PostgresLexiconReader(string connectionString, ILogg
     [GeneratedRegex("^[A-Z]+$")]
     private static partial Regex ScrabbleWord();
 
+    public async Task EnsureSchemaAsync(CancellationToken cancellationToken = default)
+    {
+        var assembly = typeof(PostgresLexiconReader).Assembly;
+        var resourceName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(n => n.EndsWith("init-lexicon-schema.sql", StringComparison.OrdinalIgnoreCase));
+        if (resourceName is null)
+        {
+            logger?.LogWarning("Lexicon schema SQL resource not found; skipping schema initialization.");
+            return;
+        }
+
+        await using var stream = assembly.GetManifestResourceStream(resourceName)!;
+        using var streamReader = new StreamReader(stream);
+        var sql = await streamReader.ReadToEndAsync(cancellationToken);
+
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(sql, connection);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+        logger?.LogInformation("Lexicon schema ensured (idempotent).");
+    }
+
     public IReadOnlySet<string> LoadDictionary(string languageCode)
     {
         var words = new HashSet<string>();

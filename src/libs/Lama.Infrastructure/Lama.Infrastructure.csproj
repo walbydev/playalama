@@ -10,5 +10,9 @@
         <PackageReference Include="Npgsql" />
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="Lexicon\Sql\init-lexicon-schema.sql" />
+    </ItemGroup>
+
 </Project>
 

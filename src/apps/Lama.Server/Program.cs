@@ -83,6 +83,17 @@ if (autoMigrate)
     db.Database.Migrate();
 }
 
+// ── Schéma lexicon (créé si absent, idempotent) ───────────────────────────
+try
+{
+    var lexicon = app.Services.GetRequiredService<ILexiconReader>();
+    await lexicon.EnsureSchemaAsync();
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Échec de l'initialisation du schéma lexicon (poursuite avec repli fichier).");
+}
+
 // ── Seeding des bots IA ───────────────────────────────────────────────────
 try
 {
