@@ -15,8 +15,6 @@
             <li><a href="/" class="@ActiveClass("/")" @onclick="CloseMenu">@L["Nav.Home"]</a></li>
             <li><a href="/leaderboard" class="@ActiveClass("/leaderboard")" @onclick="CloseMenu">@L["Nav.Leaderboard"]</a></li>
             <li><a href="/rules" class="@ActiveClass("/rules")" @onclick="CloseMenu">@L["Nav.Rules"]</a></li>
-            <li><a href="/license" class="@ActiveClass("/license")" @onclick="CloseMenu">@L["Nav.License"]</a></li>
-            <li><a href="/downloads" class="@ActiveClass("/downloads")" @onclick="CloseMenu">@L["Nav.Downloads"]</a></li>
             @if (Auth.IsLoggedIn)
             {
                 <li><a href="/games" class="@ActiveClass("/games")" @onclick="CloseMenu">@L["Nav.Games"]</a></li>
@@ -26,8 +24,11 @@
     }
 
     <div class="navbar-actions">
-        <DensitySelector />
-        <LayoutVariantSelector />
+        @if (CompactMode)
+        {
+            <DensitySelector />
+            <LayoutVariantSelector />
+        }
         <LanguageSelector />
         <ThemeToggle />
         @if (!Auth.IsInitialized)
