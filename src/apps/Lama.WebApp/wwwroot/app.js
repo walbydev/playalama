@@ -113,3 +113,21 @@ window.playalamaFloatingLetters = (function () {
 
     return { populate };
 })();
+
+// Localisation : persiste la culture via cookie .AspNetCore.Culture + recharge
+window.playalamaLang = {
+  get: function () {
+    const m = document.cookie.match(/(?:^|; )\.AspNetCore\.Culture=([^;]+)/);
+    if (!m) return null;
+    try {
+      const v = decodeURIComponent(m[1]);
+      const p = v.match(/c=([^|]+)/);
+      return p ? p[1] : null;
+    } catch { return null; }
+  },
+  set: function (culture) {
+    const val = 'c=' + culture + '|uic=' + culture;
+    document.cookie = '.AspNetCore.Culture=' + encodeURIComponent(val) + ';path=/;max-age=31536000';
+    location.reload();
+  }
+};

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\Lama.Contracts\Lama.Contracts.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="assets\scores.json"
+              CopyToOutputDirectory="PreserveNewest"
+              Link="assets\languages\en\scores.json" />
+        <None Include="assets\tile-distribution.json"
+              CopyToOutputDirectory="PreserveNewest"
+              Link="assets\languages\en\tile-distribution.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="assets\scores.json">
+            <LogicalName>Lama.Languages.en.assets.scores.json</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="assets\tile-distribution.json">
+            <LogicalName>Lama.Languages.en.assets.tile-distribution.json</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
+</Project>

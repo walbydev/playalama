@@ -13,6 +13,8 @@
     <Project Path="src/libs/Lama.Core/Lama.Core.csproj" />
     <Project Path="src/libs/Lama.Infrastructure/Lama.Infrastructure.csproj" />
     <Project Path="src/libs/Lama.Languages.fr/Lama.Languages.fr.csproj" />
+    <Project Path="src/libs/Lama.Languages.en/Lama.Languages.en.csproj" />
+    <Project Path="src/libs/Lama.Languages.de/Lama.Languages.de.csproj" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Lama.AIServer.UnitTests/Lama.AIServer.UnitTests.csproj" />

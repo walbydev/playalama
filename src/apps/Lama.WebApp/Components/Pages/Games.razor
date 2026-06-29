@@ -3,6 +3,7 @@
 @inject LamaApiClient Api
 @inject AuthService Auth
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> L
 @implements IAsyncDisposable
 
 <PageTitle>Jouer — Playalama</PageTitle>
@@ -19,15 +20,15 @@
 
             <!-- Créer une partie -->
             <div class="card">
-                <h2 class="mb-3">Créer une partie</h2>
+                <h2 class="mb-3">@L["CreateGame.Title"]</h2>
                 <EditForm Model="_createForm" OnValidSubmit="CreateGameAsync">
                     <DataAnnotationsValidator />
 
                     <div class="form-field">
-                        <label for="game-mode">Mode</label>
+                        <label for="game-mode">@L["CreateGame.Mode"]</label>
                         <InputSelect id="game-mode" @bind-Value="_createForm.Mode" @bind-Value:after="OnModeChanged">
-                            <option value="multi">Multijoueur</option>
-                            <option value="solo">Solo vs IA (entraînement)</option>
+                            <option value="multi">@L["CreateGame.Multiplayer"]</option>
+                            <option value="solo">@L["CreateGame.Solo"]</option>
                         </InputSelect>
                     </div>
 
@@ -67,8 +68,22 @@
                         <p class="form-error mb-2" role="alert">@_createError</p>
                     }
 
+                    <div class="form-field">
+                        <label>@L["CreateGame.GameLanguages"]</label>
+                        <div class="lang-choices">
+                            @foreach (var (code, label) in _gameLanguages)
+                            {
+                                <label class="lang-choice">
+                                    <input type="checkbox" checked="@_createForm.Languages.Contains(code)"
+                                           @onchange="e => ToggleLanguage(code, (bool)e.Value!)" />
+                                    <span>@label</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
                     <button class="btn btn-primary" type="submit" style="width:100%" disabled="@_busy">
-                        @(_busy ? "Création…" : (_isSolo ? "Jouer contre l'IA" : "Créer"))
+                        @(_busy ? L["CreateGame.Creating"].Value : (_isSolo ? L["CreateGame.PlayAi"].Value : L["CreateGame.Create"].Value))
                     </button>
                 </EditForm>
             </div>
@@ -167,6 +182,24 @@
     private bool _isSolo;
     private string? _createError;
     private string? _listError;
+
+    private static readonly (string Code, string Label)[] _gameLanguages =
+    {
+        ("fr", "Français"), ("en", "English"), ("de", "Deutsch")
+    };
+
+    private void ToggleLanguage(string code, bool selected)
+    {
+        if (selected)
+        {
+            if (!_createForm.Languages.Contains(code)) _createForm.Languages.Add(code);
+        }
+        else if (_createForm.Languages.Count > 1)
+        {
+            _createForm.Languages.Remove(code);
+        }
+    }
+
     private PeriodicTimer? _refreshTimer;
     private CancellationTokenSource? _timerCts;
 

@@ -55,7 +55,7 @@
                      aria-label="@ariaLabel"
                      @ondragover:preventDefault="@isDropTarget"
                      @ondrop="@(isDropTarget ? () => OnDrop.InvokeAsync((r, c)) : () => Task.CompletedTask)"
-                     @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : tile.HasValue ? () => OnTileClick.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ondblclick="@(isKeyboardTarget ? () => OnKeyboardActivate.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ontouchend="@(isKeyboardTarget ? (e) => HandleTouchEnd(e, r, c) : (Func<TouchEventArgs,Task>)(_ => Task.CompletedTask))"
                      draggable="@(pending is not null && CanDragPending ? "true" : "false")"
@@ -112,6 +112,7 @@
     [Parameter] public bool CanActivateKeyboard { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnDrop { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnRecall { get; set; }
+    [Parameter] public EventCallback<(int Row, int Col)> OnTileClick { get; set; }
     [Parameter] public EventCallback<(int Row, int Col)> OnPendingDragStart { get; set; }
     /// <summary>Activé par double-clic (souris) ou double-tap (tactile) sur une case vide.</summary>
     [Parameter] public EventCallback<(int Row, int Col)> OnKeyboardActivate { get; set; }

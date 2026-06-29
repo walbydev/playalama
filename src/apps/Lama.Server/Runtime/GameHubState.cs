@@ -9,22 +9,29 @@ namespace Lama.Server.Runtime;
 public sealed class GameHubState
 {
     private readonly IGameLanguageProvider _languageProvider;
+    private readonly ILanguageProviderRegistry? _registry;
     private readonly ConcurrentDictionary<string, OnlineGame> _games = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, EventSubscribers> _subscribers = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _activeGameByPlayerId = new(StringComparer.Ordinal);
 
-    public GameHubState(IGameLanguageProvider languageProvider)
+    public GameHubState(IGameLanguageProvider languageProvider, ILanguageProviderRegistry? registry = null)
     {
         _languageProvider = languageProvider;
+        _registry = registry;
     }
 
-    public IGameEngine CreateEngine(TileDistributionProfile? profile = null) =>
-        new GameEngine(
-            _languageProvider.GetDictionary(),
-            _languageProvider.GetLetterScores(),
+    public IGameEngine CreateEngine(TileDistributionProfile? profile = null, IReadOnlyList<string>? languages = null)
+    {
+        var provider = languages is { Count: > 0 } && _registry is not null
+            ? _registry.GetProvider(languages)
+            : _languageProvider;
+        return new GameEngine(
+            provider.GetDictionary(),
+            provider.GetLetterScores(),
             profile is null
-                ? _languageProvider.GetTileDistribution()
-                : _languageProvider.GetTileDistribution(profile));
+                ? provider.GetTileDistribution()
+                : provider.GetTileDistribution(profile));
+    }
 
     public void Create(OnlineGame game)
     {

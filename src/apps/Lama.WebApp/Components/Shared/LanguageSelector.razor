@@ -1,0 +1,18 @@
+@inject LanguageService Lang
+@using Lama.WebApp.Services
+
+<select class="lang-selector" aria-label="Langue / Language" value="@Lang.Current"
+        @onchange="OnChange" title="Langue">
+    @foreach (var item in LanguageService.Available)
+    {
+        <option value="@item.Code">@item.Label</option>
+    }
+</select>
+
+@code {
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        var selected = e.Value?.ToString() ?? "fr";
+        await Lang.SetAsync(selected);
+    }
+}

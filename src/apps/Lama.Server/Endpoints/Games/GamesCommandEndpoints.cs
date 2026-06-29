@@ -145,6 +145,9 @@ public static class GamesCommandEndpoints
         var boardSize = request.BoardSize > 0 ? request.BoardSize : 15;
         var rackSize = request.RackSize > 0 ? request.RackSize : 7;
         var language = string.IsNullOrWhiteSpace(request.Language) ? "fr" : request.Language.Trim();
+        var languages = request.Languages is { Count: > 0 }
+            ? request.Languages.Select(l => l.Trim().ToLowerInvariant()).Where(l => l.Length > 0).Distinct().ToList()
+            : new List<string> { language.ToLowerInvariant() };
         var gameType = string.IsNullOrWhiteSpace(request.TournamentId) ? "classic" : "tournament";
 
         var profile = new TileDistributionProfile(
@@ -154,7 +157,7 @@ public static class GamesCommandEndpoints
             GameLevel: level,
             GameType: gameType);
 
-        var engine = state.CreateEngine(profile);
+        var engine = state.CreateEngine(profile, languages);
 
         // ── Joueurs initiaux ──────────────────────────────────────────────────
         var initialPlayers = new List<OnlinePlayer>

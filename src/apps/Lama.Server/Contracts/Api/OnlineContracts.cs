@@ -22,7 +22,12 @@ public sealed record CreateGameRequest(
     /// Identifiant du bot à utiliser (ex: "bot-karim"). Prioritaire sur <see cref="EnableAi"/>.
     /// Si null et <see cref="EnableAi"/> est true, le bot par défaut (Karim) est sélectionné.
     /// </summary>
-    string? AiBotId = null);
+    string? AiBotId = null,
+    /// <summary>
+    /// Langues de jeu (mots du plateau). Un mot est valide s'il existe dans au moins une.
+    /// Si vide, <see cref="Language"/> est utilisé.
+    /// </summary>
+    IReadOnlyList<string>? Languages = null);
 
 public sealed record JoinGameRequest(string PlayerName, string? Password = null);
 

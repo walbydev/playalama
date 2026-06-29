@@ -145,8 +145,43 @@ else
                                       KeyboardCursorCol="_vm.KeyboardCursorCol"
                                       OnDrop="HandleDrop"
                                       OnRecall="HandleRecall"
+                                      OnTileClick="HandleTileClick"
                                       OnKeyboardActivate="HandleKeyboardActivate"
                                       OnPendingDragStart="HandlePendingDragStart" />
+
+                        @if (_wordInfo is not null)
+                        {
+                            <div class="word-info-popup" role="dialog" aria-label="Définition">
+                                <div class="word-info-header">
+                                    <strong>@_wordInfo.Word</strong>
+                                    @if (!string.IsNullOrWhiteSpace(_wordInfo.WiktionaryUrl))
+                                    {
+                                        <a href="@_wordInfo.WiktionaryUrl" target="_blank" rel="noopener" class="word-info-link">Wiktionnaire ↗</a>
+                                    }
+                                    <button class="btn btn-ghost btn-sm" @onclick="() => _wordInfo = null">✕</button>
+                                </div>
+                                @if (_wordInfo.Definitions.Count > 0)
+                                {
+                                    <ol class="word-info-defs">
+                                        @foreach (var d in _wordInfo.Definitions.Take(5))
+                                        {
+                                            <li>@(string.IsNullOrWhiteSpace(d.PartOfSpeech) ? "" : $"({d.PartOfSpeech}) ")@d.Text</li>
+                                        }
+                                    </ol>
+                                }
+                                @if (_wordInfo.Synonyms.Count > 0)
+                                {
+                                    <p class="word-info-syns"><em>Synonymes :</em> @string.Join(", ", _wordInfo.Synonyms.Take(10))</p>
+                                }
+                            </div>
+                        }
+                        else if (_wordInfoNotFound is not null)
+                        {
+                            <div class="word-info-popup" role="dialog">
+                                <span>Aucune définition pour « @_wordInfoNotFound ».</span>
+                                <button class="btn btn-ghost btn-sm" @onclick="() => _wordInfoNotFound = null">✕</button>
+                            </div>
+                        }
 
                         @* Rack sous le plateau — ligne unique *@
                         @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
@@ -690,6 +725,44 @@ else
         _vm.RecallTile(cell.Row, cell.Col);
         StateHasChanged();
     }
+
+    private WebWordInfo? _wordInfo;
+    private string? _wordInfoNotFound;
+
+    private async Task HandleTileClick((int Row, int Col) cell)
+    {
+        var board = _vm.Snapshot?.Board;
+        if (board is null) return;
+
+        var word = ExtractWordAt(board, cell.Row, cell.Col);
+        if (word.Length < 2) return;
+
+        var lang = string.IsNullOrWhiteSpace(_vm.Snapshot?.Language) ? "fr" : _vm.Snapshot!.Language;
+        _wordInfo = null;
+        _wordInfoNotFound = null;
+        var info = await Api.GetWordInfoAsync(lang, word);
+        if (info is null) _wordInfoNotFound = word;
+        else _wordInfo = info;
+        StateHasChanged();
+    }
+
+    private static string ExtractWordAt(IReadOnlyList<WebBoardTile> board, int row, int col)
+    {
+        char? At(int r, int c) => board.FirstOrDefault(t => t.Row == r && t.Column == c)?.Letter;
+
+        int hLen = 1; var c0 = col;
+        while (At(row, c0 - 1) is not null) c0--;
+        var hWord = ""; var cc = c0;
+        while (At(row, cc) is { } ch) { hWord += char.ToUpperInvariant(ch); cc++; }
+        hLen = hWord.Length;
+
+        var r0 = row; while (At(r0 - 1, col) is not null) r0--;
+        var vWord = ""; var rr = r0;
+        while (At(rr, col) is { } ch) { vWord += char.ToUpperInvariant(ch); rr++; }
+
+        return vWord.Length > hLen ? vWord : hWord;
+    }
+
 
     private async Task HandleKeyboardActivate((int Row, int Col) cell)
     {

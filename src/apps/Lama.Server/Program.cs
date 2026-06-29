@@ -8,6 +8,8 @@ using Lama.Server.Runtime;
 using Lama.Server.Security;
 using Lama.Server.Services;
 using Lama.Languages.fr;
+using Lama.Contracts.Lexicon;
+using Lama.Infrastructure.Lexicon;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,10 +20,23 @@ var connectionString = builder.Configuration.GetConnectionString("LamaServerDb")
 builder.Services.AddDbContext<LamaDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-builder.Services.AddSingleton<IGameLanguageProvider>(_ =>
+builder.Services.AddSingleton<ILexiconReader>(_ => new PostgresLexiconReader(connectionString,
+    null));
+builder.Services.AddSingleton<ILanguageProviderRegistry>(sp =>
+    new LanguageProviderRegistry(sp.GetRequiredService<ILexiconReader>(), AppContext.BaseDirectory));
+
+builder.Services.AddSingleton<IGameLanguageProvider>(sp =>
 {
     var basePath = Path.Combine(AppContext.BaseDirectory, "assets", "languages", "fr");
-    return new FrenchLanguageProvider(basePath);
+    try
+    {
+        return sp.GetRequiredService<ILanguageProviderRegistry>().GetProvider("fr");
+    }
+    catch
+    {
+        // Repli : dictionnaire fichier embarqué si la base lexicon est indisponible.
+        return new FrenchLanguageProvider(basePath);
+    }
 });
 builder.Services.AddSingleton<GameHubState>();
 builder.Services.AddSingleton<BotAutoPlayService>();
@@ -147,5 +162,6 @@ var api = app.MapGroup("/api/v1");
 api.MapGamesReadEndpoints();
 api.MapGamesCommandEndpoints();
 api.MapBotsEndpoints();
+api.MapLexiconEndpoints();
 
 app.Run();

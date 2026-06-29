@@ -1578,3 +1578,23 @@ footer {
 .metric-value.big { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
 
 .text-error { color: var(--error, #ef4444); }
+
+/* Popup définitions/synonymes d'un mot du plateau */
+.word-info-popup {
+  margin-top: .75rem;
+  padding: .75rem 1rem;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  box-shadow: 0 4px 14px rgba(0,0,0,.12);
+  max-width: 100%;
+}
+.word-info-header { display: flex; align-items: center; gap: .5rem; }
+.word-info-header strong { font-size: 1.1rem; text-transform: uppercase; }
+.word-info-header .word-info-link { font-size: .8rem; }
+.word-info-header button { margin-left: auto; }
+.word-info-defs { margin: .5rem 0 .25rem 1.1rem; padding: 0; }
+.word-info-defs li { margin-bottom: .25rem; }
+.word-info-syns { font-size: .85rem; margin: .25rem 0 0; }
+.lang-choices { display: flex; gap: 1rem; flex-wrap: wrap; }
+.lang-choice { display: inline-flex; align-items: center; gap: .35rem; cursor: pointer; }

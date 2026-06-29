@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="xml:space" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <data name="Nav.Home"><value>Startseite</value></data>
+  <data name="Nav.Games"><value>Spiele</value></data>
+  <data name="Nav.Leaderboard"><value>Rangliste</value></data>
+  <data name="Nav.Rules"><value>Regeln</value></data>
+  <data name="Nav.Downloads"><value>Downloads</value></data>
+  <data name="CreateGame.Title"><value>Spiel erstellen</value></data>
+  <data name="CreateGame.Mode"><value>Modus</value></data>
+  <data name="CreateGame.Multiplayer"><value>Mehrspieler</value></data>
+  <data name="CreateGame.Solo"><value>Solo gegen KI (Training)</value></data>
+  <data name="CreateGame.GameLanguages"><value>Spielsprachen (Wörter)</value></data>
+  <data name="CreateGame.Create"><value>Erstellen</value></data>
+  <data name="CreateGame.PlayAi"><value>Gegen KI spielen</value></data>
+  <data name="CreateGame.Creating"><value>Erstellen…</value></data>
+  <data name="CreateGame.MaxPlayers"><value>Max. Spieler</value></data>
+  <data name="CreateGame.Name"><value>Spielname</value></data>
+  <data name="WordInfo.Synonyms"><value>Synonyme:</value></data>
+  <data name="WordInfo.NotFound"><value>Keine Definition</value></data>
+  <data name="Language.Label"><value>Sprache</value></data>
+</root>

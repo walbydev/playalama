@@ -13,6 +13,17 @@ public sealed class LamaApiClient(HttpClient httpClient)
         PropertyNameCaseInsensitive = true
     };
 
+    // ── Lexique ──────────────────────────────────────────────────────────────
+
+    /// <summary>Récupère définitions/synonymes/URL d'un mot, ou null si introuvable.</summary>
+    public async Task<WebWordInfo?> GetWordInfoAsync(string lang, string word, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.GetAsync($"{ApiBase}/lexicon/{lang}/{Uri.EscapeDataString(word)}", cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return null;
+        return await response.Content.ReadFromJsonAsync<WebWordInfo>(JsonOptions, cancellationToken);
+    }
+
     // ── Auth ─────────────────────────────────────────────────────────────────
 
     public async Task<WebAuthResponse> RegisterAsync(string username, string password, string? email, string? countryCode = null, CancellationToken cancellationToken = default)
@@ -118,6 +129,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
     public async Task<WebCreateGameResponse> CreateGameAsync(CreateGameForm form, string hostName, string? token = null, CancellationToken cancellationToken = default)
     {
         var isSolo = string.Equals(form.Mode, "solo", StringComparison.OrdinalIgnoreCase);
+        var languages = form.Languages is { Count: > 0 } ? form.Languages : new List<string> { "fr" };
         var request = new
         {
             hostName,
@@ -127,7 +139,8 @@ public sealed class LamaApiClient(HttpClient httpClient)
             maxPlayers = isSolo ? 2 : form.MaxPlayers,
             enableAi = isSolo,
             aiBotId = isSolo ? (form.AiBotId ?? "bot-karim") : null,
-            language = "fr"
+            language = languages[0],
+            languages
         };
 
         using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games", token);

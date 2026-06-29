@@ -7,6 +7,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+var supportedCultures = new[] { "fr", "en", "de" };
+builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(options =>
+{
+    options.SetDefaultCulture("fr");
+    options.AddSupportedCultures(supportedCultures);
+    options.AddSupportedUICultures(supportedCultures);
+});
+
 builder.Services.AddHttpClient<LamaApiClient>(client =>
 {
     var baseUrl = LamaApiBaseUrlResolver.Resolve(builder.Configuration);
@@ -17,6 +27,7 @@ builder.Services.AddHttpClient<LamaApiClient>(client =>
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<BoardZoomService>();
+builder.Services.AddScoped<LanguageService>();
 
 // ViewModels (MVVM léger)
 builder.Services.AddScoped<HomeViewModel>();
@@ -34,6 +45,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseRequestLocalization();
 app.UseAntiforgery();
 app.MapStaticAssets();
 

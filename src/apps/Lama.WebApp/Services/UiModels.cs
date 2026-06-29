@@ -11,6 +11,8 @@ public sealed class CreateGameForm
     public int MaxPlayers { get; set; } = 4;
     /// <summary>Identifiant du bot sélectionné (ex: "bot-karim"). Null = pas de bot.</summary>
     public string? AiBotId { get; set; }
+    /// <summary>Langues de jeu (plateau). Union : un mot valide dans ≥1 langue.</summary>
+    public List<string> Languages { get; set; } = new() { "fr" };
 }
 
 public sealed class PlayForm
@@ -108,6 +110,8 @@ public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int S
 public sealed record WebBoardTile(int Row, int Column, char Letter);
 public sealed record WebPlayResponse(string GameId, string MoveId, int Score);
 public sealed record WebCheckResponse(int Score, string Message);
+public sealed record WebWordInfo(string Word, string Lang, string? WiktionaryUrl, IReadOnlyList<WebWordDefinition> Definitions, IReadOnlyList<string> Synonyms);
+public sealed record WebWordDefinition(int SenseIndex, string? PartOfSpeech, string Text);
 public sealed record WebSuggestedMove(string Word, string Position, string Direction, int Score, int Length, double BalancedScore, string Category);
 
 public sealed record WebPlayerProfile(string PlayerId, string Username, string? Email, string? CountryCode, DateTimeOffset CreatedAt);

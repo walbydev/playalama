@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="xml:space" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <data name="Nav.Home"><value>Accueil</value></data>
+  <data name="Nav.Games"><value>Parties</value></data>
+  <data name="Nav.Leaderboard"><value>Classement</value></data>
+  <data name="Nav.Rules"><value>Règles</value></data>
+  <data name="Nav.Downloads"><value>Téléchargements</value></data>
+  <data name="CreateGame.Title"><value>Créer une partie</value></data>
+  <data name="CreateGame.Mode"><value>Mode</value></data>
+  <data name="CreateGame.Multiplayer"><value>Multijoueur</value></data>
+  <data name="CreateGame.Solo"><value>Solo vs IA (entraînement)</value></data>
+  <data name="CreateGame.GameLanguages"><value>Langues de jeu (mots du plateau)</value></data>
+  <data name="CreateGame.Create"><value>Créer</value></data>
+  <data name="CreateGame.PlayAi"><value>Jouer contre l'IA</value></data>
+  <data name="CreateGame.Creating"><value>Création…</value></data>
+  <data name="CreateGame.MaxPlayers"><value>Joueurs max</value></data>
+  <data name="CreateGame.Name"><value>Nom de partie</value></data>
+  <data name="WordInfo.Synonyms"><value>Synonymes :</value></data>
+  <data name="WordInfo.NotFound"><value>Aucune définition</value></data>
+  <data name="Language.Label"><value>Langue</value></data>
+</root>
