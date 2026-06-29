@@ -29,37 +29,74 @@
                         <InputSelect id="game-mode" @bind-Value="_createForm.Mode" @bind-Value:after="OnModeChanged">
                             <option value="multi">@L["CreateGame.Multiplayer"]</option>
                             <option value="solo">@L["CreateGame.Solo"]</option>
+                            @if (_isAdmin)
+                            {
+                                <option value="ai-only">@L["CreateGame.AiOnly"]</option>
+                            }
                         </InputSelect>
                     </div>
 
+                    <div class="form-field">
+                        <label for="game-name">@L["CreateGame.Name"] <small class="text-dim">@L["Common.Optional"]</small></label>
+                        <InputText id="game-name" @bind-Value="_createForm.GameName" placeholder="@L["Games.GameNamePlaceholder"]" />
+                    </div>
                     @if (_isSolo)
                     {
                         <div class="form-field">
-                            <label for="bot-select">@L["Games.AiOpponent"]</label>
+                            <label for="bot-slot-solo">@L["CreateGame.AiSlot", 1]</label>
                             @if (_bots.Count == 0)
                             {
                                 <p class="text-muted" style="font-size:.85rem">@L["Games.LoadingBots"]</p>
                             }
                             else
                             {
-                                <InputSelect id="bot-select" @bind-Value="_createForm.AiBotId">
-                                    @foreach (var bot in _bots)
+                                <select id="bot-slot-solo"
+                                        value="@(_createForm.AiBotIds[0] ?? string.Empty)"
+                                        @onchange="e => OnAiBotSlotChanged(0, e.Value?.ToString())">
+                                    <option value="">@L["CreateGame.AiChooseBot"]</option>
+                                    @foreach (var bot in GetAvailableBotsForSlot(0, 1))
                                     {
                                         <option value="@bot.BotId">@bot.LevelEmoji @bot.Name — @bot.LevelLabel (Elo @bot.InitialElo)</option>
                                     }
-                                </InputSelect>
+                                </select>
                             }
                         </div>
+                    }
+                    else if (_isAiOnly)
+                    {
+                        <div class="form-field">
+                            <label>@L["CreateGame.AiOnlySlots"]</label>
+                            <small class="text-dim">@L["CreateGame.AiOnlyHint"]</small>
+                        </div>
+                        @for (var i = 0; i < 4; i++)
+                        {
+                            var slot = i;
+                            <div class="form-field">
+                                <label for="bot-slot-@slot">@L["CreateGame.AiSlot", slot + 1]</label>
+                                @if (_bots.Count == 0)
+                                {
+                                    <p class="text-muted" style="font-size:.85rem">@L["Games.LoadingBots"]</p>
+                                }
+                                else
+                                {
+                                    <select id="bot-slot-@slot"
+                                            value="@(_createForm.AiBotIds[slot] ?? string.Empty)"
+                                            @onchange="e => OnAiBotSlotChanged(slot, e.Value?.ToString())">
+                                        <option value="">@L["CreateGame.AiChooseBot"]</option>
+                                        @foreach (var bot in GetAvailableBotsForSlot(slot, 4))
+                                        {
+                                            <option value="@bot.BotId">@bot.LevelEmoji @bot.Name — @bot.LevelLabel (Elo @bot.InitialElo)</option>
+                                        }
+                                    </select>
+                                }
+                            </div>
+                        }
                     }
                     else
                     {
                         <div class="form-field">
-                            <label for="game-name">@L["CreateGame.Name"] <small class="text-dim">@L["Common.Optional"]</small></label>
-                            <InputText id="game-name" @bind-Value="_createForm.GameName" placeholder="@L["Games.GameNamePlaceholder"]" />
-                        </div>
-                        <div class="form-field">
                             <label for="game-max">@L["CreateGame.MaxPlayers"]</label>
-                            <InputNumber id="game-max" @bind-Value="_createForm.MaxPlayers" min="2" max="4" />
+                            <InputNumber id="game-max" @bind-Value="_createForm.MaxPlayers" @bind-Value:after="OnMaxPlayersChanged" min="2" max="4" />
                         </div>
                     }
 
@@ -83,7 +120,7 @@
                     </div>
 
                     <button class="btn btn-primary" type="submit" style="width:100%" disabled="@_busy">
-                        @(_busy ? L["CreateGame.Creating"].Value : (_isSolo ? L["CreateGame.PlayAi"].Value : L["CreateGame.Create"].Value))
+                        @(_busy ? L["CreateGame.Creating"].Value : (_isAiOnly ? L["CreateGame.LaunchAiMatch"].Value : (_isSolo ? L["CreateGame.PlayAi"].Value : L["CreateGame.Create"].Value)))
                     </button>
                 </EditForm>
             </div>
@@ -180,6 +217,8 @@
     private bool _busy;
     private bool _listBusy;
     private bool _isSolo;
+    private bool _isAiOnly;
+    private bool _isAdmin;
     private string? _createError;
     private string? _listError;
 
@@ -206,6 +245,8 @@
     protected override async Task OnInitializedAsync()
     {
         await Auth.InitializeAsync();
+        await DetectAdminAsync();
+        OnModeChanged();
         await Task.WhenAll(LoadGamesAsync(), LoadBotsAsync());
         StartAutoRefresh();
     }
@@ -217,8 +258,7 @@
             var bots = await Api.GetBotsAsync();
             _bots.Clear();
             _bots.AddRange(bots.OrderBy(b => b.Level));
-            if (_bots.Count > 0 && _createForm.AiBotId is null)
-                _createForm.AiBotId = _bots[0].BotId;
+            EnsureAiSlotSelections(_isAiOnly ? 4 : (_isSolo ? 1 : 0));
         }
         catch (Exception ex)
         {
@@ -229,6 +269,68 @@
     private void OnModeChanged()
     {
         _isSolo = string.Equals(_createForm.Mode, "solo", StringComparison.OrdinalIgnoreCase);
+        _isAiOnly = string.Equals(_createForm.Mode, "ai-only", StringComparison.OrdinalIgnoreCase);
+        if (!_isAdmin && _isAiOnly)
+        {
+            _createForm.Mode = "multi";
+            _isAiOnly = false;
+        }
+        OnMaxPlayersChanged();
+        EnsureAiSlotSelections(_isAiOnly ? 4 : (_isSolo ? 1 : 0));
+    }
+
+    private void OnMaxPlayersChanged()
+    {
+        _createForm.MaxPlayers = Math.Clamp(_createForm.MaxPlayers, 2, 4);
+    }
+
+    private async Task DetectAdminAsync()
+    {
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            _isAdmin = false;
+            return;
+        }
+
+        var status = await Api.GetStatusAsync(token);
+        _isAdmin = status is not null;
+    }
+
+    private void OnAiBotSlotChanged(int slot, string? botId)
+    {
+        if (slot < 0 || slot >= _createForm.AiBotIds.Count)
+            return;
+        _createForm.AiBotIds[slot] = string.IsNullOrWhiteSpace(botId) ? null : botId;
+        EnsureAiSlotSelections(_isAiOnly ? 4 : (_isSolo ? 1 : 0));
+    }
+
+    private IReadOnlyList<WebBotDto> GetAvailableBotsForSlot(int slot, int activeSlots)
+    {
+        var selectedOthers = _createForm.AiBotIds
+            .Select((id, idx) => new { id, idx })
+            .Where(x => x.idx != slot && x.idx < activeSlots && !string.IsNullOrWhiteSpace(x.id))
+            .Select(x => x.id!)
+            .ToHashSet(StringComparer.Ordinal);
+
+        return _bots
+            .Where(b => !selectedOthers.Contains(b.BotId) || string.Equals(_createForm.AiBotIds[slot], b.BotId, StringComparison.Ordinal))
+            .ToList();
+    }
+
+    private void EnsureAiSlotSelections(int activeSlots)
+    {
+        while (_createForm.AiBotIds.Count < 4) _createForm.AiBotIds.Add(null);
+        for (var i = activeSlots; i < _createForm.AiBotIds.Count; i++)
+            _createForm.AiBotIds[i] = null;
+
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < activeSlots; i++)
+        {
+            var id = _createForm.AiBotIds[i];
+            if (string.IsNullOrWhiteSpace(id) || !used.Add(id))
+                _createForm.AiBotIds[i] = null;
+        }
     }
 
     private void StartAutoRefresh()
@@ -264,11 +366,30 @@
             var user = Auth.CurrentUser;
             if (user is null) { Navigation.NavigateTo("/login"); return; }
 
+            var selectedAi = _createForm.AiBotIds
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+            if (_isSolo && selectedAi.Count < 1)
+            {
+                _createError = L["CreateGame.AiSoloRequired"];
+                return;
+            }
+            if (_isAiOnly && selectedAi.Count < 2)
+            {
+                _createError = L["CreateGame.AiOnlyMinTwo"];
+                return;
+            }
+            if (_isAiOnly)
+                _createForm.MaxPlayers = selectedAi.Count;
+
             var created = await Api.CreateGameAsync(_createForm, user.Username, token);
-            var isMulti = string.Equals(_createForm.Mode, "multi", StringComparison.OrdinalIgnoreCase);
-            var dest = isMulti
-                ? $"/games/{created.GameId}/lobby?playerId={Uri.EscapeDataString(created.HostPlayerId)}"
-                : $"/games/{created.GameId}?playerId={Uri.EscapeDataString(created.HostPlayerId)}";
+            var dest = _isAiOnly
+                ? $"/games/{created.GameId}"
+                : _isSolo
+                    ? $"/games/{created.GameId}?playerId={Uri.EscapeDataString(created.HostPlayerId)}"
+                    : $"/games/{created.GameId}/lobby?playerId={Uri.EscapeDataString(created.HostPlayerId)}";
             Navigation.NavigateTo(dest);
         }
         catch (Exception ex) { _createError = ex.Message; }

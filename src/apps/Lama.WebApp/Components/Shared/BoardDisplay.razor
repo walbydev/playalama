@@ -15,6 +15,7 @@
             var colLabel = GamePlayViewModel.ColLabel(c);
             <div class="board-header-cell" aria-hidden="true">@colLabel</div>
         }
+        <div class="board-header-cell" aria-hidden="true"></div>
 
         @* Lignes *@
         @for (var row = 0; row < 15; row++)
@@ -94,7 +95,17 @@
                     }
                 </div>
             }
+            <div class="board-header-cell" aria-hidden="true">@GamePlayViewModel.RowLabel(r)</div>
         }
+
+        @* Pied colonnes *@
+        <div class="board-header-cell" aria-hidden="true"></div>
+        @for (var c = 0; c < 15; c++)
+        {
+            var colLabel = GamePlayViewModel.ColLabel(c);
+            <div class="board-header-cell" aria-hidden="true">@colLabel</div>
+        }
+        <div class="board-header-cell" aria-hidden="true"></div>
     </div>
 </div>
 

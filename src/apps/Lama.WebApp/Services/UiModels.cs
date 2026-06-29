@@ -9,8 +9,8 @@ public sealed class CreateGameForm
     public string Mode { get; set; } = "multi";
     public string? GameName { get; set; }
     public int MaxPlayers { get; set; } = 4;
-    /// <summary>Identifiant du bot sélectionné (ex: "bot-karim"). Null = pas de bot.</summary>
-    public string? AiBotId { get; set; }
+    /// <summary>Bot sélectionné par slot. Index 0 = slot solo ; 0..3 = slots mode IA-only.</summary>
+    public List<string?> AiBotIds { get; set; } = new() { null, null, null, null };
     /// <summary>Langues de jeu (plateau). Union : un mot valide dans ≥1 langue.</summary>
     public List<string> Languages { get; set; } = new() { "fr" };
 }

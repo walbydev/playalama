@@ -130,7 +130,10 @@ else
                     </div>
                 }
 
-                <div class="game-layout" data-variant="@Layout.Variant">
+                <div class="game-layout"
+                     style="--board-scale:@Layout.ScaleCss;"
+                     data-variant="@Layout.Variant"
+                     data-help-open="@(_vm.SuggestPanelOpen ? "true" : "false")">
 
                     @* ── Zone plateau (+ rack selon variante D) ── *@
                     <div class="game-board-area">
@@ -294,56 +297,33 @@ else
                         {
                             <div class="card action-panel sidebar-panel" data-tab="play">
                                 <h3 class="mb-2">@L["Game.OtherActions"]</h3>
-                                <EditForm Model="_vm" OnValidSubmit="PlayAsync">
-                                    <div class="form-field">
-                                        <label for="play-cmd">@L["Game.Command"]</label>
-                                        <InputSelect id="play-cmd" @bind-Value="_vm.Command">
-                                            <option value="play.pass">@L["Game.Command.Pass"]</option>
-                                            <option value="play.move">@L["Game.Command.Move"]</option>
-                                            <option value="play.swap">@L["Game.Command.Swap"]</option>
-                                        </InputSelect>
-                                    </div>
-
-                                    @if (_vm.Command == "play.move")
-                                    {
-                                        <div class="form-field">
-                                            <label for="play-pos">@L["Game.Position"] <small class="text-dim">@L["Game.Example.H8"]</small></label>
-                                            <InputText id="play-pos" @bind-Value="_vm.Position" placeholder="H8" />
-                                        </div>
-                                        <div class="form-field">
-                                            <label for="play-word">@L["Game.Word"] <small class="text-dim">@L["Game.Word.Hint"]</small></label>
-                                            <InputText id="play-word" @bind-Value="_vm.Word" placeholder="@L["Game.Example.Word"]" />
-                                        </div>
-                                        <div class="form-field">
-                                            <label for="play-dir">@L["Game.Direction"]</label>
-                                            <InputSelect id="play-dir" @bind-Value="_vm.Direction">
-                                                <option value="H">@L["Game.Direction.Horizontal"] →</option>
-                                                <option value="V">@L["Game.Direction.Vertical"] ↓</option>
-                                            </InputSelect>
-                                        </div>
-                                    }
-
-                                    @if (_vm.Command == "play.swap")
-                                    {
-                                        <div class="form-field">
-                                            <label style="display:flex; align-items:center; gap:.5rem; cursor:pointer">
-                                                <input type="checkbox" @bind="_swapAll" style="width:1rem;height:1rem" />
-                                                <span>@L["Game.SwapAll"]</span>
-                                            </label>
-                                        </div>
-                                        @if (!_swapAll)
-                                        {
-                                            <div class="form-field">
-                                                <label for="play-letters">@L["Game.SwapLetters"] <small class="text-dim">@L["Game.Example.ABC"]</small></label>
-                                                <InputText id="play-letters" @bind-Value="_vm.Word" placeholder="ABC" />
-                                            </div>
-                                        }
-                                    }
-
-                                    <button class="btn btn-primary" type="submit" disabled="@_vm.IsLoading" style="width:100%">
-                                        @(_vm.IsLoading ? L["Game.Submitting"] : L["Game.Play"])
+                                <div class="action-buttons">
+                                    <button class="btn btn-primary btn-sm"
+                                            @onclick="PlayPendingAsync"
+                                            disabled="@(_vm.IsLoading || _vm.PendingPlacements.Count == 0 || _vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))">
+                                        ✔ @L["Game.Play"]
                                     </button>
-                                </EditForm>
+                                    <button class="btn btn-ghost btn-sm"
+                                            @onclick="PassTurnAsync"
+                                            disabled="@_vm.IsLoading">
+                                        ⏭ @L["Game.Command.Pass"]
+                                    </button>
+                                </div>
+                                <div class="action-swap">
+                                    <label style="display:flex; align-items:center; gap:.5rem; cursor:pointer">
+                                        <input type="checkbox" @bind="_swapAll" style="width:1rem;height:1rem" />
+                                        <span>@L["Game.SwapAll"]</span>
+                                    </label>
+                                    @if (!_swapAll)
+                                    {
+                                        <InputText @bind-Value="_swapLetters" placeholder="ABC" />
+                                    }
+                                    <button class="btn btn-outline btn-sm"
+                                            @onclick="SwapLettersAsync"
+                                            disabled="@(_vm.IsLoading || (!_swapAll && string.IsNullOrWhiteSpace(_swapLetters)))">
+                                        🔄 @L["Game.Command.Swap"]
+                                    </button>
+                                </div>
                             </div>
 
                             @* ── Suggestions (Aide-moi) ── *@
@@ -394,7 +374,7 @@ else
                                                         <span class="suggest-meta">@L["Game.Suggest.Meta", s.Position, (s.Direction == "H" ? "→" : "↓"), s.Score, s.Length]</span>
                                                     </div>
                                                     <button class="btn btn-ghost btn-sm suggest-use-btn"
-                                                            @onclick="() => { _vm.UseSuggestion(s); StateHasChanged(); }"
+                                                            @onclick="() => ApplySuggestionToBoard(s)"
                                                             title="@L["Game.Suggest.Use.Title"]">
                                                         ▶ @L["Game.Suggest.Use"]
                                                     </button>
@@ -415,7 +395,7 @@ else
                                                         <span class="suggest-meta">@L["Game.Suggest.Meta", s.Position, (s.Direction == "H" ? "→" : "↓"), s.Score, s.Length]</span>
                                                     </div>
                                                     <button class="btn btn-ghost btn-sm suggest-use-btn"
-                                                            @onclick="() => { _vm.UseSuggestion(s); StateHasChanged(); }"
+                                                            @onclick="() => ApplySuggestionToBoard(s)"
                                                             title="@L["Game.Suggest.Use.Title"]">
                                                         ▶ @L["Game.Suggest.Use"]
                                                     </button>
@@ -572,6 +552,7 @@ else
 
     // Swap options
     private bool _swapAll = true;
+    private string _swapLetters = string.Empty;
 
     // Abandon state
     private bool _confirmAbandon;
@@ -891,10 +872,7 @@ else
 
     private async Task PlayDragMoveAsync()
     {
-        _vm.Command = "play.move";
-        var token = await Auth.GetTokenAsync();
-        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
-        await _vm.PlayAsync(Api, token);
+        await PlayPendingAsync();
     }
 
     private async Task CheckMoveAsync()
@@ -913,19 +891,51 @@ else
         StateHasChanged();
     }
 
-    private async Task PlayAsync()
+    private async Task PlayPendingAsync()
     {
-        // En mode saisie manuelle, effacer les placements provisoires
-        _vm.RecallAll();
-        // Appliquer swapAll si nécessaire
-        if (_vm.Command == "play.swap" && _swapAll)
-            _vm.SwapAll = true;
-        else
-            _vm.SwapAll = false;
+        _vm.Command = "play.move";
+        _vm.SwapAll = false;
+        _vm.Position = string.Empty;
+        _vm.Word = string.Empty;
+        _vm.Direction = "H";
         var token = await Auth.GetTokenAsync();
         if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
         await _vm.PlayAsync(Api, token);
-        _swapAll = true; // reset pour le prochain coup
+    }
+
+    private async Task PassTurnAsync()
+    {
+        _vm.Command = "play.pass";
+        _vm.SwapAll = false;
+        _vm.Position = string.Empty;
+        _vm.Word = string.Empty;
+        _vm.Direction = "H";
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+        await _vm.PlayAsync(Api, token);
+    }
+
+    private async Task SwapLettersAsync()
+    {
+        _vm.Command = "play.swap";
+        _vm.Position = string.Empty;
+        _vm.Direction = "H";
+        _vm.SwapAll = _swapAll;
+        _vm.Word = _swapAll ? string.Empty : _swapLetters.Trim().ToUpperInvariant();
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) { Navigation.NavigateTo("/login"); return; }
+        await _vm.PlayAsync(Api, token);
+        if (string.IsNullOrWhiteSpace(_vm.Error))
+        {
+            _swapAll = true;
+            _swapLetters = string.Empty;
+        }
+    }
+
+    private void ApplySuggestionToBoard(WebSuggestedMove suggestion)
+    {
+        _vm.ApplySuggestionToPlacements(suggestion);
+        StateHasChanged();
     }
 
     private async Task AbandonAsync()

@@ -82,6 +82,100 @@ public sealed class GamePlayViewModel
         SuggestPanelOpen = false;
     }
 
+    /// <summary>
+    /// Applique une suggestion directement en placements visuels sur le plateau (sans soumettre).
+    /// Utilise les lettres disponibles du rack, avec joker si nécessaire.
+    /// </summary>
+    public void ApplySuggestionToPlacements(WebSuggestedMove s)
+    {
+        Error = null;
+        if (Snapshot is null)
+        {
+            Error = "Partie indisponible.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(s.Position) || string.IsNullOrWhiteSpace(s.Word))
+        {
+            Error = "Suggestion invalide.";
+            return;
+        }
+
+        var pos = s.Position.Trim().ToUpperInvariant();
+        var col = pos[0] - 'A';
+        if (col < 0 || col > 14 || !int.TryParse(pos[1..], out var row1) || row1 < 1 || row1 > 15)
+        {
+            Error = "Position de suggestion invalide.";
+            return;
+        }
+
+        var row = row1 - 1;
+        var stepRow = string.Equals(s.Direction, "V", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        var stepCol = stepRow == 1 ? 0 : 1;
+
+        RecallAll();
+
+        var rack = MyRack.ToList();
+        var available = Enumerable.Range(0, rack.Count).ToList();
+        var word = s.Word.Trim().ToUpperInvariant();
+
+        for (var i = 0; i < word.Length; i++)
+        {
+            var r = row + (stepRow * i);
+            var c = col + (stepCol * i);
+            if (r < 0 || r > 14 || c < 0 || c > 14)
+            {
+                RecallAll();
+                Error = "Suggestion hors plateau.";
+                return;
+            }
+
+            var expected = word[i];
+            var boardLetter = Snapshot.Board.FirstOrDefault(t => t.Row == r && t.Column == c)?.Letter;
+            if (boardLetter.HasValue)
+            {
+                if (char.ToUpperInvariant(boardLetter.Value) != expected)
+                {
+                    RecallAll();
+                    Error = "Suggestion incompatible avec le plateau.";
+                    return;
+                }
+                continue;
+            }
+
+            var rackIndex = available.FirstOrDefault(idx => char.ToUpperInvariant(rack[idx]) == expected);
+            var hasExact = available.Any(idx => char.ToUpperInvariant(rack[idx]) == expected);
+
+            if (!hasExact)
+            {
+                var jokerIdx = available.FirstOrDefault(idx => rack[idx] == '*');
+                var hasJoker = available.Any(idx => rack[idx] == '*');
+                if (!hasJoker)
+                {
+                    RecallAll();
+                    Error = "Suggestion non jouable avec le rack actuel.";
+                    return;
+                }
+
+                rackIndex = jokerIdx;
+                PendingPlacements.Add(new PendingPlacement(r, c, char.ToLowerInvariant(expected), true));
+                _usedRackIndices.Add(rackIndex);
+                available.Remove(rackIndex);
+                continue;
+            }
+
+            PendingPlacements.Add(new PendingPlacement(r, c, expected, false));
+            _usedRackIndices.Add(rackIndex);
+            available.Remove(rackIndex);
+        }
+
+        Command = "play.move";
+        Position = string.Empty;
+        Word = string.Empty;
+        Direction = "H";
+        SuggestPanelOpen = false;
+    }
+
     // Placements provisoires (drag-and-drop)
     public List<PendingPlacement> PendingPlacements { get; } = [];
 

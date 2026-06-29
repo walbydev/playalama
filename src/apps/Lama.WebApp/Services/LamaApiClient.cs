@@ -142,16 +142,36 @@ public sealed class LamaApiClient(HttpClient httpClient)
     public async Task<WebCreateGameResponse> CreateGameAsync(CreateGameForm form, string hostName, string? token = null, CancellationToken cancellationToken = default)
     {
         var isSolo = string.Equals(form.Mode, "solo", StringComparison.OrdinalIgnoreCase);
+        var isAiOnly = string.Equals(form.Mode, "ai-only", StringComparison.OrdinalIgnoreCase);
+        var selectedAiBotIds = (isSolo
+                ? form.AiBotIds.Take(1)
+                : isAiOnly
+                    ? form.AiBotIds.Take(4)
+                    : Array.Empty<string?>())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        var aiCount = selectedAiBotIds.Count;
+        var maxPlayers = isSolo
+            ? 2
+            : isAiOnly
+                ? Math.Clamp(aiCount, 2, 4)
+                : Math.Clamp(form.MaxPlayers, 2, 4);
+        var isTrueSolo = isSolo;
         var languages = form.Languages is { Count: > 0 } ? form.Languages : new List<string> { "fr" };
         var request = new
         {
             hostName,
             gameLevel = GameLevel.Standard,
-            mode = isSolo ? 0 : 1,
+            mode = isTrueSolo ? 0 : 1,
             gameName = form.GameName,
-            maxPlayers = isSolo ? 2 : form.MaxPlayers,
-            enableAi = isSolo,
-            aiBotId = isSolo ? (form.AiBotId ?? "bot-karim") : null,
+            maxPlayers,
+            enableAi = aiCount > 0,
+            aiBotId = selectedAiBotIds.FirstOrDefault(),
+            aiBotIds = selectedAiBotIds,
+            aiBotCount = aiCount,
+            includeHost = !isAiOnly,
             language = languages[0],
             languages
         };

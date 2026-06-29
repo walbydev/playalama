@@ -24,6 +24,21 @@ public sealed record CreateGameRequest(
     /// </summary>
     string? AiBotId = null,
     /// <summary>
+    /// Liste explicite des bots à injecter (0..3 en mode humain+IA, IDs uniques).
+    /// Si renseignée, prioritaire sur <see cref="AiBotId"/>.
+    /// </summary>
+    IReadOnlyList<string>? AiBotIds = null,
+    /// <summary>
+    /// Nombre de bots IA à injecter dans la partie.
+    /// 0..3 avec humain, 1..4 en mode IA-only.
+    /// </summary>
+    int? AiBotCount = null,
+    /// <summary>
+    /// Inclut le créateur humain parmi les participants.
+    /// false = partie 100% IA (admin uniquement).
+    /// </summary>
+    bool? IncludeHost = null,
+    /// <summary>
     /// Langues de jeu (mots du plateau). Un mot est valide s'il existe dans au moins une.
     /// Si vide, <see cref="Language"/> est utilisé.
     /// </summary>
@@ -142,4 +157,3 @@ public sealed record OnlineBoardTile(int Row, int Column, char Letter, bool IsWi
 public sealed record OnlineMovePlacement(int Row, int Column, char Letter);
 
 public sealed record ServerEvent(string Type, object Payload);
-

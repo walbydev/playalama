@@ -65,7 +65,13 @@ public static class GamesCommandEndpoints
         return app;
     }
 
-    private static IResult CreateGame(HttpContext context, CreateGameRequest request, GameHubState state)
+    private static IResult CreateGame(
+        HttpContext context,
+        CreateGameRequest request,
+        GameHubState state,
+        IConfiguration config,
+        IAISuggestionClient aiClient,
+        BotAutoPlayService botAutoPlay)
     {
         // Vérifier l'authentification
         if (!context.IsAuthenticated())
@@ -74,53 +80,60 @@ public static class GamesCommandEndpoints
         if (string.IsNullOrWhiteSpace(request.HostName))
             return Results.BadRequest(new { error = "hostName is required" });
 
-        // Résolution du bot demandé (AiBotId prioritaire sur EnableAi)
+        var isAdmin = IsAdmin(context, config);
+
+        // Configuration IA (0..3 bots avec humain, 1..4 sans humain pour admin)
         var requestedBotId = request.AiBotId?.Trim();
-        var enableAi = request.EnableAi || !string.IsNullOrWhiteSpace(requestedBotId);
-        BotProfile? botProfile = null;
+        var requestedBotIds = request.AiBotIds?
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToList() ?? [];
+        var includeHost = request.IncludeHost ?? true;
+        var aiBotCount = requestedBotIds.Count > 0
+            ? requestedBotIds.Count
+            : request.AiBotCount ?? ((request.EnableAi || !string.IsNullOrWhiteSpace(requestedBotId)) ? 1 : 0);
+        aiBotCount = Math.Clamp(aiBotCount, 0, 4);
 
-        if (enableAi)
-        {
-            botProfile = !string.IsNullOrWhiteSpace(requestedBotId)
-                ? BotCatalog.Find(requestedBotId)
-                : BotCatalog.Default;
+        if (!includeHost && !isAdmin)
+            return Results.BadRequest(new { error = "admin privileges required for AI-only game" });
 
-            if (botProfile is null)
-                return Results.BadRequest(new { error = $"unknown bot: '{requestedBotId}'" });
-        }
+        if (includeHost && aiBotCount is > 3)
+            return Results.BadRequest(new { error = "host + AI supports at most 3 bots" });
+        if (!includeHost && aiBotCount is < 2 or > 4)
+            return Results.BadRequest(new { error = "AI-only supports between 2 and 4 bots" });
+
+        var selectedBots = SelectBots(requestedBotIds, requestedBotId, aiBotCount);
+        if (selectedBots is null)
+            return Results.BadRequest(new { error = "unable to resolve requested bots" });
 
         var gameId = Guid.NewGuid().ToString("N");
         var hostId = context.GetPlayerId() ?? Guid.NewGuid().ToString("N");
         var hostName = request.HostName.Trim();
         var level = request.GameLevel ?? GameLevel.Standard;
-        var usesLobby = request.Mode is not null
+        var participantsCount = (includeHost ? 1 : 0) + selectedBots.Count;
+        var requestedMaxPlayers = request.MaxPlayers ?? 4;
+        if (requestedMaxPlayers < 2 || requestedMaxPlayers > 4)
+            return Results.BadRequest(new { error = "maxPlayers must be between 2 and 4" });
+        var autoStartWithBots = selectedBots.Count > 0 && participantsCount >= 2 && participantsCount >= requestedMaxPlayers;
+        var usesLobby = !autoStartWithBots && (request.Mode is not null
                         || !string.IsNullOrWhiteSpace(request.GameName)
                         || request.IsPrivate
                         || request.MaxPlayers is not null
-                        || enableAi;
+                        || selectedBots.Count > 0);
 
         var mode = request.Mode ?? OnlineGameMode.Multi;
         if (mode == OnlineGameMode.Multi && request.RackSize <= 0)
             return Results.BadRequest(new { error = "invalid rackSize" });
 
-        var requestedMaxPlayers = request.MaxPlayers ?? (mode == OnlineGameMode.Multi ? 4 : 1);
-        if (requestedMaxPlayers < 1)
-            return Results.BadRequest(new { error = "maxPlayers must be >= 1" });
-
-        if (mode == OnlineGameMode.Multi && (requestedMaxPlayers < 2 || requestedMaxPlayers > 4))
-            return Results.BadRequest(new { error = "multi mode supports between 2 and 4 participants" });
-
-        if (mode == OnlineGameMode.Solo && requestedMaxPlayers > 2)
-            return Results.BadRequest(new { error = "solo mode supports at most host + 1 AI" });
-
-        if (mode == OnlineGameMode.Multi && enableAi && requestedMaxPlayers < 2)
-            return Results.BadRequest(new { error = "invalid AI slot configuration" });
-
-        // Le bot est injecté comme joueur réel : plus besoin de slot réservé
+        // Les bots sont injectés comme joueurs réels : plus besoin de slot réservé
         var reservedAiSlots = 0;
         var maxPlayers = mode == OnlineGameMode.Solo
             ? Math.Min(2, Math.Max(1, requestedMaxPlayers))
             : requestedMaxPlayers;
+        maxPlayers = requestedMaxPlayers;
+        if (participantsCount > maxPlayers)
+            return Results.BadRequest(new { error = "maxPlayers must be >= human + selected AI slots" });
 
         var gameName = string.IsNullOrWhiteSpace(request.GameName)
             ? GenerateRandomGameName()
@@ -135,8 +148,11 @@ public static class GamesCommandEndpoints
         if (request.IsPrivate && string.IsNullOrWhiteSpace(request.Password))
             return Results.BadRequest(new { error = "password is required for private game" });
 
-        if (!state.TryReservePlayerForGame(hostId, gameId, out var blockingHostGameId))
-            return Results.BadRequest(new { error = $"player already active in game '{blockingHostGameId}'" });
+        if (includeHost)
+        {
+            if (!state.TryReservePlayerForGame(hostId, gameId, out var blockingHostGameId))
+                return Results.BadRequest(new { error = $"player already active in game '{blockingHostGameId}'" });
+        }
 
         var passwordHash = request.IsPrivate
             ? ComputePasswordHash(request.Password!)
@@ -160,20 +176,20 @@ public static class GamesCommandEndpoints
         var engine = state.CreateEngine(profile, languages);
 
         // ── Joueurs initiaux ──────────────────────────────────────────────────
-        var initialPlayers = new List<OnlinePlayer>
-        {
-            new(hostId, hostName, IsHost: true)
-        };
-        var playerIndexById = new Dictionary<string, int>(StringComparer.Ordinal)
-        {
-            [hostId] = 0
-        };
+        var initialPlayers = new List<OnlinePlayer>();
+        var playerIndexById = new Dictionary<string, int>(StringComparer.Ordinal);
 
-        // Injection du bot (botProfile déjà résolu en amont)
-        if (botProfile is not null)
+        if (includeHost)
         {
-            initialPlayers.Add(new OnlinePlayer(botProfile.BotId, botProfile.Name, IsHost: false, IsBot: true));
-            playerIndexById[botProfile.BotId] = 1;
+            initialPlayers.Add(new OnlinePlayer(hostId, hostName, IsHost: true));
+            playerIndexById[hostId] = 0;
+        }
+
+        foreach (var bot in selectedBots)
+        {
+            var idx = initialPlayers.Count;
+            initialPlayers.Add(new OnlinePlayer(bot.BotId, bot.Name, IsHost: false, IsBot: true));
+            playerIndexById[bot.BotId] = idx;
         }
 
         // Initialiser le moteur avec tous les joueurs (humains + bot)
@@ -201,7 +217,7 @@ public static class GamesCommandEndpoints
             PasswordHash: passwordHash,
             MaxPlayers: maxPlayers,
             ReservedAiSlots: reservedAiSlots,
-            HasStarted: mode == OnlineGameMode.Solo || !usesLobby,
+            HasStarted: autoStartWithBots || mode == OnlineGameMode.Solo || !usesLobby,
             UsesLobby: usesLobby,
             IsClosed: false);
 
@@ -223,6 +239,9 @@ public static class GamesCommandEndpoints
             rack = initialState.Players[0].Rack,
             createdAt = game.CreatedAt
         }));
+
+        // Si la partie démarre sur un bot, lancer la boucle IA immédiatement.
+        StartBotLoopIfNeeded(gameId, game, state, aiClient, botAutoPlay);
 
         return Results.Ok(new
         {
@@ -346,7 +365,13 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static IResult StartGame(HttpContext context, string gameId, StartGameRequest request, GameHubState state)
+    private static IResult StartGame(
+        HttpContext context,
+        string gameId,
+        StartGameRequest request,
+        GameHubState state,
+        IAISuggestionClient aiClient,
+        BotAutoPlayService botAutoPlay)
     {
         if (!context.IsAuthenticated())
             return Results.Unauthorized();
@@ -393,6 +418,8 @@ public static class GamesCommandEndpoints
             game.MaxPlayers,
             game.ReservedAiSlots
         }));
+
+        StartBotLoopIfNeeded(gameId, game, state, aiClient, botAutoPlay);
 
         return Results.Ok(new
         {
@@ -583,53 +610,7 @@ public static class GamesCommandEndpoints
             nextPlayerId
         }));
 
-        // ── Tour du bot : si le prochain joueur est une IA, jouer automatiquement ──
-        var nextPlayer = game.Players.ElementAtOrDefault(nextCurrentPlayerIndex);
-        if (nextPlayer?.IsBot == true)
-        {
-            var botProfile = BotCatalog.Find(nextPlayer.PlayerId);
-            if (botProfile is not null)
-            {
-                _ = Task.Run(async () =>
-                {
-                    // Petite pause pour un rendu naturel côté client
-                    await Task.Delay(600, CancellationToken.None);
-
-                    var (botMove, _) = await botAutoPlay.AutoPlayAsync(
-                        game, botProfile, aiClient, CancellationToken.None);
-
-                    if (botMove is null) return;
-
-                    int botNextIndex;
-                    string? botNextPlayerId;
-
-                    lock (game)
-                    {
-                        game.Moves.Add(botMove);
-                        game.UpdatedAt = DateTimeOffset.UtcNow;
-                        var botState = game.Engine.GetGameState();
-                        botNextIndex    = botState.CurrentPlayerIndex;
-                        botNextPlayerId = game.Players.ElementAtOrDefault(botNextIndex)?.PlayerId;
-                    }
-
-                    state.Publish(gameId, new ServerEvent("game.move.played", new
-                    {
-                        gameId,
-                        botMove.MoveId,
-                        botMove.PlayerId,
-                        botMove.PlayerName,
-                        botMove.Command,
-                        botMove.TurnNumber,
-                        botMove.Placements,
-                        botMove.Score,
-                        botMove.Payload,
-                        botMove.PlayedAt,
-                        currentPlayerIndex = botNextIndex,
-                        nextPlayerId       = botNextPlayerId
-                    }));
-                });
-            }
-        }
+        StartBotLoopIfNeeded(gameId, game, state, aiClient, botAutoPlay);
 
         return Results.Ok(new
         {
@@ -1208,6 +1189,131 @@ public static class GamesCommandEndpoints
             length    = s.Length,
             category  = s.Category
         };
+    }
+
+    private static List<BotProfile>? SelectBots(IReadOnlyList<string> preferredBotIds, string? preferredBotId, int count)
+    {
+        if (count <= 0) return [];
+        if (count > BotCatalog.All.Count) return null;
+
+        var selected = new List<BotProfile>(count);
+        if (preferredBotIds.Count > 0)
+        {
+            foreach (var botId in preferredBotIds)
+            {
+                var bot = BotCatalog.Find(botId);
+                if (bot is null) continue;
+                if (selected.Any(b => string.Equals(b.BotId, bot.BotId, StringComparison.Ordinal)))
+                    continue;
+                selected.Add(bot);
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(preferredBotId))
+        {
+            var preferred = BotCatalog.Find(preferredBotId);
+            if (preferred is not null)
+                selected.Add(preferred);
+        }
+
+        foreach (var bot in BotCatalog.All)
+        {
+            if (selected.Count >= count) break;
+            if (selected.Any(b => string.Equals(b.BotId, bot.BotId, StringComparison.Ordinal)))
+                continue;
+            selected.Add(bot);
+        }
+
+        if (selected.Count > count)
+            selected = selected.Take(count).ToList();
+
+        return selected.Count == count ? selected : null;
+    }
+
+    private static bool IsAdmin(HttpContext context, IConfiguration config)
+    {
+        if (!context.IsAuthenticated())
+            return false;
+
+        var playerName = context.GetPlayerName();
+        if (string.Equals(playerName, "root", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var adminPlayers = config["LAMA_ADMIN_PLAYERS"]
+                        ?? Environment.GetEnvironmentVariable("LAMA_ADMIN_PLAYERS");
+        if (string.IsNullOrWhiteSpace(adminPlayers))
+            return false;
+        if (adminPlayers.Trim() == "*")
+            return true;
+
+        var playerId = context.GetPlayerId();
+        if (string.IsNullOrWhiteSpace(playerId))
+            return false;
+
+        var allowed = adminPlayers.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return allowed.Contains(playerId, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static void StartBotLoopIfNeeded(
+        string gameId,
+        OnlineGame game,
+        GameHubState state,
+        IAISuggestionClient aiClient,
+        BotAutoPlayService botAutoPlay)
+    {
+        _ = Task.Run(async () =>
+        {
+            while (true)
+            {
+                BotProfile? botProfile;
+                lock (game)
+                {
+                    var snapshot = game.Engine.GetGameState();
+                    if (snapshot.IsGameOver || game.IsClosed || (game.UsesLobby && !game.HasStarted))
+                        return;
+
+                    var current = game.Players.ElementAtOrDefault(snapshot.CurrentPlayerIndex);
+                    if (current?.IsBot != true)
+                        return;
+
+                    botProfile = BotCatalog.Find(current.PlayerId);
+                }
+
+                if (botProfile is null)
+                    return;
+
+                await Task.Delay(600, CancellationToken.None);
+                var (botMove, _) = await botAutoPlay.AutoPlayAsync(game, botProfile, aiClient, CancellationToken.None);
+                if (botMove is null)
+                    return;
+
+                int nextIndex;
+                string? nextPlayerId;
+                lock (game)
+                {
+                    game.Moves.Add(botMove);
+                    game.UpdatedAt = DateTimeOffset.UtcNow;
+                    var botState = game.Engine.GetGameState();
+                    nextIndex = botState.CurrentPlayerIndex;
+                    nextPlayerId = game.Players.ElementAtOrDefault(nextIndex)?.PlayerId;
+                }
+
+                state.Publish(gameId, new ServerEvent("game.move.played", new
+                {
+                    gameId,
+                    botMove.MoveId,
+                    botMove.PlayerId,
+                    botMove.PlayerName,
+                    botMove.Command,
+                    botMove.TurnNumber,
+                    botMove.Placements,
+                    botMove.Score,
+                    botMove.Payload,
+                    botMove.PlayedAt,
+                    currentPlayerIndex = nextIndex,
+                    nextPlayerId
+                }));
+            }
+        });
     }
 
     private static string GenerateRandomGameName() => $"lama-{Guid.NewGuid().ToString("N")[..8]}";
