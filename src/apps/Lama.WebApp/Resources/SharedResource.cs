@@ -1,4 +1,4 @@
-namespace Lama.WebApp.Resources;
+namespace Lama.WebApp;
 
 /// <summary>
 /// Type marqueur pour les ressources de localisation partagées (FR/EN/DE).
