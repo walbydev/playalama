@@ -49,14 +49,19 @@ services:
     container_name: lama-aiserver-fr-staging
     networks:
       - staging-internal
+    env_file: .env
     environment:
       ASPNETCORE_URLS: "http://+:5203"
       ASPNETCORE_ENVIRONMENT: "Staging"
       LAMA_AI_LANGUAGE: "fr"
       LAMA_AI_MAX_CONCURRENT: "3"
+      LAMA_LEXICON_CONNECTION_STRING: "Host=postgres-lama-staging;Port=5432;Database=${POSTGRES_DB:-lama_staging};Username=${POSTGRES_USER:-lama_staging};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required};Ssl Mode=Disable;Application Name=LamaAIServer;"
     volumes:
       - ./assets/languages:/app/assets/languages:ro
     restart: unless-stopped
+    depends_on:
+      postgres-lama-staging:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5203/health"]
       interval: 30s
@@ -181,4 +186,3 @@ networks:
 volumes:
   lama-logs-staging:
   lama-postgres-staging:
-

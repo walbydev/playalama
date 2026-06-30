@@ -11,13 +11,16 @@ public sealed class HttpAISuggestionClient : IAISuggestionClient
 {
     private readonly HttpClient _http;
     private readonly ILogger<HttpAISuggestionClient> _logger;
+    private readonly LocalAISuggestionClient? _localFallback;
 
     public HttpAISuggestionClient(
         HttpClient http,
-        ILogger<HttpAISuggestionClient> logger)
+        ILogger<HttpAISuggestionClient> logger,
+        LocalAISuggestionClient? localFallback = null)
     {
         _http   = http;
         _logger = logger;
+        _localFallback = localFallback;
     }
 
     public async Task<IReadOnlyList<AISuggestion>> SuggestAsync(
@@ -26,6 +29,7 @@ public sealed class HttpAISuggestionClient : IAISuggestionClient
         bool isFirstMove,
         int topPerCategory,
         int timeoutSeconds,
+        string languageCode,
         CancellationToken ct)
     {
         var placedTiles = ExtractPlacedTiles(board);
@@ -35,7 +39,8 @@ public sealed class HttpAISuggestionClient : IAISuggestionClient
             placedTiles,
             isFirstMove,
             topPerCategory,
-            timeoutSeconds
+            timeoutSeconds,
+            language = languageCode
         };
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -49,11 +54,12 @@ public sealed class HttpAISuggestionClient : IAISuggestionClient
             {
                 _logger.LogWarning(
                     "AIServer a retourné {Status} pour /suggest.", response.StatusCode);
-                return [];
+                return TryLocalFallback(rack, board, isFirstMove, topPerCategory, languageCode, ct);
             }
 
             var body = await response.Content.ReadFromJsonAsync<AISuggestResponse>(cts.Token);
-            if (body?.Suggestions is null) return [];
+            if (body?.Suggestions is null)
+                return TryLocalFallback(rack, board, isFirstMove, topPerCategory, languageCode, ct);
 
             return body.Suggestions
                 .Select(s => new AISuggestion(
@@ -64,7 +70,7 @@ public sealed class HttpAISuggestionClient : IAISuggestionClient
         catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or TaskCanceledException)
         {
             _logger.LogWarning(ex, "AIServer injoignable ou timeout lors de /suggest.");
-            return [];
+            return TryLocalFallback(rack, board, isFirstMove, topPerCategory, languageCode, ct);
         }
     }
 
@@ -98,4 +104,21 @@ public sealed class HttpAISuggestionClient : IAISuggestionClient
         int StartCol,
         bool IsHorizontal,
         string Category);
+
+    private IReadOnlyList<AISuggestion> TryLocalFallback(
+        IReadOnlyList<char> rack,
+        BoardState board,
+        bool isFirstMove,
+        int topPerCategory,
+        string languageCode,
+        CancellationToken ct)
+    {
+        if (_localFallback is null)
+            return [];
+
+        var local = _localFallback.Suggest(rack, board, isFirstMove, topPerCategory, languageCode, ct);
+        if (local.Count > 0)
+            _logger.LogInformation("Fallback local suggestions utilisé ({Count} résultat(s)).", local.Count);
+        return local;
+    }
 }

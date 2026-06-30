@@ -10,10 +10,14 @@ namespace Lama.Server.Services;
 public sealed class NullAISuggestionClient : IAISuggestionClient
 {
     private readonly ILogger<NullAISuggestionClient> _logger;
+    private readonly LocalAISuggestionClient? _localFallback;
 
-    public NullAISuggestionClient(ILogger<NullAISuggestionClient> logger)
+    public NullAISuggestionClient(
+        ILogger<NullAISuggestionClient> logger,
+        LocalAISuggestionClient? localFallback = null)
     {
         _logger = logger;
+        _localFallback = localFallback;
     }
 
     public Task<IReadOnlyList<AISuggestion>> SuggestAsync(
@@ -22,10 +26,12 @@ public sealed class NullAISuggestionClient : IAISuggestionClient
         bool isFirstMove,
         int topPerCategory,
         int timeoutSeconds,
+        string languageCode,
         CancellationToken ct)
     {
-        _logger.LogDebug(
-            "NullAISuggestionClient : LAMA_AI_SERVER_URL non configuré, suggestions désactivées.");
-        return Task.FromResult<IReadOnlyList<AISuggestion>>([]);
+        var local = _localFallback?.Suggest(rack, board, isFirstMove, topPerCategory, languageCode, ct) ?? [];
+        if (local.Count == 0)
+            _logger.LogDebug("NullAISuggestionClient : LAMA_AI_SERVER_URL non configuré et fallback local vide.");
+        return Task.FromResult<IReadOnlyList<AISuggestion>>(local);
     }
 }

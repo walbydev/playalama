@@ -34,11 +34,15 @@ services:
       ASPNETCORE_ENVIRONMENT: "Production"
       LAMA_AI_LANGUAGE: "fr"
       LAMA_AI_MAX_CONCURRENT: "3"
+      LAMA_LEXICON_CONNECTION_STRING: "Host=postgres-lama;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;Ssl Mode=Disable;Application Name=LamaAIServer;"
     ports:
       - "5203:5203"
     volumes:
       - ./assets/languages:/app/assets/languages:ro
     restart: unless-stopped
+    depends_on:
+      postgres-lama:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5203/health"]
       interval: 30s

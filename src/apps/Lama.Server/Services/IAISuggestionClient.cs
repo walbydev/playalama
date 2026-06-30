@@ -17,6 +17,7 @@ public interface IAISuggestionClient
         bool isFirstMove,
         int topPerCategory,
         int timeoutSeconds,
+        string languageCode,
         CancellationToken ct);
 }
 

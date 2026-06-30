@@ -28,6 +28,7 @@ builder.Services.AddSingleton<IGameLanguageProvider>(sp =>
     sp.GetRequiredService<ILanguageProviderRegistry>().GetProvider("fr"));
 builder.Services.AddSingleton<GameHubState>();
 builder.Services.AddSingleton<BotAutoPlayService>();
+builder.Services.AddSingleton<LocalAISuggestionClient>();
 
 // ── Client IA (Lama.AIServer) ─────────────────────────────────────────────
 var aiServerUrl = Environment.GetEnvironmentVariable("LAMA_AI_SERVER_URL")

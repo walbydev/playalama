@@ -18,25 +18,38 @@ var connectionString = Environment.GetEnvironmentVariable("LAMA_LEXICON_CONNECTI
 builder.Services.AddSingleton<ILexiconReader>(_ => new PostgresLexiconReader(connectionString));
 builder.Services.AddSingleton<ILanguageProviderRegistry>(sp =>
     new LanguageProviderRegistry(sp.GetRequiredService<ILexiconReader>(), AppContext.BaseDirectory));
-builder.Services.AddSingleton<IGameLanguageProvider>(sp =>
-{
-    var registry = sp.GetRequiredService<ILanguageProviderRegistry>();
-    if (!registry.IsSupported(language))
-        throw new InvalidOperationException($"Langue non supportée : '{language}'.");
-    return registry.GetProvider(language);
-});
 builder.Services.AddSingleton<MoveSuggestionEngine>(sp =>
 {
-    var langProvider = sp.GetRequiredService<IGameLanguageProvider>();
-    return new MoveSuggestionEngine(langProvider.GetDictionary(), langProvider.GetLetterScores());
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Lama.AIServer.Startup");
+    try
+    {
+        var registry = sp.GetRequiredService<ILanguageProviderRegistry>();
+        if (!registry.IsSupported(language))
+            throw new InvalidOperationException($"Langue non supportée : '{language}'.");
+
+        var langProvider = registry.GetProvider(language);
+        return new MoveSuggestionEngine(langProvider.GetDictionary(), langProvider.GetLetterScores());
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Impossible de charger le lexique au démarrage de l'AIServer. Moteur en mode vide.");
+        return new MoveSuggestionEngine();
+    }
 });
 
 builder.Services.AddSingleton<SuggestionService>();
 
 var app = builder.Build();
 
-var lexicon = app.Services.GetRequiredService<ILexiconReader>();
-await lexicon.EnsureSchemaAsync();
+try
+{
+    var lexicon = app.Services.GetRequiredService<ILexiconReader>();
+    await lexicon.EnsureSchemaAsync();
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "AIServer: impossible d'initialiser le schéma lexicon (démarrage maintenu).");
+}
 
 // ── Préchargement du dictionnaire au démarrage ───────────────────────────────
 _ = app.Services.GetRequiredService<MoveSuggestionEngine>();

@@ -49,7 +49,7 @@ public sealed class HttpAISuggestionClientTests
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         });
 
-        var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, CancellationToken.None);
+        var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, "fr", CancellationToken.None);
 
         result.Should().HaveCount(2);
         result[0].Word.Should().Be("LAMAS");
@@ -65,7 +65,7 @@ public sealed class HttpAISuggestionClientTests
             Content = new StringContent("{}", Encoding.UTF8, "application/json")
         });
 
-        var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, CancellationToken.None);
+        var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, "fr", CancellationToken.None);
 
         result.Should().BeEmpty(because: "503 indique AIServer surchargé → dégradation gracieuse");
     }
@@ -77,7 +77,7 @@ public sealed class HttpAISuggestionClientTests
         var http    = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:5203") };
         var sut     = new HttpAISuggestionClient(http, NullLogger<HttpAISuggestionClient>.Instance);
 
-        var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, CancellationToken.None);
+        var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, "fr", CancellationToken.None);
 
         result.Should().BeEmpty(because: "une erreur réseau ne doit pas lever d'exception");
     }
@@ -87,7 +87,7 @@ public sealed class HttpAISuggestionClientTests
     {
         var sut = BuildClient(new HttpResponseMessage(HttpStatusCode.NotFound));
 
-        var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, CancellationToken.None);
+        var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, "fr", CancellationToken.None);
 
         result.Should().BeEmpty(because: "404 → pas de suggestions disponibles, pas d'exception");
     }
@@ -101,7 +101,7 @@ public sealed class HttpAISuggestionClientTests
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         });
 
-        var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, CancellationToken.None);
+        var result = await sut.SuggestAsync(SampleRack, EmptyBoard, false, 2, 15, "fr", CancellationToken.None);
 
         result.Should().BeEmpty();
     }

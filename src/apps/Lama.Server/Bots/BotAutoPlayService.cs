@@ -54,6 +54,7 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
             rack, board, isFirstMove,
             topPerCategory: bot.BeamWidth,
             timeoutSeconds: 5,
+            languageCode: game.Language,
             ct);
 
         // Sélection du coup selon le profil du bot (potentiellement sous-optimal).

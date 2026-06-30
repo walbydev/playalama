@@ -110,12 +110,16 @@
                         <div class="lang-choices">
                             @foreach (var (code, label) in _gameLanguages)
                             {
-                                <label class="lang-choice">
-                                    <input class="ui-checkbox" type="checkbox" checked="@_createForm.Languages.Contains(code)"
-                                           disabled="@(_createForm.Languages.Count == 1 && _createForm.Languages.Contains(code))"
-                                           @onchange="e => OnLanguageChanged(code, e)" />
+                                var selected = _createForm.Languages.Contains(code);
+                                var lockLast = _createForm.Languages.Count == 1 && selected;
+                                <button type="button"
+                                        class="lang-choice-btn @(selected ? "is-selected" : string.Empty)"
+                                        aria-pressed="@selected"
+                                        disabled="@lockLast"
+                                        @onclick="() => ToggleLanguage(code)">
+                                    <span class="lang-choice-mark" aria-hidden="true">@((selected) ? "☑" : "☐")</span>
                                     <span>@label</span>
-                                </label>
+                                </button>
                             }
                         </div>
                     </div>
@@ -228,28 +232,17 @@
         ("fr", "Français"), ("en", "English"), ("de", "Deutsch")
     };
 
-    private void ToggleLanguage(string code, bool selected)
+    private void ToggleLanguage(string code)
     {
-        if (selected)
+        if (_createForm.Languages.Contains(code))
         {
-            if (!_createForm.Languages.Contains(code)) _createForm.Languages.Add(code);
+            if (_createForm.Languages.Count > 1)
+                _createForm.Languages.Remove(code);
         }
-        else if (_createForm.Languages.Count > 1)
+        else
         {
-            _createForm.Languages.Remove(code);
+            _createForm.Languages.Add(code);
         }
-    }
-
-    private void OnLanguageChanged(string code, ChangeEventArgs e)
-    {
-        var selected = e.Value switch
-        {
-            bool value => value,
-            string s when bool.TryParse(s, out var parsed) => parsed,
-            string s when string.Equals(s, "on", StringComparison.OrdinalIgnoreCase) => true,
-            _ => false
-        };
-        ToggleLanguage(code, selected);
     }
 
     private PeriodicTimer? _refreshTimer;

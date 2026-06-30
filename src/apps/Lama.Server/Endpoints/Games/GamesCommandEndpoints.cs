@@ -1157,6 +1157,7 @@ public static class GamesCommandEndpoints
             isFirstMove,
             topPerCategory,
             timeoutSeconds: 15,
+            languageCode: game.Language,
             ct: CancellationToken.None);
 
         var mapped = suggestions

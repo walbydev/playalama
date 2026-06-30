@@ -272,7 +272,8 @@ dev-debug: ## [Dev] PostgreSQL Docker + Server (5201) + WebApp (5202) + AIServer
 	$(DOTNET) build -c Debug --no-restore
 	@echo "→ Démarrage des apps (Ctrl+C pour tout arrêter)..."
 	@trap 'kill 0' SIGINT; \
-	LAMA_AI_LANGUAGE=fr LAMA_AI_MAX_CONCURRENT=3 \
+	ASPNETCORE_ENVIRONMENT=Development LAMA_AI_LANGUAGE=fr LAMA_AI_MAX_CONCURRENT=3 \
+	LAMA_LEXICON_CONNECTION_STRING="Host=localhost;Port=5200;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;Ssl Mode=Disable;Application Name=LamaAIServer.Dev;" \
 	  $(DOTNET) run --project $(AISERVER_PROJECT) --no-build --urls http://127.0.0.1:5203 & \
 	ASPNETCORE_ENVIRONMENT=Development LAMA_SERVER_ALLOW_SHUTDOWN=true LAMA_AI_SERVER_URL=http://127.0.0.1:5203 \
 	  $(DOTNET) run --project $(SERVER_PROJECT) --no-build --urls http://127.0.0.1:5201 & \

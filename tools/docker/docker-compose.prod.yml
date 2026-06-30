@@ -49,14 +49,19 @@ services:
     container_name: lama-aiserver-fr-prod
     networks:
       - prod-internal
+    env_file: .env
     environment:
       ASPNETCORE_URLS: "http://+:5203"
       ASPNETCORE_ENVIRONMENT: "Production"
       LAMA_AI_LANGUAGE: "fr"
       LAMA_AI_MAX_CONCURRENT: "3"
+      LAMA_LEXICON_CONNECTION_STRING: "Host=postgres-lama-prod;Port=5432;Database=${POSTGRES_DB:-lama_prod};Username=${POSTGRES_USER:-lama_prod};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required};Ssl Mode=Disable;Application Name=LamaAIServer;"
     volumes:
       - ./assets/languages:/app/assets/languages:ro
     restart: unless-stopped
+    depends_on:
+      postgres-lama-prod:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5203/health"]
       interval: 30s
@@ -184,4 +189,3 @@ networks:
 volumes:
   lama-logs-prod:
   lama-postgres-prod:
-
