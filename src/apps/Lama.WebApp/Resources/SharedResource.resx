@@ -64,6 +64,7 @@
   <data name="CreateGame.AiOnlyHint"><value>Choisissez entre 2 et 4 bots différents.</value></data>
   <data name="CreateGame.AiSoloRequired"><value>Sélectionnez 1 IA pour démarrer une partie solo.</value></data>
   <data name="CreateGame.AiOnlyMinTwo"><value>Choisissez au moins 2 IA pour le mode uniquement IA.</value></data>
+  <data name="CreateGame.LanguageRequired"><value>Choisissez au moins une langue de jeu.</value></data>
   <data name="CreateGame.AiUniqueHint"><value>0 à 3 slots IA. Un bot sélectionné n'est plus disponible dans les autres slots.</value></data>
   <data name="CreateGame.Title"><value>Créer une partie</value></data>
   <data name="DevBanner.Aria"><value>Mode développement</value></data>

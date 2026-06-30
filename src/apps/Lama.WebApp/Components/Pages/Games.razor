@@ -112,7 +112,8 @@
                             {
                                 <label class="lang-choice">
                                     <input class="ui-checkbox" type="checkbox" checked="@_createForm.Languages.Contains(code)"
-                                           @onchange="e => ToggleLanguage(code, (bool)e.Value!)" />
+                                           disabled="@(_createForm.Languages.Count == 1 && _createForm.Languages.Contains(code))"
+                                           @onchange="e => OnLanguageChanged(code, e)" />
                                     <span>@label</span>
                                 </label>
                             }
@@ -237,6 +238,18 @@
         {
             _createForm.Languages.Remove(code);
         }
+    }
+
+    private void OnLanguageChanged(string code, ChangeEventArgs e)
+    {
+        var selected = e.Value switch
+        {
+            bool value => value,
+            string s when bool.TryParse(s, out var parsed) => parsed,
+            string s when string.Equals(s, "on", StringComparison.OrdinalIgnoreCase) => true,
+            _ => false
+        };
+        ToggleLanguage(code, selected);
     }
 
     private PeriodicTimer? _refreshTimer;
@@ -383,6 +396,12 @@
             }
             if (_isAiOnly)
                 _createForm.MaxPlayers = selectedAi.Count;
+
+            if (_createForm.Languages.Count == 0)
+            {
+                _createError = L["CreateGame.LanguageRequired"];
+                return;
+            }
 
             var created = await Api.CreateGameAsync(_createForm, user.Username, token);
             var dest = _isAiOnly
