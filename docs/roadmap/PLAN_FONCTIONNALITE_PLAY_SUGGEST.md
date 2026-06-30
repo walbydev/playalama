@@ -26,7 +26,7 @@ Le socle actuel est favorable:
 - validation de coup disponible via `MoveValidator` (`src/libs/Lama.Domain/Validation/MoveValidator.cs`);
 - calcul de score disponible via `ScoreCalculator` (`src/libs/Lama.Domain/Scoring/ScoreCalculator.cs`);
 - carte bonus officielle via `BonusMap` (`src/libs/Lama.Domain/Board/BonusMap.cs`);
-- dictionnaire charge via `FrenchLanguageProvider` (`src/libs/Lama.Languages.fr/FrenchLanguageProvider.cs`);
+- dictionnaire charge via le lecteur lexicon PostgreSQL (`ILexiconReader` + `LanguageProviderRegistry`);
 - execution locale et online deja structuree (`CreateGameUseCase`, `PlayMoveUseCase`, `GamesCommandEndpoints`, `OnlineGameGateway`).
 
 Points a noter:

@@ -9,14 +9,16 @@ using Lama.Console.Commands.Tournament;
 using Lama.Console.Modes;
 using Lama.Console.Services;
 using Lama.Contracts;
+using Lama.Contracts.Lexicon;
 using Lama.Core.UseCases;
 using Lama.Domain.Engine;
 using Lama.Infrastructure.Auth;
+using Lama.Infrastructure.Lexicon;
 using Lama.Infrastructure.Persistence;
 using Lama.Infrastructure.Profile;
 using Lama.Infrastructure.Rating;
 using Lama.Infrastructure.Session;
-using Lama.Languages.fr;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -70,13 +72,20 @@ try
 
     var host = Host.CreateDefaultBuilder(runtimeArgs)
         .UseSerilog()
-        .ConfigureServices((_, services) =>
+        .ConfigureServices((context, services) =>
         {
+            var connectionString = Environment.GetEnvironmentVariable("LAMA_LEXICON_CONNECTION_STRING")
+                ?? context.Configuration.GetConnectionString("LamaServerDb")
+                ?? "Host=localhost;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me";
+
             // ─── Infrastructure ──────────────────────────────────────────────
             services.AddSingleton<ISessionService,  SessionService>();
             services.AddSingleton<IAccountService,  AccountService>();
             services.AddSingleton<IAuthService,     AuthService>();
             services.AddSingleton<IGameRepository,  JsonGameRepository>();
+            services.AddSingleton<ILexiconReader>(_ => new PostgresLexiconReader(connectionString));
+            services.AddSingleton<ILanguageProviderRegistry>(sp =>
+                new LanguageProviderRegistry(sp.GetRequiredService<ILexiconReader>(), AppContext.BaseDirectory));
             services.AddSingleton<RuntimeModeService>();
             services.AddSingleton<OnlineGameGateway>(provider =>
             {
@@ -100,13 +109,8 @@ try
             services.AddSingleton<IAccessControlService, AccessControlService>();
 
             // ─── Providers de langue ─────────────────────────────────────────
-            // FrenchLanguageProvider — maintenant disponible via Lama.Languages.fr
-            services.AddSingleton<IGameLanguageProvider>(_ =>
-            {
-                var basePath = Path.Combine(AppContext.BaseDirectory,
-                    "assets", "languages", "fr");
-                return new FrenchLanguageProvider(basePath);
-            });
+            services.AddSingleton<IGameLanguageProvider>(sp =>
+                sp.GetRequiredService<ILanguageProviderRegistry>().GetProvider("fr"));
 
             // ─── Use Cases Lama.Core ─────────────────────────────────────────
             // CreateGameUseCase est Singleton : il stocke les parties en mémoire + JSON.
@@ -216,6 +220,8 @@ try
             services.AddSingleton<ICommand, SystemCmds.SystemAccountRevokeCommand>();
         })
         .Build();
+
+    await host.Services.GetRequiredService<ILexiconReader>().EnsureSchemaAsync();
 
     var accountService = host.Services.GetRequiredService<IAccountService>();
     if (!accountService.IsInitialized)

@@ -4,15 +4,16 @@ namespace Lama.Languages.fr;
 
 using System.Reflection;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 /// <summary>
 /// Implémentation FrenchLanguageProvider pour Scrabble français.
-/// Charge dictionnaire et scoring depuis assets linguistiques.
+/// Charge scoring/distribution depuis assets linguistiques et reçoit le dictionnaire
+/// depuis une source externe (lexicon DB).
 ///
 /// Stratégie de chargement (ordre de priorité) :
 ///   1. Fichier disque depuis le basePath fourni au constructeur — utilisé en mode dev/serveur.
-///   2. Ressource embarquée dans l'assembly — fallback automatique en mode single-file publish.
+///   2. Ressource embarquée dans l'assembly — fallback automatique en mode single-file publish
+///      pour les assets de scoring/distribution uniquement.
 /// </summary>
 public class FrenchLanguageProvider : IGameLanguageProvider
 {
@@ -26,16 +27,16 @@ public class FrenchLanguageProvider : IGameLanguageProvider
     /// Chemin vers le dossier racine des assets (ex. AppContext.BaseDirectory/assets/languages/fr).
     /// Si null ou absent sur disque, les ressources embarquées sont utilisées automatiquement.
     /// </param>
-    public FrenchLanguageProvider(string? basePath = null)
+    public FrenchLanguageProvider(IReadOnlySet<string> dictionary, string? basePath = null)
     {
         _basePath = basePath;
-        _dictionary = LoadDictionary();
+        _dictionary = dictionary;
         _letterScores = LoadLetterScores();
         (_baseTileDistribution, _scalingRules) = LoadTileDistributionSettings();
     }
 
     /// <summary>
-    /// Ouvre un stream sur un asset nommé <paramref name="assetFileName"/> (ex. "dictionary.txt").
+    /// Ouvre un stream sur un asset nommé <paramref name="assetFileName"/>.
     /// Tente d'abord le disque (<see cref="_basePath"/>/{assetFileName}), puis l'ancien sous-dossier <see cref="_basePath"/>/assets/, puis la ressource embarquée.
     /// </summary>
     private Stream OpenAssetStream(string assetFileName)
@@ -105,20 +106,6 @@ public class FrenchLanguageProvider : IGameLanguageProvider
     public string GetLanguageName() => "Français";
 
     public string GetLocale() => "fr-FR";
-
-    private IReadOnlySet<string> LoadDictionary()
-    {
-        using var stream = OpenAssetStream("dictionary.txt");
-        using var reader = new StreamReader(stream);
-        var words = new HashSet<string>();
-        while (reader.ReadLine() is { } line)
-        {
-            var word = line.Trim().ToUpper();
-            if (!string.IsNullOrWhiteSpace(word) && Regex.IsMatch(word, "^[A-Z]+$"))
-                words.Add(word);
-        }
-        return words;
-    }
 
     private IReadOnlyDictionary<char, int> LoadLetterScores()
     {
@@ -244,4 +231,3 @@ public class FrenchLanguageProvider : IGameLanguageProvider
         IReadOnlyDictionary<string, double> GameTypeMultipliers,
         IReadOnlyDictionary<string, double> LevelMultipliers);
 }
-

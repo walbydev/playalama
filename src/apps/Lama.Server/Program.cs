@@ -7,7 +7,6 @@ using Lama.Server.Endpoints.Players;
 using Lama.Server.Runtime;
 using Lama.Server.Security;
 using Lama.Server.Services;
-using Lama.Languages.fr;
 using Lama.Contracts.Lexicon;
 using Lama.Infrastructure.Lexicon;
 using Microsoft.EntityFrameworkCore;
@@ -26,18 +25,7 @@ builder.Services.AddSingleton<ILanguageProviderRegistry>(sp =>
     new LanguageProviderRegistry(sp.GetRequiredService<ILexiconReader>(), AppContext.BaseDirectory));
 
 builder.Services.AddSingleton<IGameLanguageProvider>(sp =>
-{
-    var basePath = Path.Combine(AppContext.BaseDirectory, "assets", "languages", "fr");
-    try
-    {
-        return sp.GetRequiredService<ILanguageProviderRegistry>().GetProvider("fr");
-    }
-    catch
-    {
-        // Repli : dictionnaire fichier embarqué si la base lexicon est indisponible.
-        return new FrenchLanguageProvider(basePath);
-    }
-});
+    sp.GetRequiredService<ILanguageProviderRegistry>().GetProvider("fr"));
 builder.Services.AddSingleton<GameHubState>();
 builder.Services.AddSingleton<BotAutoPlayService>();
 
@@ -84,15 +72,8 @@ if (autoMigrate)
 }
 
 // ── Schéma lexicon (créé si absent, idempotent) ───────────────────────────
-try
-{
-    var lexicon = app.Services.GetRequiredService<ILexiconReader>();
-    await lexicon.EnsureSchemaAsync();
-}
-catch (Exception ex)
-{
-    app.Logger.LogError(ex, "Échec de l'initialisation du schéma lexicon (poursuite avec repli fichier).");
-}
+var lexicon = app.Services.GetRequiredService<ILexiconReader>();
+await lexicon.EnsureSchemaAsync();
 
 // ── Seeding des bots IA ───────────────────────────────────────────────────
 try

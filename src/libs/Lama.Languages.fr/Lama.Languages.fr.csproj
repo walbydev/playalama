@@ -7,9 +7,6 @@
     <!-- Copie les assets de langue dans le répertoire de build du projet qui référence ce projet -->
     <!-- Destination : assets/languages/fr/{fichier} -->
     <ItemGroup>
-        <None Include="assets\dictionary.txt"
-              CopyToOutputDirectory="PreserveNewest"
-              Link="assets\languages\fr\dictionary.txt" />
         <None Include="assets\scores.json"
               CopyToOutputDirectory="PreserveNewest"
               Link="assets\languages\fr\scores.json" />
@@ -21,9 +18,6 @@
     <!-- Ressources embarquées : utilisées en mode single-file publish (aucun fichier disque dispo) -->
     <!-- Le LogicalName est explicite pour éviter toute ambiguïté selon la plateforme de build -->
     <ItemGroup>
-        <EmbeddedResource Include="assets\dictionary.txt">
-            <LogicalName>Lama.Languages.fr.assets.dictionary.txt</LogicalName>
-        </EmbeddedResource>
         <EmbeddedResource Include="assets\scores.json">
             <LogicalName>Lama.Languages.fr.assets.scores.json</LogicalName>
         </EmbeddedResource>

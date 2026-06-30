@@ -11,7 +11,6 @@ public sealed class GameHubState
 {
     private readonly IGameLanguageProvider _languageProvider;
     private readonly ILanguageProviderRegistry? _registry;
-    private readonly ILogger<GameHubState>? _logger;
     private readonly ConcurrentDictionary<string, OnlineGame> _games = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, EventSubscribers> _subscribers = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _activeGameByPlayerId = new(StringComparer.Ordinal);
@@ -20,7 +19,6 @@ public sealed class GameHubState
     {
         _languageProvider = languageProvider;
         _registry = registry;
-        _logger = logger;
     }
 
     public IGameEngine CreateEngine(TileDistributionProfile? profile = null, IReadOnlyList<string>? languages = null)
@@ -28,17 +26,7 @@ public sealed class GameHubState
         IGameLanguageProvider provider;
         if (languages is { Count: > 0 } && _registry is not null)
         {
-            try
-            {
-                provider = _registry.GetProvider(languages);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex,
-                    "Lexicon provider unavailable for languages [{Languages}], falling back to embedded dictionary.",
-                    string.Join(",", languages));
-                provider = _languageProvider;
-            }
+            provider = _registry.GetProvider(languages);
         }
         else
         {
@@ -220,4 +208,3 @@ public sealed class GameHubState
 }
 
 public sealed record SubscriberToken(string Id, ChannelReader<ServerEvent> Reader);
-

@@ -413,6 +413,35 @@ admin-users: ## [Admin] Gérer les comptes joueurs (usage: make admin-users ADMI
 	  $(if $(ADMIN_TOKEN),--token $(ADMIN_TOKEN),) \
 	  $(ADMIN_ARGS)
 
+.PHONY: admin-reset
+admin-reset: ## [Admin] Remises à zéro par environnement (usage: make admin-reset ADMIN_ARGS="reset-games --yes --json")
+	@bash tools/scripts/admin/admin-reset.sh \
+	  --env $(ADMIN_ENV) \
+	  $(if $(ADMIN_SERVER_URL),--server-url $(ADMIN_SERVER_URL),) \
+	  $(if $(ADMIN_SECRET),--admin-secret $(ADMIN_SECRET),) \
+	  $(if $(ADMIN_TOKEN),--token $(ADMIN_TOKEN),) \
+	  $(ADMIN_ARGS)
+
+.PHONY: admin-reset-games
+admin-reset-games: ## [Admin] Reset parties (dev: purge DB+mémoire, stg/prod: terminate-all)
+	@$(MAKE) --no-print-directory admin-reset ADMIN_ENV=$(ADMIN_ENV) ADMIN_SERVER_URL="$(ADMIN_SERVER_URL)" ADMIN_SECRET="$(ADMIN_SECRET)" ADMIN_TOKEN="$(ADMIN_TOKEN)" ADMIN_ARGS="reset-games --yes $(ADMIN_ARGS)"
+
+.PHONY: admin-reset-users
+admin-reset-users: ## [Admin] Reset joueurs (dev uniquement)
+	@$(MAKE) --no-print-directory admin-reset ADMIN_ENV=$(ADMIN_ENV) ADMIN_SERVER_URL="$(ADMIN_SERVER_URL)" ADMIN_SECRET="$(ADMIN_SECRET)" ADMIN_TOKEN="$(ADMIN_TOKEN)" ADMIN_ARGS="reset-users --yes $(ADMIN_ARGS)"
+
+.PHONY: admin-reset-stats
+admin-reset-stats: ## [Admin] Reset stats (dev uniquement)
+	@$(MAKE) --no-print-directory admin-reset ADMIN_ENV=$(ADMIN_ENV) ADMIN_SERVER_URL="$(ADMIN_SERVER_URL)" ADMIN_SECRET="$(ADMIN_SECRET)" ADMIN_TOKEN="$(ADMIN_TOKEN)" ADMIN_ARGS="reset-stats --yes $(ADMIN_ARGS)"
+
+.PHONY: admin-reset-all
+admin-reset-all: ## [Admin] Reset complet jeux+stats+joueurs (dev uniquement)
+	@$(MAKE) --no-print-directory admin-reset ADMIN_ENV=$(ADMIN_ENV) ADMIN_SERVER_URL="$(ADMIN_SERVER_URL)" ADMIN_SECRET="$(ADMIN_SECRET)" ADMIN_TOKEN="$(ADMIN_TOKEN)" ADMIN_ARGS="reset-all --yes $(ADMIN_ARGS)"
+
+.PHONY: admin-ensure-root
+admin-ensure-root: ## [Admin] Garantir l'accès root/root (dev uniquement)
+	@$(MAKE) --no-print-directory admin-reset ADMIN_ENV=$(ADMIN_ENV) ADMIN_SERVER_URL="$(ADMIN_SERVER_URL)" ADMIN_SECRET="$(ADMIN_SECRET)" ADMIN_TOKEN="$(ADMIN_TOKEN)" ADMIN_ARGS="ensure-root --yes $(ADMIN_ARGS)"
+
 .PHONY: web-lobby-smoke
 web-lobby-smoke: ## Smoke test Web lobby (register/create/start/my-games)
 	bash tools/scripts/e2e/e2e-web-lobby-smoke.sh

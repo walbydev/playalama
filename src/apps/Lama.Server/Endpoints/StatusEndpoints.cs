@@ -1,6 +1,8 @@
 using Lama.Server.Contracts.Api;
+using Lama.Server.Data;
 using Lama.Server.Runtime;
 using Lama.Server.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lama.Server.Endpoints;
 
@@ -69,6 +71,49 @@ public static class StatusEndpoints
         .WithDescription("Force la clôture de toutes les parties actives en mémoire.")
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized);
+
+        app.MapGet("/api/v1/admin/users", async (
+            HttpContext httpContext,
+            LamaDbContext db,
+            IConfiguration config,
+            CancellationToken cancellationToken) =>
+        {
+            if (!IsAuthorized(httpContext, config))
+                return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
+
+            try
+            {
+                var users = await db.Players
+                    .AsNoTracking()
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Select(p => new
+                    {
+                        p.PlayerId,
+                        p.Username,
+                        p.Email,
+                        p.CountryCode,
+                        p.CreatedAt
+                    })
+                    .ToListAsync(cancellationToken);
+
+                return Results.Ok(new
+                {
+                    total = users.Count,
+                    users
+                });
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return Results.Json(
+                    new { error = "Service de liste utilisateurs temporairement indisponible." },
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+        })
+        .WithName("AdminListUsers")
+        .WithDescription("Liste admin des comptes joueurs (playerId, username, email, countryCode, createdAt).")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status503ServiceUnavailable);
 
         return app;
     }

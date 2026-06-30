@@ -6,6 +6,7 @@ Scripts:
 - `tools/scripts/admin/admin-env.sh`
 - `tools/scripts/admin/admin-games.sh`
 - `tools/scripts/admin/admin-users.sh`
+- `tools/scripts/admin/admin-reset.sh`
 
 ## 1) Vérifier l'environnement résolu
 
@@ -50,6 +51,11 @@ make admin-games ADMIN_ENV=dev ADMIN_ARGS="close --game-id <GAME_ID> --json"
 
 ## 3) Gestion des joueurs/comptes (périmètre actuel)
 
+Lister tous les users (admin):
+```bash
+make admin-users ADMIN_ENV=staging ADMIN_SECRET='<SECRET>' ADMIN_ARGS="list --json"
+```
+
 Créer un compte joueur:
 ```bash
 make admin-users ADMIN_ENV=staging ADMIN_ARGS="register --username alice --password 'secret123' --country FR --json"
@@ -76,3 +82,29 @@ make admin-users ADMIN_ENV=staging ADMIN_TOKEN='<JWT>' ADMIN_ARGS="update-profil
 - En `staging/prod`, préférer `ADMIN_SECRET` (`X-Admin-Secret`) ou `ADMIN_TOKEN` (Bearer JWT).
 - Les endpoints `/internal/*` sont réservés au `dev`.
 - Ce lot ne couvre pas un CRUD admin global des joueurs (liste globale/révocation/reset mot de passe).
+
+## 4) Remises à zéro (par environnement)
+
+Commande générique:
+```bash
+make admin-reset ADMIN_ENV=dev ADMIN_ARGS="reset-games --yes --json"
+```
+
+Raccourcis Make:
+```bash
+make admin-reset-games ADMIN_ENV=dev ADMIN_ARGS="--json"
+make admin-reset-users ADMIN_ENV=dev ADMIN_ARGS="--json"
+make admin-reset-stats ADMIN_ENV=dev ADMIN_ARGS="--json"
+make admin-reset-all ADMIN_ENV=dev ADMIN_ARGS="--json"
+make admin-ensure-root ADMIN_ENV=dev ADMIN_ARGS="--json"
+```
+
+Comportement par environnement:
+- `reset-games`
+  - `dev`: purge DB sessions + purge mémoire serveur.
+  - `staging/prod`: terminaison des parties actives via endpoint admin.
+- `reset-users`, `reset-stats`, `reset-all`, `ensure-root`
+  - **dev uniquement** (bloqué en staging/prod).
+
+`ensure-root` garantit un compte joueur Web `root/root` en environnement dev.
+Le flux évite `register` (mot de passe minimum 6) et force un hash compatible serveur en base dev.

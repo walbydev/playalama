@@ -1,14 +1,18 @@
 using System.Diagnostics;
 using Lama.Contracts;
 using Lama.Domain.Engine;
-using Lama.Languages.fr;
+using Lama.Infrastructure.Lexicon;
 
 var iterations = ParseIntArg(args, "--iterations", 60);
 var warmup = ParseIntArg(args, "--warmup", 10);
 var top = ParseIntArg(args, "--top", 8);
 
-var languageBasePath = ResolveLanguageBasePath();
-var provider = new FrenchLanguageProvider(languageBasePath);
+var connectionString = Environment.GetEnvironmentVariable("LAMA_LEXICON_CONNECTION_STRING")
+    ?? "Host=localhost;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me";
+var reader = new PostgresLexiconReader(connectionString);
+await reader.EnsureSchemaAsync();
+var registry = new LanguageProviderRegistry(reader, AppContext.BaseDirectory);
+var provider = registry.GetProvider("fr");
 var dictionary = provider.GetDictionary();
 var scores = provider.GetLetterScores();
 
@@ -28,25 +32,6 @@ RunScenario("first-move", engine, firstMoveState, top, warmup, iterations);
 RunScenario("mid-game", engine, midGameState, top, warmup, iterations);
 
 return;
-
-static string ResolveLanguageBasePath()
-{
-    var direct = Path.Combine(AppContext.BaseDirectory, "assets", "languages", "fr");
-    if (Directory.Exists(direct))
-        return direct;
-
-    var current = new DirectoryInfo(Directory.GetCurrentDirectory());
-    while (current is not null)
-    {
-        var candidate = Path.Combine(current.FullName, "assets", "languages", "fr");
-        if (Directory.Exists(candidate))
-            return candidate;
-
-        current = current.Parent;
-    }
-
-    throw new DirectoryNotFoundException("Impossible de localiser assets/languages/fr pour le benchmark.");
-}
 
 static void RunScenario(
     string name,
@@ -162,4 +147,3 @@ static (GameState State, Player Player) CreateMidGameState()
 
     return (state, player);
 }
-

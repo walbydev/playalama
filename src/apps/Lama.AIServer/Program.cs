@@ -1,32 +1,42 @@
 using Lama.AIServer.Models;
 using Lama.AIServer.Services;
 using Lama.Contracts;
+using Lama.Contracts.Lexicon;
 using Lama.Domain.Engine;
-using Lama.Languages.fr;
+using Lama.Infrastructure.Lexicon;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Langue configurée par variable d'environnement ───────────────────────────
-var language = Environment.GetEnvironmentVariable("LAMA_AI_LANGUAGE")
+var language = (Environment.GetEnvironmentVariable("LAMA_AI_LANGUAGE")
             ?? builder.Configuration["LAMA_AI_LANGUAGE"]
-            ?? "fr";
+            ?? "fr").Trim().ToLowerInvariant();
+var connectionString = Environment.GetEnvironmentVariable("LAMA_LEXICON_CONNECTION_STRING")
+    ?? builder.Configuration.GetConnectionString("LamaServerDb")
+    ?? "Host=localhost;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me";
 
-// ── Chargement du dictionnaire selon la langue ───────────────────────────────
-IGameLanguageProvider langProvider = language.ToLowerInvariant() switch
+builder.Services.AddSingleton<ILexiconReader>(_ => new PostgresLexiconReader(connectionString));
+builder.Services.AddSingleton<ILanguageProviderRegistry>(sp =>
+    new LanguageProviderRegistry(sp.GetRequiredService<ILexiconReader>(), AppContext.BaseDirectory));
+builder.Services.AddSingleton<IGameLanguageProvider>(sp =>
 {
-    "fr" => new FrenchLanguageProvider(
-        Path.Combine(AppContext.BaseDirectory, "assets", "languages", "fr")),
-    _ => throw new InvalidOperationException(
-        $"Langue non supportée : '{language}'. Langues disponibles : fr")
-};
-
-builder.Services.AddSingleton(langProvider);
-builder.Services.AddSingleton<MoveSuggestionEngine>(_ =>
-    new MoveSuggestionEngine(langProvider.GetDictionary(), langProvider.GetLetterScores()));
+    var registry = sp.GetRequiredService<ILanguageProviderRegistry>();
+    if (!registry.IsSupported(language))
+        throw new InvalidOperationException($"Langue non supportée : '{language}'.");
+    return registry.GetProvider(language);
+});
+builder.Services.AddSingleton<MoveSuggestionEngine>(sp =>
+{
+    var langProvider = sp.GetRequiredService<IGameLanguageProvider>();
+    return new MoveSuggestionEngine(langProvider.GetDictionary(), langProvider.GetLetterScores());
+});
 
 builder.Services.AddSingleton<SuggestionService>();
 
 var app = builder.Build();
+
+var lexicon = app.Services.GetRequiredService<ILexiconReader>();
+await lexicon.EnsureSchemaAsync();
 
 // ── Préchargement du dictionnaire au démarrage ───────────────────────────────
 _ = app.Services.GetRequiredService<MoveSuggestionEngine>();

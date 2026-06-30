@@ -12,7 +12,7 @@ Index des guides pratiques pour développement et exploitation.
 
 - **[ADMIN_SCRIPTS_QUICKSTART.md](./ADMIN_SCRIPTS_QUICKSTART.md)** ⭐
   - Scripts admin `dev/staging/prod` pour joueurs + parties/sessions
-  - Cibles `make admin-env`, `make admin-games`, `make admin-users`
+  - Cibles `make admin-env`, `make admin-games`, `make admin-users`, `make admin-reset*`
   - Usage ops/dev avec `ADMIN_ENV`, `ADMIN_SECRET`, `ADMIN_TOKEN`
 
 ## Documentation Détaillée

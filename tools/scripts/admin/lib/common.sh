@@ -7,6 +7,9 @@ ADMIN_SECRET="${LAMA_ADMIN_SECRET:-}"
 ADMIN_JSON=false
 ADMIN_DRY_RUN=false
 ADMIN_BEARER_TOKEN="${LAMA_ADMIN_TOKEN:-}"
+ADMIN_DEV_DB_CONTAINER="${LAMA_ADMIN_DEV_DB_CONTAINER:-postgres-lama-debug}"
+ADMIN_DEV_DB_USER="${LAMA_ADMIN_DEV_DB_USER:-lama_dev}"
+ADMIN_DEV_DB_NAME="${LAMA_ADMIN_DEV_DB_NAME:-lama_dev}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
@@ -112,6 +115,11 @@ require_dev_env() {
   [[ "${ADMIN_ENV}" == "dev" ]] || log_error "Action autorisée uniquement en --env dev."
 }
 
+require_yes() {
+  local confirmed="${1:-false}"
+  [[ "${confirmed}" == "true" ]] || log_error "Action destructive: ajoute --yes pour confirmer."
+}
+
 api_call() {
   local method="$1"
   local path="$2"
@@ -133,4 +141,25 @@ api_call() {
 
   cmd+=("${ADMIN_SERVER_URL%/}${path}")
   run_cmd "${cmd[@]}"
+}
+
+run_dev_sql() {
+  local sql="$1"
+  run_cmd docker exec "${ADMIN_DEV_DB_CONTAINER}" \
+    psql -v ON_ERROR_STOP=1 -U "${ADMIN_DEV_DB_USER}" -d "${ADMIN_DEV_DB_NAME}" -c "${sql}"
+}
+
+generate_server_password_hash() {
+  local password="$1"
+  python3 - "$password" <<'PY'
+import base64
+import hashlib
+import os
+import sys
+
+password = sys.argv[1].encode("utf-8")
+salt = os.urandom(16)
+digest = hashlib.pbkdf2_hmac("sha512", password, salt, 310000, dklen=32)
+print(f"pbkdf2:{base64.b64encode(salt).decode()}:{base64.b64encode(digest).decode()}")
+PY
 }

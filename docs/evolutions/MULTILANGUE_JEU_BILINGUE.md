@@ -189,7 +189,7 @@ services.AddSingleton<ILanguageRegistry>(provider =>
 {
     var providers = new List<IGameLanguageProvider>
     {
-        new FrenchLanguageProvider(Path.Combine(base, "fr")),
+        registry.GetProvider("fr"),
         // new EnglishLanguageProvider(Path.Combine(base, "en")),
     };
     return new CompositeLanguageRegistry(providers);
@@ -206,7 +206,6 @@ Même structure que `Lama.Languages.fr` :
 src/libs/Lama.Languages.en/
   EnglishLanguageProvider.cs
   assets/
-    dictionary.txt         (SOWPODS ou TWL06, licence libre)
     scores.json            (barème Scrabble anglais standard)
     tile-distribution.json (distribution Scrabble US)
 ```
@@ -306,4 +305,3 @@ lama rating leaderboard --queue bilingual
 - `src/libs/Lama.Contracts/IGameLanguageProvider.cs`
 - `src/libs/Lama.Contracts/PlayerRating.cs`
 - `src/libs/Lama.Languages.fr/FrenchLanguageProvider.cs`
-

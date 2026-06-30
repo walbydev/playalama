@@ -810,7 +810,17 @@ else
     private string GetLexiconLanguage()
     {
         var lang = _vm.Snapshot?.Language;
-        return string.IsNullOrWhiteSpace(lang) ? "fr" : lang.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(lang))
+            return "fr";
+
+        var normalized = lang.Trim().ToLowerInvariant();
+        if (normalized is "fr" or "en" or "de")
+            return normalized;
+
+        var tokens = normalized
+            .Split([',', ';', '+', '|', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var firstSupported = tokens.FirstOrDefault(t => t is "fr" or "en" or "de");
+        return string.IsNullOrWhiteSpace(firstSupported) ? "fr" : firstSupported;
     }
 
     private static string ExtractWordAt(IReadOnlyList<WebBoardTile> board, int row, int col)

@@ -13,11 +13,13 @@ Usage:
 Global options:
   --env dev|staging|prod
   --server-url <url>
+  --admin-secret <secret>
   --token <jwt>              (ou variable LAMA_ADMIN_TOKEN)
   --json
   --dry-run
 
 Actions:
+  list
   register --username <u> --password <p> [--email <e>] [--country <cc>]
   login --username <u> --password <p>
   status
@@ -103,6 +105,9 @@ done
 resolve_server_url
 
 case "${action}" in
+  list)
+    api_call GET "/api/v1/admin/users" | print_json_or_raw
+    ;;
   register)
     require_value "--username" "${username}"
     require_value "--password" "${password}"

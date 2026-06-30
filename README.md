@@ -145,9 +145,10 @@ Voir aussi : [`docs/console-interface-architecture.md`](docs/console-interface-a
 ## Prérequis
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- Lexicon PostgreSQL disponible (mots + définitions), via `LAMA_LEXICON_CONNECTION_STRING` ou `ConnectionStrings:LamaServerDb`
 - Fichiers de langue dans `assets/languages/fr/` :
-  - `dictionary.txt` — un mot par ligne
   - `scores.json` — valeurs des lettres au format `{ "scores": { "A": 1, "Z": 10, ... } }`
+  - `tile-distribution.json` — distribution et règles de scaling des tuiles
 
 ---
 
