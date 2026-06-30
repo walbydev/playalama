@@ -35,6 +35,11 @@ SSH_KEY         ?= $(LAMA_DEPLOY_SSH_KEY)
 
 # Arguments par défaut pour run-local
 ARGS            ?= game create Alice
+ADMIN_ENV       ?= dev
+ADMIN_SERVER_URL ?=
+ADMIN_SECRET    ?=
+ADMIN_TOKEN     ?=
+ADMIN_ARGS      ?=
 
 # =============================================================================
 # Dotnet SDK resolution (global.json-compatible)
@@ -381,6 +386,32 @@ docker-local-ps: ## État des conteneurs Docker locaux
 .PHONY: health-local
 health-local: ## Vérifier les endpoints locaux
 	@curl -fsS http://localhost:5201/health && echo "✓ Server (5201) OK" || echo "✗ Server (5201) KO"
+
+.PHONY: admin-env
+admin-env: ## [Admin] Afficher l'environnement admin résolu (dev/staging/prod)
+	@bash tools/scripts/admin/admin-env.sh \
+	  --env $(ADMIN_ENV) \
+	  $(if $(ADMIN_SERVER_URL),--server-url $(ADMIN_SERVER_URL),) \
+	  $(if $(ADMIN_SECRET),--admin-secret $(ADMIN_SECRET),) \
+	  $(if $(ADMIN_TOKEN),--token $(ADMIN_TOKEN),) \
+	  $(ADMIN_ARGS)
+
+.PHONY: admin-games
+admin-games: ## [Admin] Gérer les parties (usage: make admin-games ADMIN_ARGS="list")
+	@bash tools/scripts/admin/admin-games.sh \
+	  --env $(ADMIN_ENV) \
+	  $(if $(ADMIN_SERVER_URL),--server-url $(ADMIN_SERVER_URL),) \
+	  $(if $(ADMIN_SECRET),--admin-secret $(ADMIN_SECRET),) \
+	  $(if $(ADMIN_TOKEN),--token $(ADMIN_TOKEN),) \
+	  $(ADMIN_ARGS)
+
+.PHONY: admin-users
+admin-users: ## [Admin] Gérer les comptes joueurs (usage: make admin-users ADMIN_ARGS="register --username u --password p")
+	@bash tools/scripts/admin/admin-users.sh \
+	  --env $(ADMIN_ENV) \
+	  $(if $(ADMIN_SERVER_URL),--server-url $(ADMIN_SERVER_URL),) \
+	  $(if $(ADMIN_TOKEN),--token $(ADMIN_TOKEN),) \
+	  $(ADMIN_ARGS)
 
 .PHONY: web-lobby-smoke
 web-lobby-smoke: ## Smoke test Web lobby (register/create/start/my-games)

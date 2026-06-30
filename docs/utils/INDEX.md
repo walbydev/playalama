@@ -10,6 +10,11 @@ Index des guides pratiques pour développement et exploitation.
   - Démarrage < 2 minutes
   - **Recommandé pour développement local**
 
+- **[ADMIN_SCRIPTS_QUICKSTART.md](./ADMIN_SCRIPTS_QUICKSTART.md)** ⭐
+  - Scripts admin `dev/staging/prod` pour joueurs + parties/sessions
+  - Cibles `make admin-env`, `make admin-games`, `make admin-users`
+  - Usage ops/dev avec `ADMIN_ENV`, `ADMIN_SECRET`, `ADMIN_TOKEN`
+
 ## Documentation Détaillée
 
 - **[OPTION_A_LOCAL_DEBUG.md](./OPTION_A_LOCAL_DEBUG.md)**
@@ -117,4 +122,3 @@ Pour des questions ou rapporter des bugs :
 1. Vérifier les logs : `make option-a-logs`
 2. Consulter `OPTION_A_DETAILED.md` pour dépannage
 3. Voir `../../docs/architecture/` pour context technique
-
