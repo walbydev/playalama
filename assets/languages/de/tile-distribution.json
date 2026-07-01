@@ -1,0 +1,27 @@
+{
+  "baseDistribution": {
+    "A": 5, "B": 2, "C": 2, "D": 4, "E": 15, "F": 2, "G": 3, "H": 4, "I": 6, "J": 1,
+    "K": 2, "L": 3, "M": 4, "N": 9, "O": 3, "P": 1, "Q": 1, "R": 6, "S": 7, "T": 6,
+    "U": 6, "V": 1, "W": 1, "X": 1, "Y": 1, "Z": 1, "*": 2
+  },
+  "scaling": {
+    "minMultiplier": 0.7,
+    "maxMultiplier": 1.8,
+    "boardExponent": 1.0,
+    "boardReferenceSize": 15,
+    "rackReferenceSize": 7,
+    "rackWeight": 0.2,
+    "gameTypeMultipliers": {
+      "classic": 1.0,
+      "duplicate": 0.95,
+      "blitz": 0.88,
+      "tournament": 1.0
+    },
+    "levelMultipliers": {
+      "Casual": 1.04,
+      "Standard": 1.0,
+      "Competitive": 0.97,
+      "Tournament": 0.95
+    }
+  }
+}
