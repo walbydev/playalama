@@ -88,8 +88,11 @@ case "$ENV_ARG" in
   *) err "--env doit être : prod, staging ou both." ;;
 esac
 
-SSH_ARGS=(-o StrictHostKeyChecking=accept-new -o ConnectTimeout=15)
+SSH_ARGS=(-o StrictHostKeyChecking=accept-new -o ConnectTimeout=15
+          -o ServerAliveInterval=30 -o ServerAliveCountMax=10)
 [[ -n "$SSH_KEY_FILE" ]] && SSH_ARGS+=(-i "$SSH_KEY_FILE")
+
+RESTORE_JOBS="${LAMA_RESTORE_JOBS:-4}"
 
 command -v ssh  >/dev/null 2>&1 || err "ssh introuvable."
 command -v scp  >/dev/null 2>&1 || err "scp introuvable."
@@ -143,7 +146,12 @@ else
   fi
 fi
 
-# ── 4. Restore par environnement ────────────────────────────────────────────
+# ── 4. Restore par environnement (détaché + polling résilient) ──────────────
+remote_capture() {
+  # Exécute une commande distante et renvoie sa sortie (ignore dry-run côté data).
+  ssh "${SSH_ARGS[@]}" "$REMOTE_TARGET" "$1"
+}
+
 restore_env() {
   local env="$1"
   local pg_container="postgres-lama-$env"
@@ -151,25 +159,21 @@ restore_env() {
   local aiserver_container="lama-aiserver-fr-$env"
   local db_user="${DB_USER_OVERRIDE:-lama_$env}"
   local db_name="${DB_NAME_OVERRIDE:-lama_$env}"
-  local do_restart="true"
-  [[ "$SKIP_RESTART" == "true" ]] && do_restart="false"
+  local logf="/tmp/lex-restore-$env.log"
 
   log "════════════════════════════════════════════════════"
   log " Restore lexicon → $(echo "$env" | tr '[:lower:]' '[:upper:]')"
-  log " Conteneur PG : $pg_container  (db=$db_name user=$db_user)"
+  log " Conteneur PG : $pg_container  (db=$db_name user=$db_user, jobs=$RESTORE_JOBS)"
   log "════════════════════════════════════════════════════"
 
-  local remote_script
-  remote_script=$(cat <<EOR
+  # ── Phase A : prépa + lancement DÉTACHÉ (survit aux coupures SSH) ──────────
+  local launch_script
+  launch_script=$(cat <<EOR
 set -e
-PG="$pg_container"
-DB="$db_name"
-DBUSER="$db_user"
-DUMP="$REMOTE_DUMP"
+PG="$pg_container"; DB="$db_name"; DBUSER="$db_user"; DUMP="$REMOTE_DUMP"; LOG="$logf"
 
 if ! docker ps --format '{{.Names}}' | grep -qx "\$PG"; then
-  echo "[VPS][ERREUR] Conteneur \$PG introuvable ou non démarré." >&2
-  exit 1
+  echo "[VPS][ERREUR] Conteneur \$PG introuvable ou non démarré." >&2; exit 1
 fi
 
 echo "[VPS] Copie du dump dans le conteneur..."
@@ -183,9 +187,54 @@ docker exec "\$PG" psql -U "\$DBUSER" -d "\$DB" -tAc \
 echo "[VPS] DROP SCHEMA lexicon CASCADE (n'affecte pas sessions/games)..."
 docker exec "\$PG" psql -U "\$DBUSER" -d "\$DB" -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS lexicon CASCADE;"
 
-echo "[VPS] pg_restore (remap propriétaire → \$DBUSER)..."
-docker exec "\$PG" pg_restore -U "\$DBUSER" -d "\$DB" --no-owner --no-privileges /tmp/lexicon-restore.dump
+echo "[VPS] Lancement pg_restore DÉTACHÉ (jobs=$RESTORE_JOBS) → \$LOG ..."
+docker exec -d "\$PG" sh -c \
+  "pg_restore -U \$DBUSER -d \$DB --no-owner --no-privileges --jobs=$RESTORE_JOBS --verbose /tmp/lexicon-restore.dump > /tmp/lex-restore.log 2>&1; echo EXIT=\\\$? >> /tmp/lex-restore.log"
+echo "[VPS] Restore lancé en arrière-plan."
+EOR
+)
 
+  if [[ "$DRY_RUN" == "true" ]]; then
+    printf '\033[0;33m[DRY-RUN]\033[0m ssh %s "bash -s" (lancement détaché pg_restore, jobs=%s)\n' "$REMOTE_TARGET" "$RESTORE_JOBS"
+    printf '\033[0;33m[DRY-RUN]\033[0m polling docker exec %s tail /tmp/lex-restore.log jusqu%sà EXIT=\n' "$pg_container" "'"
+    printf '\033[0;33m[DRY-RUN]\033[0m docker restart %s %s\n' "$server_container" "$aiserver_container"
+    return 0
+  fi
+
+  ssh "${SSH_ARGS[@]}" "$REMOTE_TARGET" "bash -s" <<<"$launch_script"
+
+  # ── Phase B : polling (chaque sonde = un SSH court, résilient aux coupures) ─
+  log "Suivi de la progression (Ctrl-C sans risque : le restore continue côté VPS)..."
+  local exit_line="" tries=0
+  while true; do
+    sleep 15
+    local probe
+    probe="$(remote_capture "docker exec $pg_container sh -c 'tail -n 1 /tmp/lex-restore.log 2>/dev/null; grep -m1 \"^EXIT=\" /tmp/lex-restore.log 2>/dev/null'" 2>/dev/null || true)"
+    if [[ -z "$probe" ]]; then
+      tries=$((tries+1))
+      warn "Sonde sans réponse (tentative $tries) — nouvelle tentative dans 15 s."
+      [[ $tries -ge 20 ]] && err "Trop d'échecs de sonde. Vérifiez manuellement : docker exec $pg_container tail -f /tmp/lex-restore.log"
+      continue
+    fi
+    tries=0
+    exit_line="$(printf '%s\n' "$probe" | grep -m1 '^EXIT=' || true)"
+    if [[ -n "$exit_line" ]]; then
+      break
+    fi
+    printf '\033[0;36m[…]\033[0m %s\n' "$(printf '%s' "$probe" | head -n1)"
+  done
+
+  local code="${exit_line#EXIT=}"
+  if [[ "$code" != "0" ]]; then
+    err "pg_restore ($env) a échoué (code=$code). Log : docker exec $pg_container cat /tmp/lex-restore.log"
+  fi
+  ok "pg_restore $env terminé (EXIT=0)."
+
+  # ── Phase C : compteurs finaux + nettoyage + restart ──────────────────────
+  local finalize_script
+  finalize_script=$(cat <<EOR
+set -e
+PG="$pg_container"; DB="$db_name"; DBUSER="$db_user"
 echo "[VPS] Compteurs APRÈS :"
 docker exec "\$PG" psql -U "\$DBUSER" -d "\$DB" -c \
   "SELECT w.language_code, COUNT(DISTINCT w.word_id) mots, COUNT(DISTINCT d.definition_id) defs, COUNT(DISTINCT s.synonym_id) syns
@@ -193,25 +242,18 @@ docker exec "\$PG" psql -U "\$DBUSER" -d "\$DB" -c \
    LEFT JOIN lexicon.definitions d ON d.word_id = w.word_id
    LEFT JOIN lexicon.synonyms s ON s.word_id = w.word_id
    GROUP BY 1 ORDER BY 1;"
-
-docker exec "\$PG" rm -f /tmp/lexicon-restore.dump
-
-if [ "$do_restart" = "true" ]; then
-  echo "[VPS] Redémarrage server + aiserver (rechargement dictionnaire en mémoire)..."
-  docker restart "$server_container" "$aiserver_container" >/dev/null && echo "  OK"
-else
-  echo "[VPS] Restart ignoré (--skip-restart)."
-fi
-echo "[VPS] Restore \$DB terminé."
+docker exec "\$PG" rm -f /tmp/lexicon-restore.dump /tmp/lex-restore.log
 EOR
 )
+  ssh "${SSH_ARGS[@]}" "$REMOTE_TARGET" "bash -s" <<<"$finalize_script"
 
-  if [[ "$DRY_RUN" == "true" ]]; then
-    printf '\033[0;33m[DRY-RUN]\033[0m ssh %s "bash -s" <<SCRIPT\n%s\nSCRIPT\n' "$REMOTE_TARGET" "$remote_script"
+  if [[ "$SKIP_RESTART" == "true" ]]; then
+    warn "Restart ignoré (--skip-restart) — pensez à redémarrer $server_container + $aiserver_container."
   else
-    ssh "${SSH_ARGS[@]}" "$REMOTE_TARGET" "bash -s" <<<"$remote_script"
-    ok "Restore $env terminé."
+    log "Redémarrage $server_container + $aiserver_container (reload dico mémoire)..."
+    remote_capture "docker restart $server_container $aiserver_container >/dev/null && echo OK" || warn "Restart à faire manuellement."
   fi
+  ok "Restore $env terminé."
 }
 
 for env in "${ENVS[@]}"; do
