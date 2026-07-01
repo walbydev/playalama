@@ -71,8 +71,8 @@
 
     private bool _menuOpen;
     private string SpacerHeight => CompactMode
-        ? "56px"
-        : (ShowDevBanner ? "calc(var(--nav-h) + var(--banner-h))" : "var(--nav-h)");
+        ? "calc(56px + var(--banner-h))"
+        : "calc(var(--nav-h) + var(--banner-h))";
 
     protected override void OnInitialized()
     {

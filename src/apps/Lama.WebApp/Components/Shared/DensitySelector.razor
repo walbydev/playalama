@@ -2,16 +2,11 @@
 @inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
-<div class="board-density-control" title="@L["BoardDensity.Title"]" role="group" aria-label="@L["BoardDensity.Label"]">
-    <button class="board-density-btn @(Layout.Density == GameLayoutService.Small ? "is-active" : "")"
-            @onclick="() => SetAsync(GameLayoutService.Small)" title="@L["BoardDensity.Small"]">S</button>
-    <button class="board-density-btn @(Layout.Density == GameLayoutService.Medium ? "is-active" : "")"
-            @onclick="() => SetAsync(GameLayoutService.Medium)" title="@L["BoardDensity.Medium"]">M</button>
-    <button class="board-density-btn @(Layout.Density == GameLayoutService.Large ? "is-active" : "")"
-            @onclick="() => SetAsync(GameLayoutService.Large)" title="@L["BoardDensity.Large"]">L</button>
-    <button class="board-density-btn board-fullscreen-btn @(Layout.IsFullscreen ? "is-active" : "")"
-            @onclick="ToggleFullscreenAsync" title="@L["BoardDensity.Fullscreen"]" aria-pressed="@Layout.IsFullscreen">⛶</button>
-</div>
+<button class="btn btn-ghost btn-sm board-fullscreen-btn @(Layout.IsFullscreen ? "is-active" : "")"
+        @onclick="ToggleFullscreenAsync"
+        title="@L["BoardDensity.Fullscreen"]"
+        aria-pressed="@Layout.IsFullscreen"
+        aria-label="@L["BoardDensity.Fullscreen"]">⛶</button>
 
 @code {
     protected override void OnInitialized() => Layout.Changed += HandleChanged;
@@ -22,8 +17,6 @@
         await Layout.InitializeAsync();
         StateHasChanged();
     }
-
-    private async Task SetAsync(string density) => await Layout.SetDensityAsync(density);
 
     private async Task ToggleFullscreenAsync() => await Layout.ToggleFullscreenAsync();
 

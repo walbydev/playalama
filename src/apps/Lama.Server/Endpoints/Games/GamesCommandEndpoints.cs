@@ -213,7 +213,7 @@ public static class GamesCommandEndpoints
             BoardSize: boardSize,
             RackSize: rackSize,
             MinWordLength: request.MinWordLength > 0 ? request.MinWordLength : 2,
-            Language: language,
+            Language: string.Join(",", languages),
             CreatedAt: DateTimeOffset.UtcNow,
             UpdatedAt: DateTimeOffset.UtcNow,
             Players: initialPlayers,

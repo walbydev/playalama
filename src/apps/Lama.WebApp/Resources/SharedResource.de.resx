@@ -38,6 +38,12 @@
   <data name="Layout.B"><value>Brett rechts, Rack unten</value></data>
   <data name="Layout.C"><value>Rack oben</value></data>
   <data name="Layout.D"><value>Brett rechts, Rack oben</value></data>
+  <data name="Layout.BoardPosition"><value>Brett-Position</value></data>
+  <data name="Layout.BoardLeft"><value>Brett links</value></data>
+  <data name="Layout.BoardRight"><value>Brett rechts</value></data>
+  <data name="Layout.RackPosition"><value>Rack-Position</value></data>
+  <data name="Layout.RackBottom"><value>Rack unten</value></data>
+  <data name="Layout.RackTop"><value>Rack oben</value></data>
   <data name="Common.Close"><value>Schließen</value></data>
   <data name="Common.LiveUpdated"><value>Live aktualisiert</value></data>
   <data name="Common.Loading"><value>Wird geladen…</value></data>

@@ -6,11 +6,8 @@
 @implements IDisposable
 
 <div class="page-wrapper @(IsGameFocusMode ? "page-wrapper--game-focus" : "") @(IsGameFocusMode && Layout.IsFullscreen ? "page-wrapper--fullscreen" : "")">
-    @if (!IsGameFocusMode)
-    {
-        <DevBanner />
-    }
-    <NavBar CompactMode="@IsGameFocusMode" ShowDevBanner="@(!IsGameFocusMode)" />
+    <DevBanner />
+    <NavBar CompactMode="@IsGameFocusMode" ShowDevBanner="true" />
 
     <main id="main-content" class="@(IsGameFocusMode ? "main-content--game-focus" : null)">
         @Body

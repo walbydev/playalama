@@ -61,6 +61,16 @@ public sealed class HttpAISuggestionClient : IAISuggestionClient
             if (body?.Suggestions is null)
                 return TryLocalFallback(rack, board, isFirstMove, topPerCategory, languageCode, ct);
 
+            // If the AI server used a different language than the game requires, its words may fail
+            // validation. Fall back to the local engine which always respects the game language.
+            if (!string.IsNullOrWhiteSpace(body.Language) && !LanguageMatches(body.Language, languageCode))
+            {
+                _logger.LogInformation(
+                    "AIServer suggère en '{AiLang}' mais le jeu est en '{GameLang}' — fallback local.",
+                    body.Language, languageCode);
+                return TryLocalFallback(rack, board, isFirstMove, topPerCategory, languageCode, ct);
+            }
+
             return body.Suggestions
                 .Select(s => new AISuggestion(
                     s.Word, s.Score, s.Length,
@@ -121,4 +131,16 @@ public sealed class HttpAISuggestionClient : IAISuggestionClient
             _logger.LogInformation("Fallback local suggestions utilisé ({Count} résultat(s)).", local.Count);
         return local;
     }
+
+    private static bool LanguageMatches(string aiLang, string gameLang)
+    {
+        var aiCodes   = ParseLanguageCodes(aiLang);
+        var gameCodes = ParseLanguageCodes(gameLang);
+        return aiCodes.Overlaps(gameCodes);
+    }
+
+    private static HashSet<string> ParseLanguageCodes(string lang) =>
+        lang.ToLowerInvariant()
+            .Split([',', ';', '+', '|', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 }

@@ -48,6 +48,12 @@ else
                                 <span class="chip chip-accent">@L["Game.Status.YourTurn"]</span>
                             }
                         </div>
+                        <div class="game-langs">
+                            @foreach (var l in GetGameLanguages())
+                            {
+                                <span class="lang-tag">@LanguageFlag(l) @l.ToUpperInvariant()</span>
+                            }
+                        </div>
                     </div>
 
                     <div class="letter-bag-display" title="@L["Game.BagTitle"]">
@@ -95,6 +101,12 @@ else
                         <span class="letter-bag-icon">🎒</span>
                         <span class="letter-bag-count">@_vm.Snapshot.BagCount</span>
                         <span class="letter-bag-label">@(_vm.Snapshot.BagCount > 1 ? L["Game.Letters.Plural"] : L["Game.Letters.Singular"])</span>
+                    </div>
+                    <div class="game-langs game-langs--compact">
+                        @foreach (var l in GetGameLanguages())
+                        {
+                            <span class="lang-tag">@LanguageFlag(l)</span>
+                        }
                     </div>
 
                     @if (_vm.IsAbandoned)
@@ -411,6 +423,23 @@ else
 
                                 <div class="suggest-section dictionary-search">
                                     <p class="suggest-section-title">📚 @L["Game.Dictionary.Title"]</p>
+                                    @{
+                                        var dictLangs = GetGameLanguages();
+                                    }
+                                    @if (dictLangs.Count > 1)
+                                    {
+                                        <div class="dict-lang-selector">
+                                            @foreach (var l in dictLangs)
+                                            {
+                                                <button type="button"
+                                                        class="lang-choice-btn @(_dictLang == l ? "is-selected" : "")"
+                                                        @onclick="() => _dictLang = l">
+                                                    <span class="lang-choice-mark">@LanguageFlag(l)</span>
+                                                    @l.ToUpperInvariant()
+                                                </button>
+                                            }
+                                        </div>
+                                    }
                                     <form class="dictionary-search-form" @onsubmit="SearchDictionaryAsync" @onsubmit:preventDefault="true">
                                         <InputText @bind-Value="_dictionaryQuery"
                                                    placeholder="@L["Game.Dictionary.Placeholder"]"
@@ -576,6 +605,7 @@ else
 
         _vm.Initialize(GameId, _myPlayerId);
         await _vm.LoadAsync(Api);
+        _dictLang = GetLexiconLanguage();
         SyncRackOrder();
 
         // Redirection vers lobby si la partie n'a pas encore démarré
@@ -759,6 +789,7 @@ else
     private bool _dictionarySearchLoading;
     private bool _dictionarySearchDone;
     private string? _dictionarySearchError;
+    private string _dictLang = string.Empty;
 
     private async Task HandleTileClick((int Row, int Col) cell)
     {
@@ -809,6 +840,7 @@ else
 
     private string GetLexiconLanguage()
     {
+        if (!string.IsNullOrEmpty(_dictLang)) return _dictLang;
         var lang = _vm.Snapshot?.Language;
         if (string.IsNullOrWhiteSpace(lang))
             return "fr";
@@ -822,6 +854,25 @@ else
         var firstSupported = tokens.FirstOrDefault(t => t is "fr" or "en" or "de");
         return string.IsNullOrWhiteSpace(firstSupported) ? "fr" : firstSupported;
     }
+
+    private IReadOnlyList<string> GetGameLanguages()
+    {
+        var lang = _vm.Snapshot?.Language;
+        if (string.IsNullOrWhiteSpace(lang)) return ["fr"];
+        var tokens = lang.Trim().ToLowerInvariant()
+            .Split([',', ';', '+', '|', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(t => t is "fr" or "en" or "de")
+            .ToList();
+        return tokens.Count > 0 ? tokens : (IReadOnlyList<string>)["fr"];
+    }
+
+    private static string LanguageFlag(string code) => code switch
+    {
+        "fr" => "🇫🇷",
+        "en" => "🇬🇧",
+        "de" => "🇩🇪",
+        _ => "🌐"
+    };
 
     private static string ExtractWordAt(IReadOnlyList<WebBoardTile> board, int row, int col)
     {

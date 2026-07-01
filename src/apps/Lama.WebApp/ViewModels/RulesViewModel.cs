@@ -9,6 +9,7 @@ public sealed class RulesViewModel
             new("Le plateau",           "Le plateau est composé de cases normales et de cases bonus : ×2 lettre (DL), ×3 lettre (TL), ×2 mot (DM), ×3 mot (TM). La case centrale est une DM."),
             new("Les tuiles",           "Chaque tuile porte une lettre et une valeur en points. Les lettres rares (Z, K, X…) valent plus. La tuile vierge (joker) vaut 0 point mais peut représenter n'importe quelle lettre."),
             new("Constituer un mot",    "Un mot doit s'appuyer sur au moins une tuile déjà posée sur le plateau (sauf le premier tour). Il doit être présent dans le dictionnaire de la langue choisie."),
+            new("Dictionnaire",         "Tous les mots acceptés sont issus du Wiktionnaire (via Kaikki). Ce corpus inclut les noms communs, mais aussi les noms de lieux, de régions, de langues, d'abréviations, les formes conjuguées, etc. Un mot introuvable dans un dictionnaire papier traditionnel peut donc être valide ici, et inversement."),
             new("Joker",                "En CLI, une lettre minuscule dans la commande play move force l'utilisation du joker. En Web, un bouton permet de désigner le joker."),
             new("Échange de tuiles",    "Tu peux échanger jusqu'à 7 tuiles contre des tuiles du sac, mais ça compte comme un tour (0 point)."),
             new("Fin de partie",        "La partie se termine quand le sac est vide et qu'un joueur pose toutes ses tuiles, ou quand tous les joueurs passent deux fois de suite. Les tuiles restantes en main sont soustraites du score."),

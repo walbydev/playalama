@@ -2,18 +2,30 @@
 @inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
-<div class="layout-variant-control" title="@L["Layout.Title"]" role="group" aria-label="@L["Layout.Label"]">
-    <button class="layout-variant-btn @(Layout.Variant == GameLayoutService.VariantA ? "is-active" : "")"
-            @onclick="() => SetAsync(GameLayoutService.VariantA)" title="@L["Layout.A"]" aria-label="@L["Layout.A"]">⬛▦</button>
-    <button class="layout-variant-btn @(Layout.Variant == GameLayoutService.VariantB ? "is-active" : "")"
-            @onclick="() => SetAsync(GameLayoutService.VariantB)" title="@L["Layout.B"]" aria-label="@L["Layout.B"]">▦⬛</button>
-    <button class="layout-variant-btn @(Layout.Variant == GameLayoutService.VariantC ? "is-active" : "")"
-            @onclick="() => SetAsync(GameLayoutService.VariantC)" title="@L["Layout.C"]" aria-label="@L["Layout.C"]">⬒</button>
-    <button class="layout-variant-btn @(Layout.Variant == GameLayoutService.VariantD ? "is-active" : "")"
-            @onclick="() => SetAsync(GameLayoutService.VariantD)" title="@L["Layout.D"]" aria-label="@L["Layout.D"]">⬓</button>
-</div>
+@* Sélecteur position du plateau (◀ gauche / ▶ droite) *@
+<button type="button"
+        class="btn btn-ghost btn-sm layout-btn @(IsBoardLeft ? "is-active" : "")"
+        @onclick="() => SetBoardSideAsync(true)"
+        title="@L["Layout.BoardLeft"]" aria-label="@L["Layout.BoardLeft"]">◀</button>
+<button type="button"
+        class="btn btn-ghost btn-sm layout-btn @(!IsBoardLeft ? "is-active" : "")"
+        @onclick="() => SetBoardSideAsync(false)"
+        title="@L["Layout.BoardRight"]" aria-label="@L["Layout.BoardRight"]">▶</button>
+
+@* Sélecteur position du rack (⬇ bas / ⬆ haut) *@
+<button type="button"
+        class="btn btn-ghost btn-sm layout-btn @(IsRackBelow ? "is-active" : "")"
+        @onclick="() => SetRackPositionAsync(true)"
+        title="@L["Layout.RackBottom"]" aria-label="@L["Layout.RackBottom"]">⬇</button>
+<button type="button"
+        class="btn btn-ghost btn-sm layout-btn @(!IsRackBelow ? "is-active" : "")"
+        @onclick="() => SetRackPositionAsync(false)"
+        title="@L["Layout.RackTop"]" aria-label="@L["Layout.RackTop"]">⬆</button>
 
 @code {
+    private bool IsBoardLeft => Layout.Variant is GameLayoutService.VariantA or GameLayoutService.VariantC;
+    private bool IsRackBelow => Layout.Variant is GameLayoutService.VariantA or GameLayoutService.VariantB;
+
     protected override void OnInitialized() => Layout.Changed += HandleChanged;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -23,7 +35,30 @@
         StateHasChanged();
     }
 
-    private async Task SetAsync(string v) => await Layout.SetVariantAsync(v);
+    private async Task SetBoardSideAsync(bool left)
+    {
+        var v = (left, IsRackBelow) switch
+        {
+            (true,  true)  => GameLayoutService.VariantA,
+            (false, true)  => GameLayoutService.VariantB,
+            (true,  false) => GameLayoutService.VariantC,
+            _              => GameLayoutService.VariantD,
+        };
+        await Layout.SetVariantAsync(v);
+    }
+
+    /// <param name="below">true = rack en bas, false = rack en haut.</param>
+    private async Task SetRackPositionAsync(bool below)
+    {
+        var v = (IsBoardLeft, below) switch
+        {
+            (true,  true)  => GameLayoutService.VariantA,
+            (false, true)  => GameLayoutService.VariantB,
+            (true,  false) => GameLayoutService.VariantC,
+            _              => GameLayoutService.VariantD,
+        };
+        await Layout.SetVariantAsync(v);
+    }
 
     private void HandleChanged() => InvokeAsync(StateHasChanged);
 

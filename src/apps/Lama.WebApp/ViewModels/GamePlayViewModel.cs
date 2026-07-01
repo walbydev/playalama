@@ -477,6 +477,7 @@ public sealed class GamePlayViewModel
     public async Task<bool> PlayAsync(LamaApiClient api, string token)
     {
         IsLoading = true;
+        SuggestPanelOpen = false;
         Error = null;
         ClearCheck();
         try
