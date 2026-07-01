@@ -62,6 +62,7 @@ services:
       ASPNETCORE_ENVIRONMENT: "Development"
       LAMA_SERVER_ALLOW_SHUTDOWN: "false"
       LAMA_AI_SERVER_URL: "http://lama-aiserver-fr:5203"
+      ConnectionStrings__LamaServerDb: "Host=postgres-lama;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;Ssl Mode=Disable;Application Name=LamaServer.Local;"
       LAMA_ADMIN_SECRET: "dev_admin_secret_change_in_prod"
       ConnectionStrings__LamaServerDb: "Host=postgres-lama;Port=5432;Database=lama_dev;Username=lama_dev;Password=dev_password_change_me;Ssl Mode=Disable;Application Name=LamaServer;"
       Database__AutoMigrate: "true"

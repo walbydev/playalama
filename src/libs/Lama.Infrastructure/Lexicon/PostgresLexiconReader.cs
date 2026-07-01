@@ -42,22 +42,30 @@ public sealed partial class PostgresLexiconReader(string connectionString, ILogg
     public IReadOnlySet<string> LoadDictionary(string languageCode)
     {
         var words = new HashSet<string>();
-        using var connection = new NpgsqlConnection(_connectionString);
-        connection.Open();
-        using var command = new NpgsqlCommand(
-            "SELECT lemma_normalized FROM lexicon.words WHERE language_code = @lang", connection);
-        command.Parameters.AddWithValue("lang", languageCode);
-        command.CommandTimeout = 0;
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        try
         {
-            var word = reader.GetString(0).ToUpperInvariant();
-            if (ScrabbleWord().IsMatch(word))
-                words.Add(word);
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
+            using var command = new NpgsqlCommand(
+                "SELECT lemma_normalized FROM lexicon.words WHERE language_code = @lang", connection);
+            command.Parameters.AddWithValue("lang", languageCode);
+            command.CommandTimeout = 0;
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var word = reader.GetString(0).ToUpperInvariant();
+                if (ScrabbleWord().IsMatch(word))
+                    words.Add(word);
+            }
+
+            logger?.LogInformation("Lexicon {Lang}: {Count} mots chargés depuis Postgres.", languageCode, words.Count);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "Lexicon {Lang}: impossible de charger depuis Postgres — dictionnaire vide (mode hors-ligne).", languageCode);
         }
 
-        logger?.LogInformation("Lexicon {Lang}: {Count} mots chargés depuis Postgres.", languageCode, words.Count);
         return words;
     }
 

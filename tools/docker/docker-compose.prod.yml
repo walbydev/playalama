@@ -46,6 +46,7 @@ services:
   # ─────────────────────────────────────────────────────────
   lama-aiserver-fr-prod:
     image: lama-aiserver:${DEPLOY_TAG:-latest}
+    pull_policy: never
     container_name: lama-aiserver-fr-prod
     networks:
       - prod-internal
@@ -74,6 +75,7 @@ services:
   # ─────────────────────────────────────────────────────────
   lama-server-prod:
     image: lama-server:${DEPLOY_TAG:-latest}
+    pull_policy: never
     container_name: lama-server-prod
     networks:
       - prod-internal
@@ -85,6 +87,8 @@ services:
       LAMA_SERVER_ALLOW_SHUTDOWN: "false"
       LAMA_RUNTIME_MODE: "online"
       LAMA_AI_SERVER_URL: "http://lama-aiserver-fr-prod:5203"
+      ConnectionStrings__LamaServerDb: "Host=postgres-lama-prod;Port=5432;Database=${POSTGRES_DB:-lama_prod};Username=${POSTGRES_USER:-lama_prod};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required};Ssl Mode=Disable;Application Name=LamaServer.Prod;"
+      Jwt__Secret: "${JWT_SECRET:?JWT_SECRET is required}"
       Database__AutoMigrate: "true"
       # LAMA_ADMIN_SECRET is read from .env
     expose:
@@ -125,6 +129,7 @@ services:
   # ─────────────────────────────────────────────────────────
   lama-webapp-prod:
     image: lama-webapp:${DEPLOY_TAG:-latest}
+    pull_policy: never
     container_name: lama-webapp-prod
     networks:
       - prod-internal

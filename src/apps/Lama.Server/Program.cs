@@ -67,14 +67,28 @@ var app = builder.Build();
 var autoMigrate = builder.Configuration.GetValue<bool?>("Database:AutoMigrate") ?? false;
 if (autoMigrate)
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<LamaDbContext>();
-    db.Database.Migrate();
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LamaDbContext>();
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Server: migration DB échouée au démarrage (démarrage maintenu).");
+    }
 }
 
 // ── Schéma lexicon (créé si absent, idempotent) ───────────────────────────
-var lexicon = app.Services.GetRequiredService<ILexiconReader>();
-await lexicon.EnsureSchemaAsync();
+try
+{
+    var lexicon = app.Services.GetRequiredService<ILexiconReader>();
+    await lexicon.EnsureSchemaAsync();
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "Server: impossible d'initialiser le schéma lexicon (démarrage maintenu).");
+}
 
 // ── Seeding des bots IA ───────────────────────────────────────────────────
 try

@@ -184,6 +184,22 @@ echo "[VPS] Chargement des images..."
 docker load -i "\$BUNDLE"
 rm -f "\$BUNDLE"
 
+echo "[VPS] Alignement des tags d'images (latest + tag déployé)..."
+for img in lama-server lama-webapp lama-aiserver; do
+  if docker image inspect "\$img:\$DEPLOY_TAG" >/dev/null 2>&1; then
+    docker tag "\$img:\$DEPLOY_TAG" "\$img:latest"
+  fi
+done
+
+echo "[VPS] Persist DEPLOY_TAG dans .env pour les relances manuelles..."
+if [ -f "\$REMOTE_DIR/.env" ]; then
+  if grep -q '^DEPLOY_TAG=' "\$REMOTE_DIR/.env"; then
+    sed -i "s/^DEPLOY_TAG=.*/DEPLOY_TAG=\$DEPLOY_TAG/" "\$REMOTE_DIR/.env"
+  else
+    printf "\nDEPLOY_TAG=%s\n" "\$DEPLOY_TAG" >> "\$REMOTE_DIR/.env"
+  fi
+fi
+
 echo "[VPS] Arrêt des stacks depuis les anciens répertoires..."
 for OLD_DIR in "/srv/playalama/\$DEPLOY_ENV" "/srv/playalama"; do
   if [ -d "\$OLD_DIR" ] && ([ -f "\$OLD_DIR/docker-compose.yml" ] || [ -f "\$OLD_DIR/tools/docker/docker-compose.\$DEPLOY_ENV.yml" ]); then

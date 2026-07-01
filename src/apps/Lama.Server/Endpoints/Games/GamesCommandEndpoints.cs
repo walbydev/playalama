@@ -71,7 +71,8 @@ public static class GamesCommandEndpoints
         GameHubState state,
         IConfiguration config,
         IAISuggestionClient aiClient,
-        BotAutoPlayService botAutoPlay)
+        BotAutoPlayService botAutoPlay,
+        ILoggerFactory loggerFactory)
     {
         // Vérifier l'authentification
         if (!context.IsAuthenticated())
@@ -173,7 +174,17 @@ public static class GamesCommandEndpoints
             GameLevel: level,
             GameType: gameType);
 
-        var engine = state.CreateEngine(profile, languages);
+        IGameEngine engine;
+        try
+        {
+            engine = state.CreateEngine(profile, languages);
+        }
+        catch (Exception ex)
+        {
+            loggerFactory.CreateLogger("GamesCommandEndpoints").LogError(ex, "Impossible de créer le moteur de jeu pour les langues {Languages}.", string.Join(",", languages));
+            return Results.Problem("Lexique indisponible. Réessayez dans quelques secondes.", statusCode: 503);
+        }
+
 
         // ── Joueurs initiaux ──────────────────────────────────────────────────
         var initialPlayers = new List<OnlinePlayer>();

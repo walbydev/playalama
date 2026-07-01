@@ -125,6 +125,7 @@ mkdir -p "$STAGE_DIR/tools/docker"
 
 SERVER_IMAGE="lama-server:$DEPLOY_TAG"
 WEBAPP_IMAGE="lama-webapp:$DEPLOY_TAG"
+AISERVER_IMAGE="lama-aiserver:$DEPLOY_TAG"
 
 # ── Build images ──────────────────────────────────────────────────────────────
 log "Build image serveur ($SERVER_IMAGE)..."
@@ -133,9 +134,12 @@ run_cmd "cd '$ROOT_DIR' && docker build -f tools/docker/Dockerfile.server -t '$S
 log "Build image webapp ($WEBAPP_IMAGE)..."
 run_cmd "cd '$ROOT_DIR' && docker build -f tools/docker/Dockerfile.webapp -t '$WEBAPP_IMAGE' ."
 
+log "Build image aiserver ($AISERVER_IMAGE)..."
+run_cmd "cd '$ROOT_DIR' && docker build -f Dockerfile.aiserver -t '$AISERVER_IMAGE' ."
+
 # ── Pack images ───────────────────────────────────────────────────────────────
 log "Pack des images → $BUNDLE_FILE..."
-run_cmd "cd '$ROOT_DIR' && docker save '$SERVER_IMAGE' '$WEBAPP_IMAGE' | gzip > '$BUNDLE_FILE'"
+run_cmd "cd '$ROOT_DIR' && docker save '$SERVER_IMAGE' '$WEBAPP_IMAGE' '$AISERVER_IMAGE' | gzip > '$BUNDLE_FILE'"
 
 # ── Prépare fichiers de déploiement ──────────────────────────────────────────
 log "Préparation des fichiers de déploiement..."
@@ -156,6 +160,8 @@ services:
     image: $SERVER_IMAGE
   lama-webapp-prod:
     image: $WEBAPP_IMAGE
+  lama-aiserver-fr-prod:
+    image: $AISERVER_IMAGE
 EOF
 
 # ── Sync VPS ──────────────────────────────────────────────────────────────────
@@ -191,6 +197,22 @@ cd "$REMOTE_DIR"
 echo "[VPS] Chargement des images..."
 docker load -i "$BUNDLE_FILE"
 rm -f "$BUNDLE_FILE"
+
+echo "[VPS] Alignement des tags d'images (latest + tag déployé)..."
+for img in lama-server lama-webapp lama-aiserver; do
+  if docker image inspect "$img:$DEPLOY_TAG" >/dev/null 2>&1; then
+    docker tag "$img:$DEPLOY_TAG" "$img:latest"
+  fi
+done
+
+echo "[VPS] Persist DEPLOY_TAG dans .env pour les relances manuelles..."
+if [ -f "$REMOTE_DIR/.env" ]; then
+  if grep -q '^DEPLOY_TAG=' "$REMOTE_DIR/.env"; then
+    sed -i "s/^DEPLOY_TAG=.*/DEPLOY_TAG=$DEPLOY_TAG/" "$REMOTE_DIR/.env"
+  else
+    printf "\nDEPLOY_TAG=%s\n" "$DEPLOY_TAG" >> "$REMOTE_DIR/.env"
+  fi
+fi
 
 echo "[VPS] Déploiement des conteneurs..."
 DEPLOY_TAG="$DEPLOY_TAG" docker compose \

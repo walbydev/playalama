@@ -221,7 +221,14 @@ try
         })
         .Build();
 
-    await host.Services.GetRequiredService<ILexiconReader>().EnsureSchemaAsync();
+    try
+    {
+        await host.Services.GetRequiredService<ILexiconReader>().EnsureSchemaAsync();
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Console: lexicon DB inaccessible — fonctionnement hors-ligne.");
+    }
 
     var accountService = host.Services.GetRequiredService<IAccountService>();
     if (!accountService.IsInitialized)

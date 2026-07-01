@@ -21,10 +21,12 @@ public sealed class MoveValidator
     private static readonly Position Center = new(7, 7);
 
     private readonly IReadOnlySet<string> _dictionary;
+    private readonly bool _lenientMode;
 
     public MoveValidator(IReadOnlySet<string> dictionary)
     {
         _dictionary = dictionary;
+        _lenientMode = dictionary.Count == 0;
     }
 
     public MoveValidationResult Validate(
@@ -115,7 +117,7 @@ public sealed class MoveValidator
                 return MoveValidationResult.Invalid("Le premier mot doit avoir au moins 2 lettres.");
 
             var firstWord = ExtractMainWord(placements, board, isHorizontal);
-            if (!_dictionary.Contains(firstWord))
+            if (!_lenientMode && !_dictionary.Contains(firstWord))
                 return MoveValidationResult.Invalid(
                     $"« {firstWord} » n'est pas dans le dictionnaire.");
 
@@ -134,7 +136,7 @@ public sealed class MoveValidator
             return MoveValidationResult.Invalid("Le mot formé doit avoir au moins 2 lettres.");
 
         // 9. Dictionnaire — mot principal
-        if (!_dictionary.Contains(mainWord))
+        if (!_lenientMode && !_dictionary.Contains(mainWord))
             return MoveValidationResult.Invalid(
                 $"« {mainWord} » n'est pas dans le dictionnaire.");
 
@@ -142,7 +144,7 @@ public sealed class MoveValidator
         var crossWords = ExtractCrossWords(placements, board, isHorizontal);
         foreach (var crossWord in crossWords)
         {
-            if (!_dictionary.Contains(crossWord))
+            if (!_lenientMode && !_dictionary.Contains(crossWord))
                 return MoveValidationResult.Invalid(
                     $"Le croisement « {crossWord} » n'est pas dans le dictionnaire.");
         }

@@ -46,6 +46,7 @@ services:
   # ─────────────────────────────────────────────────────────
   lama-aiserver-fr-staging:
     image: lama-aiserver:${DEPLOY_TAG:-latest}
+    pull_policy: never
     container_name: lama-aiserver-fr-staging
     networks:
       - staging-internal
@@ -74,6 +75,7 @@ services:
   # ─────────────────────────────────────────────────────────
   lama-server-staging:
     image: lama-server:${DEPLOY_TAG:-latest}
+    pull_policy: never
     container_name: lama-server-staging
     networks:
       - staging-internal
@@ -85,6 +87,8 @@ services:
       LAMA_SERVER_ALLOW_SHUTDOWN: "true"
       LAMA_RUNTIME_MODE: "online"
       LAMA_AI_SERVER_URL: "http://lama-aiserver-fr-staging:5203"
+      ConnectionStrings__LamaServerDb: "Host=postgres-lama-staging;Port=5432;Database=${POSTGRES_DB:-lama_staging};Username=${POSTGRES_USER:-lama_staging};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required};Ssl Mode=Disable;Application Name=LamaServer.Staging;"
+      Jwt__Secret: "${JWT_SECRET:?JWT_SECRET is required}"
       Database__AutoMigrate: "true"
     expose:
       - "5201"
@@ -124,6 +128,7 @@ services:
   # ─────────────────────────────────────────────────────────
   lama-webapp-staging:
     image: lama-webapp:${DEPLOY_TAG:-latest}
+    pull_policy: never
     container_name: lama-webapp-staging
     networks:
       - staging-internal
