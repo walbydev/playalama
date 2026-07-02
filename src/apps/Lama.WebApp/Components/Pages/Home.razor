@@ -29,6 +29,16 @@
     </div>
 </section>
 
+<style>
+:global(.llamo-watermark) {
+    opacity: 0.35 !important;
+}
+
+:global(html.dark .llamo-watermark) {
+    opacity: 0.40 !important;
+}
+</style>
+
 @code {
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

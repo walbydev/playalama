@@ -125,7 +125,7 @@
   <data name="Contact.GitHub.Title"><value>GitHub Issues</value></data>
   <data name="Contact.GitHub.Desc"><value>Found a bug or have a feature idea? Open an issue on our GitHub repository.</value></data>
   <data name="Contact.GitHub.Button"><value>View issues</value></data>
-  <data name="Contact.Community.Title"><value>👥 Community</value></data>
+  <data name="Contact.Community.Title"><value>Community</value></data>
   <data name="Contact.Community.Desc"><value>Playalama is a community project. Your feedback helps us improve the game!</value></data>
   <data name="Contact.Community.Point1"><value>Share your strategies and best moves</value></data>
   <data name="Contact.Community.Point2"><value>Help translate the game into your language</value></data>

@@ -1932,3 +1932,49 @@ footer {
 /* Dictionary language picker */
 .dict-lang-selector { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .5rem; }
 .dict-lang-selector .lang-choice-btn { padding: .2rem .5rem; font-size: .8rem; }
+
+/* ─ Llamo Watermark ─ */
+.llamo-watermark {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 350px;
+    height: 350px;
+    background-image: url('/assets/images/playalama/llamo.webp');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: bottom left;
+    opacity: 0.175;
+    pointer-events: none;
+    z-index: 0;
+    mix-blend-mode: multiply;
+}
+
+/* Dark theme: use lighten to make llamo visible on dark background */
+html.dark .llamo-watermark {
+    mix-blend-mode: lighten;
+    opacity: 0.22;
+}
+
+/* Light theme: keep multiply */
+html.light .llamo-watermark {
+    mix-blend-mode: multiply;
+}
+
+@media (max-width: 768px) {
+    .llamo-watermark {
+        width: 200px;
+        height: 200px;
+        opacity: 0.12;
+    }
+    
+    html.dark .llamo-watermark {
+        opacity: 0.18;
+    }
+}
+
+@media (max-width: 480px) {
+    .llamo-watermark {
+        display: none;
+    }
+}
