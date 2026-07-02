@@ -1027,13 +1027,23 @@ footer {
     flex-wrap: wrap;
 }
 
-.game-name-display {
+.game-header-info {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    min-width: 150px;
-    max-width: 250px;
-    padding: 0 1rem;
+    gap: .5rem;
+    margin-left: auto;
+    padding: 0 .25rem;
+}
+
+.game-turn-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    padding: .1rem .4rem;
+    white-space: nowrap;
 }
 
 .game-name-label {
@@ -1044,6 +1054,18 @@ footer {
     overflow: hidden;
     white-space: nowrap;
     letter-spacing: 0.02em;
+}
+
+.debug-export-btn {
+    opacity: 0.5;
+    font-size: 0.8rem;
+    padding: .15rem .35rem !important;
+    border: 1px dashed var(--accent) !important;
+    border-radius: var(--radius-sm);
+}
+
+.debug-export-btn:hover {
+    opacity: 1;
 }
 
 /* Sac de lettres dans l'en-tête — aligné en hauteur avec les boutons voisins */

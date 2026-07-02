@@ -6,6 +6,8 @@
 @inject NavigationManager Navigation
 @inject GameLayoutService Layout
 @inject IStringLocalizer<SharedResource> L
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
+@inject IJSRuntime JS
 
 <PageTitle>@L["Game.PageTitle", GameId]</PageTitle>
 
@@ -63,9 +65,6 @@ else
                     </div>
 
                     <div class="game-header-right">
-                        <div class="game-name-display" title="@L["Game.GameName"]">
-                            <span class="game-name-label">@(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")</span>
-                        </div>
                         <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
                             @L["Game.Refresh"]
                         </button>
@@ -92,6 +91,21 @@ else
                                 </button>
                             }
                         }
+                        @* ── Groupe info (Tour · Nom · Export) — poussé à droite ── *@
+                        <div class="game-header-info">
+                            <span class="game-turn-label">@L["Game.Turn", _vm.Snapshot.TurnNumber]</span>
+                            <span class="game-name-label" title="@L["Game.GameName"]">
+                                @(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")
+                            </span>
+                            @if (Env.IsDevelopment())
+                            {
+                                <button class="btn btn-ghost btn-sm debug-export-btn"
+                                        title="@(_exportCopied ? "✓ Copié !" : "[DEV] Copier le plateau (JSONL)")"
+                                        @onclick="ExportBoardAsync">
+                                    @(_exportCopied ? "✓" : "📋")
+                                </button>
+                            }
+                        </div>
                     </div>
                 </div>
 
@@ -595,6 +609,7 @@ else
     private string? _turnNotice;
     private DateTimeOffset _turnNoticeUntilUtc;
     private string? _lastAnnouncedMoveId;
+    private bool _exportCopied;
 
     protected override async Task OnInitializedAsync()
     {
@@ -1031,6 +1046,89 @@ else
         {
             _abandonError = _vm.Error;
         }
+        StateHasChanged();
+    }
+
+    // ── Export debug (dev seulement) ─────────────────────────────────────────
+
+    private async Task ExportBoardAsync()
+    {
+        if (_vm.Snapshot is null) return;
+
+        var s = _vm.Snapshot;
+        var lines = new System.Text.StringBuilder();
+
+        // ── Ligne 1 : métadonnées ─────────────────────────────────────────
+        var meta = new
+        {
+            type     = "meta",
+            gameId   = s.Id,
+            gameName = s.GameName,
+            turn     = s.TurnNumber,
+            lang     = s.Language,
+            bag      = s.BagCount,
+            isOver   = s.IsGameOver,
+            players  = s.Players.Select(p => new { p.PlayerName, p.Score, p.IsBot }),
+            current  = s.Players.ElementAtOrDefault(s.CurrentPlayerIndex)?.PlayerName,
+            exportedAt = DateTimeOffset.UtcNow.ToString("o")
+        };
+        lines.AppendLine(System.Text.Json.JsonSerializer.Serialize(meta));
+
+        // ── Construire la grille ──────────────────────────────────────────
+        var grid = new char?[15, 15];
+        foreach (var t in s.Board)
+            grid[t.Row, t.Column] = t.Letter;
+
+        // ── Mots horizontaux ─────────────────────────────────────────────
+        for (var row = 0; row < 15; row++)
+        {
+            var col = 0;
+            while (col < 15)
+            {
+                if (grid[row, col] is not null)
+                {
+                    var start = col;
+                    while (col < 15 && grid[row, col] is not null) col++;
+                    if (col - start >= 2)
+                    {
+                        var word = new string(Enumerable.Range(start, col - start)
+                            .Select(c => grid[row, c]!.Value).ToArray());
+                        lines.AppendLine(System.Text.Json.JsonSerializer.Serialize(
+                            new { type = "word", word, row, col = start, dir = "H" }));
+                    }
+                }
+                else col++;
+            }
+        }
+
+        // ── Mots verticaux ────────────────────────────────────────────────
+        for (var col = 0; col < 15; col++)
+        {
+            var row = 0;
+            while (row < 15)
+            {
+                if (grid[row, col] is not null)
+                {
+                    var start = row;
+                    while (row < 15 && grid[row, col] is not null) row++;
+                    if (row - start >= 2)
+                    {
+                        var word = new string(Enumerable.Range(start, row - start)
+                            .Select(r => grid[r, col]!.Value).ToArray());
+                        lines.AppendLine(System.Text.Json.JsonSerializer.Serialize(
+                            new { type = "word", word, row = start, col, dir = "V" }));
+                    }
+                }
+                else row++;
+            }
+        }
+
+        await JS.InvokeVoidAsync("playalamaDebug.copyToClipboard", lines.ToString());
+
+        _exportCopied = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _exportCopied = false;
         StateHasChanged();
     }
 
