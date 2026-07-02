@@ -208,9 +208,28 @@ public sealed class OnlineCliE2ETests : IAsyncLifetime, IDisposable
 		start.ExitCode.Should().Be(0);
 		start.StdOut.Should().Contain("Partie démarrée");
 
-		var passAfterStart = await RunCliAsync(_hostSessionDir, "play", "pass");
-		passAfterStart.ExitCode.Should().Be(0);
-		passAfterStart.StdOut.Should().Contain("(online)");
+		// Le premier joueur est tiré au sort : on récupère le joueur courant pour
+		// utiliser la bonne session (Alice = host, Bob = guest, IA = ignoré).
+		var showAfterStart = await RunCliAsync(_hostSessionDir, "game", "show", gameId, "--output", "json");
+		showAfterStart.ExitCode.Should().Be(0);
+		using var showDoc = JsonDocument.Parse(showAfterStart.StdOut);
+		var currentPlayerIndex = showDoc.RootElement.GetProperty("CurrentPlayerIndex").GetInt32();
+		var players = showDoc.RootElement.GetProperty("Players");
+		var currentPlayerName = players[currentPlayerIndex].GetProperty("PlayerName").GetString();
+
+		// Associer le joueur courant à la session appropriée (IA → on ne peut pas passer à sa place)
+		string? humanSessionDir = string.Equals(currentPlayerName, "Alice", StringComparison.OrdinalIgnoreCase)
+			? _hostSessionDir
+			: string.Equals(currentPlayerName, "Bob", StringComparison.OrdinalIgnoreCase)
+				? _guestSessionDir
+				: null;
+
+		if (humanSessionDir is not null)
+		{
+			var passAfterStart = await RunCliAsync(humanSessionDir, "play", "pass");
+			passAfterStart.ExitCode.Should().Be(0);
+			passAfterStart.StdOut.Should().Contain("(online)");
+		}
 	}
 
 	[Fact]
