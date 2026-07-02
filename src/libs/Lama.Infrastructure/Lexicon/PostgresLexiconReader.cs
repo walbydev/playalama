@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using Lama.Contracts.Lexicon;
 using Microsoft.Extensions.Logging;
@@ -16,6 +18,20 @@ public sealed partial class PostgresLexiconReader(string connectionString, ILogg
 
     [GeneratedRegex("^[A-Z]+$")]
     private static partial Regex ScrabbleWord();
+
+    /// <summary>
+    /// Supprime les diacritiques (accents) et met en majuscules :
+    /// "Noël" → "NOEL", "aï" → "AI", "élan" → "ELAN".
+    /// </summary>
+    public static string NormalizeForLookup(string text)
+    {
+        var decomposed = text.Normalize(NormalizationForm.FormD);
+        var sb = new StringBuilder(decomposed.Length);
+        foreach (var c in decomposed)
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                sb.Append(c);
+        return sb.ToString().Normalize(NormalizationForm.FormC).ToUpperInvariant();
+    }
 
     public async Task EnsureSchemaAsync(CancellationToken cancellationToken = default)
     {
@@ -47,7 +63,10 @@ public sealed partial class PostgresLexiconReader(string connectionString, ILogg
             using var connection = new NpgsqlConnection(_connectionString);
             connection.Open();
             using var command = new NpgsqlCommand(
-                "SELECT lemma_normalized FROM lexicon.words WHERE language_code = @lang", connection);
+                "SELECT w.lemma_normalized " +
+                "FROM lexicon.words w " +
+                "INNER JOIN lexicon.mv_valid_words mv ON mv.word_id = w.word_id " +
+                "WHERE w.language_code = @lang", connection);
             command.Parameters.AddWithValue("lang", languageCode);
             command.CommandTimeout = 0;
 
@@ -71,7 +90,7 @@ public sealed partial class PostgresLexiconReader(string connectionString, ILogg
 
     public async Task<WordInfo?> GetWordInfoAsync(string languageCode, string word, CancellationToken cancellationToken = default)
     {
-        var normalized = word.Trim().ToUpperInvariant();
+        var normalized = NormalizeForLookup(word.Trim());
         await using var connection = new NpgsqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
@@ -119,7 +138,7 @@ public sealed partial class PostgresLexiconReader(string connectionString, ILogg
 
     public async Task<IReadOnlyList<string>> SearchWordsAsync(string languageCode, string query, int limit = 20, CancellationToken cancellationToken = default)
     {
-        var normalized = query.Trim().ToUpperInvariant();
+        var normalized = NormalizeForLookup(query.Trim());
         if (string.IsNullOrWhiteSpace(normalized))
             return [];
         if (!normalized.All(c => c is >= 'A' and <= 'Z'))
@@ -132,7 +151,7 @@ public sealed partial class PostgresLexiconReader(string connectionString, ILogg
         await connection.OpenAsync(cancellationToken);
 
         await using var cmd = new NpgsqlCommand(
-            "SELECT lemma FROM lexicon.words " +
+            "SELECT lemma_normalized FROM lexicon.words " +
             "WHERE language_code = @lang AND lemma_normalized LIKE @prefix " +
             "ORDER BY char_length(lemma_normalized), lemma_normalized " +
             "LIMIT @limit", connection);

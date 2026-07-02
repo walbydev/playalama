@@ -89,6 +89,13 @@ make option-a-clean            # Réinitialiser DB
 - **Password**: dev_password_change_me
 - **Database**: lama_dev
 
+## Lexique & Vue Matérialisée
+
+- **[LEXICON_MV_REFRESH.md](./LEXICON_MV_REFRESH.md)**
+  - Rafraîchir `lexicon.mv_valid_words` après un import ou correction de définitions
+  - Commande `REFRESH MATERIALIZED VIEW CONCURRENTLY`
+  - Tableau récapitulatif des cas nécessitant un refresh
+
 ## Schéma DB
 
 Tables principales :

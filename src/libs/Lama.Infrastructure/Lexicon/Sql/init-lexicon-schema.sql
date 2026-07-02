@@ -100,3 +100,21 @@ CREATE INDEX IF NOT EXISTS idx_lexicon_import_runs_lookup
 CREATE UNIQUE INDEX IF NOT EXISTS ux_lexicon_import_runs_completed_fingerprint
     ON lexicon.import_runs (environment, language_code, sha256, options)
     WHERE status = 'completed';
+
+-- ============================================================================
+-- Vue matérialisée : mots valides (sans abréviations)
+-- Exclut tout mot dont au moins une définition a part_of_speech = 'abbrev'.
+-- À rafraîchir après un import : voir docs/utils/LEXICON_MV_REFRESH.md
+-- ============================================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS lexicon.mv_valid_words AS
+SELECT w.word_id
+FROM lexicon.words w
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM lexicon.definitions d
+    WHERE d.word_id = w.word_id
+    AND d.part_of_speech = 'abbrev'
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_valid_words_id
+    ON lexicon.mv_valid_words (word_id);

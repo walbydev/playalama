@@ -261,6 +261,101 @@ public class MoveValidatorTests
 
     #endregion
 
+    #region Mots croisés — mot horizontal adjacent à un autre mot horizontal
+
+    /// <summary>
+    /// Régression : WALIS posé horizontal au-dessus de PHOTOS crée des mots croisés
+    /// verticaux invalides (WO, LO, IS). Le coup doit être rejeté.
+    ///
+    /// Contexte du bug : quand le dictionnaire était vide (_lenientMode=true),
+    /// ces croisements invalides passaient sans contrôle.
+    /// </summary>
+    [Fact]
+    public void Move_HorizontalWordAboveParallelWord_RejectsInvalidCrossWords()
+    {
+        // Plateau : PHOTOS horizontal en ligne 3 (cols 6-11)
+        //           QATS vertical en colonne 9 (lignes 1-4) — partage T(3,9) avec PHOTOS
+        var board = BoardWith(new Dictionary<Position, char>
+        {
+            // QATS vertical : Q(1,9) A(2,9) T(3,9) S(4,9)
+            [new Position(1, 9)] = 'Q',
+            [new Position(2, 9)] = 'A',
+            [new Position(3, 9)] = 'T',
+            [new Position(4, 9)] = 'S',
+            // PHOTOS horizontal : P(3,6) H(3,7) O(3,8) T(3,9) O(3,10) S(3,11)
+            [new Position(3, 6)] = 'P',
+            [new Position(3, 7)] = 'H',
+            [new Position(3, 8)] = 'O',
+            // T(3,9) partagé avec QATS
+            [new Position(3, 10)] = 'O',
+            [new Position(3, 11)] = 'S',
+        });
+
+        // On pose WALIS horizontal en ligne 2 : W(2,8) A(2,9)=existe L(2,10) I(2,11) S(2,12)
+        // Nouvelles tuiles uniquement (A(2,9) est déjà sur le plateau)
+        // Mots croisés formés : WO (col 8), LO (col 10), IS (col 11) → hors dictionnaire
+        var newTiles = new Dictionary<Position, char>
+        {
+            [new Position(2, 8)]  = 'W',
+            [new Position(2, 10)] = 'L',
+            [new Position(2, 11)] = 'I',
+            [new Position(2, 12)] = 'S',
+        };
+
+        // Le dict de test ne contient pas WO, LO, IS → le coup doit être invalide
+        var result = _sut.Validate(newTiles, board, isFirstMove: false);
+
+        result.IsValid.Should().BeFalse(
+            because: "WO, LO et IS ne sont pas dans le dictionnaire — le coup crée des mots croisés invalides");
+        result.ErrorMessage.Should().Contain("croisement");
+    }
+
+    /// <summary>
+    /// Vérifie que le même coup (WALIS) serait valide si les mots croisés
+    /// formés sont tous présents dans le dictionnaire.
+    /// </summary>
+    [Fact]
+    public void Move_HorizontalWordAboveParallelWord_AcceptsValidCrossWords()
+    {
+        // Plateau : MOTS horizontal en ligne 3 (cols 6-9)
+        var board = BoardWith(new Dictionary<Position, char>
+        {
+            [new Position(3, 6)] = 'M',
+            [new Position(3, 7)] = 'O',
+            [new Position(3, 8)] = 'T',
+            [new Position(3, 9)] = 'S',
+        });
+
+        // On pose AS horizontal en ligne 2 : A(2,6) S(2,7)
+        // Mots croisés : AM (col 6) = A+M → "AM" n'est pas dans le dict
+        // Utilisons MA+MAS : pose MA en (2,7) et (2,8)
+        // Croisements : O(3,7)+A(2,7)="OA"... pas valide non plus.
+        // Utilisons un cas simple : on pose "MA" au-dessus de "MAS" pour former "MM" "AA"
+        // → déjà couvert par Move_FormingInvalidCrossWord_IsInvalid.
+        //
+        // Ici : plateau "AS" vertical (A(7,7), S(8,7)), on pose "MA" horizontal (M(7,6), A(7,7)=exist)
+        // Nouveau mot principal : "MA" (en dict). Croisement : aucun (A(7,7) existe déjà).
+        var board2 = BoardWith(new Dictionary<Position, char>
+        {
+            [new Position(7, 7)] = 'A',
+            [new Position(8, 7)] = 'S',
+        });
+
+        var move = new Dictionary<Position, char>
+        {
+            [new Position(7, 6)] = 'M',
+            // A(7,7) déjà sur le plateau
+        };
+
+        var result = _sut.Validate(move, board2, isFirstMove: false);
+
+        // MA est dans le dict, aucun nouveau croisement vertical (A existe déjà) → valide
+        result.IsValid.Should().BeTrue(
+            because: "MA est dans le dictionnaire et ne crée aucun croisement invalide");
+    }
+
+    #endregion
+
     #region Continuité — pas de trou autorisé
 
     [Fact]
