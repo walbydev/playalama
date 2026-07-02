@@ -63,6 +63,9 @@ else
                     </div>
 
                     <div class="game-header-right">
+                        <div class="game-name-display" title="@L["Game.GameName"]">
+                            <span class="game-name-label">@(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")</span>
+                        </div>
                         <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
                             @L["Game.Refresh"]
                         </button>

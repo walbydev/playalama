@@ -52,7 +52,7 @@ public class GameEngineTests
     {
         var engine = CreateEngine();
 
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
         var state = engine.GetGameState();
 
         state.Should().NotBeNull();
@@ -69,7 +69,7 @@ public class GameEngineTests
     {
         var engine = CreateEngine();
 
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
         var state = engine.GetGameState();
 
         state.Players[0].Rack.Should().HaveCount(7,
@@ -82,7 +82,7 @@ public class GameEngineTests
     {
         var engine = CreateEngine();
 
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
         var state = engine.GetGameState();
 
         for (var r = 0; r < 15; r++)
@@ -96,7 +96,7 @@ public class GameEngineTests
     {
         var engine = CreateEngine();
 
-        engine.InitializeGame(["Alice", "Bob", "Charlie"]);
+        engine.InitializeGame(["Alice", "Bob", "Charlie"], 0);
         var state = engine.GetGameState();
 
         state.Players.Should().HaveCount(3);
@@ -109,7 +109,7 @@ public class GameEngineTests
     {
         var engine = CreateEngine();
 
-        var act = () => engine.InitializeGame([]);
+        var act = () => engine.InitializeGame([], 0);
 
         act.Should().Throw<GameException>(
             because: "une liste vide de joueurs est toujours invalide");
@@ -123,7 +123,7 @@ public class GameEngineTests
         // avant que d'autres joueurs ne rejoignent).
         var engine = CreateEngine();
 
-        engine.InitializeGame(["Solo"]);
+        engine.InitializeGame(["Solo"], 0);
         var state = engine.GetGameState();
 
         state.Players.Should().HaveCount(1);
@@ -136,7 +136,7 @@ public class GameEngineTests
     {
         var engine = CreateEngine();
 
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
         var state = engine.GetGameState();
 
         state.Players.Should().AllSatisfy(p =>
@@ -152,7 +152,7 @@ public class GameEngineTests
     public void GetCurrentPlayer_ReturnsFirstPlayer_AfterInit()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         var current = engine.GetCurrentPlayer();
 
@@ -178,7 +178,7 @@ public class GameEngineTests
     public void ValidateMove_ValidFirstMove_ReturnsTrue()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         // Premier coup : LA horizontal depuis H8 (7,7)
         var letters = new Dictionary<Position, char>
@@ -198,7 +198,7 @@ public class GameEngineTests
     public void ValidateMove_NotThroughCenter_ReturnsFalse()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         // Premier coup loin de H8
         var letters = new Dictionary<Position, char>
@@ -230,7 +230,7 @@ public class GameEngineTests
     public void ValidateMove_EmptyMove_ReturnsFalse()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         var (isValid, error, score) = engine.ValidateMove(new Dictionary<Position, char>());
 
@@ -246,7 +246,7 @@ public class GameEngineTests
     public void PlayMove_ValidFirstMove_UpdatesBoardAndScore()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         // On force le rack d'Alice à contenir L et A
         ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
@@ -272,7 +272,7 @@ public class GameEngineTests
     public void PlayMove_ValidMove_AdvancesToNextPlayer()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
         ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
 
         var letters = new Dictionary<Position, char>
@@ -291,7 +291,7 @@ public class GameEngineTests
     public void PlayMove_ValidMove_RefillsRack()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
         ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
 
         var letters = new Dictionary<Position, char>
@@ -311,7 +311,7 @@ public class GameEngineTests
     public void PlayMove_InvalidMove_ThrowsGameException()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         // Coup invalide : pas sur H8 pour le premier coup
         var letters = new Dictionary<Position, char>
@@ -330,7 +330,7 @@ public class GameEngineTests
     public void PlayMove_LetterNotInRack_ThrowsGameException()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         // Force un rack sans 'Z'
         ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
@@ -352,7 +352,7 @@ public class GameEngineTests
     public void PlayMove_UsesWildcardFromRack_WhenLetterMissing()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         // Pas de 'L' en rack, mais un joker '*'.
         ForceRack(engine, 0, ['*', 'A', 'M', 'I', 'S', 'T', 'O']);
@@ -373,7 +373,7 @@ public class GameEngineTests
     public void PlayMove_LowercaseLetter_ForcesWildcardEvenIfLetterExistsInRack()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         // Le rack contient L et * : la notation minuscule doit consommer * et garder L.
         ForceRack(engine, 0, ['L', '*', 'A', 'I', 'S', 'T', 'O']);
@@ -394,7 +394,7 @@ public class GameEngineTests
     public void PlayMove_CrossingExistingLetter_DoesNotRequireLetterInRack()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice"]);
+        engine.InitializeGame(["Alice"], 0);
 
         // Premier mot: LA en H8-I8
         ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
@@ -425,7 +425,7 @@ public class GameEngineTests
     public void PlayMove_CrossingExistingWildcardTile_DoesNotCountWildcardPointsTwice()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice"]);
+        engine.InitializeGame(["Alice"], 0);
 
         // Premier coup: "lA" en H8-I8, avec joker force sur 'l'.
         // Score attendu premier coup: (0 + 1) x 2 = 2.
@@ -454,7 +454,7 @@ public class GameEngineTests
     public void PlayMove_IncrementsTurnNumber_AfterFullRound()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
         ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
         ForceRack(engine, 1, ['M', 'A', 'S', 'I', 'T', 'O', 'N']);
 
@@ -483,7 +483,7 @@ public class GameEngineTests
     public void PassTurn_AdvancesToNextPlayer()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         engine.PassTurn();
         var state = engine.GetGameState();
@@ -496,7 +496,7 @@ public class GameEngineTests
     public void PassTurn_WrapsAroundToFirstPlayer()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         engine.PassTurn(); // → Bob
         engine.PassTurn(); // → Alice (wraparound)
@@ -521,7 +521,7 @@ public class GameEngineTests
     public void PassTurn_DoesNotModifyBoard()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         engine.PassTurn();
         var state = engine.GetGameState();
@@ -536,7 +536,7 @@ public class GameEngineTests
     public void PassTurn_DoesNotChangeScore()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         engine.PassTurn();
         var state = engine.GetGameState();
@@ -553,7 +553,7 @@ public class GameEngineTests
     public void SwapLetters_ValidLetters_KeepsRackSizeAndAdvancesPlayer()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
         ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
 
         engine.SwapLetters(['L', 'A']);
@@ -569,7 +569,7 @@ public class GameEngineTests
     public void SwapLetters_LetterNotInRack_ThrowsGameException()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
         ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
 
         var act = () => engine.SwapLetters(['Z']);
@@ -582,7 +582,7 @@ public class GameEngineTests
     public void SwapLetters_EmptySelection_ThrowsGameException()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         var act = () => engine.SwapLetters([]);
 
@@ -644,7 +644,7 @@ public class GameEngineTests
     public void EndGame_SetsIsGameOverToTrue()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         engine.EndGame();
         var state = engine.GetGameState();
@@ -666,7 +666,7 @@ public class GameEngineTests
     public void EndGame_PreventsPlayMove()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
         ForceRack(engine, 0, ['L', 'A', 'M', 'I', 'S', 'T', 'O']);
 
         engine.EndGame();
@@ -685,7 +685,7 @@ public class GameEngineTests
     public void EndGame_PreventPassTurn()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         engine.EndGame();
 
@@ -714,7 +714,7 @@ public class GameEngineTests
     public void GetGameState_ReturnsImmutableCopy()
     {
         var engine = CreateEngine();
-        engine.InitializeGame(["Alice", "Bob"]);
+        engine.InitializeGame(["Alice", "Bob"], 0);
 
         var state1 = engine.GetGameState();
         engine.PassTurn();

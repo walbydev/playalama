@@ -38,6 +38,7 @@ public sealed class GameEngine : IGameEngine
     private bool            _isFirstMove;
     private List<GameMove>  _history = [];
     private GameStateSnapshot? _lastMoveSnapshot;
+    private Random?         _random;
 
     /// <summary>
     /// Initialise le moteur avec le dictionnaire, les scores et la distribution.
@@ -57,6 +58,16 @@ public sealed class GameEngine : IGameEngine
     /// <inheritdoc />
     public void InitializeGame(List<string> playerNames)
     {
+        InitializeGame(playerNames, null);
+    }
+
+    /// <summary>
+    /// Initialise le jeu avec éventuellement un joueur de départ spécifié.
+    /// Si startingPlayerIndex est null, le premier joueur est sélectionné aléatoirement.
+    /// Pour les tests: passer startingPlayerIndex = 0 pour avoir Alice en premier joueur.
+    /// </summary>
+    public void InitializeGame(List<string> playerNames, int? startingPlayerIndex)
+    {
         if (playerNames.Count < MinPlayers)
             throw new GameException(
                 $"Une partie nécessite au moins {MinPlayers} joueurs. " +
@@ -69,7 +80,16 @@ public sealed class GameEngine : IGameEngine
             .Select(name => new PlayerState(name, 0, _bag.Draw(RackSize)))
             .ToList();
 
-        _currentPlayerIndex = 0;
+        if (startingPlayerIndex.HasValue)
+        {
+            _currentPlayerIndex = startingPlayerIndex.Value % _players.Count;
+        }
+        else
+        {
+            _random ??= new Random();
+            _currentPlayerIndex = _random.Next(_players.Count);
+        }
+        
         _turnNumber         = 1;
         _isGameOver         = false;
         _isFirstMove        = true;
