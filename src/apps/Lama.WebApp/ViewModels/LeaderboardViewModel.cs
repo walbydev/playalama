@@ -27,7 +27,6 @@ public sealed class LeaderboardViewModel(LamaApiClient api)
     [
         ("tournament", "🏆 Tournois"),
         ("free",       "⚔️ Parties libres"),
-        ("blitz",      "⚡ Blitz"),
     ];
 
     public async Task LoadAsync(CancellationToken ct = default)

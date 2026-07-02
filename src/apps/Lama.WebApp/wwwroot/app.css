@@ -513,6 +513,8 @@ html.dark .theme-select option {
     color: var(--text);
 }
 .mode-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.25); border-color: var(--card-color, var(--accent)); color: var(--text); text-decoration: none; }
+.mode-card.disabled { opacity: 0.65; cursor: not-allowed; filter: grayscale(15%); }
+.mode-card.disabled:hover { transform: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: var(--border); }
 
 .mode-card-icon { font-size: 2rem; }
 .mode-card-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }

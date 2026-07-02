@@ -1,0 +1,102 @@
+@page "/documentation"
+@layout MainLayout
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Documentation.PageTitle"]</PageTitle>
+
+<div class="page-hero">
+    <div class="eyebrow">@L["Documentation.Eyebrow"]</div>
+    <h1>📚 @L["Documentation.Title"]</h1>
+    <p class="text-muted mt-2">@L["Documentation.Subtitle"]</p>
+</div>
+
+<div class="section">
+    <div class="container">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+            
+            <!-- Section Jouer -->
+            <div class="doc-card">
+                <div class="doc-card-icon">🎮</div>
+                <h2>@L["Documentation.Playing.Title"]</h2>
+                <p>@L["Documentation.Playing.Desc"]</p>
+                <ul style="font-size: 0.95rem; color: var(--text-muted);">
+                    <li>✓ @L["Documentation.Playing.Point1"]</li>
+                    <li>✓ @L["Documentation.Playing.Point2"]</li>
+                    <li>✓ @L["Documentation.Playing.Point3"]</li>
+                </ul>
+                <a href="/rules" class="btn btn-outline btn-sm mt-3">📖 @L["Documentation.Playing.Link"]</a>
+            </div>
+
+            <!-- Section CLI -->
+            <div class="doc-card">
+                <div class="doc-card-icon">💻</div>
+                <h2>@L["Documentation.CLI.Title"]</h2>
+                <p>@L["Documentation.CLI.Desc"]</p>
+                <ul style="font-size: 0.95rem; color: var(--text-muted);">
+                    <li>✓ @L["Documentation.CLI.Point1"]</li>
+                    <li>✓ @L["Documentation.CLI.Point2"]</li>
+                    <li>✓ @L["Documentation.CLI.Point3"]</li>
+                </ul>
+                <a href="/downloads" class="btn btn-outline btn-sm mt-3">⬇ @L["Documentation.CLI.Link"]</a>
+            </div>
+
+            <!-- Section Développement -->
+            <div class="doc-card">
+                <div class="doc-card-icon">🔧</div>
+                <h2>@L["Documentation.Dev.Title"]</h2>
+                <p>@L["Documentation.Dev.Desc"]</p>
+                <ul style="font-size: 0.95rem; color: var(--text-muted);">
+                    <li>✓ @L["Documentation.Dev.Point1"]</li>
+                    <li>✓ @L["Documentation.Dev.Point2"]</li>
+                    <li>✓ @L["Documentation.Dev.Point3"]</li>
+                </ul>
+                <a href="https://github.com/walbydev/playalama" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm mt-3">
+                    <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" style="width: 16px; height: 16px; display: inline; margin-right: 4px; filter: invert(1);" />
+                    @L["Documentation.Dev.Link"]
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+.doc-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.doc-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent);
+}
+
+.doc-card-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.doc-card h2 {
+    font-size: 1.2rem;
+    margin: 0 0 1rem 0;
+}
+
+.doc-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+    text-align: left;
+}
+
+.doc-card li {
+    padding: 0.5rem 0;
+}
+</style>

@@ -20,14 +20,15 @@ public sealed class RulesViewModel
             new("Format",               "15×15, 7 tuiles en main, sac de 102 tuiles (FR), 2–4 joueurs."),
             new("Premier tour",         "Le premier mot doit passer par la case centrale (H8)."),
             new("Bingo",                "Poser ses 7 tuiles en un seul tour rapporte 50 points bonus."),
-            new("Dictionnaire",         "Les mots doivent appartenir au dictionnaire de la langue sélectionnée (FR, EN, ES, DE, IT, PT)."),
+            new("Dictionnaire",         "Les mots doivent appartenir au dictionnaire de la langue sélectionnée (FR, EN, DE)."),
         ]),
 
-        new("blitz", "⚡ Mode Blitz", "La vitesse prime sur la stratégie.",
+        new("blitz", "⚡ Mode Blitz (À venir)", "La vitesse prime sur la stratégie.",
         [
             new("Chrono",               "3 minutes pour la partie entière. Chaque joueur joue dès que c'est son tour, le chrono ne s'arrête pas."),
             new("Passe pénalisé",       "Passer son tour coûte 2 points."),
             new("Fin de partie",        "Quand le chrono atteint zéro, on comptabilise les scores. Les tuiles en main ne sont pas soustraites."),
+            new("Status",               "⚠️ Ce mode sera bientôt disponible."),
         ]),
 
         new("solo-ia", "🤖 Mode Solo vs IA", "Perfectionne ton jeu face à l'IA.",
@@ -37,26 +38,29 @@ public sealed class RulesViewModel
             new("Statistiques",         "Fin de partie : analyse de tes mots manqués, suggestions d'amélioration."),
         ]),
 
-        new("2v2", "👥 Mode 2 vs 2", "La coopération comme arme principale.",
+        new("2v2", "👥 Mode 2 vs 2 (À venir)", "La coopération comme arme principale.",
         [
             new("Équipes",              "2 équipes de 2 joueurs. Le score est la somme des scores des deux partenaires."),
             new("Ordre de jeu",         "L'ordre alterne entre équipes : Équipe A (J1) → Équipe B (J1) → Équipe A (J2) → Équipe B (J2)."),
             new("Communication",        "Un chat d'équipe privé est disponible pendant la partie (non visible par l'adversaire)."),
+            new("Status",               "⚠️ Ce mode sera bientôt disponible."),
         ]),
 
-        new("grand-plateau", "🗺️ Grand Plateau", "Des parties épiques sur un espace élargi.",
+        new("grand-plateau", "🗺️ Grand Plateau (À venir)", "Des parties épiques sur un espace élargi.",
         [
             new("Taille",               "21×21 cases. Plus de place pour les stratégies longues distance."),
             new("Zones spéciales",      "Des zones bonus mobiles apparaissent et disparaissent au fil des tours."),
             new("Évènements aléatoires","Toutes les 5 tuiles posées, un évènement peut survenir : doublement d'une zone, annulation d'un mot, bonus surprise…"),
+            new("Status",               "⚠️ Ce mode sera bientôt disponible."),
         ]),
 
-        new("chaos", "💣 Mode Chaos", "Quand le plateau devient un champ de mines.",
+        new("chaos", "💣 Mode Chaos (À venir)", "Quand le plateau devient un champ de mines.",
         [
             new("Tuiles malus",         "Certaines tuiles dans le sac ont une valeur négative. Tu ne peux voir leur type qu'après les avoir posées."),
             new("Lettres piégées",      "Certaines lettres sur le plateau explosent si un mot les inclut, supprimant les tuiles adjacentes."),
             new("Bombes de plateau",    "À intervalles aléatoires, une zone du plateau est détruite et ses tuiles retournent dans le sac."),
             new("Score négatif",        "Un score peut descendre en dessous de zéro — y compris le vainqueur final."),
+            new("Status",               "⚠️ Ce mode sera bientôt disponible."),
         ]),
     ];
 

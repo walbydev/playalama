@@ -26,7 +26,14 @@ else
         </h1>
         <p class="text-muted mt-2" style="max-width:680px; font-size:1.1rem">@ModeFullDesc(_mode)</p>
         <div class="hero-btns mt-3">
-            <a href="/games" class="btn btn-primary">🎮 @L["GameModes.PlayIn", ModeName(_mode)]</a>
+            @if (_mode.IsImplemented)
+            {
+                <a href="/games" class="btn btn-primary">🎮 @L["GameModes.PlayIn", ModeName(_mode)]</a>
+            }
+            else
+            {
+                <button class="btn btn-primary" disabled title="Ce mode sera bientôt disponible">🎮 @L["GameModes.PlayIn", ModeName(_mode)]</button>
+            }
             <a href="/#modes" class="btn btn-ghost">← @L["GameModes.AllModes"]</a>
         </div>
     </div>
@@ -64,16 +71,32 @@ else
         </div>
     </div>
 
-    <div class="section bg2 text-center">
-        <div class="container">
-            <h2>@L["GameModes.Ready", ModeName(_mode)]</h2>
-            <p class="text-muted mt-2">@L["GameModes.ReadySubtitle"]</p>
-            <div class="hero-btns mt-3">
-                <a href="/games"     class="btn btn-primary btn-lg">🎮 @L["Home.Hero.PlayNow"]</a>
-                <a href="/downloads" class="btn btn-outline btn-lg">⬇ @L["Downloads.CliDownload"]</a>
+    @if (_mode.IsImplemented)
+    {
+        <div class="section bg2 text-center">
+            <div class="container">
+                <h2>@L["GameModes.Ready", ModeName(_mode)]</h2>
+                <p class="text-muted mt-2">@L["GameModes.ReadySubtitle"]</p>
+                <div class="hero-btns mt-3">
+                    <a href="/games"     class="btn btn-primary btn-lg">🎮 @L["Home.Hero.PlayNow"]</a>
+                    <a href="/downloads" class="btn btn-outline btn-lg">⬇ @L["Downloads.CliDownload"]</a>
+                </div>
             </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="section bg2 text-center">
+            <div class="container">
+                <h2>@L["GameModes.ComingSoon", ModeName(_mode)]</h2>
+                <p class="text-muted mt-2">Ce mode sera bientôt disponible. Restez à l'écoute !</p>
+                <div class="hero-btns mt-3">
+                    <a href="/games"     class="btn btn-outline btn-lg">🎮 @L["Home.Hero.PlayNow"]</a>
+                    <a href="/#modes"    class="btn btn-outline btn-lg">← Voir tous les modes</a>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {

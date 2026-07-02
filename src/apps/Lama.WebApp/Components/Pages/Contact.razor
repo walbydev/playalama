@@ -1,0 +1,137 @@
+@page "/contact"
+@layout MainLayout
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Contact.PageTitle"]</PageTitle>
+
+<div class="page-hero">
+    <div class="eyebrow">@L["Contact.Eyebrow"]</div>
+    <h1>📧 @L["Contact.Title"]</h1>
+    <p class="text-muted mt-2">@L["Contact.Subtitle"]</p>
+</div>
+
+<div class="section">
+    <div class="container" style="max-width: 700px; margin: 0 auto;">
+        
+        <div class="contact-methods">
+            <!-- Discord -->
+            <div class="contact-card">
+                <div class="contact-card-header">
+                    <img src="https://assets-global.ssl.fastly.net/pages/discord-icon.svg" alt="Discord" style="width: 40px; height: 40px;" />
+                    <h2>@L["Contact.Discord.Title"]</h2>
+                </div>
+                <p>@L["Contact.Discord.Desc"]</p>
+                <a href="https://discord.gg/6ZRWrcjzbB" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   class="btn btn-primary"
+                   style="
+                     background-color: #5865F2;
+                     border: 1px solid #5865F2;
+                     display: inline-flex;
+                     align-items: center;
+                     gap: 8px;
+                   ">
+                    <img src="https://assets-global.ssl.fastly.net/pages/discord-icon.svg" alt="Discord" style="width: 20px; height: 20px;" />
+                    @L["Contact.Discord.Button"]
+                </a>
+            </div>
+
+            <!-- GitHub Issues -->
+            <div class="contact-card">
+                <div class="contact-card-header">
+                    <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" style="width: 40px; height: 40px; filter: invert(1);" />
+                    <h2>@L["Contact.GitHub.Title"]</h2>
+                </div>
+                <p>@L["Contact.GitHub.Desc"]</p>
+                <a href="https://github.com/walbydev/playalama/issues" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   class="btn btn-outline">
+                    <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" style="width: 16px; height: 16px; filter: invert(1); margin-right: 6px;" />
+                    @L["Contact.GitHub.Button"]
+                </a>
+            </div>
+
+            <!-- Community -->
+            <div class="contact-card community-card">
+                <div class="community-icon">👥</div>
+                <h2>@L["Contact.Community.Title"]</h2>
+                <p>@L["Contact.Community.Desc"]</p>
+                <ul style="list-style: none; padding: 0; margin: 1rem 0;">
+                    <li style="padding: 0.5rem 0;">✓ @L["Contact.Community.Point1"]</li>
+                    <li style="padding: 0.5rem 0;">✓ @L["Contact.Community.Point2"]</li>
+                    <li style="padding: 0.5rem 0;">✓ @L["Contact.Community.Point3"]</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+.contact-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.contact-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.contact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent);
+}
+
+.contact-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.contact-card-header h2 {
+    font-size: 1.3rem;
+    margin: 0;
+}
+
+.contact-card p {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.contact-card ul {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.community-card {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.community-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.community-card h2 {
+    font-size: 1.3rem;
+    margin: 0 0 1rem 0;
+}
+
+.community-card ul {
+    margin: 1rem auto;
+    text-align: left;
+}
+</style>
