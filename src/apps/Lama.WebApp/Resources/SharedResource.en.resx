@@ -305,7 +305,7 @@
   <data name="Home.Why.NoTracking.Title"><value>No tracking</value></data>
   <data name="Home.Why.OpenSource.Text"><value>Source code available on GitHub. Contribute, fork, customize.</value></data>
   <data name="Home.Why.OpenSource.Title"><value>Open Source</value></data>
-  <data name="Home.Why.Responsive.Text"><value>Optimized for mobile, tablet, and desktop with light/dark themes.</value></data>
+  <data name="Home.Why.Responsive.Text"><value>Optimized for tablet, and desktop with light/dark themes.</value></data>
   <data name="Home.Why.Responsive.Title"><value>Responsive</value></data>
   <data name="Home.Why.Title"><value>Built for real players</value></data>
   <data name="Home.Why.WebCli.Text"><value>Play from your browser or terminal with no installation.</value></data>
