@@ -1046,6 +1046,15 @@ footer {
     white-space: nowrap;
 }
 
+.game-focus-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    opacity: 0.75;
+}
+
 .game-name-label {
     font-size: 0.85rem;
     font-weight: 600;

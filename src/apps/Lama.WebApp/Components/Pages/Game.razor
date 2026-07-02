@@ -97,14 +97,11 @@ else
                             <span class="game-name-label" title="@L["Game.GameName"]">
                                 @(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")
                             </span>
-                            @if (Env.IsDevelopment())
-                            {
-                                <button class="btn btn-ghost btn-sm debug-export-btn"
-                                        title="@(_exportCopied ? "✓ Copié !" : "[DEV] Copier le plateau (JSONL)")"
-                                        @onclick="ExportBoardAsync">
-                                    @(_exportCopied ? "✓" : "📋")
-                                </button>
-                            }
+                            <button class="btn btn-ghost btn-sm debug-export-btn"
+                                    title="@(_exportCopied ? "✓ Copié !" : "Copier le plateau (JSONL)")"
+                                    @onclick="ExportBoardAsync">
+                                @(_exportCopied ? "✓" : "📋")
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -149,6 +146,15 @@ else
                             </button>
                         }
                     }
+
+                    <div class="game-header-info">
+                        <span class="game-focus-title">@L["Game.Turn", _vm.Snapshot.TurnNumber] — @(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")</span>
+                        <button class="btn btn-ghost btn-sm debug-export-btn"
+                                title="@(_exportCopied ? "✓ Copié !" : "Copier le plateau (JSONL)")"
+                                @onclick="ExportBoardAsync">
+                            @(_exportCopied ? "✓" : "📋")
+                        </button>
+                    </div>
                 </div>
 
                 @* ── Bandeau spectateur ── *@
