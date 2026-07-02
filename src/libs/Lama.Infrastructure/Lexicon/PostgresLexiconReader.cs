@@ -62,23 +62,35 @@ public sealed partial class PostgresLexiconReader(string connectionString, ILogg
         {
             using var connection = new NpgsqlConnection(_connectionString);
             connection.Open();
-            using var command = new NpgsqlCommand(
+
+            // Requête via la vue matérialisée (filtre les abréviations)
+            const string sqlWithMv =
                 "SELECT w.lemma_normalized " +
                 "FROM lexicon.words w " +
                 "INNER JOIN lexicon.mv_valid_words mv ON mv.word_id = w.word_id " +
-                "WHERE w.language_code = @lang", connection);
-            command.Parameters.AddWithValue("lang", languageCode);
-            command.CommandTimeout = 0;
+                "WHERE w.language_code = @lang";
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
+            // Fallback : table brute sans filtre abbrev (si la MV n'existe pas encore)
+            const string sqlFallback =
+                "SELECT lemma_normalized FROM lexicon.words WHERE language_code = @lang";
+
+            var sql = sqlWithMv;
+            try
             {
-                var word = reader.GetString(0).ToUpperInvariant();
-                if (ScrabbleWord().IsMatch(word))
-                    words.Add(word);
+                LoadWords(connection, sql, languageCode, words);
+                logger?.LogInformation("Lexicon {Lang}: {Count} mots chargés via mv_valid_words.", languageCode, words.Count);
             }
-
-            logger?.LogInformation("Lexicon {Lang}: {Count} mots chargés depuis Postgres.", languageCode, words.Count);
+            catch (PostgresException pgEx) when (pgEx.SqlState == PostgresErrorCodes.UndefinedTable)
+            {
+                // mv_valid_words n'existe pas encore (MV pas encore créée en base).
+                // Fallback sur la table brute — les abréviations ne sont pas filtrées.
+                words.Clear();
+                logger?.LogWarning(
+                    "Lexicon {Lang}: mv_valid_words introuvable — fallback sur lexicon.words (abréviations non filtrées). " +
+                    "Redémarrer le serveur pour créer la vue.", languageCode);
+                LoadWords(connection, sqlFallback, languageCode, words);
+                logger?.LogInformation("Lexicon {Lang}: {Count} mots chargés (fallback).", languageCode, words.Count);
+            }
         }
         catch (Exception ex)
         {
@@ -86,6 +98,20 @@ public sealed partial class PostgresLexiconReader(string connectionString, ILogg
         }
 
         return words;
+    }
+
+    private static void LoadWords(NpgsqlConnection connection, string sql, string languageCode, HashSet<string> words)
+    {
+        using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue("lang", languageCode);
+        command.CommandTimeout = 0;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var word = reader.GetString(0).ToUpperInvariant();
+            if (ScrabbleWord().IsMatch(word))
+                words.Add(word);
+        }
     }
 
     public async Task<WordInfo?> GetWordInfoAsync(string languageCode, string word, CancellationToken cancellationToken = default)
