@@ -531,6 +531,16 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> CloseAdminGameAsync(string? jwtToken, string gameId, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{ApiBase}/admin/games/{gameId}/close");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        return response.IsSuccessStatusCode;
+    }
+
     // ── Player: Delete own game ───────────────────────────────────────────────
 
     public async Task<bool> DeleteMyGameAsync(string? jwtToken, string gameId, CancellationToken cancellationToken = default)

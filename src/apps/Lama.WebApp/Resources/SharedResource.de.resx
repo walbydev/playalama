@@ -509,8 +509,8 @@
   <data name="Admin.CreatedGame"><value>Erstellt</value></data>
   <data name="Admin.LastLogin"><value>Letzte Anmeldung</value></data>
   <data name="Admin.Status"><value>Status</value></data>
-  <data name="Admin.Online"><value>Online</value></data>
-  <data name="Admin.Offline"><value>Offline</value></data>
+  <data name="Admin.Online"><value>Im Spiel</value></data>
+  <data name="Admin.Offline"><value>Nicht im Spiel</value></data>
   <data name="Admin.TotalUsers"><value>Benutzer gesamt</value></data>
   <data name="Admin.NoUsers"><value>Keine Benutzer.</value></data>
   <data name="Admin.GameId"><value>ID</value></data>
@@ -522,6 +522,7 @@
   <data name="Admin.TotalGames"><value>Spiele gesamt</value></data>
   <data name="Admin.NoGames"><value>Keine Spiele.</value></data>
   <data name="Admin.Delete"><value>Löschen</value></data>
+  <data name="Admin.CloseGame"><value>Spiel schließen (erzwungener Abbruch)</value></data>
   <data name="Status.AccessDenied"><value>Zugriff verweigert</value></data>
   <data name="Status.AccessDeniedText"><value>Dein Konto hat keine Adminrechte oder deine Sitzung ist abgelaufen.</value></data>
   <data name="Status.Admin"><value>Administration</value></data>

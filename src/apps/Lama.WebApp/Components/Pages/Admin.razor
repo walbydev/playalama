@@ -285,18 +285,45 @@ else
                                         <td>
                                             <span class="chip @GameStatusClass(g.Status)">@g.Status</span>
                                         </td>
-                                        <td>@g.PlayerCount</td>
+                                        <td>
+                                            @if (g.Players.Count > 0)
+                                            {
+                                                <div style="display:flex; flex-wrap:wrap; gap:.2rem">
+                                                    @foreach (var p in g.Players)
+                                                    {
+                                                        <span class="chip @(p.IsBot ? "chip-muted" : "chip-accent")" style="font-size:.75rem">
+                                                            @(p.IsBot ? "🤖 " : "👤 ")@p.PlayerName
+                                                        </span>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-dim">—</span>
+                                            }
+                                        </td>
                                         <td>@g.MoveCount</td>
                                         <td>@g.CreatedAt.LocalDateTime.ToString("dd/MM HH:mm")</td>
                                         <td>
                                             <span class="chip chip-muted">@g.Source</span>
                                         </td>
                                         <td>
-                                            <button class="btn btn-danger btn-sm"
-                                                    @onclick="@(() => DeleteGameAsync(g))"
-                                                    disabled="@_gamesLoading">
-                                                🗑️
-                                            </button>
+                                            <div style="display:flex; gap:.25rem">
+                                                @if (g.Source == "memory" && g.Status is "active" or "lobby")
+                                                {
+                                                    <button class="btn btn-outline btn-sm"
+                                                            @onclick="@(() => CloseGameAsync(g))"
+                                                            disabled="@_gamesLoading"
+                                                            title="@L["Admin.CloseGame"]">
+                                                        🛑
+                                                    </button>
+                                                }
+                                                <button class="btn btn-danger btn-sm"
+                                                        @onclick="@(() => DeleteGameAsync(g))"
+                                                        disabled="@_gamesLoading">
+                                                    🗑️
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 }
@@ -445,6 +472,31 @@ else
             _gamesLoading = false;
             StateHasChanged();
         }
+    }
+
+    private async Task CloseGameAsync(AdminGameDto game)
+    {
+        _error = null;
+        _success = null;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            var ok = await Api.CloseAdminGameAsync(token, game.GameId);
+            if (ok)
+            {
+                game = game with { Status = "closed" };
+                _success = "Partie fermée.";
+            }
+            else
+            {
+                _error = "Échec de la fermeture.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        StateHasChanged();
     }
 
     private async Task DeleteGameAsync(AdminGameDto game)

@@ -11,6 +11,9 @@ using Lama.Contracts.Lexicon;
 using Lama.Infrastructure.Lexicon;
 using Microsoft.EntityFrameworkCore;
 
+// Npgsql 6+: restaurer le comportement legacy pour DateTimeOffset avec offset non-UTC
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("LamaServerDb")

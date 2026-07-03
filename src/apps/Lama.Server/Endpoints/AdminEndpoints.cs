@@ -60,9 +60,9 @@ public static class AdminEndpoints
                         p.CountryCode,
                         p.CreatedAt,
                         p.LastLoginAt,
-                        p.Ratings.FirstOrDefault(r => r.Queue == "open")!.EloRating,
-                        p.Ratings.FirstOrDefault(r => r.Queue == "open")!.GamesPlayed,
-                        p.Ratings.FirstOrDefault(r => r.Queue == "open")!.GamesWon,
+                        p.Ratings.Where(r => r.Queue == "open").Select(r => (decimal?)r.EloRating).FirstOrDefault() ?? 0m,
+                        p.Ratings.Where(r => r.Queue == "open").Select(r => (int?)r.GamesPlayed).FirstOrDefault() ?? 0,
+                        p.Ratings.Where(r => r.Queue == "open").Select(r => (int?)r.GamesWon).FirstOrDefault() ?? 0,
                         activePlayerIds.Contains(p.PlayerId)))
                     .ToListAsync(cancellationToken);
 
@@ -149,8 +149,8 @@ public static class AdminEndpoints
                     var gs = g.Engine.GetGameState();
                     return new AdminGameDto(
                         g.Id,
-                        g.GameLevel,
-                        g.Queue,
+                        g.GameLevel.ToString(),
+                        g.Queue.ToString(),
                         g.BoardSize,
                         g.RackSize,
                         g.Language,
@@ -166,27 +166,45 @@ public static class AdminEndpoints
 
                 var persistedRaw = await db.SessionGames
                     .AsNoTracking()
-                    .Where(s => !inMemoryIds.Contains(s.GameId.ToString("N").ToUpperInvariant()) &&
-                                !inMemoryIds.Contains(s.GameId.ToString()))
                     .OrderByDescending(s => s.UpdatedAt)
-                    .Take(100)
+                    .Take(200)
                     .ToListAsync(cancellationToken);
 
-                var persistedGames = persistedRaw.Select(s => new AdminGameDto(
+                var persistedFiltered = persistedRaw
+                    .Where(s => !inMemoryIds.Contains(s.GameId.ToString("N")) &&
+                                !inMemoryIds.Contains(s.GameId.ToString().ToUpperInvariant()))
+                    .Take(100)
+                    .ToList();
+
+                var persistedGameIds = persistedFiltered.Select(s => s.GameId).ToList();
+                var persistedPlayers = await db.SessionPlayersInGame
+                    .AsNoTracking()
+                    .Where(sp => persistedGameIds.Contains(sp.GameId))
+                    .ToListAsync(cancellationToken);
+
+                var persistedGames = persistedFiltered.Select(s =>
+                {
+                    var players = persistedPlayers
+                        .Where(sp => sp.GameId == s.GameId)
+                        .OrderBy(sp => sp.PlayerIndex)
+                        .Select(sp => new AdminGamePlayerDto(sp.Nickname, sp.Nickname.StartsWith("bot-", StringComparison.OrdinalIgnoreCase)))
+                        .ToList();
+                    return new AdminGameDto(
                         s.GameId.ToString(),
-                        Enum.Parse<GameLevel>(s.GameLevel, true),
-                        Enum.Parse<RankingQueue>(s.Queue, true),
+                        s.GameLevel,
+                        s.Queue,
                         s.BoardSize,
                         s.RackSize,
                         s.Language,
                         s.Status,
                         s.Status is "ended" or "abandoned" or "finished_normal",
-                        0,
+                        players.Count,
                         0,
                         s.CreatedAt,
                         s.UpdatedAt,
                         "database",
-                        new List<AdminGamePlayerDto>()))
+                        players);
+                })
                     .ToList();
 
                 var allGames = inMemoryDtos.Concat(persistedGames).ToList();
@@ -204,6 +222,58 @@ public static class AdminEndpoints
         .WithDescription("Liste toutes les parties (en mémoire + persistées).")
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized);
+
+        admin.MapPost("/games/{gameId}/close", (
+            HttpContext httpContext,
+            string gameId,
+            GameHubState state,
+            IConfiguration config) =>
+        {
+            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+                return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
+
+            try
+            {
+                var game = state.ListGames().FirstOrDefault(g =>
+                    string.Equals(g.Id, gameId, StringComparison.OrdinalIgnoreCase));
+
+                if (game is null)
+                    return Results.NotFound(new { error = "Partie introuvable en mémoire." });
+
+                lock (game)
+                {
+                    if (game.IsClosed)
+                        return Results.Ok(new { closed = true, gameId, message = "Already closed" });
+
+                    game.Engine.EndGame();
+                    game.IsClosed = true;
+                    game.EndReason = "admin_closed";
+                    game.UpdatedAt = DateTimeOffset.UtcNow;
+                }
+
+                state.Publish(game.Id, new ServerEvent("game.ended", new
+                {
+                    gameId = game.Id,
+                    endedAt = DateTimeOffset.UtcNow,
+                    reason = "admin_closed",
+                    scores = Array.Empty<object>(),
+                    winner = (string?)null
+                }));
+
+                return Results.Ok(new { closed = true, gameId });
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return Results.Json(
+                    new { error = "Erreur lors de la fermeture de la partie." },
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+        })
+        .WithName("AdminCloseGame")
+        .WithDescription("Force la fermeture d'une partie en cours (abandon forcé).")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status404NotFound);
 
         admin.MapDelete("/games/{gameId}", async (
             HttpContext httpContext,
@@ -302,8 +372,8 @@ public sealed record AdminUserDto(
 
 public sealed record AdminGameDto(
     string GameId,
-    GameLevel GameLevel,
-    RankingQueue Queue,
+    string GameLevel,
+    string Queue,
     int BoardSize,
     int RackSize,
     string Language,

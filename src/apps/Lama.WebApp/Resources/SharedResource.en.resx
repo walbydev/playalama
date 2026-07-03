@@ -510,8 +510,8 @@
   <data name="Admin.CreatedGame"><value>Created</value></data>
   <data name="Admin.LastLogin"><value>Last login</value></data>
   <data name="Admin.Status"><value>Status</value></data>
-  <data name="Admin.Online"><value>Online</value></data>
-  <data name="Admin.Offline"><value>Offline</value></data>
+  <data name="Admin.Online"><value>Playing</value></data>
+  <data name="Admin.Offline"><value>Not playing</value></data>
   <data name="Admin.TotalUsers"><value>Total users</value></data>
   <data name="Admin.NoUsers"><value>No users.</value></data>
   <data name="Admin.GameId"><value>ID</value></data>
@@ -523,6 +523,7 @@
   <data name="Admin.TotalGames"><value>Total games</value></data>
   <data name="Admin.NoGames"><value>No games.</value></data>
   <data name="Admin.Delete"><value>Delete</value></data>
+  <data name="Admin.CloseGame"><value>Close game (force abandon)</value></data>
   <data name="Status.AccessDenied"><value>Access denied</value></data>
   <data name="Status.AccessDeniedText"><value>Your account lacks admin rights, or your session expired.</value></data>
   <data name="Status.Admin"><value>Administration</value></data>

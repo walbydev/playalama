@@ -142,9 +142,7 @@ public sealed class StatusCollector(
             ? $"{(int)t.TotalDays}j {t.Hours:D2}h {t.Minutes:D2}m"
             : $"{t.Hours:D2}h {t.Minutes:D2}m {t.Seconds:D2}s";
 
-    private static string GetVersion() =>
-        System.Reflection.Assembly.GetExecutingAssembly()
-            .GetName().Version?.ToString(3) ?? "unknown";
+    private static string GetVersion() => BuildInfoConstants.Version;
 }
 
 // ── Snapshot DTOs ─────────────────────────────────────────────────────────────

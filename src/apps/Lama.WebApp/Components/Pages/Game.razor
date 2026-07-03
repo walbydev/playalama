@@ -42,7 +42,7 @@ else
                             {
                                 <span class="chip chip-muted">@L["Game.Status.Finished"]</span>
                             }
-                            else if (_vm.IsAbandoned)
+                            else if (_vm.IsObserver)
                             {
                                 <span class="chip" style="background:rgba(120,120,120,.18); color:var(--text-dim)">@L["Game.Status.Observer"]</span>
                             }
@@ -69,7 +69,7 @@ else
                         <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
                             @L["Game.Refresh"]
                         </button>
-                        @if (_vm.IsAbandoned)
+                        @if (_vm.IsObserver)
                         {
                             <a href="/games" class="btn btn-ghost btn-sm">← @L["Game.Leave"]</a>
                         }
@@ -124,7 +124,7 @@ else
                         }
                     </div>
 
-                    @if (_vm.IsAbandoned)
+                    @if (_vm.IsObserver)
                     {
                         <a href="/games" class="btn btn-ghost btn-sm">← @L["Game.Leave"]</a>
                     }
@@ -159,7 +159,7 @@ else
                 </div>
 
                 @* ── Bandeau spectateur ── *@
-                @if (_vm.IsAbandoned && !_vm.Snapshot!.IsGameOver)
+                @if (_vm.IsObserver && !_vm.Snapshot!.IsGameOver)
                 {
                     <div class="spectator-banner" role="status" aria-live="polite">
                         🔍 @L["Game.SpectatorBanner"] <a href="/games">@L["Game.Leave"] →</a>

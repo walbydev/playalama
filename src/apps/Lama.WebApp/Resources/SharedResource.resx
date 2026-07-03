@@ -510,8 +510,8 @@
   <data name="Admin.Created"><value>Inscrit</value></data>
   <data name="Admin.LastLogin"><value>Dernière connexion</value></data>
   <data name="Admin.Status"><value>Statut</value></data>
-  <data name="Admin.Online"><value>En ligne</value></data>
-  <data name="Admin.Offline"><value>Hors ligne</value></data>
+  <data name="Admin.Online"><value>En jeu</value></data>
+  <data name="Admin.Offline"><value>Hors jeu</value></data>
   <data name="Admin.TotalUsers"><value>Total utilisateurs</value></data>
   <data name="Admin.NoUsers"><value>Aucun utilisateur.</value></data>
   <data name="Admin.GameId"><value>ID</value></data>
@@ -524,6 +524,7 @@
   <data name="Admin.TotalGames"><value>Total parties</value></data>
   <data name="Admin.NoGames"><value>Aucune partie.</value></data>
   <data name="Admin.Delete"><value>Supprimer</value></data>
+  <data name="Admin.CloseGame"><value>Fermer la partie (abandon forcé)</value></data>
   <data name="Status.AccessDenied"><value>Accès refusé</value></data>
   <data name="Status.AccessDeniedText"><value>Votre compte ne dispose pas des droits administrateur, ou votre session a expiré.</value></data>
   <data name="Status.Admin"><value>Administration</value></data>

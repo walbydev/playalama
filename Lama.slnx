@@ -102,6 +102,7 @@
     <File Path="docs/roadmap/STATUS_OPTION_A.md" />
   </Folder>
   <Folder Name="/Docs/bugs/">
+    <File Path="docs\bugs\260703_CheckAdministrationScreen.md" />
     <File Path="docs\bugs\260703_HideAllNonPermittedItems.md" />
   </Folder>
   <Folder Name="/Docs/evolutions/">

@@ -201,6 +201,13 @@ public sealed class GamePlayViewModel
     public bool IsAbandoned => _myPlayerId is not null
         && Snapshot?.AbandonedPlayerIds.Contains(_myPlayerId) == true;
 
+    /// <summary>Vrai si le joueur courant participe à cette partie (pas un observateur externe).</summary>
+    public bool IsPlayerInGame => _myPlayerId is not null
+        && Snapshot?.Players.Any(p => string.Equals(p.PlayerId, _myPlayerId, StringComparison.Ordinal)) == true;
+
+    /// <summary>Vrai si le joueur courant est un observateur (non-joueur ou avoir abandonné).</summary>
+    public bool IsObserver => !IsPlayerInGame || IsAbandoned;
+
     /// <summary>Noms des joueurs qui ont abandonné, pour notification.</summary>
     public IReadOnlyList<string> AbandonedPlayerNames =>
         Snapshot?.Players
