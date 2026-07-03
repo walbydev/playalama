@@ -13,6 +13,9 @@ public sealed class RulesViewModel
             new("Joker",                "En CLI, une lettre minuscule dans la commande play move force l'utilisation du joker. En Web, un bouton permet de désigner le joker."),
             new("Échange de tuiles",    "Tu peux échanger jusqu'à 7 tuiles contre des tuiles du sac, mais ça compte comme un tour (0 point)."),
             new("Fin de partie",        "La partie se termine quand le sac est vide et qu'un joueur pose toutes ses tuiles, ou quand tous les joueurs passent deux fois de suite. Les tuiles restantes en main sont soustraites du score."),
+            new("Aides à disposition",  "Plusieurs aides sont disponibles pendant les parties : suggestions de coups (play.suggest), vérification d'un coup avant de le jouer (play.check), simulation, indices (show.hints) et recherche dans le dictionnaire (dict.check, dict.search, dict.anagram). La recherche dans le dictionnaire est autorisée et encouragée dans tous les modes. Les autres aides (vérification, simulation, indices) sont réservées au mode Casual."),
+            new("Conséquences sur le classement", "L'utilisation d'une suggestion pendant une partie désactive l'approvisionnement de l'Elo pour cette partie (hors mode Tournoi). La partie compte tout de même comme jouée, mais votre classement Elo n'est pas impacté. Les autres aides (vérification, simulation, indices) n'ont aucun impact sur l'Elo mais ne sont disponibles qu'en mode Casual."),
+            new("Définitions",          "À tout moment, tu peux sélectionner n'importe quel mot pour afficher sa définition, ses synonymes et un lien vers le Wiktionary, s'ils existent. Cette fonctionnalité est disponible dans tous les modes, sans aucune conséquence sur le classement."),
         ]),
 
         new("classique", "🎯 Mode Classique", "Le scrabble revisité avec des variantes modernes.",
