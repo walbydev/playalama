@@ -11,16 +11,11 @@ Ce projet est distribué sous **GNU Affero General Public License v3.0 or later 
 - L'AGPL garantit que les forks et versions modifiées exposées en réseau restent libres.
 - Les dons pour financer l'infrastructure sont compatibles avec cette licence.
 
-Le jeu est d'abord disponible en console, avec deux modes d'utilisation :
+Le jeu est disponible via plusieurs interfaces :
 
-- un mode **commande par commande**, adapté aux actions ponctuelles, aux scripts et aux tests ;
-- un mode **interactif textuel**, jouable directement dans un terminal avec menus, prompts et affichage enrichi.
-
-### Interfaces supportées
-
-L'application console prend en charge deux modes :
-
-À terme, le cœur du jeu pourra être réutilisé par d'autres interfaces, notamment une WebApp ou une interface graphique.
+- une **console** (CLI) avec deux modes : **commande par commande** (actions ponctuelles, scripts, tests) et **interactif textuel** (menus, prompts, affichage enrichi) ;
+- une **WebApp Blazor Server** (`Lama.WebApp`) : portail public + interface de jeu en ligne ;
+- un **serveur API** (`Lama.Server`) : parties centralisées online, classement, streaming SSE.
 
 ---
 
@@ -89,11 +84,26 @@ La partie se termine quand :
 Le projet suit une architecture inspirée de la **Clean Architecture / Ports & Adapters**.
 
 Le principe central est que la logique du jeu ne dépend d'aucune interface utilisateur.
-La console actuelle, le futur mode interactif textuel et une éventuelle future WebApp doivent tous appeler les mêmes services applicatifs.
+La console, la WebApp et le serveur appellent tous les mêmes services applicatifs.
 
-### Interfaces supportées
+### Composants
 
-L'application console prend en charge deux modes :
+```text
+Apps
+├── Lama.Console   — CLI (mode commande + mode interactif)
+├── Lama.Server    — API HTTP autoritaire (état en mémoire, persistance PostgreSQL)
+├── Lama.WebApp    — Blazor Server (portail + interface de jeu, MVVM léger)
+└── Lama.AIServer  — service HTTP de suggestions de coups (port 5203)
+
+Libs
+├── Lama.Contracts       — types et interfaces (0 dépendance)
+├── Lama.Domain           — règles du jeu (GameEngine, MoveValidator, ScoreCalculator)
+├── Lama.Core             — use cases (CreateGame, PlayMove, EndGame, ...)
+├── Lama.Infrastructure   — persistance JSON, lexique PostgreSQL, auth, rating
+└── Lama.Languages.fr|de|en — packs de langue (assets JSON embarqués)
+```
+
+### Console — modes supportés
 
 ```text
 Lama.Console
@@ -112,8 +122,15 @@ Le point d'entrée `Program.cs` ne contient pas la logique du jeu.
 Il configure l'application, enregistre les services, puis délègue l'exécution au mode approprié.
 
 ```text
-Program.cs -> ApplicationModeResolver -> CommandLineMode -> InteractiveMode
+Program.cs -> ApplicationModeResolver -> CommandLineMode | InteractiveMode
 ```
+
+### Serveur online
+
+- `Lama.Server` est **autoritaire en mémoire** (`GameHubState`) avec persistance async PostgreSQL (EF Core) après fin de partie.
+- Streaming temps réel via **SSE** (Server-Sent Events), pas de SignalR.
+- Authentification **JWT** (`JwtTokenService` + `JwtMiddleware`).
+- Bots IA auto-seedés au démarrage (`BotCatalog` + `BotAutoPlayService`).
 
 ### Décision sur le parsing des commandes
 
@@ -133,12 +150,9 @@ Cette décision permet de :
 - garder une architecture simple ;
 - éviter de coupler le jeu à une librairie de parsing CLI ;
 - faciliter le mode interactif textuel ;
-- préparer une future interface graphique ou WebApp ;
 - maintenir la logique métier en dehors du projet console.
 
 Si un besoin fort apparaît plus tard pour une CLI avancée, scriptable et très typée, un parser pourra être ajouté uniquement dans `Lama.Console`, sans impacter `Core`, `Domain` ou `Contracts`.
-
-Voir aussi : [`docs/console-interface-architecture.md`](docs/console-interface-architecture.md).
 
 ---
 
@@ -146,7 +160,7 @@ Voir aussi : [`docs/console-interface-architecture.md`](docs/console-interface-a
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - Lexicon PostgreSQL disponible (mots + définitions), via `LAMA_LEXICON_CONNECTION_STRING` ou `ConnectionStrings:LamaServerDb`
-- Fichiers de langue dans `assets/languages/fr/` :
+- Fichiers de langue dans `assets/languages/{fr,de,en}/` :
   - `scores.json` — valeurs des lettres au format `{ "scores": { "A": 1, "Z": 10, ... } }`
   - `tile-distribution.json` — distribution et règles de scaling des tuiles
 
@@ -329,7 +343,7 @@ lama game end
 | `--quiet` | `-q` | Mode silencieux |
 | `--no-color` | | Désactive les couleurs ANSI |
 | `--high-contrast` | | Mode contraste élevé |
-| `--lang <code>` | `-l` | Langue de l'interface (`fr`, `en`, `de`, `es`, `it`) |
+| `--lang <code>` | `-l` | Langue de l'interface (`fr`, `en`, `de`) |
 | `--output <format>` | `-o` | Format de sortie : `text`, `json`, `csv` |
 
 ---
@@ -346,8 +360,9 @@ lama game end
 | `6` | Placement impossible |
 | `8` | Pas votre tour |
 | `10` | Timeout dépassé |
+| `11` | Droits insuffisants (ACL refusée) |
 
-Liste complète dans [`docs/defines-CLI.md`](docs/defines-CLI.md).
+Source : `src/apps/Lama.Console/Services/ExitCodes.cs`.
 
 ---
 
@@ -356,32 +371,33 @@ Liste complète dans [`docs/defines-CLI.md`](docs/defines-CLI.md).
 | Code | Langue | Statut |
 |------|--------|--------|
 | `fr` | Français | Implémenté |
-| `en` | Anglais | Prévu |
-| `de` | Allemand | Prévu |
-| `es` | Espagnol | Prévu |
-| `it` | Italien | Prévu |
+| `en` | Anglais | Implémenté |
+| `de` | Allemand | Implémenté |
 
 
 ---
 
 ## Multijoueur (serveur central + local offline)
 
-LAMA conserve deux modes de fonctionnement:
+LAMA conserve deux modes de fonctionnement :
 
-- **Mode local (offline)**: jeu sur la machine locale, sans internet, ideal pour dev/test.
-- **Mode online (serveur central)**: parties centralisees via `Lama.Server`, necessaire pour classement mondial.
+- **Mode local (offline)** : jeu sur la machine locale, sans internet, idéal pour dev/test. Isolé des classements mondiaux.
+- **Mode online (serveur central)** : parties centralisées via `Lama.Server`, nécessaire pour le classement mondial. Streaming temps réel via SSE, authentification JWT.
 
-Le mode local reste **isole** des classements mondiaux.
-
-Voir le plan de migration detaille : [`docs/PLAN_MIGRATION_MULTIJOUEUR.md`](docs/PLAN_MIGRATION_MULTIJOUEUR.md).
-
-### Demarrer le serveur central alpha
+### Démarrer le serveur central
 
 ```bash
-dotnet run --project src/apps/Lama.Server
+dotnet run --project src/apps/Lama.Server --urls http://127.0.0.1:5201
 ```
 
-### Verifier la sante du serveur
+### Démarrer la WebApp
+
+```bash
+dotnet run --project src/apps/Lama.WebApp --urls http://127.0.0.1:5202
+# avec LAMA_SERVER_URL=http://127.0.0.1:5201
+```
+
+### Vérifier la santé du serveur
 
 ```bash
 curl -s http://localhost:5201/health
@@ -389,11 +405,17 @@ curl -s http://localhost:5201/health
 
 ### Convention de ports online (compose)
 
-- API Server: `5201`
-- WebApp: `5202`
-- AI Server (suggestions): `5203`
+- API Server : `5201`
+- WebApp : `5202`
+- AI Server (suggestions) : `5203`
 
-Cette convention est utilisee en local, staging et production dans les stacks Docker compose du projet.
+Cette convention est utilisée en local, staging et production dans les stacks Docker compose du projet.
+
+### Dev complet
+
+```bash
+make dev-debug   # Server 5201 + WebApp 5202 en parallèle
+```
 
 ---
 

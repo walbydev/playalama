@@ -42,6 +42,7 @@
     <File Path="Dockerfile.webapp" />
     <File Path="dotnet-tools.json" />
     <File Path="Lama.sln.DotSettings.user" />
+    <File Path="LICENSE" />
     <File Path="Makefile" />
     <File Path="README.md" />
   </Folder>
