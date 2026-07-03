@@ -300,7 +300,7 @@ public sealed class InteractiveMode : IConsoleMode
                 if (!confirm)
                     continue;
 
-                var endContext = BuildSessionBoundContext("game", "end", "game.end", session);
+                var endContext = BuildSessionBoundContext("game", "end", "game.end", session, isAbandoned: true);
                 var endCode = await _dispatcher.DispatchAsync(endContext, cancellationToken);
                 if (endCode == ExitCodes.Success)
                 {
@@ -627,7 +627,8 @@ public sealed class InteractiveMode : IConsoleMode
         string commandId,
         SessionContext session,
         IReadOnlyList<string>? arguments = null,
-        IReadOnlyDictionary<string, string?>? options = null)
+        IReadOnlyDictionary<string, string?>? options = null,
+        bool isAbandoned = false)
     {
         return new CommandContext
         {
@@ -640,7 +641,8 @@ public sealed class InteractiveMode : IConsoleMode
             PlayerId = session.PlayerId,
             PlayerName = session.PlayerName,
             Role = session.Role,
-            GameLevel = session.GameLevel
+            GameLevel = session.GameLevel,
+            IsAbandoned = isAbandoned
         };
     }
 }

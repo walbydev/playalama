@@ -33,6 +33,9 @@ public sealed class SuggestMovesUseCase
 
         EnsureCurrentPlayer(state, request.GameId, request.PlayerId);
 
+        // Marquer la partie comme ayant utilisé une suggestion (désactive l'alimentation Elo hors Tournament)
+        session.SuggestionsUsed = true;
+
         var playerIndex = _createUseCase.GetPlayerIndex(request.GameId, request.PlayerId);
         var currentPlayer = state.Players[playerIndex];
 

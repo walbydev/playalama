@@ -297,6 +297,9 @@ internal sealed class GameSession
 {
     public GameEngine               Engine           { get; }
     public Dictionary<string, int>  PlayerIndexById  { get; }
+    /// <summary>Indique qu'au moins une suggestion a été utilisée pendant la partie
+    /// (l'Elo n'est alors pas approvisionné, hors mode Tournament).</summary>
+    public bool                     SuggestionsUsed  { get; set; }
 
     public GameSession(
         GameEngine engine,

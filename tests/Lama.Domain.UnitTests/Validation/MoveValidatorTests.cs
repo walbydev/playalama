@@ -1,11 +1,11 @@
 using FluentAssertions;
 using Lama.Contracts;
-using Lama.Domain.Validation;
+using Lama.Domain.Scoring;
 
 namespace Lama.Domain.UnitTests.Validation;
 
 /// <summary>
-/// Tests unitaires pour <see cref="MoveValidator"/>.
+/// Tests unitaires pour <see cref="MoveAnalyzer"/> (validation des coups).
 /// Vérifie les règles de placement officielles Scrabble :
 /// - alignement (horizontal ou vertical)
 /// - continuité (pas de trous)
@@ -19,7 +19,7 @@ public class MoveValidatorTests
     private static readonly IReadOnlySet<string> Dictionary =
         new HashSet<string> { "LA", "LAMA", "LAMAS", "ASLAMA", "AMI", "AMS", "MA", "MAS", "MOT", "MOTS", "ZEN", "AS", "AI" };
 
-    private readonly MoveValidator _sut = new(Dictionary);
+    private readonly MoveAnalyzer _sut = new(Dictionary, new Dictionary<char, int>());
 
     // Helper : plateau vide
     private static BoardState EmptyBoard() => new();

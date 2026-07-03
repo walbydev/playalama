@@ -22,7 +22,7 @@ namespace Lama.Console.Services;
 ///   show.board / scores / hist  |    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✅
 ///   show.rack                   |    ✗       |  ✗    |  ✅   |      ✅       |           ✅            |    ✗
 ///   show.hints                  |    ✅      |  ✅   |  ✅   |      ✅       |           ✗             |    ✗
-///   dict.check / search /anagram|    ✅      |  ✅   |  ✅   |      ✅       |           ✗             |    ✗
+///   dict.check / search /anagram|    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✗
 ///   dict.install / remove       |    ✅      |  ✅   |  ✗    |      ✗        |           ✗             |    ✗
 ///   player.*                    |    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✅(lecture)
 ///   tournament.*                |    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✅(lecture)
@@ -97,17 +97,19 @@ public sealed class AccessControlService : IAccessControlService
         {
             "play.check",
             "play.simulate",
-            "show.hints",
-            "dict.check",
-            "dict.search",
-            "dict.anagram"
+            "show.hints"
         };
 
-    // ── Commandes de suggestion disponibles dans tous les modes de jeu ────────
+    // ── Commandes de suggestion et de recherche dictionnaire disponibles
+    // dans tous les modes de jeu (la recherche dans le dictionnaire est
+    // autorisée et encouragée). ────────────────────────────────────────────────
     private static readonly HashSet<string> AllModesAidCommands =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            "play.suggest"
+            "play.suggest",
+            "dict.check",
+            "dict.search",
+            "dict.anagram"
         };
 
     // ── Commandes accessibles en lecture seule (spectateurs inclus) ──────────

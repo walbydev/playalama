@@ -102,6 +102,7 @@ public record SwapLettersRequest(
 /// <param name="MinWordLength">Longueur minimale des mots.</param>
 /// <param name="Language">Langue de la partie.</param>
 /// <param name="TournamentId">Identifiant de tournoi éventuel.</param>
+/// <param name="IsAbandoned">Indique que la partie se termine par abandon (0 point, Elo inchangé).</param>
 public record EndGameRequest(
     string GameId,
     GameLevel? GameLevel = null,
@@ -109,7 +110,8 @@ public record EndGameRequest(
     int RackSize = 7,
     int MinWordLength = 2,
     string Language = "fr",
-    string? TournamentId = null);
+    string? TournamentId = null,
+    bool IsAbandoned = false);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Réponses (sorties des cas d'usage)

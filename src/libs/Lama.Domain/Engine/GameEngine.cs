@@ -11,8 +11,7 @@ namespace Lama.Domain.Engine;
 /// Orchestre :
 /// <list type="bullet">
 ///   <item><see cref="TileBag"/> — gestion du sac de lettres</item>
-///   <item><see cref="MoveValidator"/> — validation des coups</item>
-///   <item><see cref="ScoreCalculator"/> — calcul des scores</item>
+///   <item><see cref="MoveAnalyzer"/> — validation et calcul de score des coups</item>
 /// </list>
 ///
 /// Contient l'état mutable de la partie. <see cref="GetGameState"/> retourne
@@ -23,8 +22,7 @@ public sealed class GameEngine : IGameEngine
     private const int RackSize    = 7;
     private const int MinPlayers  = 1; // La contrainte 2 joueurs min est dans Lama.Core
 
-    private readonly MoveValidator   _moveValidator;
-    private readonly ScoreCalculator _scoreCalculator;
+    private readonly MoveAnalyzer   _moveAnalyzer;
     private readonly IReadOnlyDictionary<char, int> _tileDistribution;
 
     // ── État mutable de la partie ─────────────────────────────────────────────
@@ -48,8 +46,7 @@ public sealed class GameEngine : IGameEngine
         IReadOnlyDictionary<char, int> letterScores,
         IReadOnlyDictionary<char, int> tileDistribution)
     {
-        _moveValidator    = new MoveValidator(dictionary);
-        _scoreCalculator  = new ScoreCalculator(letterScores);
+        _moveAnalyzer     = new MoveAnalyzer(dictionary, letterScores);
         _tileDistribution = tileDistribution;
     }
 
@@ -135,12 +132,12 @@ public sealed class GameEngine : IGameEngine
         if (letters.Count == 0)
             return (false, "Le coup ne peut pas être vide.", 0);
 
-        var result = _moveValidator.Validate(letters, _board!, _isFirstMove);
+        var result = _moveAnalyzer.Validate(letters, _board!, _isFirstMove);
         if (!result.IsValid)
             return (false, result.ErrorMessage ?? "Coup invalide.", 0);
 
-        var isHorizontal = MoveValidator.DetermineIsHorizontal(letters, _board!);
-        var score = _scoreCalculator.CalculateTotal(letters, _board!, null, isHorizontal);
+        var isHorizontal = MoveAnalyzer.DetermineIsHorizontal(letters, _board!);
+        var score = _moveAnalyzer.CalculateTotal(letters, _board!, null, isHorizontal);
         return (true, string.Empty, score);
     }
 
@@ -151,7 +148,7 @@ public sealed class GameEngine : IGameEngine
         EnsureNotGameOver();
 
         // 1. Valider le coup (avant toute mutation du rack)
-        var result = _moveValidator.Validate(letters, _board!, _isFirstMove);
+        var result = _moveAnalyzer.Validate(letters, _board!, _isFirstMove);
         if (!result.IsValid)
             throw new GameException(result.ErrorMessage ?? "Coup invalide.");
 
@@ -163,8 +160,8 @@ public sealed class GameEngine : IGameEngine
         // 3. Vérifier que les nouvelles lettres sont bien dans le rack du joueur courant
         var wildcardPositions = ConsumeLettersFromRack(newPlacements);
 
-        var isHorizontal = MoveValidator.DetermineIsHorizontal(letters, _board!);
-        var score = _scoreCalculator.CalculateTotal(letters, _board!, wildcardPositions, isHorizontal);
+        var isHorizontal = MoveAnalyzer.DetermineIsHorizontal(letters, _board!);
+        var score = _moveAnalyzer.CalculateTotal(letters, _board!, wildcardPositions, isHorizontal);
 
         // 2b. Mémoriser l'état précédent pour permettre un challenge
         _lastMoveSnapshot = CaptureSnapshot();
@@ -282,7 +279,7 @@ public sealed class GameEngine : IGameEngine
             p => new Position(p.Row, p.Column),
             p => p.Letter);
 
-        var validation = _moveValidator.Validate(
+        var validation = _moveAnalyzer.Validate(
             challengeMove,
             BuildBoardFromSnapshot(_lastMoveSnapshot.Board),
             _lastMoveSnapshot.IsFirstMove);

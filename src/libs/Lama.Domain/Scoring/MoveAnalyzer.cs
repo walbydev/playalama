@@ -1,34 +1,38 @@
 using Lama.Contracts;
+using Lama.Domain.Board;
+using Lama.Domain.Validation;
 
-namespace Lama.Domain.Validation;
+namespace Lama.Domain.Scoring;
 
 /// <summary>
-/// Valide un coup selon les règles officielles Scrabble.
-///
-/// Règles vérifiées :
-/// 1. Le coup doit avoir au moins une lettre.
-/// 2. Toutes les lettres doivent être sur la même ligne ou la même colonne (alignement).
-/// 3. Les croisements doivent avoir la même lettre que celle existante.
-/// 4. Au moins une lettre doit être nouvellement posée.
-/// 5. Pas de trou dans le mot.
-/// 6. Premier coup : le mot doit passer par la case centrale H8 (7, 7).
-/// 7. Hors premier coup : connexion obligatoire à une tuile existante.
-/// 8. Le mot formé doit avoir au moins 2 lettres.
-/// 9. Tous les mots formés (principal + croisements) doivent être dans le dictionnaire.
+/// Analyse un coup pour valider sa conformité aux règles et calculer son score.
+/// Fusionne les responsabilités de validation et de calcul de score
+/// pour éviter la duplication de logique (extraction des mots, croisements).
 /// </summary>
-public sealed class MoveValidator
+public sealed class MoveAnalyzer
 {
+    private const int ScrabbleBonus      = 50;
+    private const int ScrabbleBonusTiles = 7;
     private static readonly Position Center = new(7, 7);
 
     private readonly IReadOnlySet<string> _dictionary;
+    private readonly IReadOnlyDictionary<char, int> _letterScores;
     private readonly bool _lenientMode;
 
-    public MoveValidator(IReadOnlySet<string> dictionary)
+    public MoveAnalyzer(
+        IReadOnlySet<string> dictionary,
+        IReadOnlyDictionary<char, int> letterScores)
     {
         _dictionary = dictionary;
+        _letterScores = letterScores;
         _lenientMode = dictionary.Count == 0;
     }
 
+    // ── Validation ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Valide un coup selon les règles officielles Scrabble.
+    /// </summary>
     public MoveValidationResult Validate(
         IReadOnlyDictionary<Position, char> placements,
         BoardState board,
@@ -44,7 +48,7 @@ public sealed class MoveValidator
         {
             if (!IsAllowedLetter(letter))
                 return MoveValidationResult.Invalid(
-                    $"Lettre invalide '{letter}'. Utilisez A-Z ou '*' pour un joker.");
+                    "Lettre invalide '" + letter + "'. Utilisez A-Z ou '*' pour un joker.");
 
             var existingTile = board.Grid[pos.Row, pos.Column];
             if (existingTile is not null)
@@ -53,9 +57,9 @@ public sealed class MoveValidator
                 var proposedLetter = char.ToUpperInvariant(letter);
                 if (existingLetter != proposedLetter)
                     return MoveValidationResult.Invalid(
-                        $"À la case {FormatPosition(pos)}, la lettre '{existingLetter}' existe déjà. " +
-                        $"Vous tentez de placer '{proposedLetter}'. " +
-                        $"Pour un croisement valide, les lettres doivent être identiques.");
+                        "À la case " + FormatPosition(pos) + ", la lettre '" + existingLetter
+                        + "' existe déjà. Vous tentez de placer '" + proposedLetter
+                        + "'. Pour un croisement valide, les lettres doivent être identiques.");
             }
             else
             {
@@ -76,7 +80,6 @@ public sealed class MoveValidator
             return MoveValidationResult.Invalid(
                 "Toutes les lettres doivent être sur la même ligne ou la même colonne.");
 
-        // Pour une tuile unique, la direction se déduit des voisins existants sur le plateau
         var isHorizontal = DetermineIsHorizontal(placements, board);
 
         // 5. Pas de trou
@@ -119,7 +122,7 @@ public sealed class MoveValidator
             var firstWord = ExtractMainWord(placements, board, isHorizontal);
             if (!_lenientMode && !_dictionary.Contains(firstWord))
                 return MoveValidationResult.Invalid(
-                    $"« {firstWord} » n'est pas dans le dictionnaire.");
+                    "« " + firstWord + " » n'est pas dans le dictionnaire.");
 
             return MoveValidationResult.Valid();
         }
@@ -138,7 +141,7 @@ public sealed class MoveValidator
         // 9. Dictionnaire — mot principal
         if (!_lenientMode && !_dictionary.Contains(mainWord))
             return MoveValidationResult.Invalid(
-                $"« {mainWord} » n'est pas dans le dictionnaire.");
+                "« " + mainWord + " » n'est pas dans le dictionnaire.");
 
         // 10. Dictionnaire — mots croisés
         var crossWords = ExtractCrossWords(placements, board, isHorizontal);
@@ -146,23 +149,59 @@ public sealed class MoveValidator
         {
             if (!_lenientMode && !_dictionary.Contains(crossWord))
                 return MoveValidationResult.Invalid(
-                    $"Le croisement « {crossWord} » n'est pas dans le dictionnaire.");
+                    "Le croisement « " + crossWord + " » n'est pas dans le dictionnaire.");
         }
 
         return MoveValidationResult.Valid();
     }
 
-    // ── Extraction des mots ──────────────────────────────────────────────────
+    // ── Calcul de score ───────────────────────────────────────────────────────────
+
+    /// <summary>Calcule le score du mot principal uniquement (sans mots croisés ni bonus Scrabble).</summary>
+    public int Calculate(IReadOnlyDictionary<Position, char> placements, BoardState board)
+        => Calculate(placements, board, wildcardPositions: null);
+
+    /// <summary>
+    /// Calcule le score du mot principal en tenant compte des jokers.
+    /// Inclut le bonus Scrabble si 7 lettres ou plus sont posées.
+    /// </summary>
+    public int Calculate(
+        IReadOnlyDictionary<Position, char> placements,
+        BoardState board,
+        ISet<Position>? wildcardPositions)
+    {
+        if (placements.Count == 0) return 0;
+        var score = CalculateWordScore(placements, board, wildcardPositions, out var newlyPlaced);
+        if (newlyPlaced >= ScrabbleBonusTiles) score += ScrabbleBonus;
+        return score;
+    }
+
+    /// <summary>
+    /// Calcule le score total d'un coup : mot principal + tous les mots croisés + bonus Scrabble.
+    /// </summary>
+    public int CalculateTotal(
+        IReadOnlyDictionary<Position, char> placements,
+        BoardState board,
+        ISet<Position>? wildcardPositions,
+        bool isHorizontal)
+    {
+        if (placements.Count == 0) return 0;
+
+        var mainScore = CalculateWordScore(placements, board, wildcardPositions, out var newlyPlacedTiles);
+        var crossScore = CalculateCrossWordsScore(placements, board, wildcardPositions, isHorizontal);
+
+        var total = mainScore + crossScore;
+        if (newlyPlacedTiles >= ScrabbleBonusTiles)
+            total += ScrabbleBonus;
+
+        return total;
+    }
+
+    // ── Extraction des mots ───────────────────────────────────────────────────────
 
     /// <summary>
     /// Détermine si le coup est horizontal, en tenant compte du contexte du plateau
     /// pour les placements d'une seule tuile.
-    /// <list type="bullet">
-    ///   <item>Multi-tuiles sur une même ligne → horizontal</item>
-    ///   <item>Multi-tuiles sur une même colonne → vertical</item>
-    ///   <item>Tuile unique : horizontal si un voisin existe à gauche/droite,
-    ///         vertical sinon (voisin haut/bas ou tuile isolée sans connexion).</item>
-    /// </list>
     /// </summary>
     public static bool DetermineIsHorizontal(
         IReadOnlyDictionary<Position, char> placements,
@@ -171,16 +210,14 @@ public sealed class MoveValidator
         var rowCount = placements.Keys.Select(p => p.Row).Distinct().Count();
         var colCount = placements.Keys.Select(p => p.Column).Distinct().Count();
 
-        if (rowCount > 1) return false; // vertical multi-tuiles
-        if (colCount > 1) return true;  // horizontal multi-tuiles
+        if (rowCount > 1) return false;
+        if (colCount > 1) return true;
 
-        // Tuile unique : voisins du plateau déterminent la direction
         var pos = placements.Keys.First();
         var hasHorizontalNeighbor =
             (pos.Column > 0  && board.Grid[pos.Row, pos.Column - 1] is not null) ||
             (pos.Column < 14 && board.Grid[pos.Row, pos.Column + 1] is not null);
 
-        // Si voisin horizontal → sens horizontal ; sinon vertical (ou tuile isolée)
         return hasHorizontalNeighbor;
     }
 
@@ -240,13 +277,11 @@ public sealed class MoveValidator
 
         foreach (var (pos, letter) in placements)
         {
-            // Ignorer les cases déjà occupées (croisements réutilisés)
             if (board.Grid[pos.Row, pos.Column] is not null) continue;
 
             string crossWord;
             if (mainIsHorizontal)
             {
-                // Croisement vertical
                 var minRow = pos.Row;
                 var maxRow = pos.Row;
                 while (minRow > 0 && board.Grid[minRow - 1, pos.Column] is not null) minRow--;
@@ -264,7 +299,6 @@ public sealed class MoveValidator
             }
             else
             {
-                // Croisement horizontal
                 var minCol = pos.Column;
                 var maxCol = pos.Column;
                 while (minCol > 0 && board.Grid[pos.Row, minCol - 1] is not null) minCol--;
@@ -288,9 +322,9 @@ public sealed class MoveValidator
         return crossWords;
     }
 
-    // ── Helpers privés ────────────────────────────────────────────────────────
+    // ── Helpers privés (validation) ───────────────────────────────────────────────
 
-    private static bool HasAdjacentTile(
+    private bool HasAdjacentTile(
         Position pos,
         BoardState board,
         IReadOnlyDictionary<Position, char> placements)
@@ -317,7 +351,7 @@ public sealed class MoveValidator
     {
         var col = (char)('A' + pos.Column);
         var row = pos.Row + 1;
-        return $"{col}{row}";
+        return col.ToString() + row;
     }
 
     private static bool IsAllowedLetter(char letter)
@@ -325,4 +359,127 @@ public sealed class MoveValidator
         var upper = char.ToUpperInvariant(letter);
         return (upper >= 'A' && upper <= 'Z') || upper == '*';
     }
+
+    // ── Helpers privés (calcul de score) ──────────────────────────────────────────
+
+    private int CalculateWordScore(
+        IReadOnlyDictionary<Position, char> placements,
+        BoardState board,
+        ISet<Position>? wildcardPositions,
+        out int newlyPlacedTiles)
+    {
+        var wordScore      = 0;
+        var wordMultiplier = 1;
+        newlyPlacedTiles   = 0;
+
+        foreach (var (pos, letter) in placements)
+        {
+            var isWildcard  = wildcardPositions?.Contains(pos) == true;
+            var letterValue = isWildcard ? 0 : GetLetterValue(letter);
+            var bonus       = BonusMap.GetBonus(pos);
+            var existingTile = board.Grid[pos.Row, pos.Column];
+            var isNewSquare  = existingTile is null;
+
+            if (isNewSquare)
+            {
+                newlyPlacedTiles++;
+                wordScore      += letterValue * bonus.LetterMultiplier;
+                wordMultiplier *= bonus.WordMultiplier;
+            }
+            else
+            {
+                var existingLetterValue = existingTile!.IsWildcard
+                    ? 0
+                    : GetLetterValue(existingTile.Letter);
+                wordScore += existingLetterValue;
+            }
+        }
+
+        return wordScore * wordMultiplier;
+    }
+
+    private int CalculateCrossWordsScore(
+        IReadOnlyDictionary<Position, char> placements,
+        BoardState board,
+        ISet<Position>? wildcardPositions,
+        bool mainIsHorizontal)
+    {
+        var total = 0;
+
+        foreach (var (pos, letter) in placements)
+        {
+            if (board.Grid[pos.Row, pos.Column] is not null) continue;
+
+            int crossScore = 0;
+            int crossMulti = 1;
+            bool hasCross  = false;
+
+            if (mainIsHorizontal)
+            {
+                var minRow = pos.Row;
+                var maxRow = pos.Row;
+                while (minRow > 0 && board.Grid[minRow - 1, pos.Column] is not null) minRow--;
+                while (maxRow < 14 && board.Grid[maxRow + 1, pos.Column] is not null) maxRow++;
+                if (maxRow == minRow) continue;
+
+                hasCross = true;
+                for (var r = minRow; r <= maxRow; r++)
+                {
+                    var tilePos = new Position(r, pos.Column);
+                    var isNewPos = board.Grid[r, pos.Column] is null;
+                    var bonus    = BonusMap.GetBonus(tilePos);
+
+                    if (isNewPos)
+                    {
+                        var isWildcard = wildcardPositions?.Contains(tilePos) == true;
+                        var letterVal  = isWildcard ? 0 : GetLetterValue(letter);
+                        crossScore    += letterVal * bonus.LetterMultiplier;
+                        crossMulti    *= bonus.WordMultiplier;
+                    }
+                    else
+                    {
+                        var existingTile = board.Grid[r, pos.Column]!;
+                        crossScore += existingTile.IsWildcard ? 0 : GetLetterValue(existingTile.Letter);
+                    }
+                }
+            }
+            else
+            {
+                var minCol = pos.Column;
+                var maxCol = pos.Column;
+                while (minCol > 0 && board.Grid[pos.Row, minCol - 1] is not null) minCol--;
+                while (maxCol < 14 && board.Grid[pos.Row, maxCol + 1] is not null) maxCol++;
+                if (maxCol == minCol) continue;
+
+                hasCross = true;
+                for (var c = minCol; c <= maxCol; c++)
+                {
+                    var tilePos = new Position(pos.Row, c);
+                    var isNewPos = board.Grid[pos.Row, c] is null;
+                    var bonus    = BonusMap.GetBonus(tilePos);
+
+                    if (isNewPos)
+                    {
+                        var isWildcard = wildcardPositions?.Contains(tilePos) == true;
+                        var letterVal  = isWildcard ? 0 : GetLetterValue(letter);
+                        crossScore    += letterVal * bonus.LetterMultiplier;
+                        crossMulti    *= bonus.WordMultiplier;
+                    }
+                    else
+                    {
+                        var existingTile = board.Grid[pos.Row, c]!;
+                        crossScore += existingTile.IsWildcard ? 0 : GetLetterValue(existingTile.Letter);
+                    }
+                }
+            }
+
+            if (hasCross)
+                total += crossScore * crossMulti;
+        }
+
+        return total;
+    }
+
+    private int GetLetterValue(char letter) =>
+        _letterScores.TryGetValue(char.ToUpperInvariant(letter), out var value) ? value : 0;
 }

@@ -37,6 +37,8 @@ public sealed class EndGameUseCase
         engine.EndGame();
         var finalState = engine.GetGameState();
 
+        var suggestionsUsed = session.SuggestionsUsed;
+
         var scores = finalState.Players
             .OrderByDescending(p => p.Score)
             .Select(p => (p.Name, p.Score))
@@ -105,7 +107,7 @@ public sealed class EndGameUseCase
                     PlayerId: p.PlayerId,
                     PlayerName: p.PlayerName,
                     Rank: rankByPlayerId[p.PlayerId],
-                    IsAbandoned: false,
+                    IsAbandoned: request.IsAbandoned,
                     Score: p.Score,
                     OpponentIds: participants
                         .Where(o => o.PlayerId != p.PlayerId)
@@ -124,7 +126,8 @@ public sealed class EndGameUseCase
                     MinWordLength: request.MinWordLength,
                     Language: request.Language,
                     IsRanked: isRanked,
-                    TournamentId: request.TournamentId))
+                    TournamentId: request.TournamentId,
+                    SuggestionsUsed: suggestionsUsed))
                 .ToList();
 
             await _playerRatingService.UpdateRatingsAsync(results);

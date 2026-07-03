@@ -108,6 +108,9 @@ public sealed class OnlineGame(
     public string? EndReason { get; set; }
     /// <summary>Nom du joueur à l'origine de la fin prématurée.</summary>
     public string? AbandonedByName { get; set; }
+    /// <summary>Indique qu'au moins une suggestion a été utilisée pendant la partie
+    /// (l'Elo n'est alors pas approvisionné, hors mode Tournament).</summary>
+    public bool SuggestionsUsed { get; set; }
 }
 
 public sealed record OnlinePlayer(string PlayerId, string PlayerName, bool IsHost, bool IsBot = false);

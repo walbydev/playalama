@@ -56,8 +56,16 @@ public sealed class PlayerRatingService : IPlayerRatingService
 
             var sourceElo = GetEloForQueue(currentRating, result.Queue);
 
+            // L'Elo n'est approvisionné que si la partie est classée ET
+            //   - n'est pas un abandon (0 point, Elo inchangé)
+            //   - n'a pas utilisé de suggestion (hors mode Tournament où la règle ne s'applique pas)
+            var eloFeeds = result.IsRanked
+                && result.Queue != RankingQueue.CasualUnranked
+                && !result.IsAbandoned
+                && !(result.SuggestionsUsed && result.Queue != RankingQueue.Tournament);
+
             // Calculer le changement Elo
-            var ratingChange = (result.IsRanked && result.Queue != RankingQueue.CasualUnranked)
+            var ratingChange = eloFeeds
                 ? _eloCalculator.CalculateRatingChange(
                     sourceElo,
                     result.OpponentRatings,
@@ -65,8 +73,10 @@ public sealed class PlayerRatingService : IPlayerRatingService
                     gameResults.Count)
                 : 0;
 
-            // Appliquer le changement
-            var newQueueElo = _eloCalculator.ApplyRatingChange(sourceElo, ratingChange);
+            // Appliquer le changement (inchangé si abandon/suggestion)
+            var newQueueElo = eloFeeds
+                ? _eloCalculator.ApplyRatingChange(sourceElo, ratingChange)
+                : sourceElo;
             var newOpenElo = result.Queue == RankingQueue.OpenRanked ? newQueueElo : currentRating.EloOpen;
             var newTournamentElo = result.Queue == RankingQueue.Tournament ? newQueueElo : currentRating.EloTournament;
             var compatibilityElo = newOpenElo;

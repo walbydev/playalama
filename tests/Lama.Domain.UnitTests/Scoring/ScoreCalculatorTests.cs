@@ -6,7 +6,7 @@ using Lama.Domain.Scoring;
 namespace Lama.Domain.UnitTests.Scoring;
 
 /// <summary>
-/// Tests unitaires pour <see cref="ScoreCalculator"/>.
+/// Tests unitaires pour <see cref="MoveAnalyzer"/> (calcul de score).
 /// Vérifie le calcul des scores selon les règles officielles Scrabble :
 /// score = Σ(valeur_lettre × multiplicateur_lettre) × multiplicateur_mot
 /// + bonus Scrabble (50 pts si 7 lettres posées en un coup).
@@ -24,7 +24,7 @@ public class ScoreCalculatorTests
         ['Z'] = 10,['*'] = 0  // joker
     };
 
-    private readonly ScoreCalculator _sut = new(Scores);
+    private readonly MoveAnalyzer _sut = new(new HashSet<string>(), Scores);
 
     #region Score de base — case normale
 

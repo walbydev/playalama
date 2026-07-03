@@ -644,7 +644,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static async Task<IResult> AbandonGame(HttpContext context, string gameId, AbandonGameRequest request, GameHubState state, LamaDbContext db)
+    private static async Task<IResult> AbandonGame(HttpContext context, string gameId, AbandonGameRequest request, GameHubState state, IPlayerRatingService ratingService, LamaDbContext db)
     {
         if (!context.IsAuthenticated())
             return Results.Unauthorized();
@@ -768,6 +768,64 @@ public static class GamesCommandEndpoints
                 logger.LogWarning(ex, "Impossible de persister la partie abandonnée {GameId}", gameId);
             }
 
+            // ── Mise à jour des ratings : abandon → 0 point, Elo inchangé, games_abandoned+1 ──
+            try
+            {
+                var endedState2 = game.Engine.GetGameState();
+                var durationAb = (int)(endedAt - game.CreatedAt).TotalSeconds;
+                var rankedNamesAb = endedState2.Players.OrderByDescending(p => p.Score)
+                    .Select(p => p.Name).ToList();
+
+                var gameResults = game.Players
+                    .Select(player =>
+                    {
+                        var persistentId = player.IsBot
+                            ? (BotCatalog.Find(player.PlayerId)?.PersistentPlayerId ?? player.PlayerId)
+                            : player.PlayerId;
+
+                        var enginePlayer = endedState2.Players
+                            .FirstOrDefault(p => p.Name == player.PlayerName);
+
+                        var rank  = rankedNamesAb.IndexOf(player.PlayerName) + 1;
+                        var score = enginePlayer?.Score ?? 0;
+
+                        var opponentPersistentIds = game.Players
+                            .Where(p => p.PlayerId != player.PlayerId)
+                            .Select(p => p.IsBot
+                                ? (BotCatalog.Find(p.PlayerId)?.PersistentPlayerId ?? p.PlayerId)
+                                : p.PlayerId)
+                            .ToList();
+
+                        return new GameResult(
+                            GameId:     gameId,
+                            PlayerId:   persistentId,
+                            PlayerName: player.PlayerName,
+                            Rank:       rank > 0 ? rank : game.Players.Count,
+                            IsAbandoned: true,
+                            Score:      score,
+                            OpponentIds:     opponentPersistentIds,
+                            OpponentRatings: [],
+                            PlayedAt:       endedAt,
+                            DurationSeconds:durationAb,
+                            Queue:          game.Queue,
+                            GameLevel:      game.GameLevel,
+                            BoardSize:      game.BoardSize,
+                            RackSize:       game.RackSize,
+                            MinWordLength:  game.MinWordLength,
+                            Language:       game.Language,
+                            IsRanked:       game.Queue != RankingQueue.CasualUnranked,
+                            TournamentId:   game.TournamentId,
+                            SuggestionsUsed: game.SuggestionsUsed);
+                    }).ToList();
+
+                await ratingService.UpdateRatingsAsync(gameResults);
+            }
+            catch (Exception ex)
+            {
+                var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning(ex, "Impossible de mettre à jour les ratings pour la partie abandonnée {GameId}", gameId);
+            }
+
             state.Publish(gameId, new ServerEvent("game.ended", new
             {
                 gameId,
@@ -851,7 +909,6 @@ public static class GamesCommandEndpoints
                     .Select(p => p.Name).ToList();
 
                 var gameResults = game.Players
-                    .Where(p => !game.AbandonedPlayerIds.Contains(p.PlayerId))
                     .Select(player =>
                     {
                         // Bots : utiliser leur GUID stable plutôt que "bot-xxx"
@@ -872,12 +929,15 @@ public static class GamesCommandEndpoints
                                 : p.PlayerId)
                             .ToList();
 
+                        // Un joueur ayant abandonné puis la partie a continué : marqué abandon (0 point, Elo inchangé)
+                        var playerAbandoned = game.AbandonedPlayerIds.Contains(player.PlayerId);
+
                         return new GameResult(
                             GameId:     gameId,
                             PlayerId:   persistentId,
                             PlayerName: player.PlayerName,
                             Rank:       rank > 0 ? rank : game.Players.Count,
-                            IsAbandoned: false,
+                            IsAbandoned: playerAbandoned,
                             Score:      score,
                             OpponentIds:     opponentPersistentIds,
                             OpponentRatings: [],  // le service utilise les ratings en DB
@@ -890,7 +950,8 @@ public static class GamesCommandEndpoints
                             MinWordLength:  game.MinWordLength,
                             Language:       game.Language,
                             IsRanked:       true,
-                            TournamentId:   game.TournamentId);
+                            TournamentId:   game.TournamentId,
+                            SuggestionsUsed: game.SuggestionsUsed);
                     }).ToList();
 
                 await ratingService.UpdateRatingsAsync(gameResults);
@@ -1158,6 +1219,9 @@ public static class GamesCommandEndpoints
 
             // Détecter si c'est le premier coup (aucune tuile sur le plateau)
             isFirstMove = !currentState.Board.Grid.Cast<object?>().Any(t => t is not null);
+
+            // Marquer la partie comme ayant utilisé une suggestion (désactive l'alimentation Elo hors Tournament)
+            game.SuggestionsUsed = true;
         }
 
         var currentPlayer  = currentState.Players[playerIndex];

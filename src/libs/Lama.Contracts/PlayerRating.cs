@@ -45,8 +45,8 @@ public record PlayerRating(
         ? (double)WinsCount / (WinsCount + LossesCount) * 100 
         : 0;
 
-    /// <summary>Total de parties jouées (moins les abandons).</summary>
-    public int TotalGames => WinsCount + LossesCount;
+    /// <summary>Total de parties jouées (victoires + défaites + abandons).</summary>
+    public int TotalGames => WinsCount + LossesCount + AbandonedCount;
 }
 
 /// <summary>
@@ -95,6 +95,8 @@ public enum LevelEnum
 /// <param name="Language">Langue de la partie.</param>
 /// <param name="IsRanked">Indique si la partie influence le classement Elo.</param>
 /// <param name="TournamentId">Identifiant tournoi optionnel.</param>
+/// <param name="SuggestionsUsed">Indique qu'une suggestion a été utilisée pendant la partie
+/// (l'Elo n'est alors pas approvisionné, hors mode Tournament).</param>
 public record GameResult(
     string GameId,
     string PlayerId,
@@ -113,7 +115,8 @@ public record GameResult(
     int MinWordLength = 2,
     string Language = "fr",
     bool IsRanked = true,
-    string? TournamentId = null);
+    string? TournamentId = null,
+    bool SuggestionsUsed = false);
 
 /// <summary>
 /// Résumé des statistiques d'un joueur sur différentes périodes.

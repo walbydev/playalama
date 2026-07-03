@@ -1,7 +1,6 @@
 using Lama.Contracts;
 using Lama.Domain.Board;
 using Lama.Domain.Scoring;
-using Lama.Domain.Validation;
 
 namespace Lama.Domain.Engine;
 
@@ -12,8 +11,7 @@ namespace Lama.Domain.Engine;
 public sealed class MoveSuggestionEngine
 {
     private readonly IReadOnlySet<string> _dictionary;
-    private readonly ScoreCalculator _scoreCalculator;
-    private readonly MoveValidator _moveValidator;
+    private readonly MoveAnalyzer _moveAnalyzer;
 
     public MoveSuggestionEngine()
         : this(new HashSet<string>(), new Dictionary<char, int>())
@@ -25,8 +23,7 @@ public sealed class MoveSuggestionEngine
         IReadOnlyDictionary<char, int> letterScores)
     {
         _dictionary = dictionary;
-        _scoreCalculator = new ScoreCalculator(letterScores);
-        _moveValidator = new MoveValidator(dictionary);
+        _moveAnalyzer = new MoveAnalyzer(dictionary, letterScores);
     }
 
     /// <summary>
@@ -234,11 +231,11 @@ public sealed class MoveSuggestionEngine
         if (!TryAssignWildcards(newPlacements, rack, out var wildcardPositions))
             return;
 
-        var validation = _moveValidator.Validate(placements, board, isFirstMove);
+        var validation = _moveAnalyzer.Validate(placements, board, isFirstMove);
         if (!validation.IsValid)
             return;
 
-        var score = _scoreCalculator.Calculate(placements, board, wildcardPositions);
+        var score = _moveAnalyzer.Calculate(placements, board, wildcardPositions);
         var heuristic = ComputeBalancedScore(board, placements, score);
         var candidate = new MoveSuggestion(
             Word: word,

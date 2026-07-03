@@ -120,7 +120,16 @@ public sealed class PlayerRatingService(LamaDbContext db) : IPlayerRatingService
                 result.Rank,
                 gameResults.Count);
 
-            row.EloRating    = (decimal)EloCalc.ApplyRatingChange((double)row.EloRating, change);
+            // L'Elo n'est approvisionné que si la partie n'est pas un abandon et
+            // n'a pas utilisé de suggestion (hors mode Tournament).
+            var eloFeeds = result.IsRanked
+                && result.Queue != RankingQueue.CasualUnranked
+                && !result.IsAbandoned
+                && !(result.SuggestionsUsed && result.Queue != RankingQueue.Tournament);
+
+            if (eloFeeds)
+                row.EloRating = (decimal)EloCalc.ApplyRatingChange((double)row.EloRating, change);
+
             row.GamesPlayed++;
 
             if (result.IsAbandoned)
@@ -154,6 +163,7 @@ public sealed class PlayerRatingService(LamaDbContext db) : IPlayerRatingService
 
         var rows = await db.PlayerRatings
             .Where(r => r.Queue == queueStr)
+            .Where(r => r.Player != null && r.Player.Username != "root")
             .OrderByDescending(r => r.EloRating)
             .Take(topCount)
             .Include(r => r.Player)

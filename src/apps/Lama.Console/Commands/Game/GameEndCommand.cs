@@ -94,7 +94,8 @@ public sealed class GameEndCommand : ICommand
                 var response = await _endGameUseCase.ExecuteAsync(
                     new EndGameRequest(
                         GameId: context.GameId,
-                        GameLevel: context.GameLevel));
+                        GameLevel: context.GameLevel,
+                        IsAbandoned: context.IsAbandoned));
 
                 winner = response.Winner;
                 scores = response.Scores;

@@ -86,6 +86,12 @@ public sealed class CommandContext
     public GameLevel? GameLevel { get; init; }
 
     /// <summary>
+    /// Indique que la commande termine la partie par abandon (game.end).
+    /// Propagé jusqu'au rating pour neutraliser l'Elo (0 point, games_abandoned+1).
+    /// </summary>
+    public bool IsAbandoned { get; init; }
+
+    /// <summary>
     /// Indique si le contexte possède une session active (partie en cours).
     /// </summary>
     public bool HasActiveSession => GameId is not null && PlayerId is not null;
