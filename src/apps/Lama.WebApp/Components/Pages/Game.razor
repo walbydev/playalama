@@ -718,10 +718,20 @@ else
                 if (!string.IsNullOrWhiteSpace(justPlayed) && !string.IsNullOrWhiteSpace(nextPlayer))
                 {
                     var turnLabel = _vm.Snapshot.LastMoveTurnNumber is { } n ? L["Game.TurnLabel", n].Value : string.Empty;
+                    var actionKey = _vm.Snapshot.LastMoveCommand?.ToLowerInvariant() switch
+                    {
+                        "play.pass" => "Game.TurnNotice.Pass",
+                        "play.swap" => "Game.TurnNotice.Swap",
+                        "play.challenge" => "Game.TurnNotice.Challenge",
+                        _ => "Game.TurnNotice.Move"
+                    };
+                    var isReplay = string.Equals(justPlayed, nextPlayer, StringComparison.Ordinal);
+                    var suffixKey = isReplay ? "Game.TurnNotice.ReplaySuffix" : "Game.TurnNotice.NextSuffix";
+                    var scoreSuffix = _vm.Snapshot.LastMoveScore is > 0 and var sc
+                        ? $" ({sc} {L["Game.PointsShort"]})"
+                        : string.Empty;
                     ShowTurnNotice(
-                        string.Equals(justPlayed, nextPlayer, StringComparison.Ordinal)
-                            ? L["Game.TurnNotice.Replay", turnLabel, justPlayed, nextPlayer]
-                            : L["Game.TurnNotice.Next", turnLabel, justPlayed, nextPlayer]);
+                        $"{turnLabel}{L[actionKey, justPlayed, scoreSuffix]} {L[suffixKey, nextPlayer]}");
                 }
 
                 _lastAnnouncedMoveId = _vm.Snapshot.LastMoveId;

@@ -233,6 +233,12 @@
   <data name="Game.TurnLabel"><value>Turn {0} — </value></data>
   <data name="Game.TurnNotice.Next"><value>{0}{1} just played. It's {2}'s turn.</value></data>
   <data name="Game.TurnNotice.Replay"><value>{0}{1} just played. {2} plays again.</value></data>
+  <data name="Game.TurnNotice.Move"><value>{0} placed a word{1}.</value></data>
+  <data name="Game.TurnNotice.Pass"><value>{0} passed their turn.</value></data>
+  <data name="Game.TurnNotice.Swap"><value>{0} swapped letters.</value></data>
+  <data name="Game.TurnNotice.Challenge"><value>{0} challenged the previous move.</value></data>
+  <data name="Game.TurnNotice.NextSuffix"><value>It's {0}'s turn.</value></data>
+  <data name="Game.TurnNotice.ReplaySuffix"><value>{0} plays again.</value></data>
   <data name="Game.UnknownPlayer"><value>Unknown player</value></data>
   <data name="Game.Validate"><value>Validate</value></data>
   <data name="Game.WaitingTurn"><value>Turn: {0}</value></data>

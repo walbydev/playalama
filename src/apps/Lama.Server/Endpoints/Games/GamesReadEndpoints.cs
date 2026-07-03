@@ -197,6 +197,8 @@ public static class GamesReadEndpoints
                     lastMoveId = lastMove?.MoveId,
                     lastMovePlayerName = lastMove?.PlayerName,
                     lastMoveTurnNumber = lastMove?.TurnNumber,
+                    lastMoveCommand = lastMove?.Command,
+                    lastMoveScore = lastMove?.Score,
                     source = "memory"
                 });
             }
@@ -222,6 +224,8 @@ public static class GamesReadEndpoints
         string? persistedLastMoveId = null;
         string? persistedLastMovePlayerName = null;
         int? persistedLastMoveTurnNumber = null;
+        string? persistedLastMoveCommand = null;
+        int? persistedLastMoveScore = null;
         IReadOnlyList<OnlineBoardTile> persistedBoard = [];
         var lastTurnNumber = 0;
 
@@ -282,6 +286,9 @@ public static class GamesReadEndpoints
             {
                 persistedLastMoveId = lastDbTurn.TurnId.ToString("N");
                 persistedLastMoveTurnNumber = lastDbTurn.TurnNumber;
+                persistedLastMoveCommand = GamesEndpointParsers.ToOnlineCommand(lastDbTurn.ActionType);
+                var lastPayload = GamesEndpointParsers.ParseActionPayload(lastDbTurn.ActionPayload);
+                persistedLastMoveScore = GamesEndpointParsers.ExtractScoreFromPayload(lastPayload);
                 if (playersBySessionId.TryGetValue(lastDbTurn.PlayerSessionId, out var lastOwner))
                     persistedLastMovePlayerName = lastOwner.Nickname;
             }
@@ -330,6 +337,8 @@ public static class GamesReadEndpoints
             lastMoveId = persistedLastMoveId,
             lastMovePlayerName = persistedLastMovePlayerName,
             lastMoveTurnNumber = persistedLastMoveTurnNumber,
+            lastMoveCommand = persistedLastMoveCommand,
+            lastMoveScore = persistedLastMoveScore,
             source = "database"
         });
     }

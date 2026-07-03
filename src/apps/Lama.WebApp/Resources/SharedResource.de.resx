@@ -232,6 +232,12 @@
   <data name="Game.TurnLabel"><value>Zug {0} — </value></data>
   <data name="Game.TurnNotice.Next"><value>{0}{1} hat gerade gespielt. {2} ist dran.</value></data>
   <data name="Game.TurnNotice.Replay"><value>{0}{1} hat gerade gespielt. {2} spielt erneut.</value></data>
+  <data name="Game.TurnNotice.Move"><value>{0} hat ein Wort gelegt{1}.</value></data>
+  <data name="Game.TurnNotice.Pass"><value>{0} hat seinen Zug übersprungen.</value></data>
+  <data name="Game.TurnNotice.Swap"><value>{0} hat Buchstaben getauscht.</value></data>
+  <data name="Game.TurnNotice.Challenge"><value>{0} hat den vorherigen Zug angefochten.</value></data>
+  <data name="Game.TurnNotice.NextSuffix"><value>{0} ist dran.</value></data>
+  <data name="Game.TurnNotice.ReplaySuffix"><value>{0} spielt erneut.</value></data>
   <data name="Game.UnknownPlayer"><value>Unbekannter Spieler</value></data>
   <data name="Game.Validate"><value>Bestätigen</value></data>
   <data name="Game.WaitingTurn"><value>Zug: {0}</value></data>

@@ -102,6 +102,8 @@ public sealed record WebGameSnapshot(
     string? LastMoveId,
     string? LastMovePlayerName,
     int? LastMoveTurnNumber,
+    string? LastMoveCommand,
+    int? LastMoveScore,
     IReadOnlyList<string> AbandonedPlayerIds,
     string? EndReason,
     string? AbandonedByName);

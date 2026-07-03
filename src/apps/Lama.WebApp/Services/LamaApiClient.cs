@@ -279,6 +279,8 @@ public sealed class LamaApiClient(HttpClient httpClient)
             payload.LastMoveId,
             payload.LastMovePlayerName,
             payload.LastMoveTurnNumber,
+            payload.LastMoveCommand,
+            payload.LastMoveScore,
             payload.AbandonedPlayerIds ?? [],
             payload.EndReason,
             payload.AbandonedByName);
@@ -591,7 +593,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
         int CurrentPlayerIndex, int TurnNumber, int BagCount, int MaxPlayers, int BoardSize, int RackSize, string? Language,
         List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board,
         string? LastMoveId,
-        string? LastMovePlayerName, int? LastMoveTurnNumber,
+        string? LastMovePlayerName, int? LastMoveTurnNumber, string? LastMoveCommand, int? LastMoveScore,
         List<string>? AbandonedPlayerIds, string? EndReason, string? AbandonedByName);
     private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost, List<char>? Rack, int RackCount, bool IsBot = false);
     private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);
