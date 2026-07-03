@@ -486,6 +486,7 @@
   <data name="Accessibility.FontSize.Title"><value>Text size</value></data>
   <data name="Theme.Blue"><value>Blue</value></data>
   <data name="Theme.Choose"><value>Choose a theme</value></data>
+  <data name="Theme.Compact"><value>Dark Compact</value></data>
   <data name="Theme.Dark"><value>Dark</value></data>
   <data name="Theme.Deuteranopia"><value>Red-Green Color Blindness (Deuteranopia)</value></data>
   <data name="Theme.Green"><value>Green</value></data>

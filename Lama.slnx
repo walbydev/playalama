@@ -101,9 +101,16 @@
     <File Path="docs/roadmap/OPTION_A_SETUP.md" />
     <File Path="docs/roadmap/STATUS_OPTION_A.md" />
   </Folder>
+  <Folder Name="/Docs/bugs/">
+    <File Path="docs\bugs\260703_HideAllNonPermittedItems.md" />
+  </Folder>
   <Folder Name="/Docs/evolutions/">
     <File Path="docs/evolutions/INDEX.md" />
     <File Path="docs/evolutions/MULTILANGUE_JEU_BILINGUE.md" />
+    <File Path="docs\evolutions\CONDENSED_THEME_DEFINITION.md" />
+    <File Path="docs\evolutions\MODES_DE_JEU.md" />
+    <File Path="docs\evolutions\MODES_ET_OPTIONS_GRILLE_DECISION.md" />
+    <File Path="docs\evolutions\USERS_MANAGEMENT_PAGE.md" />
   </Folder>
   <Folder Name="/Docs/utils/">
     <File Path="docs/utils/GUIDE_DEMARRAGE_DEV.md" />

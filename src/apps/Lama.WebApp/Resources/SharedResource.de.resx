@@ -517,6 +517,7 @@
   <data name="Accessibility.XLarge"><value>Sehr groß</value></data>
   <data name="Theme.Blue"><value>Bläulich</value></data>
   <data name="Theme.Choose"><value>Thema wählen</value></data>
+  <data name="Theme.Compact"><value>Dunkel Kompakt</value></data>
   <data name="Theme.Dark"><value>Dunkel</value></data>
   <data name="Theme.Deuteranopia"><value>Rot-Grün-Farbenblindheit (Deuteranopie)</value></data>
   <data name="Theme.Green"><value>Grünlich</value></data>

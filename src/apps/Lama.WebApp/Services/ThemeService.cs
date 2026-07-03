@@ -11,7 +11,7 @@ public sealed class ThemeService(IJSRuntime js)
     private static readonly HashSet<string> AllowedThemes = new(StringComparer.Ordinal)
     {
         "dark", "light", "blue", "green", "vermillion", "highcontrast",
-        "deuteranopia", "protanopia", "tritanopia"
+        "deuteranopia", "protanopia", "tritanopia", "compact"
     };
 
     private string _theme = "dark";

@@ -212,6 +212,30 @@ html.tritanopia {
     --shadow:     0 4px 24px rgba(0,0,0,0.5);
 }
 
+/* ── TOKENS compact (condensé : sombre, accent corail, espacement réduit) ── */
+html.compact {
+    --bg:         #1E1E1E;
+    --bg2:        #262626;
+    --bg3:        #303030;
+    --surface:    #2a2a2a;
+    --border:     rgba(255,255,255,0.12);
+    --accent:     #FF6F61;
+    --accent2:    #ff8a7f;
+    --gold:       #fbbf24;
+    --silver:     #d1d5db;
+    --bronze:     #b45309;
+    --text:       #FFFFFF;
+    --text-muted: #c4c4c4;
+    --text-dim:   #8a8a8a;
+    --success:    #4ade80;
+    --error:      #f87171;
+    --board-grid-line: rgba(255,255,255,0.18);
+    --board-grid-outline: rgba(255,255,255,0.28);
+    --shadow:     0 2px 12px rgba(0,0,0,0.4);
+    --radius:     6px;
+    --radius-sm:  4px;
+}
+
 /* ── ACCESSIBILITÉ renforcée pour haut contraste ── */
 html.highcontrast {
     font-size: 18px; /* Plus grand que la taille par défaut (17px) */
@@ -2744,6 +2768,171 @@ html.dark .page-wrapper--game-focus .llamo-watermark {
 
 @media (max-width: 480px) {
     .llamo-watermark {
+        display: none;
+    }
+}
+
+/* ════════════════════════════════════════════════════════
+   THÈME COMPACT — disposition condensée, rack latéral
+   ════════════════════════════════════════════════════════ */
+
+/* Rack latéral : caché par défaut, visible uniquement en compact */
+.game-sidebar-rack {
+    display: none;
+}
+
+/* ── Layout : cacher le rack principal, activer le rack latéral ── */
+/* ── Rack haut/bas caché : le rack vit uniquement dans la sidebar ── */
+html.compact .game-rack-area {
+    display: none;
+}
+
+html.compact .game-sidebar-rack {
+    display: block;
+}
+
+/* Cacher les commandes "rack haut/bas" (sans objet en compact) */
+html.compact .layout-rack-controls {
+    display: none;
+}
+
+/* Layout compact : 2 colonnes uniquement (plateau + sidebar), plus de rang rack */
+html.compact .game-layout {
+    grid-template-columns: 1fr 560px;
+    grid-template-areas:
+        "board side";
+}
+
+html.compact .game-layout[data-variant="b"],
+html.compact .game-layout[data-variant="d"] {
+    grid-template-columns: 560px 1fr;
+    grid-template-areas:
+        "side board";
+}
+
+@media (max-width: 1024px) {
+    html.compact .game-layout { grid-template-columns: 1fr 500px; }
+    html.compact .game-layout[data-variant="b"],
+    html.compact .game-layout[data-variant="d"] { grid-template-columns: 500px 1fr; }
+}
+
+/* ── Plateau aligné tout en haut, aligné sur le haut du rack latéral ── */
+html.compact .game-board-area {
+    align-self: start;
+    padding-top: 0;
+    margin-top: 0;
+}
+
+html.compact .game-sidebar {
+    align-self: start;
+}
+
+/* ── Tuiles du rack compactes + lisibles ── */
+html.compact .rack-tile {
+    width: 64px;
+    height: 74px;
+    font-size: 2rem;             /* lettres plus grandes */
+    border-radius: 6px;
+    background:
+        linear-gradient(145deg, #e8c39a 0%, #d4a878 42%, #c08c5c 100%);
+    box-shadow:
+        0 2px 4px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255, 246, 232, 0.5);
+}
+
+html.compact .rack-tile-val {
+    font-size: 1rem;             /* points plus visibles */
+    bottom: 4px;
+    right: 5px;
+    font-weight: 800;
+}
+
+html.compact .rack-tile--joker {
+    background: #e6f9ec;        /* fond éclairci pour contraste */
+    color: #14532d;
+    border-color: #86efac;
+}
+
+/* ── Rack latéral : largeur suffisante pour 7 tuiles sur une ligne ── */
+html.compact .game-sidebar-rack .rack-container {
+    gap: .35rem;
+    padding: .35rem .5rem;
+    min-height: 64px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow: visible;
+}
+
+html.compact .rack-side-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .35rem;
+}
+
+html.compact .rack-side-header h3 {
+    margin: 0;
+    font-size: .9rem;
+}
+
+html.compact .rack-side-actions {
+    display: flex;
+    gap: .35rem;
+    margin-top: .35rem;
+}
+
+html.compact .rack-side-validate {
+    flex: 1;
+    padding: .5rem .8rem;
+    font-size: 1rem;
+    font-weight: 700;
+    min-height: 2.5rem;
+}
+
+/* ── Espacement réduit global ── */
+html.compact .game-layout {
+    gap: .75rem;
+}
+
+html.compact .game-board-area {
+    padding: .5rem;
+    gap: .35rem;
+}
+
+html.compact .game-sidebar {
+    gap: .5rem;
+}
+
+html.compact .card {
+    padding: .5rem .65rem;
+}
+
+html.compact .btn {
+    padding: .25rem .55rem;
+    font-size: .85rem;
+    min-height: 2rem;
+}
+
+html.compact .btn-sm {
+    padding: .18rem .4rem;
+    font-size: .78rem;
+    min-height: 1.7rem;
+}
+
+html.compact h3 {
+    font-size: .95rem;
+}
+
+html.compact .sidebar-panel {
+    padding: .5rem .65rem;
+}
+
+/* ── Responsive : garder le rack latéral sur tablette, retomber sur rack dessous sur mobile ── */
+@media (max-width: 800px) {
+    html.compact .game-rack-area {
+        display: block;
+    }
+    html.compact .game-sidebar-rack {
         display: none;
     }
 }

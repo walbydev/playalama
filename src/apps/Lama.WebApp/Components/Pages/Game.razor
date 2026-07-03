@@ -275,6 +275,49 @@ else
                     @* ── Colonne droite : sidebar (scores + actions) ── *@
                     <div class="game-sidebar" data-active-tab="@Layout.ActiveTab">
 
+                        @* Rack latéral (thème compact uniquement) — au-dessus des scores *@
+                        @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
+                        {
+                            <div class="card game-sidebar-rack">
+                                <div class="rack-side-header">
+                                    <h3>@L["Game.MyTiles"]</h3>
+                                    @if (_vm.IsMyTurn && _vm.PendingPlacements.Count > 0)
+                                    {
+                                        <button class="btn btn-ghost btn-sm rack-recall-btn"
+                                                @onclick="() => { _vm.RecallAll(); StateHasChanged(); }"
+                                                title="@L["Game.RecallAll.Title"]">
+                                            ↩
+                                        </button>
+                                    }
+                                </div>
+                                <RackDisplay Rack="_vm.MyRack"
+                                             DisplayOrder="@_rackOrder"
+                                             IsMyTurn="_vm.IsMyTurn"
+                                             UsedIndices="@(_vm.PendingPlacements.Count > 0 ? GetUsedIndices() : [])"
+                                             OnDragStart="HandleDragStart"
+                                             OnRackReorder="HandleRackReorder" />
+                                @if (_vm.PendingPlacements.Count > 0)
+                                {
+                                    <div class="rack-side-actions">
+                                        <button class="btn btn-ghost btn-sm"
+                                                @onclick="CheckMoveAsync"
+                                                disabled="@(_vm.IsCheckLoading || _vm.IsLoading)"
+                                                title="@L["Game.Check.Title"]">
+                                            @(_vm.IsCheckLoading ? "…" : $"🔍 {L["Game.Check"]}")
+                                        </button>
+                                        <button class="btn btn-primary rack-side-validate" @onclick="PlayDragMoveAsync"
+                                                disabled="@(_vm.IsLoading || _vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))">
+                                            ✔ @L["Game.Validate"] (@_vm.PendingPlacements.Count)
+                                        </button>
+                                    </div>
+                                }
+                                @if (_vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))
+                                {
+                                    <p class="form-error mt-1" style="font-size:.8rem">@L["Game.JokerAssignHint"]</p>
+                                }
+                            </div>
+                        }
+
                         @* Scores *@
                         <div class="card sidebar-panel" data-tab="scores">
                             <h3 class="mb-2">@L["Game.Scores"]</h3>

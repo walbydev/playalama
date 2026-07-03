@@ -40,7 +40,7 @@ public static class PlayerEndpoints
     private static readonly HashSet<string> AllowedThemes = new(StringComparer.Ordinal)
     {
         "dark", "light", "blue", "green", "vermillion", "highcontrast",
-        "deuteranopia", "protanopia", "tritanopia"
+        "deuteranopia", "protanopia", "tritanopia", "compact"
     };
 
     private static readonly HashSet<int> AllowedFontSizes = [100, 125, 150, 200];

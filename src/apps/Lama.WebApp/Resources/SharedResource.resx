@@ -519,6 +519,7 @@
   <data name="Accessibility.XLarge"><value>Très grand</value></data>
   <data name="Theme.Blue"><value>Bleuté</value></data>
   <data name="Theme.Choose"><value>Choisir un thème</value></data>
+  <data name="Theme.Compact"><value>Sombre compact</value></data>
   <data name="Theme.Dark"><value>Sombre</value></data>
   <data name="Theme.Deuteranopia"><value>Daltonisme rouge-vert (Deutéranopie)</value></data>
   <data name="Theme.Green"><value>Verdâtre</value></data>

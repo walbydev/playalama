@@ -5,7 +5,7 @@
 
 // ── Thèmes visuels ───────────────────────────────────────────────────────────
 window.playalamaTheme = {
-    availableThemes: ['dark', 'light', 'blue', 'green', 'vermillion', 'highcontrast', 'deuteranopia', 'protanopia', 'tritanopia'],
+    availableThemes: ['dark', 'light', 'blue', 'green', 'vermillion', 'highcontrast', 'deuteranopia', 'protanopia', 'tritanopia', 'compact'],
     getTheme() {
         const stored = localStorage.getItem('playalama-theme') || 'dark';
         return this.availableThemes.includes(stored) ? stored : 'dark';

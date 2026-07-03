@@ -79,7 +79,7 @@
     private static int NormalizeFontSize(int size) => size is 100 or 125 or 150 or 200 ? size : 100;
     private static string NormalizeTheme(string theme) => theme switch
     {
-        "dark" or "light" or "blue" or "green" or "vermillion" or "highcontrast" or "deuteranopia" or "protanopia" or "tritanopia" => theme,
+        "dark" or "light" or "blue" or "green" or "vermillion" or "highcontrast" or "deuteranopia" or "protanopia" or "tritanopia" or "compact" => theme,
         _ => "dark"
     };
     private sealed record GameLayoutState(string? Density, bool Fullscreen, string[]? Collapsed, string? ActiveTab, string? Variant);

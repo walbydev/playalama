@@ -35,9 +35,7 @@
                                 aria-describedby="theme-help">
                             <option value="dark">@L["Theme.Dark"]</option>
                             <option value="light">@L["Theme.Light"]</option>
-                            <option value="blue">@L["Theme.Blue"]</option>
-                            <option value="green">@L["Theme.Green"]</option>
-                            <option value="vermillion">@L["Theme.Vermillion"]</option>
+                            <option value="compact">@L["Theme.Compact"]</option>
                             <option value="highcontrast">@L["Theme.HighContrast"]</option>
                             <option value="deuteranopia">@L["Theme.Deuteranopia"]</option>
                             <option value="protanopia">@L["Theme.Protanopia"]</option>
@@ -55,6 +53,9 @@
                         </button>
                         <button type="button" class="btn btn-ghost @(_currentTheme == "light" ? "active" : "")" @onclick="@(() => SetThemeAsync("light"))" aria-label="@L["Theme.Light"]">
                             ⚪ @L["Theme.Light"]
+                        </button>
+                        <button type="button" class="btn btn-ghost @(_currentTheme == "compact" ? "active" : "")" @onclick="@(() => SetThemeAsync("compact"))" aria-label="@L["Theme.Compact"]">
+                            ⬛ @L["Theme.Compact"]
                         </button>
                         <button type="button" class="btn btn-ghost @(_currentTheme == "highcontrast" ? "active" : "")" @onclick="@(() => SetThemeAsync("highcontrast"))" aria-label="@L["Theme.HighContrast"]">
                             ◐ @L["Theme.HighContrast"]
@@ -359,7 +360,7 @@
 
     private static string NormalizeTheme(string theme) => theme switch
     {
-        "dark" or "light" or "blue" or "green" or "vermillion" or "highcontrast" or "deuteranopia" or "protanopia" or "tritanopia" => theme,
+        "dark" or "light" or "blue" or "green" or "vermillion" or "highcontrast" or "deuteranopia" or "protanopia" or "tritanopia" or "compact" => theme,
         _ => "dark"
     };
 
