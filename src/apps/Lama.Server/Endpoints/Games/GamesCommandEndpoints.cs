@@ -78,6 +78,12 @@ public static class GamesCommandEndpoints
         if (!context.IsAuthenticated())
             return Results.Unauthorized();
 
+        // Mode maintenance : empêche la création de nouvelles parties
+        if (state.IsDraining)
+            return Results.Json(
+                new { error = "server_in_maintenance", message = "Le serveur est en maintenance. Veuillez revenir plus tard." },
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+
         if (string.IsNullOrWhiteSpace(request.HostName))
             return Results.BadRequest(new { error = "hostName is required" });
 
@@ -932,7 +938,7 @@ public static class GamesCommandEndpoints
         });
     }
 
-    private static async Task PersistCompletedGameSnapshotAsync(
+    internal static async Task PersistCompletedGameSnapshotAsync(
         LamaDbContext db,
         OnlineGame game,
         DateTimeOffset endedAt,
@@ -986,7 +992,7 @@ public static class GamesCommandEndpoints
         sessionGame.MinWordLength = game.MinWordLength;
         sessionGame.Language = game.Language;
         sessionGame.Queue = queueToken;
-        sessionGame.Status = string.Equals(status, "abandoned", StringComparison.OrdinalIgnoreCase) ? "abandoned" : "ended";
+        sessionGame.Status = status;
         sessionGame.CreatedAt = game.CreatedAt;
         sessionGame.UpdatedAt = endedAt;
         sessionGame.EndedAt = endedAt;

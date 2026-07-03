@@ -216,8 +216,13 @@ public static class GamesReadEndpoints
 
         var parsedLevel = GamesEndpointParsers.ParseGameLevelToken(persistedGame.GameLevel);
         var parsedQueue = GamesEndpointParsers.ParseRankingQueueToken(persistedGame.Queue);
+        var isServerRestart = string.Equals(persistedGame.Status, "abandoned_server_restart", StringComparison.OrdinalIgnoreCase);
         var isGameOver = string.Equals(persistedGame.Status, "ended", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(persistedGame.Status, "abandoned", StringComparison.OrdinalIgnoreCase);
+                         || string.Equals(persistedGame.Status, "abandoned", StringComparison.OrdinalIgnoreCase)
+                         || isServerRestart;
+        var endReason = isServerRestart ? "server_restart"
+                        : string.Equals(persistedGame.Status, "abandoned", StringComparison.OrdinalIgnoreCase)
+                            ? "abandoned" : null;
 
         var persistedPlayers = new List<object>();
         var persistedMoves = new List<object>();
@@ -331,6 +336,8 @@ public static class GamesReadEndpoints
             IsGameOver = isGameOver,
             CurrentPlayerIndex = currentPlayerIndex,
             TurnNumber = lastTurnNumber,
+            endReason = endReason,
+            abandonedByName = (string?)null,
             players = persistedPlayers,
             board = persistedBoard,
             moves = persistedMoves,

@@ -57,7 +57,8 @@ public sealed class StatusCollector(
 
         return Task.FromResult(new GamesSection(
             ActiveCount:       activeCount,
-            ActivePlayers:     activePlayers
+            ActivePlayers:     activePlayers,
+            IsDraining:        hubState.IsDraining
         ));
     }
 
@@ -168,7 +169,8 @@ public sealed record ServerSection(
 
 public sealed record GamesSection(
     int ActiveCount,
-    int ActivePlayers
+    int ActivePlayers,
+    bool IsDraining = false
 );
 
 public sealed record PlayersSection(

@@ -50,6 +50,7 @@
   <data name="Common.Optional"><value>(optional)</value></data>
   <data name="CreateGame.Create"><value>Erstellen</value></data>
   <data name="CreateGame.Creating"><value>Wird erstellt…</value></data>
+  <data name="CreateGame.ServerMaintenance"><value>Der Server wird gewartet. Bitte versuchen Sie es später erneut.</value></data>
   <data name="CreateGame.GameLanguages"><value>Spielsprachen (Brettwörter)</value></data>
   <data name="CreateGame.MaxPlayers"><value>Max. Spieler</value></data>
   <data name="CreateGame.Mode"><value>Modus</value></data>
@@ -180,6 +181,10 @@
   <data name="Game.End.AbandonedTitle"><value>Spiel aufgegeben</value></data>
   <data name="Game.End.FinishedTitle"><value>Spiel vorbei!</value></data>
   <data name="Game.End.RedirectIn"><value>Weiterleitung in {0}s…</value></data>
+  <data name="Game.End.ServerRestartMessage"><value>Das Spiel wurde durch einen Serverneustart unterbrochen. Ihr Punktestand wurde gespeichert.</value></data>
+  <data name="Game.End.ServerRestartTitle"><value>Server neu gestartet</value></data>
+  <data name="Game.End.NotFoundMessage"><value>Spiel nicht gefunden — der Server wurde möglicherweise neu gestartet.</value></data>
+  <data name="Game.End.NotFoundTitle"><value>Spiel nicht gefunden</value></data>
   <data name="Game.Example.ABC"><value>(z. B. ABC)</value></data>
   <data name="Game.Example.H8"><value>(z. B. H8)</value></data>
   <data name="Game.Example.Word"><value>HALLO</value></data>
@@ -498,6 +503,12 @@
   <data name="Admin.No"><value>Nein</value></data>
   <data name="Admin.TerminateAll"><value>Alle Spiele beenden</value></data>
   <data name="Admin.TerminateAllDesc"><value>Beendet sofort alle aktiven Spiele im Speicher (Spieler erhalten ein game.ended-Ereignis).</value></data>
+  <data name="Admin.DrainDesc"><value>Wartungsmodus: verhindert die Erstellung neuer Spiele. Laufende Spiele sind nicht betroffen.</value></data>
+  <data name="Admin.DrainStart"><value>Wartungsmodus aktivieren</value></data>
+  <data name="Admin.DrainStop"><value>Wartungsmodus deaktivieren</value></data>
+  <data name="Admin.DrainActive"><value>Wartungsmodus aktiv</value></data>
+  <data name="Admin.DrainStartedMessage"><value>Wartungsmodus aktiviert. {0} Spiel(e) noch im Gange.</value></data>
+  <data name="Admin.DrainStoppedMessage"><value>Wartungsmodus deaktiviert. Spielerstellung ist wieder verfügbar.</value></data>
   <data name="Admin.AllUsers"><value>Alle</value></data>
   <data name="Admin.ConnectedUsers"><value>Verbunden</value></data>
   <data name="Admin.DailyUsers"><value>Aktiv (24h)</value></data>

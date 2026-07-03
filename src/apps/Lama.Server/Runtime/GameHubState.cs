@@ -15,6 +15,10 @@ public sealed class GameHubState
     private readonly ConcurrentDictionary<string, EventSubscribers> _subscribers = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _activeGameByPlayerId = new(StringComparer.Ordinal);
 
+    /// <summary>Mode maintenance : empêche la création de nouvelles parties.
+    /// Les parties en cours ne sont pas affectées.</summary>
+    public volatile bool IsDraining;
+
     public GameHubState(IGameLanguageProvider languageProvider, ILanguageProviderRegistry? registry = null, ILogger<GameHubState>? logger = null)
     {
         _languageProvider = languageProvider;

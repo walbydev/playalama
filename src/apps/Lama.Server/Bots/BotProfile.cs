@@ -27,7 +27,11 @@ public sealed record BotProfile(
     /// <summary>Score max d'un coup considéré "faible" pour déclencher un échange.</summary>
     int WeakMoveScoreThreshold = 0,
     /// <summary>Nombre max de lettres à échanger lors d'un tour.</summary>
-    int SwapMaxLetters = 3)
+    int SwapMaxLetters = 3,
+    /// <summary>Score au-delà duquel un coup est jugé "gros points". 0 = désactivé.</summary>
+    int BigMoveScoreThreshold = 0,
+    /// <summary>Probabilité d'écarter les coups "gros points" au profit d'une alternative plus modeste (0 = jamais, 1 = toujours).</summary>
+    double BigMoveSkipRate = 0.0)
 {
     /// <summary>Identifiant persistant au format N (sans tirets) pour le mapping joueur↔moteur.</summary>
     public string PersistentPlayerId => BotGuid.ToString("N");

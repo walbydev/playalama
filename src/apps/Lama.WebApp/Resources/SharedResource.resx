@@ -50,6 +50,7 @@
   <data name="Common.Optional"><value>(optionnel)</value></data>
   <data name="CreateGame.Create"><value>Créer</value></data>
   <data name="CreateGame.Creating"><value>Création…</value></data>
+  <data name="CreateGame.ServerMaintenance"><value>Le serveur est en maintenance. Veuillez revenir plus tard.</value></data>
   <data name="CreateGame.GameLanguages"><value>Langues de jeu (mots du plateau)</value></data>
   <data name="CreateGame.MaxPlayers"><value>Joueurs max</value></data>
   <data name="CreateGame.Mode"><value>Mode</value></data>
@@ -181,6 +182,10 @@
   <data name="Game.End.AbandonedTitle"><value>Partie abandonnée</value></data>
   <data name="Game.End.FinishedTitle"><value>Partie terminée !</value></data>
   <data name="Game.End.RedirectIn"><value>Redirection dans {0} s…</value></data>
+  <data name="Game.End.ServerRestartMessage"><value>La partie a été interrompue par un redémarrage du serveur. Vos points ont été sauvegardés.</value></data>
+  <data name="Game.End.ServerRestartTitle"><value>Serveur redémarré</value></data>
+  <data name="Game.End.NotFoundMessage"><value>Partie introuvable — le serveur a peut-être été redémarré.</value></data>
+  <data name="Game.End.NotFoundTitle"><value>Partie introuvable</value></data>
   <data name="Game.Example.ABC"><value>(ex. ABC)</value></data>
   <data name="Game.Example.H8"><value>(ex. H8)</value></data>
   <data name="Game.Example.Word"><value>BONJOUR</value></data>
@@ -500,6 +505,12 @@
   <data name="Admin.No"><value>Non</value></data>
   <data name="Admin.TerminateAll"><value>Terminer toutes les parties</value></data>
   <data name="Admin.TerminateAllDesc"><value>Termine immédiatement toutes les parties actives en mémoire (les joueurs reçoivent un événement game.ended).</value></data>
+  <data name="Admin.DrainDesc"><value>Mode maintenance : empêche la création de nouvelles parties. Les parties en cours ne sont pas affectées.</value></data>
+  <data name="Admin.DrainStart"><value>Activer le mode maintenance</value></data>
+  <data name="Admin.DrainStop"><value>Désactiver le mode maintenance</value></data>
+  <data name="Admin.DrainActive"><value>Mode maintenance actif</value></data>
+  <data name="Admin.DrainStartedMessage"><value>Mode maintenance activé. {0} partie(s) toujours en cours.</value></data>
+  <data name="Admin.DrainStoppedMessage"><value>Mode maintenance désactivé. La création de parties est de nouveau possible.</value></data>
   <data name="Admin.AllUsers"><value>Tous</value></data>
   <data name="Admin.ConnectedUsers"><value>Connectés</value></data>
   <data name="Admin.DailyUsers"><value>Actifs (24h)</value></data>

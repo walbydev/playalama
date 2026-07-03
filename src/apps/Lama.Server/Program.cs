@@ -1,5 +1,6 @@
 using Lama.Contracts;
 using Lama.Server.Bots;
+using Lama.Server.Contracts.Api;
 using Lama.Server.Data;
 using Lama.Server.Endpoints;
 using Lama.Server.Endpoints.Auth;
@@ -175,5 +176,61 @@ api.MapGamesCommandEndpoints();
 api.MapBotsEndpoints();
 api.MapLexiconEndpoints();
 api.MapStatsEndpoints();
+
+// ── Shutdown : persister les parties actives et notifier les joueurs ──────
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStopping.Register(() =>
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var db    = scope.ServiceProvider.GetRequiredService<LamaDbContext>();
+        var state = scope.ServiceProvider.GetRequiredService<GameHubState>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+        var activeGames = state.ListGames();
+        var saved = 0;
+
+        foreach (var game in activeGames)
+        {
+            lock (game)
+            {
+                if (game.IsClosed || game.Engine.GetGameState().IsGameOver)
+                    continue;
+
+                game.IsClosed  = true;
+                game.EndReason = "server_restart";
+
+                state.Publish(game.Id, new ServerEvent("game.ended", new
+                {
+                    gameId   = game.Id,
+                    endedAt  = DateTimeOffset.UtcNow,
+                    reason   = "server_restart",
+                    message  = "Partie terminée par redémarrage serveur"
+                }));
+
+                try
+                {
+                    GamesCommandEndpoints.PersistCompletedGameSnapshotAsync(
+                        db, game, DateTimeOffset.UtcNow,
+                        status: "abandoned_server_restart",
+                        winnerPlayerName: null,
+                        CancellationToken.None).GetAwaiter().GetResult();
+                    saved++;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Shutdown: impossible de persister la partie {GameId}", game.Id);
+                }
+            }
+        }
+
+        logger.LogInformation("Shutdown: {Saved} partie(s) active(s) persistée(s) comme abandoned_server_restart.", saved);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Shutdown: erreur lors de la persistance des parties actives.");
+    }
+});
 
 app.Run();

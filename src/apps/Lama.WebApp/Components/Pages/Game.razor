@@ -18,6 +18,16 @@
         <p class="text-muted" aria-live="polite">@L["Game.Loading"]</p>
     </div>
 }
+else if (_vm.Snapshot is null && !string.IsNullOrWhiteSpace(_vm.Error))
+{
+    <div class="page-hero">
+        <div class="card text-center" style="max-width:420px; margin:2rem auto">
+            <h3 class="mb-2">🔌 @L["Game.End.NotFoundTitle"]</h3>
+            <p class="text-dim mb-3" style="font-size:.9rem">@L["Game.End.NotFoundMessage"]</p>
+            <a href="/games" class="btn btn-primary">@L["Game.NewGame"]</a>
+        </div>
+    </div>
+}
 else if (_vm.Snapshot is { UsesLobby: true, HasStarted: false })
 {
     @* Redirige vers le lobby si la partie n'a pas encore démarré *@
@@ -519,7 +529,16 @@ else
                         {
                             @* ── Écran de fin de partie ── *@
                             <div class="card text-center sidebar-panel" data-tab="play">
-                                @if (string.Equals(_vm.Snapshot.EndReason, "abandoned", StringComparison.Ordinal))
+                                @if (string.Equals(_vm.Snapshot.EndReason, "server_restart", StringComparison.Ordinal))
+                                {
+                                    <h3 class="mb-1">🔌 @L["Game.End.ServerRestartTitle"]</h3>
+                                    <p class="text-dim mb-3" style="font-size:.9rem">@L["Game.End.ServerRestartMessage"]</p>
+                                    @if (_abandonRedirectCountdown > 0)
+                                    {
+                                        <p class="text-dim" style="font-size:.85rem">@L["Game.End.RedirectIn", _abandonRedirectCountdown]</p>
+                                    }
+                                }
+                                else if (string.Equals(_vm.Snapshot.EndReason, "abandoned", StringComparison.Ordinal))
                                 {
                                     <h3 class="mb-1">🏳 @L["Game.End.AbandonedTitle"]</h3>
                                     <p class="text-dim mb-3" style="font-size:.9rem">@L["Game.End.AbandonedBy", _vm.Snapshot.AbandonedByName ?? L["Game.UnknownPlayer"].Value]</p>
@@ -689,6 +708,10 @@ else
             return;
         }
 
+        // Ne pas démarrer le polling si la partie est introuvable
+        if (_vm.Snapshot is null)
+            return;
+
         StartPolling();
         Layout.Changed += HandleLayoutChanged;
     }
@@ -757,10 +780,11 @@ else
             _previousAbandonedCount = abandonedCount;
         }
 
-        // Détecter fin de partie par abandon (hôte) → lancer countdown auto-redirection
+        // Détecter fin de partie par abandon (hôte) ou redémarrage serveur → lancer countdown auto-redirection
         if (_vm.Snapshot is { IsGameOver: true } &&
-            string.Equals(_vm.Snapshot.EndReason, "abandoned", StringComparison.Ordinal) &&
-            !_vm.IsAbandoned && _abandonRedirectCountdown == 0)
+            _abandonRedirectCountdown == 0 &&
+            (string.Equals(_vm.Snapshot.EndReason, "server_restart", StringComparison.Ordinal) ||
+             (string.Equals(_vm.Snapshot.EndReason, "abandoned", StringComparison.Ordinal) && !_vm.IsAbandoned)))
         {
             _ = StartAbandonRedirectCountdownAsync();
         }
@@ -801,12 +825,20 @@ else
         _ = Task.Run(async () =>
         {
             while (await _timer.WaitForNextTickAsync(_pollingCts.Token))
+            {
                 await InvokeAsync(async () =>
                 {
                     await _vm.LoadAsync(Api);
                     SyncRackOrder();
                     StateHasChanged();
                 });
+
+                if (_vm.Snapshot is null && !string.IsNullOrWhiteSpace(_vm.Error))
+                {
+                    _pollingCts.Cancel();
+                    break;
+                }
+            }
         }, _pollingCts.Token);
     }
 

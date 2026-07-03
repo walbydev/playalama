@@ -354,6 +354,62 @@ public static class AdminEndpoints
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized);
 
+        // ── Drain mode (maintenance) ──────────────────────────────────────
+
+        admin.MapGet("/drain", (
+            HttpContext httpContext,
+            GameHubState state,
+            IConfiguration config) =>
+        {
+            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+                return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
+
+            var activeCount = state.ListGames()
+                .Count(g => !g.IsClosed && !g.Engine.GetGameState().IsGameOver);
+
+            return Results.Ok(new { isDraining = state.IsDraining, activeGames = activeCount });
+        })
+        .WithName("AdminGetDrain")
+        .WithDescription("Retourne l'état du mode maintenance (drain) et le nombre de parties actives.")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized);
+
+        admin.MapPost("/drain/start", (
+            HttpContext httpContext,
+            GameHubState state,
+            IConfiguration config) =>
+        {
+            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+                return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
+
+            state.IsDraining = true;
+            var activeCount = state.ListGames()
+                .Count(g => !g.IsClosed && !g.Engine.GetGameState().IsGameOver);
+
+            return Results.Ok(new { isDraining = true, activeGames = activeCount });
+        })
+        .WithName("AdminStartDrain")
+        .WithDescription("Active le mode maintenance : empêche la création de nouvelles parties.")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized);
+
+        admin.MapPost("/drain/stop", (
+            HttpContext httpContext,
+            GameHubState state,
+            IConfiguration config) =>
+        {
+            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+                return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
+
+            state.IsDraining = false;
+
+            return Results.Ok(new { isDraining = false, activeGames = state.ListGames().Count });
+        })
+        .WithName("AdminStopDrain")
+        .WithDescription("Désactive le mode maintenance : autorise à nouveau la création de parties.")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized);
+
         return app;
     }
 }

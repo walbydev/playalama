@@ -50,6 +50,7 @@
   <data name="Common.Optional"><value>(optional)</value></data>
   <data name="CreateGame.Create"><value>Create</value></data>
   <data name="CreateGame.Creating"><value>Creating…</value></data>
+  <data name="CreateGame.ServerMaintenance"><value>The server is under maintenance. Please come back later.</value></data>
   <data name="CreateGame.GameLanguages"><value>Game languages (board words)</value></data>
   <data name="CreateGame.MaxPlayers"><value>Max players</value></data>
   <data name="CreateGame.Mode"><value>Mode</value></data>
@@ -181,6 +182,10 @@
   <data name="Game.End.AbandonedTitle"><value>Game abandoned</value></data>
   <data name="Game.End.FinishedTitle"><value>Game over!</value></data>
   <data name="Game.End.RedirectIn"><value>Redirecting in {0}s…</value></data>
+  <data name="Game.End.ServerRestartMessage"><value>The game was interrupted by a server restart. Your score has been saved.</value></data>
+  <data name="Game.End.ServerRestartTitle"><value>Server restarted</value></data>
+  <data name="Game.End.NotFoundMessage"><value>Game not found — the server may have been restarted.</value></data>
+  <data name="Game.End.NotFoundTitle"><value>Game not found</value></data>
   <data name="Game.Example.ABC"><value>(e.g. ABC)</value></data>
   <data name="Game.Example.H8"><value>(e.g. H8)</value></data>
   <data name="Game.Example.Word"><value>HELLO</value></data>
@@ -499,6 +504,12 @@
   <data name="Admin.No"><value>No</value></data>
   <data name="Admin.TerminateAll"><value>Terminate all games</value></data>
   <data name="Admin.TerminateAllDesc"><value>Immediately terminates all active in-memory games (players receive a game.ended event).</value></data>
+  <data name="Admin.DrainDesc"><value>Maintenance mode: prevents new games from being created. Active games are not affected.</value></data>
+  <data name="Admin.DrainStart"><value>Enable maintenance mode</value></data>
+  <data name="Admin.DrainStop"><value>Disable maintenance mode</value></data>
+  <data name="Admin.DrainActive"><value>Maintenance mode active</value></data>
+  <data name="Admin.DrainStartedMessage"><value>Maintenance mode enabled. {0} game(s) still in progress.</value></data>
+  <data name="Admin.DrainStoppedMessage"><value>Maintenance mode disabled. Game creation is available again.</value></data>
   <data name="Admin.AllUsers"><value>All</value></data>
   <data name="Admin.ConnectedUsers"><value>Connected</value></data>
   <data name="Admin.DailyUsers"><value>Active (24h)</value></data>

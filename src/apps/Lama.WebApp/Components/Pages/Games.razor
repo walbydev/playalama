@@ -391,7 +391,13 @@
                     : $"/games/{created.GameId}/lobby?playerId={Uri.EscapeDataString(created.HostPlayerId)}";
             Navigation.NavigateTo(dest);
         }
-        catch (Exception ex) { _createError = ex.Message; }
+        catch (Exception ex)
+        {
+            if (ex.Message.Contains("server_in_maintenance"))
+                _createError = L["CreateGame.ServerMaintenance"].Value;
+            else
+                _createError = ex.Message;
+        }
         finally { _busy = false; }
     }
 
@@ -409,7 +415,13 @@
             var joined = await Api.JoinGameAsync(gameId, playerName, password: null, token);
             Navigation.NavigateTo($"/games/{joined.GameId}/lobby?playerId={Uri.EscapeDataString(joined.PlayerId)}");
         }
-        catch (Exception ex) { _createError = ex.Message; }
+        catch (Exception ex)
+        {
+            if (ex.Message.Contains("server_in_maintenance"))
+                _createError = L["CreateGame.ServerMaintenance"].Value;
+            else
+                _createError = ex.Message;
+        }
         finally { _busy = false; }
     }
 

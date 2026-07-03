@@ -222,6 +222,15 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
             .ThenByDescending(s => s.Length)
             .ToList();
 
+        // ── Filtre "gros points" : les bots faibles écartent les coups trop rentables ──
+        if (bot.BigMoveScoreThreshold > 0 && bot.BigMoveSkipRate > 0)
+        {
+            var modest = ranked.Where(s => s.Score < bot.BigMoveScoreThreshold).ToList();
+            // On n'applique le filtre que s'il reste au moins une alternative jouable.
+            if (modest.Count > 0 && Rng.NextDouble() < bot.BigMoveSkipRate)
+                ranked = modest;
+        }
+
         var windowSize = Math.Clamp(bot.CandidateWindow, 1, ranked.Count);
         var candidates = ranked.Take(windowSize).ToList();
 

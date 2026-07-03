@@ -541,6 +541,45 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<DrainStatusDto> GetDrainStatusAsync(string? jwtToken, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBase}/admin/drain");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+
+        return await response.Content.ReadFromJsonAsync<DrainStatusDto>(JsonOptions, cancellationToken)
+            ?? new DrainStatusDto(false, 0);
+    }
+
+    public async Task<DrainStatusDto> StartDrainAsync(string? jwtToken, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{ApiBase}/admin/drain/start");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+
+        return await response.Content.ReadFromJsonAsync<DrainStatusDto>(JsonOptions, cancellationToken)
+            ?? new DrainStatusDto(true, 0);
+    }
+
+    public async Task<DrainStatusDto> StopDrainAsync(string? jwtToken, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{ApiBase}/admin/drain/stop");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+
+        return await response.Content.ReadFromJsonAsync<DrainStatusDto>(JsonOptions, cancellationToken)
+            ?? new DrainStatusDto(false, 0);
+    }
+
     // ── Player: Delete own game ───────────────────────────────────────────────
 
     public async Task<bool> DeleteMyGameAsync(string? jwtToken, string gameId, CancellationToken cancellationToken = default)

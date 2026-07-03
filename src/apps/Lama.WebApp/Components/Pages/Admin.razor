@@ -171,6 +171,28 @@ else
                                     }
                                 </button>
                             </div>
+                            <div style="display:flex; flex-direction:column; gap:.5rem; padding-top:.5rem; border-top:1px solid var(--border)">
+                                <p class="text-muted" style="font-size:.85rem">@L["Admin.DrainDesc"]</p>
+                                <div style="display:flex; gap:.5rem; flex-wrap:wrap">
+                                    @if (s.Games.IsDraining)
+                                    {
+                                        <span class="chip chip-warning">🔧 @L["Admin.DrainActive"]</span>
+                                        <button class="btn btn-primary btn-sm"
+                                                @onclick="StopDrainAsync"
+                                                disabled="@_isDrainToggling">
+                                            @if (_isDrainToggling) { <span>⏳</span> } else { <span>✅ @L["Admin.DrainStop"]</span> }
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-outline btn-sm"
+                                                @onclick="StartDrainAsync"
+                                                disabled="@_isDrainToggling">
+                                            @if (_isDrainToggling) { <span>⏳</span> } else { <span>🔧 @L["Admin.DrainStart"]</span> }
+                                        </button>
+                                    }
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -348,6 +370,7 @@ else
     private string? _success;
     private ServerStatusDto? _status;
     private bool _isTerminating;
+    private bool _isDrainToggling;
 
     private readonly List<AdminUserDto> _users = [];
     private string? _userFilter;
@@ -543,6 +566,54 @@ else
         finally
         {
             _isTerminating = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task StartDrainAsync()
+    {
+        _isDrainToggling = true;
+        _error = null;
+        _success = null;
+        StateHasChanged();
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            var result = await Api.StartDrainAsync(token);
+            _success = L["Admin.DrainStartedMessage", result.ActiveGames].Value;
+            await LoadDashboardAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isDrainToggling = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task StopDrainAsync()
+    {
+        _isDrainToggling = true;
+        _error = null;
+        _success = null;
+        StateHasChanged();
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            await Api.StopDrainAsync(token);
+            _success = L["Admin.DrainStoppedMessage"].Value;
+            await LoadDashboardAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isDrainToggling = false;
             StateHasChanged();
         }
     }

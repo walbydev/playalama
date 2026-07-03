@@ -189,7 +189,8 @@ public sealed record ServerSectionDto(
 
 public sealed record GamesSectionDto(
     int ActiveCount,
-    int ActivePlayers
+    int ActivePlayers,
+    bool IsDraining = false
 );
 
 public sealed record PlayersSectionDto(
@@ -256,3 +257,7 @@ public sealed record AdminGameDto(
 );
 
 public sealed record AdminGamePlayerDto(string PlayerName, bool IsBot);
+
+// ── Admin: Drain (maintenance) ───────────────────────────────────────────────
+
+public sealed record DrainStatusDto(bool IsDraining, int ActiveGames);
