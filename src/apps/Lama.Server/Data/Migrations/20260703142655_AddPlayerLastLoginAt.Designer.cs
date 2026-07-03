@@ -3,6 +3,7 @@ using System;
 using Lama.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Lama.Server.Data.Migrations
 {
     [DbContext(typeof(LamaDbContext))]
-    partial class LamaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260703142655_AddPlayerLastLoginAt")]
+    partial class AddPlayerLastLoginAt
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -69,6 +69,13 @@ public static class PlayerEndpoints
             .WithDescription("Retourne l'historique de parties du joueur connecté.")
             .Produces<List<PlayerGameHistoryItem>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
+
+        group.MapDelete("/me/games/{gameId}", DeleteMyGame())
+            .WithName("DeleteMyGame")
+            .WithDescription("Supprime une partie de l'historique du joueur connecté.")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
     }
 
     private static Func<HttpContext, LamaDbContext, Task<IResult>> GetProfile()
@@ -280,6 +287,52 @@ public static class PlayerEndpoints
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 return Results.Ok(new List<PlayerGameHistoryItem>());
+            }
+        };
+    }
+
+    private static Func<HttpContext, LamaDbContext, string, Task<IResult>> DeleteMyGame()
+    {
+        return async (context, db, gameId) =>
+        {
+            var playerId = ExtractPlayerId(context);
+            if (playerId is null)
+                return Results.Unauthorized();
+
+            if (!Guid.TryParse(gameId, out var gid))
+                return Results.NotFound(new { error = "Partie introuvable." });
+
+            try
+            {
+                var sessionPlayer = await db.SessionPlayersInGame
+                    .FirstOrDefaultAsync(s => s.GameId == gid && s.PlayerId == playerId.Value);
+
+                if (sessionPlayer is null)
+                    return Results.NotFound(new { error = "Partie introuvable dans votre historique." });
+
+                db.SessionPlayersInGame.Remove(sessionPlayer);
+
+                var otherPlayers = await db.SessionPlayersInGame
+                    .Where(s => s.GameId == gid)
+                    .ToListAsync();
+                if (otherPlayers.Count == 0)
+                {
+                    var sessionGame = await db.SessionGames.FirstOrDefaultAsync(s => s.GameId == gid);
+                    if (sessionGame is not null)
+                        db.SessionGames.Remove(sessionGame);
+                    var completedGame = await db.CompletedGames.FirstOrDefaultAsync(c => c.GameId == gid);
+                    if (completedGame is not null)
+                        db.CompletedGames.Remove(completedGame);
+                }
+
+                await db.SaveChangesAsync();
+                return Results.Ok(new { deleted = true, gameId });
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return Results.Json(
+                    new { error = "Erreur lors de la suppression de la partie." },
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
             }
         };
     }

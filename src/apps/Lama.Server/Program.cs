@@ -158,6 +158,7 @@ app.UseJwtMiddleware(jwtService);
 app.MapHealthEndpoints();
 app.MapInternalEndpoints(allowShutdown);
 app.MapStatusEndpoints();
+app.MapAdminEndpoints();
 
 // Auth endpoints
 app.MapAuthEndpoints(jwtService);

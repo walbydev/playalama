@@ -25,5 +25,6 @@ public sealed class PlayerEntityConfiguration : IEntityTypeConfiguration<PlayerE
         builder.Property(x => x.AccessibilityPreferencesJson).HasColumnName("accessibility_preferences_json").HasColumnType("jsonb").IsRequired(false);
 
         builder.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Property(x => x.LastLoginAt).HasColumnName("last_login_at").IsRequired(false);
     }
 }

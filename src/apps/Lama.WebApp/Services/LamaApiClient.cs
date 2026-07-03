@@ -475,6 +475,72 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return doc.RootElement.TryGetProperty("terminated", out var t) ? t.GetInt32() : 0;
     }
 
+    // ── Admin: Users management ───────────────────────────────────────────────
+
+    public async Task<AdminUserListResponse?> GetAdminUsersAsync(string? jwtToken, string? filter = null, CancellationToken cancellationToken = default)
+    {
+        var url = $"{ApiBase}/admin/users";
+        if (!string.IsNullOrWhiteSpace(filter))
+            url += $"?filter={Uri.EscapeDataString(filter)}";
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<AdminUserListResponse>(JsonOptions, cancellationToken);
+    }
+
+    public async Task<bool> DeleteAdminUserAsync(string? jwtToken, Guid playerId, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"{ApiBase}/admin/users/{playerId}");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        return response.IsSuccessStatusCode;
+    }
+
+    // ── Admin: Games management ───────────────────────────────────────────────
+
+    public async Task<AdminGameListResponse?> GetAdminGamesAsync(string? jwtToken, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBase}/admin/games");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<AdminGameListResponse>(JsonOptions, cancellationToken);
+    }
+
+    public async Task<bool> DeleteAdminGameAsync(string? jwtToken, string gameId, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"{ApiBase}/admin/games/{gameId}");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        return response.IsSuccessStatusCode;
+    }
+
+    // ── Player: Delete own game ───────────────────────────────────────────────
+
+    public async Task<bool> DeleteMyGameAsync(string? jwtToken, string gameId, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"{ApiBase}/players/me/games/{gameId}");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        return response.IsSuccessStatusCode;
+    }
+
     // ── Bots ─────────────────────────────────────────────────────────────────
 
     public async Task<IReadOnlyList<WebBotDto>> GetBotsAsync(CancellationToken cancellationToken = default)

@@ -102,6 +102,9 @@ public static class AuthEndpoints
                 if (player is null || player.PasswordHash is null || !PasswordHasher.Verify(request.Password, player.PasswordHash))
                     return Results.Unauthorized();
 
+                player.LastLoginAt = DateTimeOffset.UtcNow;
+                await db.SaveChangesAsync();
+
                 var token = tokenService.GenerateToken(player.PlayerId.ToString("N"), player.Username);
                 return Results.Ok(new LoginResponse(
                     Token: token,

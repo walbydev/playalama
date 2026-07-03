@@ -9,6 +9,7 @@ public sealed class PlayerEntity
     public string? CountryCode { get; set; }
     public string? AccessibilityPreferencesJson { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? LastLoginAt { get; set; }
 
     public ICollection<PlayerRatingEntity> Ratings { get; set; } = [];
 }

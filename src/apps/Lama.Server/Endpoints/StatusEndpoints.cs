@@ -118,7 +118,7 @@ public static class StatusEndpoints
         return app;
     }
 
-    private static bool IsAuthorized(HttpContext ctx, IConfiguration config)
+    internal static bool IsAuthorized(HttpContext ctx, IConfiguration config)
     {
         var expectedSecret = config["LAMA_ADMIN_SECRET"]
                           ?? Environment.GetEnvironmentVariable("LAMA_ADMIN_SECRET");

@@ -214,3 +214,43 @@ public sealed record AiServerSectionDto(
     string? Language,
     int? ResponseTimeMs
 );
+
+// ── Admin: Users management ──────────────────────────────────────────────────
+
+public sealed record AdminUserListResponse(int Total, List<AdminUserDto> Users);
+
+public sealed record AdminUserDto(
+    Guid PlayerId,
+    string Username,
+    string? Email,
+    string? CountryCode,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? LastLoginAt,
+    decimal EloRating,
+    int GamesPlayed,
+    int GamesWon,
+    bool IsConnected
+);
+
+// ── Admin: Games management ──────────────────────────────────────────────────
+
+public sealed record AdminGameListResponse(int Total, List<AdminGameDto> Games);
+
+public sealed record AdminGameDto(
+    string GameId,
+    string GameLevel,
+    string Queue,
+    int BoardSize,
+    int RackSize,
+    string Language,
+    string Status,
+    bool IsGameOver,
+    int PlayerCount,
+    int MoveCount,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    string Source,
+    List<AdminGamePlayerDto> Players
+);
+
+public sealed record AdminGamePlayerDto(string PlayerName, bool IsBot);

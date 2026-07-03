@@ -110,7 +110,12 @@ else
                                         else
                                             { <span class="chip chip-muted">@L["MyGames.Defeat"]</span> }
                                     </td>
-                                    <td><a href="/games/@g.GameId" class="btn btn-ghost btn-sm">@L["MyGames.View"]</a></td>
+                                    <td>
+                                        <div style="display:flex; gap:.25rem">
+                                            <a href="/games/@g.GameId" class="btn btn-ghost btn-sm">@L["MyGames.View"]</a>
+                                            <button class="btn btn-danger btn-sm" @onclick="@(() => DeleteGameAsync(g))" title="@L["Admin.Delete"]" disabled="@_busy">🗑️</button>
+                                        </div>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -159,6 +164,24 @@ else
             if (token is null) { _error = L["Auth.SessionExpired"]; return; }
             _games.Clear();
             _games.AddRange(await Api.GetMyGamesAsync(token));
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; StateHasChanged(); }
+    }
+
+    private async Task DeleteGameAsync(WebGameHistoryItem game)
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (token is null) { _error = L["Auth.SessionExpired"]; return; }
+            var ok = await Api.DeleteMyGameAsync(token, game.GameId);
+            if (ok)
+                _games.Remove(game);
+            else
+                _error = "Échec de la suppression.";
         }
         catch (Exception ex) { _error = ex.Message; }
         finally { _busy = false; StateHasChanged(); }

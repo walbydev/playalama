@@ -89,6 +89,20 @@ public sealed class GameHubState
 
     public int ActivePlayerCount => _activeGameByPlayerId.Count;
 
+    /// <summary>
+    /// Retourne les PlayerIds (parsés en Guid) actuellement actifs dans une partie.
+    /// </summary>
+    public HashSet<Guid> GetActivePlayerIds()
+    {
+        var result = new HashSet<Guid>();
+        foreach (var playerIdStr in _activeGameByPlayerId.Keys)
+        {
+            if (Guid.TryParse(playerIdStr, out var gid))
+                result.Add(gid);
+        }
+        return result;
+    }
+
     public SubscriberToken Subscribe(string gameId)
     {
         var subscribers = _subscribers.GetOrAdd(gameId, _ => new EventSubscribers());
