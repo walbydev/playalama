@@ -69,6 +69,7 @@ public sealed class CreateGameUseCase
         var tileDistribution = ResolveTileDistribution(request);
         var engine = new GameEngine(_dictionary, _letterScores, tileDistribution);
         engine.InitializeGame([request.HostPlayerName]);
+        engine.SetTimeConfig(request.TimePerPlayerSeconds);
 
         var state   = engine.GetGameState();
         var session = new GameSession(
@@ -79,7 +80,7 @@ public sealed class CreateGameUseCase
 
         // Persister immédiatement
         _repository.Save(BuildPersistedGame(gameId, request.Language, request.GameLevel,
-            session, engine, isFirstMove: true));
+            session, engine, isFirstMove: true, timePerPlayerSeconds: request.TimePerPlayerSeconds));
 
         return Task.FromResult(new CreateGameResponse(gameId, hostId, state));
     }
@@ -104,8 +105,9 @@ public sealed class CreateGameUseCase
     {
         var session = RequireSession(gameId);
         var engine  = session.Engine;
+        var state = engine.GetGameState();
         var persisted = BuildPersistedGame(gameId, "fr", GameLevel.Standard,
-            session, engine, isFirstMove);
+            session, engine, isFirstMove, state.TimePerPlayerSeconds);
         _repository.Save(persisted);
     }
 
@@ -113,8 +115,9 @@ public sealed class CreateGameUseCase
     public void SaveGame(string gameId, GameLevel level, bool isFirstMove)
     {
         var session   = RequireSession(gameId);
+        var state = session.Engine.GetGameState();
         var persisted = BuildPersistedGame(gameId, "fr", level,
-            session, session.Engine, isFirstMove);
+            session, session.Engine, isFirstMove, state.TimePerPlayerSeconds);
         _repository.Save(persisted);
     }
 
@@ -208,6 +211,13 @@ public sealed class CreateGameUseCase
             persisted.IsGameOver,
             persisted.Players.Select(p => p.Score).ToList());
 
+        // Restaurer les données de timer
+        engine.RestoreTimeState(
+            persisted.TimePerPlayerSeconds,
+            persisted.PlayerTimeUsed,
+            persisted.TurnStartAt,
+            persisted.ForfeitedPlayerIndex);
+
         // Restaurer l'historique + snapshot de challenge
         engine.RestoreHistory(persisted.History, persisted.LastMoveSnapshot);
 
@@ -250,7 +260,8 @@ public sealed class CreateGameUseCase
     /// <summary>Construit un <see cref="PersistedGame"/> depuis l'état courant.</summary>
     private static PersistedGame BuildPersistedGame(
         string gameId, string language, GameLevel level,
-        GameSession session, GameEngine engine, bool isFirstMove)
+        GameSession session, GameEngine engine, bool isFirstMove,
+        int? timePerPlayerSeconds = null)
     {
         var state = engine.GetGameState();
 
@@ -288,7 +299,11 @@ public sealed class CreateGameUseCase
             History:            state.History.ToList(),
             LastMoveSnapshot:   engine.GetLastMoveSnapshot(),
             CreatedAt:          DateTimeOffset.UtcNow,
-            UpdatedAt:          DateTimeOffset.UtcNow);
+            UpdatedAt:          DateTimeOffset.UtcNow,
+            TimePerPlayerSeconds: timePerPlayerSeconds ?? state.TimePerPlayerSeconds,
+            PlayerTimeUsed:     new List<int>(state.PlayerTimeUsed),
+            TurnStartAt:        state.TurnStartAt,
+            ForfeitedPlayerIndex: state.ForfeitedPlayerIndex);
     }
 }
 

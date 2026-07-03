@@ -17,6 +17,8 @@ public record CreateGameRequest
     public int BoardSize { get; init; } = 15;
     public int RackSize { get; init; } = 7;
     public int MinWordLength { get; init; } = 2;
+    /// <summary>Temps alloué par joueur en secondes en mode Blitz (null sinon).</summary>
+    public int? TimePerPlayerSeconds { get; init; }
 
     public CreateGameRequest(
         string hostPlayerName,
@@ -24,7 +26,8 @@ public record CreateGameRequest
         GameLevel gameLevel = GameLevel.Standard,
         int boardSize = 15,
         int rackSize = 7,
-        int minWordLength = 2)
+        int minWordLength = 2,
+        int? timePerPlayerSeconds = null)
     {
         HostPlayerName = hostPlayerName;
         Language = language;
@@ -32,6 +35,7 @@ public record CreateGameRequest
         BoardSize = boardSize;
         RackSize = rackSize;
         MinWordLength = minWordLength;
+        TimePerPlayerSeconds = timePerPlayerSeconds;
     }
 }
 

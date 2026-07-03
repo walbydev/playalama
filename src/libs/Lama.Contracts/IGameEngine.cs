@@ -66,6 +66,13 @@ public interface IGameEngine
     /// Termine la partie actuelle.
     /// </summary>
     void EndGame();
+
+    /// <summary>
+    /// Configure le timer par joueur. En mode Blitz, <paramref name="timePerPlayerSeconds"/>
+    /// est le temps alloué par joueur (décompte). Dans les autres modes, le temps est
+    /// simplement compté (incrément). Appeler après <see cref="InitializeGame"/>.
+    /// </summary>
+    void SetTimeConfig(int? timePerPlayerSeconds);
 }
 
 /// <summary>

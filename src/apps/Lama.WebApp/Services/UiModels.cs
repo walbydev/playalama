@@ -13,6 +13,10 @@ public sealed class CreateGameForm
     public List<string?> AiBotIds { get; set; } = new() { null, null, null, null };
     /// <summary>Langues de jeu (plateau). Union : un mot valide dans ≥1 langue.</summary>
     public List<string> Languages { get; set; } = new() { "fr" };
+    /// <summary>True si mode Blitz activé.</summary>
+    public bool IsBlitz { get; set; }
+    /// <summary>Temps par joueur en minutes en mode Blitz (5, 10 ou 25).</summary>
+    public int BlitzTimeMinutes { get; set; } = 10;
 }
 
 public sealed class PlayForm
@@ -106,9 +110,12 @@ public sealed record WebGameSnapshot(
     int? LastMoveScore,
     IReadOnlyList<string> AbandonedPlayerIds,
     string? EndReason,
-    string? AbandonedByName);
+    string? AbandonedByName,
+    int? TimePerPlayerSeconds = null,
+    int? ForfeitedPlayerIndex = null,
+    DateTimeOffset? TurnStartAt = null);
 
-public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int Score, bool IsHost, IReadOnlyList<char> Rack, int RackCount, bool IsBot = false);
+public sealed record WebSnapshotPlayer(string PlayerId, string PlayerName, int Score, bool IsHost, IReadOnlyList<char> Rack, int RackCount, bool IsBot = false, int TimeUsed = 0);
 public sealed record WebBoardTile(int Row, int Column, char Letter);
 public sealed record WebPlayResponse(string GameId, string MoveId, int Score);
 public sealed record WebCheckResponse(int Score, string Message);

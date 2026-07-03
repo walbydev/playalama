@@ -205,7 +205,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
         var request = new
         {
             hostName,
-            gameLevel = GameLevel.Standard,
+            gameLevel = form.IsBlitz ? GameLevel.Blitz : GameLevel.Standard,
             mode = isTrueSolo ? 0 : 1,
             gameName = form.GameName,
             maxPlayers,
@@ -215,7 +215,8 @@ public sealed class LamaApiClient(HttpClient httpClient)
             aiBotCount = aiCount,
             includeHost = !isAiOnly,
             language = languages[0],
-            languages
+            languages,
+            timePerPlayerSeconds = form.IsBlitz ? form.BlitzTimeMinutes * 60 : (int?)null
         };
 
         using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, $"{ApiBase}/games", token);
@@ -274,7 +275,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
             payload.Language ?? "fr",
             payload.Players.Select(x => new WebSnapshotPlayer(
                 x.PlayerId, x.PlayerName, x.Score, x.IsHost,
-                x.Rack ?? [], x.RackCount, x.IsBot)).ToList(),
+                x.Rack ?? [], x.RackCount, x.IsBot, x.TimeUsed)).ToList(),
             payload.Board.Select(x => new WebBoardTile(x.Row, x.Column, x.Letter)).ToList(),
             payload.LastMoveId,
             payload.LastMovePlayerName,
@@ -283,7 +284,10 @@ public sealed class LamaApiClient(HttpClient httpClient)
             payload.LastMoveScore,
             payload.AbandonedPlayerIds ?? [],
             payload.EndReason,
-            payload.AbandonedByName);
+            payload.AbandonedByName,
+            payload.TimePerPlayerSeconds,
+            payload.ForfeitedPlayerIndex,
+            payload.TurnStartAt);
     }
 
     public async Task<WebPlayResponse> PlayAsync(string gameId, PlayForm form, string? token = null, CancellationToken cancellationToken = default)
@@ -643,8 +647,9 @@ public sealed class LamaApiClient(HttpClient httpClient)
         List<GameSnapshotPlayerEnvelope> Players, List<GameBoardTileEnvelope> Board,
         string? LastMoveId,
         string? LastMovePlayerName, int? LastMoveTurnNumber, string? LastMoveCommand, int? LastMoveScore,
-        List<string>? AbandonedPlayerIds, string? EndReason, string? AbandonedByName);
-    private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost, List<char>? Rack, int RackCount, bool IsBot = false);
+        List<string>? AbandonedPlayerIds, string? EndReason, string? AbandonedByName,
+        int? TimePerPlayerSeconds = null, int? ForfeitedPlayerIndex = null, DateTimeOffset? TurnStartAt = null);
+    private sealed record GameSnapshotPlayerEnvelope(string PlayerId, string PlayerName, int Score, bool IsHost, List<char>? Rack, int RackCount, bool IsBot = false, int TimeUsed = 0);
     private sealed record GameBoardTileEnvelope(int Row, int Column, char Letter);
     private sealed record PlayEnvelope(string GameId, string MoveId, int Score);
     private sealed record LexiconSearchEnvelope(List<string> Words);

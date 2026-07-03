@@ -107,7 +107,9 @@ public sealed class EndGameUseCase
                     PlayerId: p.PlayerId,
                     PlayerName: p.PlayerName,
                     Rank: rankByPlayerId[p.PlayerId],
-                    IsAbandoned: request.IsAbandoned,
+                    IsAbandoned: request.IsAbandoned || (finalState.ForfeitedPlayerIndex.HasValue
+                        && session.PlayerIndexById.TryGetValue(p.PlayerId, out var idx)
+                        && idx == finalState.ForfeitedPlayerIndex.Value),
                     Score: p.Score,
                     OpponentIds: participants
                         .Where(o => o.PlayerId != p.PlayerId)
@@ -147,6 +149,7 @@ public sealed class EndGameUseCase
         {
             GameLevel.Casual => RankingQueue.CasualUnranked,
             GameLevel.Tournament => RankingQueue.Tournament,
+            GameLevel.Blitz => RankingQueue.OpenRanked,
             _ => RankingQueue.OpenRanked
         };
 }

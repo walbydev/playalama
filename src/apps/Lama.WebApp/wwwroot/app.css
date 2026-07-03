@@ -2165,6 +2165,62 @@ html.highcontrast .rack-tile--used {
 .scoreboard-name { font-weight: 600; font-size: .95rem; }
 .scoreboard-score { font-size: 1.05rem; font-weight: 700; color: var(--accent2); white-space: nowrap; }
 .scoreboard-rack-count { font-size: .72rem; color: var(--text-dim); }
+.scoreboard-timer { font-size: .75rem; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.scoreboard-timer--low { color: var(--danger, #ef4444); animation: timer-pulse 1s ease-in-out infinite; }
+@keyframes timer-pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+
+/* ════════════════════════════════════════════════════════
+   CREATE GAME — Cartes de mode et pills de temps
+   ════════════════════════════════════════════════════════ */
+
+.create-mode-cards { display: flex; gap: .75rem; flex-wrap: wrap; }
+.create-mode-cards--pace .create-mode-card { flex: 1 1 0; min-width: 140px; }
+
+.create-mode-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .25rem;
+    padding: .85rem 1rem;
+    border-radius: .75rem;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    flex: 1 1 180px;
+    min-width: 0;
+    transition: border-color .15s, background .15s, transform .1s;
+}
+.create-mode-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
+.create-mode-card.is-selected {
+    border-color: var(--accent2);
+    background: rgba(124,92,252,.10);
+}
+.create-mode-card-icon { font-size: 1.4rem; }
+.create-mode-card-label { font-weight: 700; font-size: .95rem; }
+.create-mode-card-desc { font-size: .78rem; color: var(--text-dim); }
+
+.blitz-time-pills { display: flex; gap: .5rem; flex-wrap: wrap; }
+.blitz-time-pill {
+    padding: .45rem 1.1rem;
+    border-radius: 999px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    font-size: .9rem;
+    transition: border-color .15s, background .15s;
+}
+.blitz-time-pill:hover { border-color: var(--accent2); }
+.blitz-time-pill.is-selected {
+    border-color: #f59e0b;
+    background: rgba(245,158,11,.12);
+    color: #f59e0b;
+}
 
 /* ════════════════════════════════════════════════════════
    GAME LAYOUT — Grille partie en cours

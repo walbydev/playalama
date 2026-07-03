@@ -1,7 +1,7 @@
 @using Lama.WebApp.Services
 @inject IStringLocalizer<SharedResource> L
 
-@* Tableau des scores avec indicateur du joueur actif. *@
+@* Tableau des scores avec indicateur du joueur actif et chrono en temps réel. *@
 
 <div class="scoreboard" role="list" aria-label="@L["Game.Scores"]">
     @for (var i = 0; i < Players.Count; i++)
@@ -25,6 +25,23 @@
                 <div class="scoreboard-rack-count">@L["Game.RackCount", player.RackCount, (player.RackCount > 1 ? L["Game.Tiles.Plural"].Value : L["Game.Tiles.Singular"].Value)]</div>
             </div>
             <div class="scoreboard-score" aria-label="@L["Game.PointsLabel", player.Score]">@player.Score <small>@L["Game.PointsShort"]</small></div>
+            @if (TimePerPlayerSeconds.HasValue)
+            {
+                var timeUsed = isActive && !isAbandoned && TurnStartAt.HasValue
+                    ? player.TimeUsed + (int)(DateTimeOffset.UtcNow - TurnStartAt.Value).TotalSeconds
+                    : player.TimeUsed;
+                var remaining = Math.Max(0, TimePerPlayerSeconds.Value - timeUsed);
+                var timeStr = FormatTime(remaining);
+                var isLow = remaining <= 30;
+                <div class="scoreboard-timer @(isLow ? "scoreboard-timer--low" : "")" aria-label="@L["Game.TimerLabel", timeStr]">⏱ @timeStr</div>
+            }
+            else
+            {
+                var timeUsed = isActive && !isAbandoned && TurnStartAt.HasValue
+                    ? player.TimeUsed + (int)(DateTimeOffset.UtcNow - TurnStartAt.Value).TotalSeconds
+                    : player.TimeUsed;
+                <div class="scoreboard-timer text-dim" style="font-size:.7rem">⏱ @FormatTime(timeUsed)</div>
+            }
             @if (isActive && !isAbandoned)
             {
                 <span class="chip chip-accent" style="font-size:.7rem" aria-label="@L["Game.ActiveTurn"]">▶</span>
@@ -38,7 +55,17 @@
     [Parameter] public int CurrentPlayerIndex { get; set; }
     [Parameter] public string? MyPlayerId { get; set; }
     [Parameter] public IReadOnlyList<string> AbandonedPlayerIds { get; set; } = [];
+    [Parameter] public int? TimePerPlayerSeconds { get; set; }
+    [Parameter] public DateTimeOffset? TurnStartAt { get; set; }
 
     private static char GetInitial(string name) =>
         string.IsNullOrWhiteSpace(name) ? '?' : name.Trim()[0];
+
+    private static string FormatTime(int totalSeconds)
+    {
+        totalSeconds = Math.Max(0, totalSeconds);
+        var mins = totalSeconds / 60;
+        var secs = totalSeconds % 60;
+        return $"{mins:D1}:{secs:D2}";
+    }
 }

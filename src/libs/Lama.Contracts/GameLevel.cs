@@ -27,5 +27,12 @@ public enum GameLevel
     /// <summary>
     /// Mode tournoi : règles figées par l'organisateur, aucune déviation possible.
     /// </summary>
-    Tournament
+    Tournament,
+
+    /// <summary>
+    /// Mode blitz : chrono par joueur (décompte de 5/10/25 min).
+    /// Le premier joueur à 0 perd par forfait et la partie s'arrête.
+    /// Les suggestions sont autorisées mais désactivent l'Elo.
+    /// </summary>
+    Blitz
 }

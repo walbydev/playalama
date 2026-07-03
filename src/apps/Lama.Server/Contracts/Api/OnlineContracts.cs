@@ -42,7 +42,9 @@ public sealed record CreateGameRequest(
     /// Langues de jeu (mots du plateau). Un mot est valide s'il existe dans au moins une.
     /// Si vide, <see cref="Language"/> est utilisé.
     /// </summary>
-    IReadOnlyList<string>? Languages = null);
+    IReadOnlyList<string>? Languages = null,
+    /// <summary>Temps alloué par joueur en secondes en mode Blitz (null sinon).</summary>
+    int? TimePerPlayerSeconds = null);
 
 public sealed record JoinGameRequest(string PlayerName, string? Password = null);
 
@@ -111,6 +113,8 @@ public sealed class OnlineGame(
     /// <summary>Indique qu'au moins une suggestion a été utilisée pendant la partie
     /// (l'Elo n'est alors pas approvisionné, hors mode Tournament).</summary>
     public bool SuggestionsUsed { get; set; }
+    /// <summary>Temps alloué par joueur en secondes en mode Blitz (null sinon).</summary>
+    public int? TimePerPlayerSeconds { get; set; }
 }
 
 public sealed record OnlinePlayer(string PlayerId, string PlayerName, bool IsHost, bool IsBot = false);

@@ -38,6 +38,16 @@ public sealed class GameEngine : IGameEngine
     private GameStateSnapshot? _lastMoveSnapshot;
     private Random?         _random;
 
+    // ── Timer par joueur ──────────────────────────────────────────────────────
+    /// <summary>Temps alloué par joueur en secondes en mode Blitz (null sinon).</summary>
+    private int?            _timePerPlayerSeconds;
+    /// <summary>Temps consommé par chaque joueur en secondes.</summary>
+    private List<int>       _playerTimeUsed = [];
+    /// <summary>Date/heure de début du tour courant.</summary>
+    private DateTimeOffset? _turnStartAt;
+    /// <summary>Index du joueur forfait par timeout (Blitz), null si aucun.</summary>
+    private int?            _forfeitedPlayerIndex;
+
     /// <summary>
     /// Initialise le moteur avec le dictionnaire, les scores et la distribution.
     /// </summary>
@@ -93,6 +103,20 @@ public sealed class GameEngine : IGameEngine
         _history            = [];
         _lastMoveSnapshot   = null;
         _isInitialized      = true;
+
+        // Timer : initialiser à zéro pour chaque joueur et démarrer le chrono du premier tour
+        _timePerPlayerSeconds = null;
+        _playerTimeUsed   = new List<int>(new int[playerNames.Count]);
+        _turnStartAt      = DateTimeOffset.UtcNow;
+        _forfeitedPlayerIndex = null;
+    }
+
+    /// <inheritdoc />
+    public void SetTimeConfig(int? timePerPlayerSeconds)
+    {
+        EnsureInitialized();
+        _timePerPlayerSeconds = timePerPlayerSeconds;
+        _turnStartAt = DateTimeOffset.UtcNow;
     }
 
     /// <inheritdoc />
@@ -111,7 +135,11 @@ public sealed class GameEngine : IGameEngine
             IsGameOver         = _isGameOver,
             History            = _history
                 .Select(move => move with { Placements = move.Placements.ToList() })
-                .ToList()
+                .ToList(),
+            TimePerPlayerSeconds = _timePerPlayerSeconds,
+            PlayerTimeUsed    = new List<int>(_playerTimeUsed),
+            TurnStartAt       = _turnStartAt,
+            ForfeitedPlayerIndex = _forfeitedPlayerIndex
         };
     }
 
@@ -199,6 +227,7 @@ public sealed class GameEngine : IGameEngine
         var playedTurn = _turnNumber;
 
         // 9. Passer au joueur suivant
+        RecordTurnTime();
         AdvancePlayer();
 
         _history.Add(new GameMove(
@@ -223,6 +252,7 @@ public sealed class GameEngine : IGameEngine
         EnsureNotGameOver();
 
         _lastMoveSnapshot = null;
+        RecordTurnTime();
         AdvancePlayer();
     }
 
@@ -260,6 +290,7 @@ public sealed class GameEngine : IGameEngine
 
         _lastMoveSnapshot = null;
 
+        RecordTurnTime();
         AdvancePlayer();
     }
 
@@ -362,6 +393,26 @@ public sealed class GameEngine : IGameEngine
 
         for (var i = 0; i < Math.Min(scores.Count, _players!.Count); i++)
             _players[i] = _players[i] with { Score = scores[i] };
+
+        _turnStartAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// Restaure les données de timer depuis la persistance.
+    /// </summary>
+    internal void RestoreTimeState(
+        int? timePerPlayerSeconds,
+        List<int>? playerTimeUsed,
+        DateTimeOffset? turnStartAt,
+        int? forfeitedPlayerIndex)
+    {
+        EnsureInitialized();
+        _timePerPlayerSeconds = timePerPlayerSeconds;
+        _playerTimeUsed = playerTimeUsed is not null
+            ? new List<int>(playerTimeUsed)
+            : new List<int>(new int[_players!.Count]);
+        _turnStartAt = turnStartAt ?? DateTimeOffset.UtcNow;
+        _forfeitedPlayerIndex = forfeitedPlayerIndex;
     }
 
     /// <summary>
@@ -434,7 +485,11 @@ public sealed class GameEngine : IGameEngine
                     Rack: new List<char>(p.Rack)))
                 .ToList(),
             Board: CaptureBoard(),
-            RemainingTiles: _bag!.SnapshotTiles());
+            RemainingTiles: _bag!.SnapshotTiles(),
+            TimePerPlayerSeconds: _timePerPlayerSeconds,
+            PlayerTimeUsed: new List<int>(_playerTimeUsed),
+            TurnStartAt: _turnStartAt,
+            ForfeitedPlayerIndex: _forfeitedPlayerIndex);
     }
 
     private void RestoreSnapshot(GameStateSnapshot snapshot)
@@ -448,6 +503,12 @@ public sealed class GameEngine : IGameEngine
             .ToList();
         _board = BuildBoardFromSnapshot(snapshot.Board);
         _bag!.RestoreTiles(snapshot.RemainingTiles);
+        _timePerPlayerSeconds = snapshot.TimePerPlayerSeconds;
+        _playerTimeUsed = snapshot.PlayerTimeUsed is not null
+            ? new List<int>(snapshot.PlayerTimeUsed)
+            : new List<int>(new int[_players.Count]);
+        _turnStartAt = snapshot.TurnStartAt;
+        _forfeitedPlayerIndex = snapshot.ForfeitedPlayerIndex;
     }
 
     private List<PersistedTile> CaptureBoard()
@@ -533,6 +594,31 @@ public sealed class GameEngine : IGameEngine
         // Incrémenter le tour quand on revient au premier joueur
         if (_currentPlayerIndex == 0 && previousIndex != 0)
             _turnNumber++;
+
+        // Démarrer le chrono pour le prochain joueur
+        _turnStartAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// Enregistre le temps consommé par le joueur courant pour ce tour.
+    /// En mode Blitz, vérifie si le joueur a dépassé son temps alloué → forfait.
+    /// </summary>
+    private void RecordTurnTime()
+    {
+        if (_turnStartAt is null || _currentPlayerIndex >= _playerTimeUsed.Count)
+            return;
+
+        var elapsed = (int)(DateTimeOffset.UtcNow - _turnStartAt.Value).TotalSeconds;
+        if (elapsed < 0) elapsed = 0;
+
+        _playerTimeUsed[_currentPlayerIndex] += elapsed;
+
+        // En mode Blitz : si le joueur a dépassé son temps → forfait, fin de partie
+        if (_timePerPlayerSeconds is { } limit && _playerTimeUsed[_currentPlayerIndex] >= limit)
+        {
+            _forfeitedPlayerIndex = _currentPlayerIndex;
+            _isGameOver = true;
+        }
     }
 
     // ── État interne des joueurs ──────────────────────────────────────────────

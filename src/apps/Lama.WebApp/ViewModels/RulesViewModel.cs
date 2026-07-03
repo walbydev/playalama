@@ -23,12 +23,13 @@ public sealed class RulesViewModel
             new("Dictionnaire",         "Les mots doivent appartenir au dictionnaire de la langue sélectionnée (FR, EN, DE)."),
         ]),
 
-        new("blitz", "⚡ Mode Blitz (À venir)", "La vitesse prime sur la stratégie.",
+        new("blitz", "⚡ Mode Blitz", "La vitesse prime sur la stratégie.",
         [
-            new("Chrono",               "3 minutes pour la partie entière. Chaque joueur joue dès que c'est son tour, le chrono ne s'arrête pas."),
-            new("Passe pénalisé",       "Passer son tour coûte 2 points."),
-            new("Fin de partie",        "Quand le chrono atteint zéro, on comptabilise les scores. Les tuiles en main ne sont pas soustraites."),
-            new("Status",               "⚠️ Ce mode sera bientôt disponible."),
+            new("Chrono individuel",   "Chaque joueur dispose d'un temps limité : 5, 10 ou 25 minutes. Le chrono décompte le temps de réflexie à chaque tour."),
+            new("Forfait",             "Le premier joueur qui atteint 0 seconde perd par forfait. La partie s'arrête immédiatement."),
+            new("Fin de partie",       "Quand un joueur est à 0, on comptabilise les scores. Les tuiles en main ne sont pas soustraites."),
+            new("Suggestions",         "Les suggestions de coups sont autorisées, mais l'utilisation d'une suggestion désactive l'approvisionnement de l'Elo pour cette partie."),
+            new("Classement",          "Le mode Blitz alimente la file OpenRanked (Elo Open), comme les modes Standard et Competitive."),
         ]),
 
         new("solo-ia", "🤖 Mode Solo vs IA", "Perfectionne ton jeu face à l'IA.",

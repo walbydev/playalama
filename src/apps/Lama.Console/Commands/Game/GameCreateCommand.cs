@@ -71,8 +71,25 @@ public sealed class GameCreateCommand : ICommand
         {
             global::System.Console.Error.WriteLine(
                 $"[game create] Niveau invalide : '{levelStr}'. " +
-                "Valeurs acceptées : casual, standard, competitive, tournament.");
+                "Valeurs acceptées : casual, standard, competitive, tournament, blitz.");
             return ExitCodes.InvalidArgument;
+        }
+
+        // Lire le temps par joueur (mode Blitz)
+        int? timePerPlayerSeconds = null;
+        var timeStr = context.GetOption("time-per-player");
+        if (gameLevel == GameLevel.Blitz)
+        {
+            if (string.IsNullOrWhiteSpace(timeStr))
+                timePerPlayerSeconds = 600; // 10 min par défaut
+            else if (!int.TryParse(timeStr, out var timeMin) || timeMin <= 0)
+            {
+                global::System.Console.Error.WriteLine(
+                    "[game create] --time-per-player doit être un entier positif (minutes).");
+                return ExitCodes.InvalidArgument;
+            }
+            else
+                timePerPlayerSeconds = timeMin * 60;
         }
 
         var modeStr = context.GetOption("mode") ?? (_runtimeMode.IsOnline ? "multi" : "solo");
@@ -134,6 +151,7 @@ public sealed class GameCreateCommand : ICommand
                     password,
                     maxPlayers,
                     enableAi,
+                    timePerPlayerSeconds,
                     cancellationToken);
                 gameId = response.GameId;
                 hostPlayerId = response.HostPlayerId;
@@ -141,7 +159,7 @@ public sealed class GameCreateCommand : ICommand
             }
             else
             {
-                var request  = new CreateGameRequest(hostName, language: context.Lang, gameLevel: gameLevel);
+                var request  = new CreateGameRequest(hostName, language: context.Lang, gameLevel: gameLevel, timePerPlayerSeconds: timePerPlayerSeconds);
                 var response = await _createGameUseCase.ExecuteAsync(request);
                 gameId = response.GameId;
                 hostPlayerId = response.HostPlayerId;
@@ -166,6 +184,8 @@ public sealed class GameCreateCommand : ICommand
             global::System.Console.WriteLine($"  Type      : {modeStr}");
             global::System.Console.WriteLine($"  Hôte      : {hostName}");
             global::System.Console.WriteLine($"  Niveau    : {gameLevel}");
+            if (gameLevel == GameLevel.Blitz && timePerPlayerSeconds.HasValue)
+                global::System.Console.WriteLine($"  Temps/joueur: {timePerPlayerSeconds.Value / 60} min");
             if (!string.IsNullOrWhiteSpace(gameName))
                 global::System.Console.WriteLine($"  Nom       : {gameName}");
             if (_runtimeMode.IsOnline)

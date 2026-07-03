@@ -112,6 +112,7 @@ public sealed class OnlineGameGateway
         string? password,
         int? maxPlayers,
         bool enableAi,
+        int? timePerPlayerSeconds,
         CancellationToken cancellationToken)
     {
         EnsureOnlineMode();
@@ -131,7 +132,8 @@ public sealed class OnlineGameGateway
             isPrivate,
             password,
             maxPlayers,
-            enableAi
+            enableAi,
+            timePerPlayerSeconds
         };
 
         var response = await _httpClient.PostAsJsonAsync($"{ApiBase}/games", request, cancellationToken);

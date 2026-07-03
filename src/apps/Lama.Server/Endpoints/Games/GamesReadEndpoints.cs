@@ -182,6 +182,9 @@ public static class GamesReadEndpoints
                     abandonedPlayerIds = game.AbandonedPlayerIds.ToList(),
                     endReason = game.EndReason,
                     abandonedByName = game.AbandonedByName,
+                    timePerPlayerSeconds = stateSnapshot.TimePerPlayerSeconds,
+                    forfeitedPlayerIndex = stateSnapshot.ForfeitedPlayerIndex,
+                    turnStartAt = stateSnapshot.TurnStartAt,
                     players = game.Players.Select((player, index) => new
                     {
                         player.PlayerId,
@@ -190,7 +193,9 @@ public static class GamesReadEndpoints
                         player.IsBot,
                         Score = stateSnapshot.Players[index].Score,
                         Rack = stateSnapshot.Players[index].Rack,
-                        RackCount = stateSnapshot.Players[index].Rack.Count
+                        RackCount = stateSnapshot.Players[index].Rack.Count,
+                        TimeUsed = index < stateSnapshot.PlayerTimeUsed.Count
+                            ? stateSnapshot.PlayerTimeUsed[index] : 0
                     }),
                     board = GamesEndpointParsers.CaptureBoard(stateSnapshot.Board),
                     moves = game.Moves,

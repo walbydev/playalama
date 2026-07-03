@@ -16,7 +16,7 @@
 
 <div class="section">
     <div class="container">
-        <div style="display:grid; grid-template-columns:1fr 2fr; gap:2rem; align-items:start">
+        <div style="display:grid; grid-template-columns:1.75fr 1fr; gap:2rem; align-items:start">
 
             <!-- Créer une partie -->
             <div class="card">
@@ -24,17 +24,69 @@
                 <EditForm Model="_createForm" OnValidSubmit="CreateGameAsync">
                     <DataAnnotationsValidator />
 
+                    @* ── Type de partie ── *@
                     <div class="form-field">
-                        <label for="game-mode">@L["CreateGame.Mode"]</label>
-                        <InputSelect id="game-mode" class="ui-control ui-control-lg" @bind-Value="_createForm.Mode" @bind-Value:after="OnModeChanged">
-                            <option value="multi">@L["CreateGame.Multiplayer"]</option>
-                            <option value="solo">@L["CreateGame.Solo"]</option>
+                        <label>@L["CreateGame.Mode"]</label>
+                        <div class="create-mode-cards">
+                            <button type="button" class='create-mode-card @(_createForm.Mode == "multi" ? "is-selected" : "")'
+                                    @onclick='() => SelectMode("multi")'>
+                                <span class="create-mode-card-icon">👥</span>
+                                <span class="create-mode-card-label">@L["CreateGame.Multiplayer"]</span>
+                                <span class="create-mode-card-desc">@L["CreateGame.MultiplayerDesc"]</span>
+                            </button>
+                            <button type="button" class='create-mode-card @(_createForm.Mode == "solo" ? "is-selected" : "")'
+                                    @onclick='() => SelectMode("solo")'>
+                                <span class="create-mode-card-icon">🤖</span>
+                                <span class="create-mode-card-label">@L["CreateGame.Solo"]</span>
+                                <span class="create-mode-card-desc">@L["CreateGame.SoloDesc"]</span>
+                            </button>
                             @if (_isAdmin)
                             {
-                                <option value="ai-only">@L["CreateGame.AiOnly"]</option>
+                                <button type="button" class='create-mode-card @(_createForm.Mode == "ai-only" ? "is-selected" : "")'
+                                        @onclick='() => SelectMode("ai-only")'>
+                                    <span class="create-mode-card-icon">🏭</span>
+                                    <span class="create-mode-card-label">@L["CreateGame.AiOnly"]</span>
+                                    <span class="create-mode-card-desc">@L["CreateGame.AiOnlyDesc"]</span>
+                                </button>
                             }
-                        </InputSelect>
+                        </div>
                     </div>
+
+                    @* ── Cadence (Classique / Blitz) ── *@
+                    <div class="form-field">
+                        <label>@L["CreateGame.Pace"]</label>
+                        <div class="create-mode-cards create-mode-cards--pace">
+                            <button type="button" class="create-mode-card @(!_createForm.IsBlitz ? "is-selected" : "")"
+                                    @onclick="() => SelectPace(false)">
+                                <span class="create-mode-card-icon">🎯</span>
+                                <span class="create-mode-card-label">@L["CreateGame.PaceClassic"]</span>
+                                <span class="create-mode-card-desc">@L["CreateGame.PaceClassicDesc"]</span>
+                            </button>
+                            <button type="button" class="create-mode-card @(_createForm.IsBlitz ? "is-selected" : "")"
+                                    @onclick="() => SelectPace(true)">
+                                <span class="create-mode-card-icon">⚡</span>
+                                <span class="create-mode-card-label">@L["CreateGame.PaceBlitz"]</span>
+                                <span class="create-mode-card-desc">@L["CreateGame.PaceBlitzDesc"]</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (_createForm.IsBlitz)
+                    {
+                        <div class="form-field">
+                            <label>@L["CreateGame.BlitzTime"]</label>
+                            <div class="blitz-time-pills">
+                                @foreach (var min in new[] { 5, 10, 25 })
+                                {
+                                    <button type="button"
+                                            class="blitz-time-pill @(_createForm.BlitzTimeMinutes == min ? "is-selected" : "")"
+                                            @onclick="() => _createForm.BlitzTimeMinutes = min">
+                                        @min @L["CreateGame.BlitzTimeUnit"]
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
 
                     <div class="form-field">
                         <label for="game-name">@L["CreateGame.Name"] <small class="text-dim">@L["Common.Optional"]</small></label>
@@ -278,11 +330,22 @@
         _isAiOnly = string.Equals(_createForm.Mode, "ai-only", StringComparison.OrdinalIgnoreCase);
         if (!_isAdmin && _isAiOnly)
         {
-            _createForm.Mode = "multi";
             _isAiOnly = false;
+            _createForm.Mode = "multi";
         }
-        OnMaxPlayersChanged();
+
         EnsureAiSlotSelections(_isAiOnly ? 4 : (_isSolo ? 1 : 0));
+    }
+
+    private void SelectMode(string mode)
+    {
+        _createForm.Mode = mode;
+        OnModeChanged();
+    }
+
+    private void SelectPace(bool isBlitz)
+    {
+        _createForm.IsBlitz = isBlitz;
     }
 
     private void OnMaxPlayersChanged()

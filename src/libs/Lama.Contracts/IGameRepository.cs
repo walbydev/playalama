@@ -19,6 +19,10 @@ namespace Lama.Contracts;
 /// <param name="LastMoveSnapshot">Snapshot permettant d'annuler le dernier coup en cas de challenge réussi.</param>
 /// <param name="CreatedAt">Date de création de la partie (UTC).</param>
 /// <param name="UpdatedAt">Date de dernière modification (UTC).</param>
+/// <param name="TimePerPlayerSeconds">Temps alloué par joueur en mode Blitz (null sinon).</param>
+/// <param name="PlayerTimeUsed">Temps consommé par chaque joueur en secondes.</param>
+/// <param name="TurnStartAt">Date/heure de début du tour courant.</param>
+/// <param name="ForfeitedPlayerIndex">Index du joueur forfait par timeout (null si aucun).</param>
 public record PersistedGame(
     string                    GameId,
     string                    Language,
@@ -33,7 +37,11 @@ public record PersistedGame(
     DateTimeOffset            CreatedAt,
     DateTimeOffset            UpdatedAt,
     List<GameMove>            History = null!,
-    GameStateSnapshot?        LastMoveSnapshot = null);
+    GameStateSnapshot?        LastMoveSnapshot = null,
+    int?                      TimePerPlayerSeconds = null,
+    List<int>?                PlayerTimeUsed = null,
+    DateTimeOffset?           TurnStartAt = null,
+    int?                      ForfeitedPlayerIndex = null);
 
 /// <summary>
 /// Représente un joueur persisté (nom, score, rack).

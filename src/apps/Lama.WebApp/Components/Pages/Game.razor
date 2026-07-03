@@ -302,6 +302,8 @@ else
                             <ScoreBoard Players="_vm.Snapshot.Players"
                                         CurrentPlayerIndex="_vm.Snapshot.CurrentPlayerIndex"
                                         MyPlayerId="@_myPlayerId"
+                                        TimePerPlayerSeconds="_vm.Snapshot.TimePerPlayerSeconds"
+                                        TurnStartAt="_vm.Snapshot.TurnStartAt"
                                         AbandonedPlayerIds="_vm.Snapshot.AbandonedPlayerIds" />
                         </div>
 
@@ -658,7 +660,9 @@ else
     private readonly GamePlayViewModel _vm = new();
     private string? _myPlayerId;
     private PeriodicTimer? _timer;
+    private PeriodicTimer? _uiTimer;
     private CancellationTokenSource? _pollingCts;
+    private CancellationTokenSource? _uiCts;
 
     // Drag state (rack → board)
     private int _draggingRackIndex = -1;
@@ -847,6 +851,17 @@ else
                 }
             }
         }, _pollingCts.Token);
+
+        // Timer UI 1-seconde : rafraîchit le chrono du joueur courant sans polling serveur
+        _uiCts = new CancellationTokenSource();
+        _uiTimer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        _ = Task.Run(async () =>
+        {
+            while (await _uiTimer.WaitForNextTickAsync(_uiCts.Token))
+            {
+                await InvokeAsync(() => StateHasChanged());
+            }
+        }, _uiCts.Token);
     }
 
     private async Task RefreshAsync()
@@ -1246,6 +1261,8 @@ else
     {
         Layout.Changed -= HandleLayoutChanged;
         if (_pollingCts is not null) { await _pollingCts.CancelAsync(); _pollingCts.Dispose(); }
+        if (_uiCts is not null) { await _uiCts.CancelAsync(); _uiCts.Dispose(); }
         _timer?.Dispose();
+        _uiTimer?.Dispose();
     }
 }

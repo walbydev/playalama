@@ -37,6 +37,17 @@ public record GameMove(
 /// <summary>
 /// Snapshot complet d'une partie utilisé pour restaurer un état précédent.
 /// </summary>
+/// <param name="IsFirstMove">Indique si aucun coup n'a encore été joué.</param>
+/// <param name="IsGameOver">Indique si la partie est terminée.</param>
+/// <param name="CurrentPlayerIndex">Index du joueur dont c'est le tour.</param>
+/// <param name="TurnNumber">Numéro du tour courant.</param>
+/// <param name="Players">Liste des joueurs persistés.</param>
+/// <param name="Board">Tuiles du plateau.</param>
+/// <param name="RemainingTiles">Lettres restantes dans le sac.</param>
+/// <param name="TimePerPlayerSeconds">Temps alloué par joueur en mode Blitz (null sinon).</param>
+/// <param name="PlayerTimeUsed">Temps consommé par chaque joueur en secondes.</param>
+/// <param name="TurnStartAt">Date/heure de début du tour courant (pour calculer le temps écoulé).</param>
+/// <param name="ForfeitedPlayerIndex">Index du joueur qui a perdu par timeout en Blitz (null si aucun).</param>
 public record GameStateSnapshot(
     bool IsFirstMove,
     bool IsGameOver,
@@ -44,7 +55,11 @@ public record GameStateSnapshot(
     int TurnNumber,
     List<PersistedPlayer> Players,
     List<PersistedTile> Board,
-    List<char> RemainingTiles);
+    List<char> RemainingTiles,
+    int? TimePerPlayerSeconds = null,
+    List<int>? PlayerTimeUsed = null,
+    DateTimeOffset? TurnStartAt = null,
+    int? ForfeitedPlayerIndex = null);
 
 /// <summary>
 /// Résultat d'un challenge.
@@ -93,5 +108,13 @@ public record GameState
     public required int TurnNumber { get; init; }
     public bool IsGameOver { get; init; } = false;
     public List<GameMove> History { get; init; } = [];
+    /// <summary>Temps alloué par joueur en secondes en mode Blitz (null dans les autres modes).</summary>
+    public int? TimePerPlayerSeconds { get; init; }
+    /// <summary>Temps consommé par chaque joueur en secondes (compteur dans tous les modes).</summary>
+    public List<int> PlayerTimeUsed { get; init; } = [];
+    /// <summary>Date/heure de début du tour courant (pour calculer le temps écoulé entre deux coups).</summary>
+    public DateTimeOffset? TurnStartAt { get; init; }
+    /// <summary>Index du joueur qui a perdu par timeout en Blitz (null si aucun).</summary>
+    public int? ForfeitedPlayerIndex { get; init; }
 }
 

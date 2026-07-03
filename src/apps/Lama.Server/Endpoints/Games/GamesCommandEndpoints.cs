@@ -211,6 +211,7 @@ public static class GamesCommandEndpoints
 
         // Initialiser le moteur avec tous les joueurs (humains + bot)
         engine.InitializeGame(initialPlayers.Select(p => p.PlayerName).ToList());
+        engine.SetTimeConfig(request.TimePerPlayerSeconds);
         var initialState = engine.GetGameState();
 
         var game = new OnlineGame(
@@ -237,6 +238,8 @@ public static class GamesCommandEndpoints
             HasStarted: autoStartWithBots || mode == OnlineGameMode.Solo || !usesLobby,
             UsesLobby: usesLobby,
             IsClosed: false);
+
+        game.TimePerPlayerSeconds = request.TimePerPlayerSeconds;
 
         state.Create(game);
 
@@ -930,7 +933,10 @@ public static class GamesCommandEndpoints
                             .ToList();
 
                         // Un joueur ayant abandonné puis la partie a continué : marqué abandon (0 point, Elo inchangé)
-                        var playerAbandoned = game.AbandonedPlayerIds.Contains(player.PlayerId);
+                        // En Blitz, un joueur forfait par timeout est aussi marqué abandon
+                        var playerAbandoned = game.AbandonedPlayerIds.Contains(player.PlayerId)
+                            || (endedState2.ForfeitedPlayerIndex.HasValue
+                                && game.Players.ElementAtOrDefault(endedState2.ForfeitedPlayerIndex.Value)?.PlayerId == player.PlayerId);
 
                         return new GameResult(
                             GameId:     gameId,
