@@ -70,6 +70,9 @@ try
 
     Log.Information("Démarrage de LAMA");
 
+    // Appliquer les paramètres d'accessibilité depuis l'environnement
+    AccessibilityMiddleware.ApplyFromEnvironment();
+
     var host = Host.CreateDefaultBuilder(runtimeArgs)
         .UseSerilog()
         .ConfigureServices((context, services) =>

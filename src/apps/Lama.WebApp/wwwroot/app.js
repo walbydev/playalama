@@ -5,7 +5,7 @@
 
 // ── Thèmes visuels ───────────────────────────────────────────────────────────
 window.playalamaTheme = {
-    availableThemes: ['dark', 'light', 'blue', 'green', 'vermillion', 'highcontrast'],
+    availableThemes: ['dark', 'light', 'blue', 'green', 'vermillion', 'highcontrast', 'deuteranopia', 'protanopia', 'tritanopia'],
     getTheme() {
         const stored = localStorage.getItem('playalama-theme') || 'dark';
         return this.availableThemes.includes(stored) ? stored : 'dark';
@@ -22,6 +22,40 @@ window.playalamaTheme = {
         return current === 'dark' ? 'light' : 'dark';
     }
 };
+
+// ── Accessibilité : Taille de police globale ─────────────────────────────────
+window.playalamaAccessibility = {
+    fontSizes: ['100', '125', '150', '200'],
+    getFontSize() {
+        const stored = localStorage.getItem('playalama-font-size') || '100';
+        return this.fontSizes.includes(stored) ? stored : '100';
+    },
+    setFontSize(size) {
+        const normalized = this.fontSizes.includes(size) ? size : '100';
+        localStorage.setItem('playalama-font-size', normalized);
+        document.documentElement.setAttribute('data-font-size', normalized);
+    },
+    increaseFontSize() {
+        const current = this.getFontSize();
+        const idx = this.fontSizes.indexOf(current);
+        const next = idx < this.fontSizes.length - 1 ? this.fontSizes[idx + 1] : current;
+        this.setFontSize(next);
+        return next;
+    },
+    decreaseFontSize() {
+        const current = this.getFontSize();
+        const idx = this.fontSizes.indexOf(current);
+        const prev = idx > 0 ? this.fontSizes[idx - 1] : current;
+        this.setFontSize(prev);
+        return prev;
+    }
+};
+
+// Appliquer la taille de police au chargement
+(function () {
+    const fontSize = window.playalamaAccessibility.getFontSize();
+    document.documentElement.setAttribute('data-font-size', fontSize);
+})();
 
 // ── Disposition du plateau (densité S/M/L, plein écran, panneaux) ───────────────
 window.playalamaGameLayout = {

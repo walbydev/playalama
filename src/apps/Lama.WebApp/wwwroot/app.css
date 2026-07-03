@@ -146,6 +146,72 @@ html.highcontrast {
     --radius-sm:  0;
 }
 
+/* ── TOKENS deuteranopia (rouge-vert) ── */
+html.deuteranopia {
+    --bg:         #0a0e1a;
+    --bg2:        #151b2e;
+    --bg3:        #1f2842;
+    --surface:    #253052;
+    --border:     rgba(100,150,255,0.35);
+    --accent:     #4da6ff;
+    --accent2:    #66ccff;
+    --gold:       #ffcc00;
+    --silver:     #c0c0c0;
+    --bronze:     #cc9966;
+    --text:       #e6f0ff;
+    --text-muted: #99b3e6;
+    --text-dim:   #6680b3;
+    --success:    #00ccff;
+    --error:      #ff6666;
+    --board-grid-line: rgba(100,130,200,0.30);
+    --board-grid-outline: rgba(100,130,200,0.40);
+    --shadow:     0 4px 24px rgba(0,0,0,0.5);
+}
+
+/* ── TOKENS protanopia (rouge-vert) ── */
+html.protanopia {
+    --bg:         #0a0e1a;
+    --bg2:        #151b2e;
+    --bg3:        #1f2842;
+    --surface:    #253052;
+    --border:     rgba(120,160,255,0.35);
+    --accent:     #3399ff;
+    --accent2:    #5db3ff;
+    --gold:       #ffcc00;
+    --silver:     #c0c0c0;
+    --bronze:     #cc9966;
+    --text:       #e6f0ff;
+    --text-muted: #99b3e6;
+    --text-dim:   #6680b3;
+    --success:    #00ccff;
+    --error:      #ff5555;
+    --board-grid-line: rgba(110,140,210,0.30);
+    --board-grid-outline: rgba(110,140,210,0.40);
+    --shadow:     0 4px 24px rgba(0,0,0,0.5);
+}
+
+/* ── TOKENS tritanopia (bleu-jaune) ── */
+html.tritanopia {
+    --bg:         #0f0a1a;
+    --bg2:        #1b152e;
+    --bg3:        #281f42;
+    --surface:    #302552;
+    --border:     rgba(255,120,180,0.35);
+    --accent:     #ff66b3;
+    --accent2:    #ff99cc;
+    --gold:       #ff6666;
+    --silver:     #c0c0c0;
+    --bronze:     #cc8866;
+    --text:       #ffe6f0;
+    --text-muted: #e699c2;
+    --text-dim:   #b36699;
+    --success:    #ff99cc;
+    --error:      #ff5577;
+    --board-grid-line: rgba(200,100,160,0.30);
+    --board-grid-outline: rgba(200,100,160,0.40);
+    --shadow:     0 4px 24px rgba(0,0,0,0.5);
+}
+
 /* ── ACCESSIBILITÉ renforcée pour haut contraste ── */
 html.highcontrast {
     font-size: 18px; /* Plus grand que la taille par défaut (17px) */
@@ -176,6 +242,12 @@ html.highcontrast .scoreboard-row--active {
 
 /* ── BASE ── */
 html { scroll-behavior: smooth; font-size: 17px; }
+
+/* ── TAILLES DE POLICE GLOBALES (Accessibilité) ── */
+html[data-font-size="100"] { font-size: 17px; }
+html[data-font-size="125"] { font-size: 21px; }
+html[data-font-size="150"] { font-size: 26px; }
+html[data-font-size="200"] { font-size: 34px; }
 
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -636,6 +708,74 @@ html.highcontrast .theme-select {
 html.highcontrast .theme-select option {
     background: #000000;
     color: #ffffff;
+}
+
+/* ── ACCESSIBILITÉ : Contrôle taille de police ── */
+.accessibility-control {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: .25rem .5rem;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    background: var(--surface);
+}
+
+.font-size-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: .35rem .65rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    font-weight: 700;
+    font-size: .95rem;
+    cursor: pointer;
+    transition: all .15s;
+}
+
+:is(html.light, html.blue, html.green, html.vermillion) .font-size-btn {
+    background: rgba(0,0,0,0.04);
+}
+
+.font-size-btn:hover {
+    background: rgba(124,92,252,0.15);
+    border-color: var(--accent);
+}
+
+.font-size-label {
+    min-width: 3rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: .85rem;
+    color: var(--text-muted);
+}
+
+/* Contrôle police haut contraste */
+html.highcontrast .accessibility-control {
+    background: #000000;
+    border: 3px solid #ffffff;
+}
+
+html.highcontrast .font-size-btn {
+    background: #000000;
+    color: #ffffff;
+    border: 3px solid #ffffff;
+}
+
+html.highcontrast .font-size-btn:hover {
+    background: #ffff00;
+    color: #000000;
+    border-color: #ffff00;
+}
+
+html.highcontrast .font-size-label {
+    color: #ffffff;
+    font-weight: 700;
 }
 
 .navbar--compact .board-density-control {
