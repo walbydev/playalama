@@ -1369,7 +1369,21 @@ public static class GamesCommandEndpoints
                 if (botProfile is null)
                     return;
 
-                await Task.Delay(600, CancellationToken.None);
+                // Délai avant que le bot ne joue. En mode Blitz, l'IA est trop rapide :
+                // on ajoute une probabilité d'attente plus longue pour qu'elle consomme
+                // du temps de réflexion, rendant la partie plus équilibrée.
+                var baseDelayMs = 600;
+                if (game.GameLevel == GameLevel.Blitz)
+                {
+                    // 60% du temps : délai court (1.5–3s, simule un coup rapide)
+                    // 40% du temps : délai long (4–9s, simule une réflexion)
+                    if (Random.Shared.NextDouble() < 0.4)
+                        baseDelayMs = Random.Shared.Next(4000, 9000);
+                    else
+                        baseDelayMs = Random.Shared.Next(1500, 3000);
+                }
+
+                await Task.Delay(baseDelayMs, CancellationToken.None);
                 var (botMove, _) = await botAutoPlay.AutoPlayAsync(game, botProfile, aiClient, CancellationToken.None);
                 if (botMove is null)
                     return;

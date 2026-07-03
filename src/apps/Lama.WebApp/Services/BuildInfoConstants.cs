@@ -7,6 +7,6 @@ namespace Lama.WebApp.Services;
 public static class BuildInfoConstants
 {
     public const string Version = "0.1.6";
-    public const int BuildNumber = 33;
-    public const string BuildTimestamp = "2026-07-03T19:16:53Z";
+    public const int BuildNumber = 34;
+    public const string BuildTimestamp = "2026-07-03T19:52:56Z";
 }
