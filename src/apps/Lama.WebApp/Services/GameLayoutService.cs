@@ -4,7 +4,7 @@ using Microsoft.JSInterop;
 namespace Lama.WebApp.Services;
 
 /// <summary>
-/// Pilote la disposition proportionnelle du plateau : densité S/M/L (auto-fit dominant),
+/// Pilote la disposition proportionnelle du plateau : densité S/M/L/XL/XXL (auto-fit dominant),
 /// panneaux escamotables, plein écran. Persisté en localStorage. Scoped per-circuit.
 /// </summary>
 public sealed class GameLayoutService(IJSRuntime js)
@@ -130,6 +130,8 @@ public sealed class GameLayoutService(IJSRuntime js)
     {
         Small => Small,
         Large => Large,
+        "xl" => "xl",
+        "xxl" => "xxl",
         _ => Medium,
     };
 

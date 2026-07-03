@@ -22,8 +22,8 @@ public sealed class PlayerEntityConfiguration : IEntityTypeConfiguration<PlayerE
         builder.Property(x => x.PasswordHash).HasColumnName("password_hash").HasMaxLength(512).IsRequired(false);
 
         builder.Property(x => x.CountryCode).HasColumnName("country_code").HasMaxLength(2).IsRequired(false);
+        builder.Property(x => x.AccessibilityPreferencesJson).HasColumnName("accessibility_preferences_json").HasColumnType("jsonb").IsRequired(false);
 
         builder.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
     }
 }
-

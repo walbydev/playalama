@@ -1,6 +1,8 @@
 @page "/accessibility"
 @inject IJSRuntime JS
 @inject ThemeService Theme
+@inject AuthService Auth
+@inject LamaApiClient Api
 @inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
@@ -24,21 +26,24 @@
             <div class="settings-grid">
                 <div class="setting-item">
                     <label for="theme-select-setting" class="setting-label">@L["Accessibility.CurrentTheme"]</label>
-                    <select id="theme-select-setting" 
-                            class="form-control" 
-                            value="@_currentTheme"
-                            @onchange="OnThemeChanged"
-                            aria-describedby="theme-help">
-                        <option value="dark">@L["Theme.Dark"]</option>
-                        <option value="light">@L["Theme.Light"]</option>
-                        <option value="blue">@L["Theme.Blue"]</option>
-                        <option value="green">@L["Theme.Green"]</option>
-                        <option value="vermillion">@L["Theme.Vermillion"]</option>
-                        <option value="highcontrast">@L["Theme.HighContrast"]</option>
-                        <option value="deuteranopia">@L["Theme.Deuteranopia"]</option>
-                        <option value="protanopia">@L["Theme.Protanopia"]</option>
-                        <option value="tritanopia">@L["Theme.Tritanopia"]</option>
-                    </select>
+                    <div class="theme-select-control accessibility-theme-select">
+                        <span class="theme-select-icon" aria-hidden="true">🎨</span>
+                        <select id="theme-select-setting"
+                                class="theme-select"
+                                value="@_currentTheme"
+                                @onchange="OnThemeChanged"
+                                aria-describedby="theme-help">
+                            <option value="dark">@L["Theme.Dark"]</option>
+                            <option value="light">@L["Theme.Light"]</option>
+                            <option value="blue">@L["Theme.Blue"]</option>
+                            <option value="green">@L["Theme.Green"]</option>
+                            <option value="vermillion">@L["Theme.Vermillion"]</option>
+                            <option value="highcontrast">@L["Theme.HighContrast"]</option>
+                            <option value="deuteranopia">@L["Theme.Deuteranopia"]</option>
+                            <option value="protanopia">@L["Theme.Protanopia"]</option>
+                            <option value="tritanopia">@L["Theme.Tritanopia"]</option>
+                        </select>
+                    </div>
                     <small id="theme-help" class="setting-help">@L["Accessibility.ThemeHelp"]</small>
                 </div>
 
@@ -170,6 +175,7 @@
     private string _currentTheme = "dark";
     private int _fontSize = 100;
     private double _boardScale = 1.0;
+    private CancellationTokenSource? _persistCts;
 
     protected override void OnInitialized()
     {
@@ -181,20 +187,17 @@
         if (firstRender)
         {
             _currentTheme = await JS.InvokeAsync<string>("playalamaTheme.getTheme");
-            _fontSize = int.Parse(await JS.InvokeAsync<string>("playalamaAccessibility.getFontSize"));
-            
-            var layout = await JS.InvokeAsync<dynamic>("playalamaGameLayout.get");
-            if (layout != null)
-            {
-                _boardScale = layout.density switch {
-                    "s" => 0.85,
-                    "l" => 1.5,
-                    "xl" => 1.8,
-                    "xxl" => 2.0,
-                    _ => 1.0
-                };
-            }
-            
+            var fontSizeRaw = await JS.InvokeAsync<string>("playalamaAccessibility.getFontSize");
+            if (!int.TryParse(fontSizeRaw, out _fontSize))
+                _fontSize = 100;
+
+            var layout = await JS.InvokeAsync<GameLayoutState?>("playalamaGameLayout.get");
+            _boardScale = DensityToScale(layout?.Density);
+
+            await Auth.InitializeAsync();
+            if (Auth.IsLoggedIn)
+                await LoadAccessibilityFromProfileAsync();
+
             StateHasChanged();
         }
     }
@@ -216,20 +219,23 @@
     private async Task SetThemeAsync(string theme)
     {
         await Theme.SetAsync(theme);
-        _currentTheme = theme;
+        _currentTheme = Theme.Theme;
         StateHasChanged();
+        await QueuePersistAccessibilityAsync();
     }
 
     private async Task IncreaseFontSize()
     {
         _fontSize = await JS.InvokeAsync<int>("playalamaAccessibility.increaseFontSize");
         StateHasChanged();
+        await QueuePersistAccessibilityAsync();
     }
 
     private async Task DecreaseFontSize()
     {
         _fontSize = await JS.InvokeAsync<int>("playalamaAccessibility.decreaseFontSize");
         StateHasChanged();
+        await QueuePersistAccessibilityAsync();
     }
 
     private async Task ResetFontSize()
@@ -237,6 +243,7 @@
         await JS.InvokeVoidAsync("playalamaAccessibility.setFontSize", "100");
         _fontSize = 100;
         StateHasChanged();
+        await QueuePersistAccessibilityAsync();
     }
 
     private async Task SetFontSizeAsync(int size)
@@ -244,14 +251,17 @@
         await JS.InvokeVoidAsync("playalamaAccessibility.setFontSize", size.ToString());
         _fontSize = size;
         StateHasChanged();
+        await QueuePersistAccessibilityAsync();
     }
 
     private async Task OnBoardScaleInput(ChangeEventArgs e)
     {
         if (e.Value is string value && double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var scale))
         {
-            _boardScale = Math.Clamp(scale, 0.8, 2.0);
+            _boardScale = NormalizeBoardScale(scale);
+            await JS.InvokeVoidAsync("playalamaGameLayout.setDensity", ScaleToDensity(_boardScale));
             StateHasChanged();
+            await QueuePersistAccessibilityAsync();
         }
     }
 
@@ -259,14 +269,120 @@
     {
         if (e.Value is string value && double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var scale))
         {
-            _boardScale = Math.Clamp(scale, 0.8, 2.0);
-            // Mise à jour UI immédiate
+            _boardScale = NormalizeBoardScale(scale);
+            await JS.InvokeVoidAsync("playalamaGameLayout.setDensity", ScaleToDensity(_boardScale));
             StateHasChanged();
+            await QueuePersistAccessibilityAsync();
+        }
+    }
+
+    private async Task LoadAccessibilityFromProfileAsync()
+    {
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token))
+            return;
+
+        try
+        {
+            var profile = await Api.GetMyProfileAsync(token);
+            if (profile?.Accessibility is null)
+                return;
+
+            var pref = profile.Accessibility;
+            _currentTheme = NormalizeTheme(pref.Theme);
+            _fontSize = NormalizeFontSize(pref.FontSize);
+            _boardScale = NormalizeBoardScale(pref.BoardScale);
+
+            await Theme.SetAsync(_currentTheme);
+            await JS.InvokeVoidAsync("playalamaAccessibility.setFontSize", _fontSize.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            await JS.InvokeVoidAsync("playalamaGameLayout.setDensity", ScaleToDensity(_boardScale));
+        }
+        catch (HttpRequestException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private async Task QueuePersistAccessibilityAsync()
+    {
+        _persistCts?.Cancel();
+        _persistCts?.Dispose();
+        _persistCts = new CancellationTokenSource();
+        var ct = _persistCts.Token;
+
+        try
+        {
+            await Task.Delay(200, ct);
+            await PersistAccessibilityToProfileAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task PersistAccessibilityToProfileAsync(CancellationToken cancellationToken)
+    {
+        if (!Auth.IsLoggedIn)
+            return;
+
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token))
+            return;
+
+        var payload = new WebAccessibilityPreferences(
+            NormalizeTheme(_currentTheme),
+            NormalizeFontSize(_fontSize),
+            NormalizeBoardScale(_boardScale));
+
+        try
+        {
+            await Api.UpdateMyAccessibilityAsync(token, payload, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
         }
     }
 
     public void Dispose()
     {
+        _persistCts?.Cancel();
+        _persistCts?.Dispose();
         Theme.ThemeChanged -= HandleThemeChanged;
     }
+
+    private static int NormalizeFontSize(int size) => size is 100 or 125 or 150 or 200 ? size : 100;
+
+    private static string NormalizeTheme(string theme) => theme switch
+    {
+        "dark" or "light" or "blue" or "green" or "vermillion" or "highcontrast" or "deuteranopia" or "protanopia" or "tritanopia" => theme,
+        _ => "dark"
+    };
+
+    private static double NormalizeBoardScale(double scale) => Math.Round(Math.Clamp(scale, 0.8, 2.0), 1);
+
+    private static string ScaleToDensity(double scale)
+    {
+        var normalized = NormalizeBoardScale(scale);
+        if (normalized <= 0.9) return "s";
+        if (normalized <= 1.2) return "m";
+        if (normalized <= 1.6) return "l";
+        if (normalized <= 1.9) return "xl";
+        return "xxl";
+    }
+
+    private static double DensityToScale(string? density) => density switch
+    {
+        "s" => 0.85,
+        "l" => 1.5,
+        "xl" => 1.8,
+        "xxl" => 2.0,
+        _ => 1.0
+    };
+
+    private sealed record GameLayoutState(string? Density, bool Fullscreen, string[]? Collapsed, string? ActiveTab, string? Variant);
 }

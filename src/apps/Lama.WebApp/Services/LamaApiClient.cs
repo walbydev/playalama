@@ -75,20 +75,62 @@ public sealed class LamaApiClient(HttpClient httpClient)
         await EnsureSuccessAsync(response, cancellationToken);
 
         var payload = await response.Content.ReadFromJsonAsync<PlayerProfileEnvelope>(JsonOptions, cancellationToken);
-        return payload is null ? null : new WebPlayerProfile(payload.PlayerId, payload.Username, payload.Email, payload.CountryCode, payload.CreatedAt);
+        return payload is null
+            ? null
+            : new WebPlayerProfile(
+                payload.PlayerId,
+                payload.Username,
+                payload.Email,
+                payload.CountryCode,
+                payload.Accessibility is null
+                    ? null
+                    : new WebAccessibilityPreferences(payload.Accessibility.Theme, payload.Accessibility.FontSize, payload.Accessibility.BoardScale),
+                payload.CreatedAt);
     }
 
-    public async Task<WebPlayerProfile?> UpdateMyProfileAsync(string token, string? email, string? currentPassword, string? newPassword, string? countryCode = null, CancellationToken cancellationToken = default)
+    public async Task<WebPlayerProfile?> UpdateMyProfileAsync(
+        string token,
+        string? email,
+        string? currentPassword,
+        string? newPassword,
+        string? countryCode = null,
+        WebAccessibilityPreferences? accessibility = null,
+        CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Put, $"{ApiBase}/players/me");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        request.Content = JsonContent.Create(new { email, currentPassword, newPassword, countryCode });
+        request.Content = JsonContent.Create(new { email, currentPassword, newPassword, countryCode, accessibility });
 
         var response = await httpClient.SendAsync(request, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
 
         var payload = await response.Content.ReadFromJsonAsync<PlayerProfileEnvelope>(JsonOptions, cancellationToken);
-        return payload is null ? null : new WebPlayerProfile(payload.PlayerId, payload.Username, payload.Email, payload.CountryCode, payload.CreatedAt);
+        return payload is null
+            ? null
+            : new WebPlayerProfile(
+                payload.PlayerId,
+                payload.Username,
+                payload.Email,
+                payload.CountryCode,
+                payload.Accessibility is null
+                    ? null
+                    : new WebAccessibilityPreferences(payload.Accessibility.Theme, payload.Accessibility.FontSize, payload.Accessibility.BoardScale),
+                payload.CreatedAt);
+    }
+
+    public Task<WebPlayerProfile?> UpdateMyAccessibilityAsync(
+        string token,
+        WebAccessibilityPreferences accessibility,
+        CancellationToken cancellationToken = default)
+    {
+        return UpdateMyProfileAsync(
+            token,
+            email: null,
+            currentPassword: null,
+            newPassword: null,
+            countryCode: null,
+            accessibility,
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<WebGameHistoryItem>> GetMyGamesAsync(string token, CancellationToken cancellationToken = default)
@@ -465,7 +507,14 @@ public sealed class LamaApiClient(HttpClient httpClient)
     // ── Enveloppes API (privées) ──────────────────────────────────────────────
 
     private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, DateTime ExpiresAt);
-    private sealed record PlayerProfileEnvelope(string PlayerId, string Username, string? Email, string? CountryCode, DateTimeOffset CreatedAt);
+    private sealed record PlayerProfileEnvelope(
+        string PlayerId,
+        string Username,
+        string? Email,
+        string? CountryCode,
+        AccessibilityEnvelope? Accessibility,
+        DateTimeOffset CreatedAt);
+    private sealed record AccessibilityEnvelope(string Theme, int FontSize, double BoardScale);
     private sealed record GameHistoryEnvelope(string GameId, string GameLevel, string Queue, string Status, DateTimeOffset EndedAt, int DurationSeconds, bool IsWinner);
     private sealed record GameListEnvelope(List<GameListItemEnvelope> Games);
     private sealed record GameListItemEnvelope(string Id, string? GameName, string Status, int Players, int MaxPlayers, JsonElement Queue, bool IsJoinable);

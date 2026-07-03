@@ -114,7 +114,8 @@ public sealed record WebWordInfo(string Word, string Lang, string? WiktionaryUrl
 public sealed record WebWordDefinition(int SenseIndex, string? PartOfSpeech, string Text);
 public sealed record WebSuggestedMove(string Word, string Position, string Direction, int Score, int Length, double BalancedScore, string Category);
 
-public sealed record WebPlayerProfile(string PlayerId, string Username, string? Email, string? CountryCode, DateTimeOffset CreatedAt);
+public sealed record WebAccessibilityPreferences(string Theme, int FontSize, double BoardScale);
+public sealed record WebPlayerProfile(string PlayerId, string Username, string? Email, string? CountryCode, WebAccessibilityPreferences? Accessibility, DateTimeOffset CreatedAt);
 
 public sealed record WebGameHistoryItem(
     string GameId,

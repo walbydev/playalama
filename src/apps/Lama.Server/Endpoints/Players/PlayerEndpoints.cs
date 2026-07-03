@@ -4,6 +4,7 @@ using Lama.Server.Security;
 using Lama.Contracts;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Lama.Server.Endpoints.Players;
 
@@ -14,9 +15,11 @@ public sealed record PlayerProfileResponse(
     string Username,
     string? Email,
     string? CountryCode,
+    AccessibilityPreferences? Accessibility,
     DateTimeOffset CreatedAt);
 
-public sealed record UpdateProfileRequest(string? Email, string? NewPassword, string? CurrentPassword, string? CountryCode);
+public sealed record AccessibilityPreferences(string Theme, int FontSize, double BoardScale);
+public sealed record UpdateProfileRequest(string? Email, string? NewPassword, string? CurrentPassword, string? CountryCode, AccessibilityPreferences? Accessibility);
 
 public sealed record PlayerGameHistoryItem(
     string GameId,
@@ -34,6 +37,15 @@ public sealed record PlayerGameHistoryItem(
 /// </summary>
 public static class PlayerEndpoints
 {
+    private static readonly HashSet<string> AllowedThemes = new(StringComparer.Ordinal)
+    {
+        "dark", "light", "blue", "green", "vermillion", "highcontrast",
+        "deuteranopia", "protanopia", "tritanopia"
+    };
+
+    private static readonly HashSet<int> AllowedFontSizes = [100, 125, 150, 200];
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     public static void MapPlayerEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/api/v1/players")
@@ -47,7 +59,7 @@ public static class PlayerEndpoints
 
         group.MapPut("/me", UpdateProfile())
             .WithName("UpdateMyProfile")
-            .WithDescription("Met à jour email et/ou mot de passe.")
+            .WithDescription("Met à jour email/mot de passe et les préférences d'accessibilité.")
             .Produces<PlayerProfileResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
@@ -73,11 +85,13 @@ public static class PlayerEndpoints
                 if (player is null)
                     return Results.Unauthorized();
 
+                var accessibility = ParseAccessibilityPreferences(player.AccessibilityPreferencesJson);
                 return Results.Ok(new PlayerProfileResponse(
                     player.PlayerId.ToString("N"),
                     player.Username,
                     player.Email,
                     player.CountryCode,
+                    accessibility,
                     player.CreatedAt));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -134,13 +148,21 @@ public static class PlayerEndpoints
                     player.PasswordHash = PasswordHasher.Hash(request.NewPassword);
                 }
 
+                if (request.Accessibility is not null)
+                {
+                    var normalized = NormalizeAccessibilityPreferences(request.Accessibility);
+                    player.AccessibilityPreferencesJson = JsonSerializer.Serialize(normalized, JsonOptions);
+                }
+
                 await db.SaveChangesAsync();
 
+                var accessibility = ParseAccessibilityPreferences(player.AccessibilityPreferencesJson);
                 return Results.Ok(new PlayerProfileResponse(
                     player.PlayerId.ToString("N"),
                     player.Username,
                     player.Email,
                     player.CountryCode,
+                    accessibility,
                     player.CreatedAt));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -268,5 +290,29 @@ public static class PlayerEndpoints
                ?? context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         return raw is not null && Guid.TryParse(raw, out var id) ? id : null;
+    }
+
+    private static AccessibilityPreferences NormalizeAccessibilityPreferences(AccessibilityPreferences source)
+    {
+        var theme = AllowedThemes.Contains(source.Theme) ? source.Theme : "dark";
+        var fontSize = AllowedFontSizes.Contains(source.FontSize) ? source.FontSize : 100;
+        var boardScale = Math.Round(Math.Clamp(source.BoardScale, 0.8, 2.0), 1);
+        return new AccessibilityPreferences(theme, fontSize, boardScale);
+    }
+
+    private static AccessibilityPreferences? ParseAccessibilityPreferences(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return null;
+
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<AccessibilityPreferences>(raw, JsonOptions);
+            return parsed is null ? null : NormalizeAccessibilityPreferences(parsed);
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

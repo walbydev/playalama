@@ -3,6 +3,7 @@
 @inject AuthService Auth
 @inject ThemeService Theme
 @inject GameLayoutService Layout
+@inject LamaApiClient Api
 @inject IJSRuntime JS
 @inject IStringLocalizer<SharedResource> L
 @implements IDisposable
@@ -37,6 +38,7 @@
 
 @code {
     private bool IsGameFocusMode => IsInGamePage();
+    private string? _syncedAccessibilityPlayerId;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -52,9 +54,46 @@
 
         await Theme.InitializeAsync();
         await Layout.InitializeAsync();
+        await SyncAccessibilityFromProfileAsync();
 
         if (firstRender || !Auth.IsInitialized)
             StateHasChanged();
+    }
+
+    private async Task SyncAccessibilityFromProfileAsync()
+    {
+        if (!Auth.IsLoggedIn)
+        {
+            _syncedAccessibilityPlayerId = null;
+            return;
+        }
+
+        var currentPlayerId = Auth.CurrentUser?.PlayerId;
+        if (string.IsNullOrWhiteSpace(currentPlayerId) || currentPlayerId == _syncedAccessibilityPlayerId)
+            return;
+
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token))
+            return;
+
+        try
+        {
+            var profile = await Api.GetMyProfileAsync(token);
+            var accessibility = profile?.Accessibility;
+            if (accessibility is null)
+                return;
+
+            await Theme.SetAsync(accessibility.Theme);
+            await JS.InvokeVoidAsync("playalamaAccessibility.setFontSize", NormalizeFontSize(accessibility.FontSize).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            await Layout.SetDensityAsync(ScaleToDensity(accessibility.BoardScale));
+            _syncedAccessibilityPlayerId = currentPlayerId;
+        }
+        catch (HttpRequestException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     private async Task FocusMainContent()
@@ -95,5 +134,17 @@
     {
         Nav.LocationChanged -= HandleLocationChanged;
         Layout.Changed -= HandleZoomChanged;
+    }
+
+    private static int NormalizeFontSize(int size) => size is 100 or 125 or 150 or 200 ? size : 100;
+
+    private static string ScaleToDensity(double scale)
+    {
+        var normalized = Math.Round(Math.Clamp(scale, 0.8, 2.0), 1);
+        if (normalized <= 0.9) return "s";
+        if (normalized <= 1.2) return "m";
+        if (normalized <= 1.6) return "l";
+        if (normalized <= 1.9) return "xl";
+        return "xxl";
     }
 }

@@ -1,5 +1,4 @@
 @inject AuthService Auth
-@inject ThemeService Theme
 @inject NavigationManager Nav
 @inject IStringLocalizer<SharedResource> L
 @implements IDisposable
@@ -25,14 +24,8 @@
     }
 
     <div class="navbar-actions">
-        @if (CompactMode)
-        {
-            <DensitySelector />
-            <LayoutVariantSelector />
-        }
-        <FontSizeSelector />
-        <LanguageSelector />
-        <ThemeToggle />
+        <DensitySelector />
+        <QuickSettingsPanel />
         @if (!Auth.IsInitialized)
         {
             <span class="text-muted" style="font-size:.9rem" aria-live="polite">@L["Common.Loading"]</span>

@@ -489,12 +489,14 @@
   <data name="Accessibility.BoardSection"><value>Options du plateau</value></data>
   <data name="Accessibility.CurrentTheme"><value>Thème actuel</value></data>
   <data name="Accessibility.FontSize.Decrease"><value>Réduire la taille du texte</value></data>
+  <data name="Accessibility.FontSize.Increase"><value>Agrandir la taille du texte</value></data>
   <data name="Accessibility.FontSizeDescription"><value>Ajustez la taille du texte pour toute l'interface.</value></data>
   <data name="Accessibility.FontSizeHelp"><value>Utilisez A+ et A- pour ajuster, ou choisissez un préréglage.</value></data>
   <data name="Accessibility.FontSizeInIncrease"><value>Agrandir la taille du texte</value></data>
   <data name="Accessibility.FontSizeLabel"><value>Taille du texte</value></data>
   <data name="Accessibility.FontSizePreset"><value>Préréglages</value></data>
   <data name="Accessibility.FontSizeSection"><value>Taille du texte</value></data>
+  <data name="Accessibility.FontSize.Title"><value>Taille du texte</value></data>
   <data name="Accessibility.FontSizeTitle"><value>Taille du texte</value></data>
   <data name="Accessibility.InfoContrast"><value>Contraste de couleurs optimal (WCAG AAA) pour le thème haut contraste</value></data>
   <data name="Accessibility.InfoColorBlind"><value>3 thèmes spécialisés pour les différents types de daltonisme</value></data>

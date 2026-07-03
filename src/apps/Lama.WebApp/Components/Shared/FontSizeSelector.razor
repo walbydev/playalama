@@ -1,8 +1,10 @@
 @inject IJSRuntime JS
+@inject AuthService Auth
+@inject LamaApiClient Api
 @inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
-<div class="accessibility-control" title="@L["Accessibility.FontSize.Title"]">
+<div class="accessibility-control" title="@L["Accessibility.FontSizeLabel"]">
     <button type="button" class="font-size-btn" @onclick="OnDecrease" aria-label="@L["Accessibility.FontSize.Decrease"]" title="@L["Accessibility.FontSize.Decrease"]">
         <span aria-hidden="true">A-</span>
     </button>
@@ -28,6 +30,7 @@
     {
         await JS.InvokeVoidAsync("playalamaAccessibility.increaseFontSize");
         _fontSize = await JS.InvokeAsync<string>("playalamaAccessibility.getFontSize");
+        await PersistAccessibilityAsync();
         StateHasChanged();
     }
 
@@ -35,8 +38,51 @@
     {
         await JS.InvokeVoidAsync("playalamaAccessibility.decreaseFontSize");
         _fontSize = await JS.InvokeAsync<string>("playalamaAccessibility.getFontSize");
+        await PersistAccessibilityAsync();
         StateHasChanged();
     }
+
+    private async Task PersistAccessibilityAsync()
+    {
+        await Auth.InitializeAsync();
+        if (!Auth.IsLoggedIn)
+            return;
+
+        var token = await Auth.GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token))
+            return;
+
+        try
+        {
+            var theme = await JS.InvokeAsync<string>("playalamaTheme.getTheme");
+            var layout = await JS.InvokeAsync<GameLayoutState?>("playalamaGameLayout.get");
+            var boardScale = layout?.Density switch
+            {
+                "s" => 0.85,
+                "l" => 1.5,
+                "xl" => 1.8,
+                "xxl" => 2.0,
+                _ => 1.0
+            };
+            var fontSize = int.TryParse(_fontSize, out var parsedSize) ? parsedSize : 100;
+
+            await Api.UpdateMyAccessibilityAsync(token, new WebAccessibilityPreferences(NormalizeTheme(theme), NormalizeFontSize(fontSize), boardScale));
+        }
+        catch (HttpRequestException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private static int NormalizeFontSize(int size) => size is 100 or 125 or 150 or 200 ? size : 100;
+    private static string NormalizeTheme(string theme) => theme switch
+    {
+        "dark" or "light" or "blue" or "green" or "vermillion" or "highcontrast" or "deuteranopia" or "protanopia" or "tritanopia" => theme,
+        _ => "dark"
+    };
+    private sealed record GameLayoutState(string? Density, bool Fullscreen, string[]? Collapsed, string? ActiveTab, string? Variant);
 
     public void Dispose()
     {

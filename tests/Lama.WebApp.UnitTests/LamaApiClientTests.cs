@@ -220,6 +220,83 @@ public sealed class LamaApiClientTests
         words.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task GetMyProfileAsync_Should_Map_Accessibility_From_Api()
+    {
+        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                """
+                {
+                  "playerId": "p1",
+                  "username": "Alice",
+                  "email": "alice@example.com",
+                  "countryCode": "FR",
+                  "accessibility": {
+                    "theme": "highcontrast",
+                    "fontSize": 150,
+                    "boardScale": 1.8
+                  },
+                  "createdAt": "2026-07-03T10:00:00Z"
+                }
+                """, Encoding.UTF8, "application/json")
+        });
+
+        var client = CreateClient(handler);
+        var profile = await client.GetMyProfileAsync("token");
+
+        profile.Should().NotBeNull();
+        profile!.Accessibility.Should().NotBeNull();
+        profile.Accessibility!.Theme.Should().Be("highcontrast");
+        profile.Accessibility.FontSize.Should().Be(150);
+        profile.Accessibility.BoardScale.Should().Be(1.8);
+    }
+
+    [Fact]
+    public async Task UpdateMyAccessibilityAsync_Should_Send_Accessibility_Payload()
+    {
+        HttpRequestMessage? captured = null;
+        string? capturedBody = null;
+        var handler = new StubHandler(request =>
+        {
+            captured = request;
+            capturedBody = request.Content is null
+                ? null
+                : request.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                      "playerId": "p1",
+                      "username": "Alice",
+                      "email": "alice@example.com",
+                      "countryCode": "FR",
+                      "accessibility": {
+                        "theme": "deuteranopia",
+                        "fontSize": 125,
+                        "boardScale": 1.5
+                      },
+                      "createdAt": "2026-07-03T10:00:00Z"
+                    }
+                    """, Encoding.UTF8, "application/json")
+            };
+        });
+
+        var client = CreateClient(handler);
+        var profile = await client.UpdateMyAccessibilityAsync("token", new WebAccessibilityPreferences("deuteranopia", 125, 1.5));
+
+        captured.Should().NotBeNull();
+        captured!.Method.Should().Be(HttpMethod.Put);
+        captured.RequestUri!.AbsolutePath.Should().Be("/api/v1/players/me");
+        capturedBody.Should().Contain("\"accessibility\":");
+        capturedBody.Should().Contain("\"theme\":\"deuteranopia\"");
+        capturedBody.Should().Contain("\"fontSize\":125");
+        capturedBody.Should().Contain("\"boardScale\":1.5");
+        profile.Should().NotBeNull();
+        profile!.Accessibility!.Theme.Should().Be("deuteranopia");
+    }
+
     private static LamaApiClient CreateClient(HttpMessageHandler handler)
     {
         var httpClient = new HttpClient(handler)

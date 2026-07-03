@@ -1,0 +1,59 @@
+@inject IStringLocalizer<SharedResource> L
+
+<div class="quick-settings-nav">
+    <button type="button"
+            class="quick-settings-toggle"
+            @onclick="TogglePanel"
+            aria-expanded="@_isOpen"
+            aria-controls="quick-settings-panel"
+            aria-label="@L["Nav.Accessibility"]">
+        ⚙
+    </button>
+
+    <aside id="quick-settings-panel" class="quick-settings-panel @(_isOpen ? "is-open" : "")">
+        <div class="quick-settings-header">
+            <strong>@L["Nav.Accessibility"]</strong>
+            <button type="button"
+                    class="btn btn-ghost btn-sm"
+                    @onclick="ClosePanel"
+                    aria-label="@L["Common.Close"]">
+                ✕
+            </button>
+        </div>
+
+        <div class="quick-settings-group">
+            <label class="quick-settings-label">@L["Layout.BoardLeft"] / @L["Layout.BoardRight"]</label>
+            <p class="quick-settings-hint">@L["Layout.RackTop"] / @L["Layout.RackBottom"]</p>
+            <div class="quick-settings-layout">
+                <LayoutVariantSelector />
+            </div>
+        </div>
+
+        <div class="quick-settings-group">
+            <label class="quick-settings-label">@L["Accessibility.BoardScale"]</label>
+            <BoardScaleSelector />
+        </div>
+
+        <div class="quick-settings-group">
+            <label class="quick-settings-label">@L["Accessibility.FontSize.Title"]</label>
+            <FontSizeSelector />
+        </div>
+
+        <div class="quick-settings-group">
+            <label class="quick-settings-label">@L["Language.Label"]</label>
+            <LanguageSelector />
+        </div>
+
+        <div class="quick-settings-group">
+            <label class="quick-settings-label">@L["Theme.Choose"]</label>
+            <ThemeToggle />
+        </div>
+    </aside>
+</div>
+
+@code {
+    private bool _isOpen;
+
+    private void TogglePanel() => _isOpen = !_isOpen;
+    private void ClosePanel() => _isOpen = false;
+}

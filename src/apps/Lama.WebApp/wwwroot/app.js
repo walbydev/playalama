@@ -65,7 +65,7 @@ window.playalamaGameLayout = {
             if (!raw) return { density: 'm', fullscreen: false, collapsed: [], activeTab: 'play', variant: 'a' };
             const parsed = JSON.parse(raw);
             return {
-                density: ['s', 'm', 'l'].includes(parsed.density) ? parsed.density : 'm',
+                density: ['s', 'm', 'l', 'xl', 'xxl'].includes(parsed.density) ? parsed.density : 'm',
                 fullscreen: !!parsed.fullscreen,
                 collapsed: Array.isArray(parsed.collapsed) ? parsed.collapsed : [],
                 activeTab: ['scores', 'play', 'messages'].includes(parsed.activeTab) ? parsed.activeTab : 'play',
@@ -75,6 +75,12 @@ window.playalamaGameLayout = {
     },
     set(state) {
         try { localStorage.setItem('playalama-game-layout', JSON.stringify(state)); } catch { }
+    },
+    setDensity(density) {
+        const state = this.get();
+        state.density = ['s', 'm', 'l', 'xl', 'xxl'].includes(density) ? density : 'm';
+        this.set(state);
+        return state;
     },
     setFullscreen(on) {
         try {
