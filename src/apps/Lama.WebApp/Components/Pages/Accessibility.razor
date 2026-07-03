@@ -1,0 +1,272 @@
+@page "/accessibility"
+@inject IJSRuntime JS
+@inject ThemeService Theme
+@inject IStringLocalizer<SharedResource> L
+@implements IDisposable
+
+<PageTitle>@L["Accessibility.PageTitle"]</PageTitle>
+
+<div class="page-hero">
+    <h1>@L["Accessibility.PageTitle"]</h1>
+    <p class="text-muted">@L["Accessibility.PageDescription"]</p>
+</div>
+
+<div class="container">
+    <div class="accessibility-settings">
+        @* ── SECTION 1 : Thèmes visuels ────────────────────────────────────── *@
+        <section class="card accessibility-section">
+            <h2>
+                <span aria-hidden="true">🎨</span>
+                @L["Accessibility.ThemesSection"]
+            </h2>
+            <p class="text-muted">@L["Accessibility.ThemesDescription"]</p>
+            
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="theme-select-setting" class="setting-label">@L["Accessibility.CurrentTheme"]</label>
+                    <select id="theme-select-setting" 
+                            class="form-control" 
+                            value="@_currentTheme"
+                            @onchange="OnThemeChanged"
+                            aria-describedby="theme-help">
+                        <option value="dark">@L["Theme.Dark"]</option>
+                        <option value="light">@L["Theme.Light"]</option>
+                        <option value="blue">@L["Theme.Blue"]</option>
+                        <option value="green">@L["Theme.Green"]</option>
+                        <option value="vermillion">@L["Theme.Vermillion"]</option>
+                        <option value="highcontrast">@L["Theme.HighContrast"]</option>
+                        <option value="deuteranopia">@L["Theme.Deuteranopia"]</option>
+                        <option value="protanopia">@L["Theme.Protanopia"]</option>
+                        <option value="tritanopia">@L["Theme.Tritanopia"]</option>
+                    </select>
+                    <small id="theme-help" class="setting-help">@L["Accessibility.ThemeHelp"]</small>
+                </div>
+
+                <div class="setting-item">
+                    <span class="setting-label">@L["Accessibility.ThemeQuickSelect"]</span>
+                    <div class="theme-buttons">
+                        <button type="button" class="btn btn-ghost @(_currentTheme == "dark" ? "active" : "")" @onclick="@(() => SetThemeAsync("dark"))" aria-label="@L["Theme.Dark"]">
+                            ⚫ @L["Theme.Dark"]
+                        </button>
+                        <button type="button" class="btn btn-ghost @(_currentTheme == "light" ? "active" : "")" @onclick="@(() => SetThemeAsync("light"))" aria-label="@L["Theme.Light"]">
+                            ⚪ @L["Theme.Light"]
+                        </button>
+                        <button type="button" class="btn btn-ghost @(_currentTheme == "highcontrast" ? "active" : "")" @onclick="@(() => SetThemeAsync("highcontrast"))" aria-label="@L["Theme.HighContrast"]">
+                            ◐ @L["Theme.HighContrast"]
+                        </button>
+                        <button type="button" class="btn btn-ghost @(_currentTheme == "deuteranopia" ? "active" : "")" @onclick="@(() => SetThemeAsync("deuteranopia"))" aria-label="@L["Theme.Deuteranopia"]">
+                            👁️ Deutéra
+                        </button>
+                        <button type="button" class="btn btn-ghost @(_currentTheme == "protanopia" ? "active" : "")" @onclick="@(() => SetThemeAsync("protanopia"))" aria-label="@L["Theme.Protanopia"]">
+                            👁️ Protana
+                        </button>
+                        <button type="button" class="btn btn-ghost @(_currentTheme == "tritanopia" ? "active" : "")" @onclick="@(() => SetThemeAsync("tritanopia"))" aria-label="@L["Theme.Tritanopia"]">
+                            👁️ Tritana
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        @* ── SECTION 2 : Taille de police ──────────────────────────────────── *@
+        <section class="card accessibility-section">
+            <h2>
+                <span aria-hidden="true">🔤</span>
+                @L["Accessibility.FontSizeSection"]
+            </h2>
+            <p class="text-muted">@L["Accessibility.FontSizeDescription"]</p>
+            
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <span class="setting-label">@L["Accessibility.FontSizeLabel"]</span>
+                    <div class="font-size-control">
+                        <button type="button" class="btn btn-outline" @onclick="DecreaseFontSize" aria-label="@L["Accessibility.FontSize.Decrease"]">
+                            A-
+                        </button>
+                        <span class="font-size-display" aria-live="polite">@_fontSize%</span>
+                        <button type="button" class="btn btn-outline" @onclick="IncreaseFontSize" aria-label="@L["Accessibility.FontSize.Increase"]">
+                            A+
+                        </button>
+                        <button type="button" class="btn btn-ghost" @onclick="ResetFontSize" aria-label="@L["Accessibility.Reset"]">
+                            @L["Accessibility.Reset"]
+                        </button>
+                    </div>
+                    <small class="setting-help">@L["Accessibility.FontSizeHelp"]</small>
+                </div>
+
+                <div class="setting-item">
+                    <span class="setting-label">@L["Accessibility.FontSizePreset"]</span>
+                    <div class="font-size-presets">
+                        <button type="button" class="btn btn-ghost @(_fontSize == 100 ? "active" : "")" @onclick="@(() => SetFontSizeAsync(100))">
+                            100% <small>(@L["Accessibility.Normal"])</small>
+                        </button>
+                        <button type="button" class="btn btn-ghost @(_fontSize == 125 ? "active" : "")" @onclick="@(() => SetFontSizeAsync(125))">
+                            125% <small>(@L["Accessibility.Medium"])</small>
+                        </button>
+                        <button type="button" class="btn btn-ghost @(_fontSize == 150 ? "active" : "")" @onclick="@(() => SetFontSizeAsync(150))">
+                            150% <small>(@L["Accessibility.Large"])</small>
+                        </button>
+                        <button type="button" class="btn btn-ghost @(_fontSize == 200 ? "active" : "")" @onclick="@(() => SetFontSizeAsync(200))">
+                            200% <small>(@L["Accessibility.XLarge"])</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        @* ── SECTION 3 : Options du plateau ────────────────────────────────── *@
+        <section class="card accessibility-section">
+            <h2>
+                <span aria-hidden="true">🎯</span>
+                @L["Accessibility.BoardSection"]
+            </h2>
+            <p class="text-muted">@L["Accessibility.BoardDescription"]</p>
+            
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="board-scale" class="setting-label">@L["Accessibility.BoardScale"]</label>
+                    <input type="range" 
+                           id="board-scale"
+                           min="0.8" 
+                           max="2.0" 
+                           step="0.1" 
+                           value="@_boardScale.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)"
+                           @oninput="OnBoardScaleInput"
+                           @onchange="OnBoardScaleChanged"
+                           aria-valuemin="0.8"
+                           aria-valuemax="2.0"
+                           aria-valuenow="@_boardScale.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)"
+                           aria-describedby="board-scale-help" />
+                    <div class="range-values">
+                        <span>0.8x</span>
+                        <span><strong>@_boardScale.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)x</strong></span>
+                        <span>2.0x</span>
+                    </div>
+                    <small id="board-scale-help" class="setting-help">@L["Accessibility.BoardScaleHelp"]</small>
+                </div>
+            </div>
+        </section>
+
+        @* ── SECTION 4 : Informations ──────────────────────────────────────── *@
+        <section class="card accessibility-section">
+            <h2>
+                <span aria-hidden="true">ℹ️</span>
+                @L["Accessibility.InfoSection"]
+            </h2>
+            <div class="accessibility-info">
+                <p>@L["Accessibility.InfoText"]</p>
+                <ul>
+                    <li>@L["Accessibility.InfoContrast"]</li>
+                    <li>@L["Accessibility.InfoFonts"]</li>
+                    <li>@L["Accessibility.InfoColorBlind"]</li>
+                    <li>@L["Accessibility.InfoKeyboard"]</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+</div>
+
+@code {
+    private string _currentTheme = "dark";
+    private int _fontSize = 100;
+    private double _boardScale = 1.0;
+
+    protected override void OnInitialized()
+    {
+        Theme.ThemeChanged += HandleThemeChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _currentTheme = await JS.InvokeAsync<string>("playalamaTheme.getTheme");
+            _fontSize = int.Parse(await JS.InvokeAsync<string>("playalamaAccessibility.getFontSize"));
+            
+            var layout = await JS.InvokeAsync<dynamic>("playalamaGameLayout.get");
+            if (layout != null)
+            {
+                _boardScale = layout.density switch {
+                    "s" => 0.85,
+                    "l" => 1.5,
+                    "xl" => 1.8,
+                    "xxl" => 2.0,
+                    _ => 1.0
+                };
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private void HandleThemeChanged()
+    {
+        _currentTheme = Theme.Theme;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnThemeChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string theme)
+        {
+            await SetThemeAsync(theme);
+        }
+    }
+
+    private async Task SetThemeAsync(string theme)
+    {
+        await Theme.SetAsync(theme);
+        _currentTheme = theme;
+        StateHasChanged();
+    }
+
+    private async Task IncreaseFontSize()
+    {
+        _fontSize = await JS.InvokeAsync<int>("playalamaAccessibility.increaseFontSize");
+        StateHasChanged();
+    }
+
+    private async Task DecreaseFontSize()
+    {
+        _fontSize = await JS.InvokeAsync<int>("playalamaAccessibility.decreaseFontSize");
+        StateHasChanged();
+    }
+
+    private async Task ResetFontSize()
+    {
+        await JS.InvokeVoidAsync("playalamaAccessibility.setFontSize", "100");
+        _fontSize = 100;
+        StateHasChanged();
+    }
+
+    private async Task SetFontSizeAsync(int size)
+    {
+        await JS.InvokeVoidAsync("playalamaAccessibility.setFontSize", size.ToString());
+        _fontSize = size;
+        StateHasChanged();
+    }
+
+    private async Task OnBoardScaleInput(ChangeEventArgs e)
+    {
+        if (e.Value is string value && double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var scale))
+        {
+            _boardScale = Math.Clamp(scale, 0.8, 2.0);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnBoardScaleChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string value && double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var scale))
+        {
+            _boardScale = Math.Clamp(scale, 0.8, 2.0);
+            // Mise à jour UI immédiate
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        Theme.ThemeChanged -= HandleThemeChanged;
+    }
+}

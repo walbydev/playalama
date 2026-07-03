@@ -3,13 +3,24 @@
 @inject AuthService Auth
 @inject ThemeService Theme
 @inject GameLayoutService Layout
+@inject IJSRuntime JS
+@inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
 <div class="page-wrapper @(IsGameFocusMode ? "page-wrapper--game-focus" : "") @(IsGameFocusMode && Layout.IsFullscreen ? "page-wrapper--fullscreen" : "")">
     <DevBanner />
+    
+    @* ── SKIP LINKS (Accessibilité) ─────────────────────────────────────── *@
+    <a href="#main-content" class="skip-link" @onclick="FocusMainContent">
+        @L["Accessibility.SkipToMain"]
+    </a>
+    <a href="#nav-links" class="skip-link skip-link-secondary" @onclick="FocusNav">
+        @L["Accessibility.SkipToNav"]
+    </a>
+    
     <NavBar CompactMode="@IsGameFocusMode" ShowDevBanner="true" />
 
-    <main id="main-content" class="@(IsGameFocusMode ? "main-content--game-focus" : null)">
+    <main id="main-content" class="@(IsGameFocusMode ? "main-content--game-focus" : null)" tabindex="-1">
         @Body
     </main>
 
@@ -19,6 +30,9 @@
     }
 
     <div class="llamo-watermark" aria-hidden="true"></div>
+    
+    @* ── ANNONCES SCREEN READER ────────────────────────────────────────── *@
+    <LiveAnnouncer />
 </div>
 
 @code {
@@ -41,6 +55,24 @@
 
         if (firstRender || !Auth.IsInitialized)
             StateHasChanged();
+    }
+
+    private async Task FocusMainContent()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval", "document.getElementById('main-content')?.focus()");
+        }
+        catch { /* JSInterop pas encore dispo */ }
+    }
+
+    private async Task FocusNav()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval", "document.getElementById('nav-links')?.focus()");
+        }
+        catch { /* JSInterop pas encore dispo */ }
     }
 
     private bool IsInGamePage()

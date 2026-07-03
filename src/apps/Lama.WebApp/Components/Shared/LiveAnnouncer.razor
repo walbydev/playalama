@@ -1,0 +1,26 @@
+@inject ScreenReaderAnnouncer Service
+@implements IDisposable
+
+<div aria-live="@Service.Politeness" 
+     aria-atomic="true" 
+     class="sr-announcements"
+     role="status">
+    @Service.CurrentAnnouncement
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Service.OnAnnouncementChanged += HandleAnnouncementChanged;
+    }
+
+    private void HandleAnnouncementChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Service.OnAnnouncementChanged -= HandleAnnouncementChanged;
+    }
+}

@@ -34,11 +34,13 @@ public sealed class GameLayoutService(IJSRuntime js)
     public string ActiveTab => _activeTab;
     public string Variant => _variant;
 
-    /// <summary>Multiplicateur appliqué au clamp d'auto-fit (S/M/L).</summary>
+    /// <summary>Multiplicateur appliqué au clamp d'auto-fit (S/M/L/XL/XXL).</summary>
     public string ScaleCss => _density switch
     {
         Small => "0.85",
-        Large => "1.2",
+        Large => "1.5",
+        "xl" => "1.8",
+        "xxl" => "2.0",
         _ => "1",
     };
 

@@ -28,6 +28,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<GameLayoutService>();
 builder.Services.AddScoped<LanguageService>();
+builder.Services.AddScoped<ScreenReaderAnnouncer>();
 
 // ViewModels (MVVM léger)
 builder.Services.AddScoped<HomeViewModel>();

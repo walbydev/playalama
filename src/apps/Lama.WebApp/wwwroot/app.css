@@ -273,6 +273,58 @@ a:hover { text-decoration: underline; }
     border-radius: var(--radius-sm);
 }
 
+/* ── SKIP LINKS (Accessibilité) ── */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: calc(var(--banner-h) + 10px);
+    z-index: 9999;
+    background: var(--accent);
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: left 0.2s;
+}
+
+.skip-link:focus {
+    left: 10px;
+    outline: 3px solid var(--accent2);
+    outline-offset: 2px;
+}
+
+.skip-link-secondary {
+    top: calc(var(--banner-h) + 60px);
+}
+
+/* Skip links haut contraste */
+html.highcontrast .skip-link {
+    background: #ffff00;
+    color: #000000;
+    border: 3px solid #ffffff;
+}
+
+html.highcontrast .skip-link:focus {
+    outline: 4px solid #00ffff;
+    outline-offset: 4px;
+}
+
+/* ── ANNONCES SCREEN READER ── */
+.sr-announcements {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 img { max-width: 100%; }
 
 /* ── TYPOGRAPHY ── */
@@ -776,6 +828,128 @@ html.highcontrast .font-size-btn:hover {
 html.highcontrast .font-size-label {
     color: #ffffff;
     font-weight: 700;
+}
+
+/* ── PAGE ACCESSIBILITÉ ── */
+.accessibility-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.accessibility-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+}
+
+.accessibility-section > p {
+    margin-bottom: 1.5rem;
+}
+
+.settings-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.setting-label {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.setting-help {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.theme-buttons,
+.font-size-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.font-size-control {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.font-size-display {
+    min-width: 4rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text);
+    padding: 0.5rem 1rem;
+    background: var(--bg2);
+    border-radius: var(--radius-sm);
+}
+
+.range-values {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+input[type="range"] {
+    width: 100%;
+    height: 2.5rem;
+    cursor: pointer;
+}
+
+.accessibility-info ul {
+    margin-top: 1rem;
+    padding-left: 1.5rem;
+}
+
+.accessibility-info li {
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+}
+
+/* Style des boutons actifs */
+.font-size-presets .btn.active,
+.theme-buttons .btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.font-size-presets .btn small,
+.theme-buttons .btn small {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+/* Accessibilité : haut contraste */
+html.highcontrast .accessibility-section {
+    border-width: 3px;
+    border-color: #ffffff;
+}
+
+html.highcontrast .setting-label {
+    color: #ffffff;
+}
+
+html.highcontrast .font-size-display {
+    background: #000000;
+    border: 2px solid #ffffff;
+    color: #ffffff;
 }
 
 .navbar--compact .board-density-control {

@@ -15,6 +15,7 @@
             <li><a href="/" class="@ActiveClass("/")" @onclick="CloseMenu">@L["Nav.Home"]</a></li>
             <li><a href="/leaderboard" class="@ActiveClass("/leaderboard")" @onclick="CloseMenu">@L["Nav.Leaderboard"]</a></li>
             <li><a href="/rules" class="@ActiveClass("/rules")" @onclick="CloseMenu">@L["Nav.Rules"]</a></li>
+            <li><a href="/accessibility" class="@ActiveClass("/accessibility")" @onclick="CloseMenu">@L["Nav.Accessibility"]</a></li>
             @if (Auth.IsLoggedIn)
             {
                 <li><a href="/games" class="@ActiveClass("/games")" @onclick="CloseMenu">@L["Nav.Games"]</a></li>
