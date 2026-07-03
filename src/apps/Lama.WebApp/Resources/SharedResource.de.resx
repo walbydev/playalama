@@ -485,6 +485,7 @@
   <data name="Theme.Choose"><value>Thema wählen</value></data>
   <data name="Theme.Dark"><value>Dunkel</value></data>
   <data name="Theme.Green"><value>Grünlich</value></data>
+  <data name="Theme.HighContrast"><value>Hoher Kontrast</value></data>
   <data name="Theme.Light"><value>Hell</value></data>
   <data name="Theme.Title"><value>Visuelles Thema</value></data>
   <data name="Theme.Vermillion"><value>Zinnoberrot</value></data>

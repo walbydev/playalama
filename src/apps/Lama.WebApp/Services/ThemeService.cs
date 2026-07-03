@@ -10,7 +10,7 @@ public sealed class ThemeService(IJSRuntime js)
 {
     private static readonly HashSet<string> AllowedThemes = new(StringComparer.Ordinal)
     {
-        "dark", "light", "blue", "green", "vermillion"
+        "dark", "light", "blue", "green", "vermillion", "highcontrast"
     };
 
     private string _theme = "dark";

@@ -122,6 +122,58 @@ html.vermillion {
     --shadow:     0 4px 24px rgba(60,27,18,0.09);
 }
 
+/* ── TOKENS highcontrast (WCAG AAA) ── */
+html.highcontrast {
+    --bg:         #000000;
+    --bg2:        #1a1a1a;
+    --bg3:        #2d2d2d;
+    --surface:    #000000;
+    --border:     #ffffff;
+    --accent:     #ffff00;
+    --accent2:    #00ffff;
+    --gold:       #ffd700;
+    --silver:     #c0c0c0;
+    --bronze:     #cd7f32;
+    --text:       #ffffff;
+    --text-muted: #ffffff;
+    --text-dim:   #e0e0e0;
+    --success:    #00ff00;
+    --error:      #ff0000;
+    --board-grid-line: #ffffff;
+    --board-grid-outline: #ffffff;
+    --shadow:     none;
+    --radius:     0;
+    --radius-sm:  0;
+}
+
+/* ── ACCESSIBILITÉ renforcée pour haut contraste ── */
+html.highcontrast {
+    font-size: 18px; /* Plus grand que la taille par défaut (17px) */
+}
+
+html.highcontrast .btn {
+    min-height: 3rem; /* Touch targets plus grands */
+    border-width: 3px; /* Bordures plus épaisses */
+}
+
+html.highcontrast .navbar {
+    border-bottom-width: 3px;
+}
+
+html.highcontrast :focus-visible {
+    outline-width: 4px;
+    outline-offset: 4px;
+}
+
+html.highcontrast .board-grid {
+    gap: 2px; /* Grille plus visible */
+    border-width: 3px;
+}
+
+html.highcontrast .scoreboard-row--active {
+    border-width: 3px;
+}
+
 /* ── BASE ── */
 html { scroll-behavior: smooth; font-size: 17px; }
 
@@ -227,6 +279,49 @@ h4 { font-size: 1.05rem; font-weight: 600; }
 :is(html.light, html.blue, html.green, html.vermillion) .btn-danger { background: rgba(220,50,50,0.08); }
 .btn-danger:hover { background: rgba(220,50,50,0.25); transform: translateY(-1px); color: #c33; }
 
+/* Boutons haut contraste */
+html.highcontrast .btn-primary {
+    background: #ffff00;
+    color: #000000;
+    border: 3px solid #ffff00;
+    box-shadow: none;
+}
+html.highcontrast .btn-primary:hover {
+    background: #000000;
+    color: #ffff00;
+    border-color: #ffff00;
+}
+
+html.highcontrast .btn-outline {
+    background: transparent;
+    color: #00ffff;
+    border: 3px solid #00ffff;
+}
+html.highcontrast .btn-outline:hover {
+    background: #00ffff;
+    color: #000000;
+}
+
+html.highcontrast .btn-ghost {
+    background: #000000;
+    color: #ffffff;
+    border: 3px solid #ffffff;
+}
+html.highcontrast .btn-ghost:hover {
+    background: #ffffff;
+    color: #000000;
+}
+
+html.highcontrast .btn-danger {
+    background: #000000;
+    color: #ff0000;
+    border: 3px solid #ff0000;
+}
+html.highcontrast .btn-danger:hover {
+    background: #ff0000;
+    color: #000000;
+}
+
 .btn-sm { padding: .45rem 1rem; font-size: .85rem; min-height: 2.5rem; }
 .btn-lg { padding: .9rem 2.2rem; font-size: 1.05rem; }
 .btn-icon { padding: .5rem; line-height: 1; border-radius: 50%; }
@@ -256,6 +351,12 @@ h4 { font-size: 1.05rem; font-weight: 600; }
     background: rgba(248,249,252,0.92);
 }
 
+/* Navbar haut contraste - fond noir opaque pour contraste maximal */
+html.highcontrast .navbar {
+    background: #000000;
+    border-bottom: 3px solid #ffffff;
+}
+
 .navbar-logo {
     font-size: 1.75rem;
     font-weight: 900;
@@ -269,6 +370,13 @@ h4 { font-size: 1.05rem; font-weight: 600; }
     position: relative;
     display: inline-block;
     padding-bottom: .15rem;
+}
+
+/* Logo haut contraste - jaune vif */
+html.highcontrast .navbar-logo {
+    background: none;
+    -webkit-text-fill-color: #ffff00;
+    color: #ffff00;
 }
 
 /* ── Bannière pleine largeur "En développement" ── */
@@ -292,6 +400,13 @@ h4 { font-size: 1.05rem; font-weight: 600; }
 }
 .dev-banner .dev-banner-sep { opacity: .45; }
 
+/* Bannière dev haut contraste */
+html.highcontrast .dev-banner {
+    background: #000000;
+    color: #ffff00;
+    border-bottom: 3px solid #ffff00;
+}
+
 .navbar-links {
     display: flex;
     gap: 1.75rem;
@@ -310,6 +425,17 @@ h4 { font-size: 1.05rem; font-weight: 600; }
 }
 .navbar-links a:hover,
 .navbar-links a.active { color: var(--text); }
+
+/* Liens navbar haut contraste - jaune vif sur fond noir */
+html.highcontrast .navbar-links a {
+    color: #ffffff;
+    font-weight: 700;
+}
+html.highcontrast .navbar-links a:hover,
+html.highcontrast .navbar-links a.active {
+    color: #ffff00;
+    text-decoration: underline;
+}
 
 .navbar-actions {
     display: flex;
@@ -387,6 +513,16 @@ h4 { font-size: 1.05rem; font-weight: 600; }
 :is(html.light, html.blue, html.green, html.vermillion) .theme-select-control { background: rgba(0,0,0,0.04); }
 .theme-select-control:hover { border-color: var(--accent); }
 
+/* Sélecteur de thème haut contraste */
+html.highcontrast .theme-select-control {
+    background: #000000;
+    border: 3px solid #ffffff;
+    color: #ffffff;
+}
+html.highcontrast .theme-select-control:hover {
+    border-color: #ffff00;
+}
+
 .theme-select-icon {
     font-size: .85rem;
     line-height: 1;
@@ -416,6 +552,12 @@ h4 { font-size: 1.05rem; font-weight: 600; }
     border: none !important;
     box-shadow: none !important;
     outline: none;
+}
+
+/* Select thème haut contraste */
+html.highcontrast .theme-select-control .theme-select {
+    color: #ffffff;
+    font-weight: 700;
 }
 
 .board-density-control {
@@ -449,6 +591,25 @@ h4 { font-size: 1.05rem; font-weight: 600; }
     color: #fff;
 }
 
+/* Contrôles densité haut contraste */
+html.highcontrast .board-density-control {
+    background: #000000;
+    border: 3px solid #ffffff;
+}
+html.highcontrast .board-density-btn {
+    color: #ffffff;
+    border: 2px solid transparent;
+}
+html.highcontrast .board-density-btn:hover {
+    background: #1a1a1a;
+    border-color: #ffff00;
+}
+html.highcontrast .board-density-btn.is-active {
+    background: #ffff00;
+    color: #000000;
+    border-color: #ffff00;
+}
+
 .board-fullscreen-btn { font-size: 1rem; }
 .board-fullscreen-btn.is-active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
@@ -466,6 +627,15 @@ html.dark .theme-select {
 html.dark .theme-select option {
     background: #0f172a;
     color: #f8fafc;
+}
+
+html.highcontrast .theme-select {
+    color-scheme: dark;
+}
+
+html.highcontrast .theme-select option {
+    background: #000000;
+    color: #ffffff;
 }
 
 .navbar--compact .board-density-control {
@@ -932,6 +1102,13 @@ footer {
 .board-cell--dl { background: #86adc2; color: #f8fcff; }
 .board-cell--st { background: var(--accent); color: #fff; font-size: calc(1.1rem * var(--board-scale)); }
 
+/* Cases bonus - thème haut contraste (avec motifs/textures pour daltoniens) */
+html.highcontrast .board-cell--tw { background: #000000; border: 3px solid #ffff00; color: #ffff00; }
+html.highcontrast .board-cell--dw { background: #1a1a1a; border: 2px solid #00ffff; color: #00ffff; }
+html.highcontrast .board-cell--tl { background: #000000; border: 3px dashed #ff00ff; color: #ff00ff; }
+html.highcontrast .board-cell--dl { background: #1a1a1a; border: 2px dashed #00ff00; color: #00ff00; }
+html.highcontrast .board-cell--st { background: #000000; border: 4px solid #ffff00; color: #ffff00; font-size: calc(1.1rem * var(--board-scale)); }
+
 /* Tuile posée — style bois verni avec marquage sombre (fer) */
 .board-cell--tile {
     background:
@@ -942,6 +1119,22 @@ footer {
     box-shadow:
         inset 0 1px 0 rgba(255, 248, 235, .45),
         inset 0 -2px 4px rgba(63, 36, 22, .25);
+}
+
+/* Tuile posée - thème haut contraste */
+html.highcontrast .board-cell--tile {
+    background: #ffffff;
+    color: #000000;
+    border: 3px solid #000000;
+    box-shadow: none;
+}
+html.highcontrast .tile-letter {
+    color: #000000;
+    font-weight: 900;
+}
+html.highcontrast .tile-val {
+    color: #000000;
+    font-weight: 700;
 }
 .tile-letter {
     font-size: calc(1.05rem * var(--board-scale));
@@ -1272,6 +1465,34 @@ footer {
 }
 .rack-tile:hover { transform: translateY(-5px); }
 .rack-tile--joker { background: #f0fdf4; color: #166534; border-color: #86efac; }
+
+/* Tuiles rack - thème haut contraste */
+html.highcontrast .rack-tile {
+    background: #ffffff;
+    color: #000000;
+    border: 3px solid #000000;
+    border-radius: 0;
+    box-shadow: none;
+    text-shadow: none;
+}
+html.highcontrast .rack-tile:hover {
+    transform: none;
+    border-color: #ffff00;
+}
+html.highcontrast .rack-tile--joker {
+    background: #000000;
+    color: #ffff00;
+    border: 3px solid #ffff00;
+}
+html.highcontrast .rack-tile-val {
+    color: #000000;
+    font-weight: 700;
+}
+html.highcontrast .rack-tile--used {
+    opacity: 0.5;
+    background: #333333;
+    color: #cccccc;
+}
 
 .rack-tile-val {
     font-size: .7rem;
