@@ -73,6 +73,12 @@
   <data name="CreateGame.LanguageRequired"><value>Select at least one game language.</value></data>
   <data name="CreateGame.AiUniqueHint"><value>0 to 3 AI slots. A selected bot cannot be used in another slot.</value></data>
   <data name="CreateGame.Title"><value>Create a game</value></data>
+  <data name="Density.Section"><value>Display density</value></data>
+  <data name="Density.Description"><value>Choose a compact display to reduce spacing or a normal display for more comfort.</value></data>
+  <data name="Density.Label"><value>Display mode</value></data>
+  <data name="Density.Normal"><value>Normal</value></data>
+  <data name="Density.Compact"><value>Compact</value></data>
+  <data name="Density.Help"><value>Compact mode hides the board rack and shows it in the sidebar, with larger tiles and reduced spacing.</value></data>
   <data name="DevBanner.Aria"><value>Development mode</value></data>
   <data name="DevBanner.Build"><value>Build:</value></data>
   <data name="DevBanner.InDevelopment"><value>In development</value></data>
@@ -541,7 +547,6 @@
   <data name="Accessibility.FontSize.Title"><value>Text size</value></data>
   <data name="Theme.Blue"><value>Blue</value></data>
   <data name="Theme.Choose"><value>Choose a theme</value></data>
-  <data name="Theme.Compact"><value>Dark Compact</value></data>
   <data name="Theme.Dark"><value>Dark</value></data>
   <data name="Theme.Deuteranopia"><value>Red-Green Color Blindness (Deuteranopia)</value></data>
   <data name="Theme.Green"><value>Green</value></data>

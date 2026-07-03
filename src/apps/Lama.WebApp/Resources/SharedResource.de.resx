@@ -72,6 +72,12 @@
   <data name="CreateGame.AiOnlyMinTwo"><value>Wähle mindestens 2 KIs für den Nur-KI-Modus.</value></data>
   <data name="CreateGame.AiUniqueHint"><value>0 bis 3 KI-Slots. Ein gewählter Bot ist in anderen Slots nicht mehr verfügbar.</value></data>
   <data name="CreateGame.Title"><value>Spiel erstellen</value></data>
+  <data name="Density.Section"><value>Anzeigedichte</value></data>
+  <data name="Density.Description"><value>Wählen Sie eine kompakte Anzeige, um den Abstand zu verringern, oder eine normale Anzeige für mehr Komfort.</value></data>
+  <data name="Density.Label"><value>Anzeigemodus</value></data>
+  <data name="Density.Normal"><value>Normal</value></data>
+  <data name="Density.Compact"><value>Kompakt</value></data>
+  <data name="Density.Help"><value>Der Kompaktmodus blendet das Spielbrett-Rack aus und zeigt es in der Seitenleiste an, mit größeren Kacheln und verringertem Abstand.</value></data>
   <data name="DevBanner.Aria"><value>Entwicklungsmodus</value></data>
   <data name="DevBanner.Build"><value>Build:</value></data>
   <data name="DevBanner.InDevelopment"><value>In Entwicklung</value></data>
@@ -572,7 +578,6 @@
   <data name="Accessibility.XLarge"><value>Sehr groß</value></data>
   <data name="Theme.Blue"><value>Bläulich</value></data>
   <data name="Theme.Choose"><value>Thema wählen</value></data>
-  <data name="Theme.Compact"><value>Dunkel Kompakt</value></data>
   <data name="Theme.Dark"><value>Dunkel</value></data>
   <data name="Theme.Deuteranopia"><value>Rot-Grün-Farbenblindheit (Deuteranopie)</value></data>
   <data name="Theme.Green"><value>Grünlich</value></data>

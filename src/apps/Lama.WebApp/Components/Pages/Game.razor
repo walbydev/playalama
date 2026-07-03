@@ -5,6 +5,7 @@
 @inject AuthService Auth
 @inject NavigationManager Navigation
 @inject GameLayoutService Layout
+@inject DensityService Density
 @inject IStringLocalizer<SharedResource> L
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 @inject IJSRuntime JS
@@ -663,6 +664,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await Auth.InitializeAsync();
+        await Density.InitializeAsync();
 
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
         var parsed = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);

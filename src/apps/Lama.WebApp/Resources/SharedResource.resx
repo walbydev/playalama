@@ -73,6 +73,12 @@
   <data name="CreateGame.LanguageRequired"><value>Choisissez au moins une langue de jeu.</value></data>
   <data name="CreateGame.AiUniqueHint"><value>0 à 3 slots IA. Un bot sélectionné n'est plus disponible dans les autres slots.</value></data>
   <data name="CreateGame.Title"><value>Créer une partie</value></data>
+  <data name="Density.Section"><value>Densité d'affichage</value></data>
+  <data name="Density.Description"><value>Choisissez un affichage compact pour réduire les espacements ou un affichage normal pour plus de confort.</value></data>
+  <data name="Density.Label"><value>Mode d'affichage</value></data>
+  <data name="Density.Normal"><value>Normal</value></data>
+  <data name="Density.Compact"><value>Compact</value></data>
+  <data name="Density.Help"><value>Le mode compact cache le rack du plateau et l'affiche latéralement, avec des tuiles plus grandes et des espacements réduits.</value></data>
   <data name="DevBanner.Aria"><value>Mode développement</value></data>
   <data name="DevBanner.Build"><value>Build :</value></data>
   <data name="DevBanner.InDevelopment"><value>En développement</value></data>
@@ -574,7 +580,6 @@
   <data name="Accessibility.XLarge"><value>Très grand</value></data>
   <data name="Theme.Blue"><value>Bleuté</value></data>
   <data name="Theme.Choose"><value>Choisir un thème</value></data>
-  <data name="Theme.Compact"><value>Sombre compact</value></data>
   <data name="Theme.Dark"><value>Sombre</value></data>
   <data name="Theme.Deuteranopia"><value>Daltonisme rouge-vert (Deutéranopie)</value></data>
   <data name="Theme.Green"><value>Verdâtre</value></data>

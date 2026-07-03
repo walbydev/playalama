@@ -1,4 +1,5 @@
 @inject IStringLocalizer<SharedResource> L
+@inject DensityService Density
 
 <div class="quick-settings-nav">
     <button type="button"
@@ -19,6 +20,22 @@
                     aria-label="@L["Common.Close"]">
                 ✕
             </button>
+        </div>
+
+        <div class="quick-settings-group">
+            <label class="quick-settings-label">@L["Density.Label"]</label>
+            <div class="quick-settings-density">
+                <button type="button"
+                        class="btn btn-sm @(Density.IsCompact ? "btn-ghost" : "btn-primary")"
+                        @onclick="@(() => Density.SetAsync(DensityService.Normal))">
+                    @L["Density.Normal"]
+                </button>
+                <button type="button"
+                        class="btn btn-sm @(Density.IsCompact ? "btn-primary" : "btn-ghost")"
+                        @onclick="@(() => Density.SetAsync(DensityService.Compact))">
+                    @L["Density.Compact"]
+                </button>
+            </div>
         </div>
 
         <div class="quick-settings-group">
@@ -54,6 +71,23 @@
 @code {
     private bool _isOpen;
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Density.InitializeAsync();
+            Density.DensityChanged += OnDensityChanged;
+            StateHasChanged();
+        }
+    }
+
+    private void OnDensityChanged() => InvokeAsync(StateHasChanged);
+
     private void TogglePanel() => _isOpen = !_isOpen;
     private void ClosePanel() => _isOpen = false;
+
+    public void Dispose()
+    {
+        Density.DensityChanged -= OnDensityChanged;
+    }
 }

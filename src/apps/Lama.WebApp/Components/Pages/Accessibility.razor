@@ -1,6 +1,7 @@
 @page "/accessibility"
 @inject IJSRuntime JS
 @inject ThemeService Theme
+@inject DensityService Density
 @inject AuthService Auth
 @inject LamaApiClient Api
 @inject IStringLocalizer<SharedResource> L
@@ -35,7 +36,6 @@
                                 aria-describedby="theme-help">
                             <option value="dark">@L["Theme.Dark"]</option>
                             <option value="light">@L["Theme.Light"]</option>
-                            <option value="compact">@L["Theme.Compact"]</option>
                             <option value="highcontrast">@L["Theme.HighContrast"]</option>
                             <option value="deuteranopia">@L["Theme.Deuteranopia"]</option>
                             <option value="protanopia">@L["Theme.Protanopia"]</option>
@@ -54,9 +54,6 @@
                         <button type="button" class="btn btn-ghost @(_currentTheme == "light" ? "active" : "")" @onclick="@(() => SetThemeAsync("light"))" aria-label="@L["Theme.Light"]">
                             ⚪ @L["Theme.Light"]
                         </button>
-                        <button type="button" class="btn btn-ghost @(_currentTheme == "compact" ? "active" : "")" @onclick="@(() => SetThemeAsync("compact"))" aria-label="@L["Theme.Compact"]">
-                            ⬛ @L["Theme.Compact"]
-                        </button>
                         <button type="button" class="btn btn-ghost @(_currentTheme == "highcontrast" ? "active" : "")" @onclick="@(() => SetThemeAsync("highcontrast"))" aria-label="@L["Theme.HighContrast"]">
                             ◐ @L["Theme.HighContrast"]
                         </button>
@@ -70,6 +67,30 @@
                             👁️ Tritana
                         </button>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        @* ── SECTION 1b : Densité d'affichage ─────────────────────────────── *@
+        <section class="card accessibility-section">
+            <h2>
+                <span aria-hidden="true">📐</span>
+                @L["Density.Section"]
+            </h2>
+            <p class="text-muted">@L["Density.Description"]</p>
+
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <span class="setting-label">@L["Density.Label"]</span>
+                    <div class="font-size-presets">
+                        <button type="button" class="btn btn-ghost @(!Density.IsCompact ? "active" : "")" @onclick="@(() => Density.SetAsync(DensityService.Normal))">
+                            @L["Density.Normal"]
+                        </button>
+                        <button type="button" class="btn btn-ghost @(Density.IsCompact ? "active" : "")" @onclick="@(() => Density.SetAsync(DensityService.Compact))">
+                            @L["Density.Compact"]
+                        </button>
+                    </div>
+                    <small class="setting-help">@L["Density.Help"]</small>
                 </div>
             </div>
         </section>
@@ -194,6 +215,9 @@
 
             var layout = await JS.InvokeAsync<GameLayoutState?>("playalamaGameLayout.get");
             _boardScale = DensityToScale(layout?.Density);
+
+            await Density.InitializeAsync();
+            Density.DensityChanged += OnDensityChanged;
 
             await Auth.InitializeAsync();
             if (Auth.IsLoggedIn)
@@ -354,13 +378,16 @@
         _persistCts?.Cancel();
         _persistCts?.Dispose();
         Theme.ThemeChanged -= HandleThemeChanged;
+        Density.DensityChanged -= OnDensityChanged;
     }
+
+    private void OnDensityChanged() => InvokeAsync(StateHasChanged);
 
     private static int NormalizeFontSize(int size) => size is 100 or 125 or 150 or 200 ? size : 100;
 
     private static string NormalizeTheme(string theme) => theme switch
     {
-        "dark" or "light" or "blue" or "green" or "vermillion" or "highcontrast" or "deuteranopia" or "protanopia" or "tritanopia" or "compact" => theme,
+        "dark" or "light" or "blue" or "green" or "vermillion" or "highcontrast" or "deuteranopia" or "protanopia" or "tritanopia" => theme,
         _ => "dark"
     };
 

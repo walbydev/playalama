@@ -2,6 +2,7 @@
 @inject NavigationManager Nav
 @inject AuthService Auth
 @inject ThemeService Theme
+@inject DensityService Density
 @inject GameLayoutService Layout
 @inject LamaApiClient Api
 @inject IJSRuntime JS
@@ -53,6 +54,7 @@
             await Auth.InitializeAsync();
 
         await Theme.InitializeAsync();
+        await Density.InitializeAsync();
         await Layout.InitializeAsync();
         await SyncAccessibilityFromProfileAsync();
 

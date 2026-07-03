@@ -5,7 +5,7 @@
 
 // ── Thèmes visuels ───────────────────────────────────────────────────────────
 window.playalamaTheme = {
-    availableThemes: ['dark', 'light', 'blue', 'green', 'vermillion', 'highcontrast', 'deuteranopia', 'protanopia', 'tritanopia', 'compact'],
+    availableThemes: ['dark', 'light', 'blue', 'green', 'vermillion', 'highcontrast', 'deuteranopia', 'protanopia', 'tritanopia'],
     getTheme() {
         const stored = localStorage.getItem('playalama-theme') || 'dark';
         return this.availableThemes.includes(stored) ? stored : 'dark';
@@ -20,6 +20,18 @@ window.playalamaTheme = {
         const current = this.getTheme();
         this.setTheme(current === 'dark' ? 'light' : 'dark');
         return current === 'dark' ? 'light' : 'dark';
+    }
+};
+
+// ── Densité (normal/compact) ─────────────────────────────────────────────────
+window.playalamaDensity = {
+    getDensity() {
+        return localStorage.getItem('playalama-density') || 'normal';
+    },
+    setDensity(density) {
+        const normalized = density === 'compact' ? 'compact' : 'normal';
+        localStorage.setItem('playalama-density', normalized);
+        document.documentElement.setAttribute('data-density', normalized);
     }
 };
 
@@ -197,3 +209,11 @@ window.playalamaDebug = {
     await navigator.clipboard.writeText(text);
   }
 };
+
+// ── Anti-flash : appliquer densité dès le chargement ─────────────────────────
+(function () {
+  try {
+    var d = localStorage.getItem('playalama-density') || 'normal';
+    document.documentElement.setAttribute('data-density', d === 'compact' ? 'compact' : 'normal');
+  } catch (e) { }
+})();
