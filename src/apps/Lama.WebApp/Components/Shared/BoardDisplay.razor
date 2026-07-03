@@ -7,7 +7,9 @@
 @* Plateau de jeu 15×15 avec cases bonus colorées, tuiles posées et placements provisoires. *@
 
 <div class="board-container" role="region" aria-label="@L["Board.Aria"]" style="--board-scale:@Layout.ScaleCss;">
-    <div class="board-grid" role="grid">
+    <div class="board-grid" role="grid"
+         @onpointerup="HandlePointerUp"
+         @onpointerleave="HandlePointerLeave">
         @* En-tête colonnes *@
         <div class="board-header-cell" aria-hidden="true"></div>
         @for (var c = 0; c < 15; c++)
@@ -31,13 +33,14 @@
                 var isDropTarget = CanDrop && tile is null && (pending is null || _draggingFromBoard);
                 var isKeyboardCursor = KeyboardModeActive && r == KeyboardCursorRow && c == KeyboardCursorCol;
                 var isKeyboardTarget = CanActivateKeyboard && OnKeyboardActivate.HasDelegate && tile is null && pending is null;
+                var isWordSelected = IsInWordSelection(r, c);
 
                 string cssClass;
                 string ariaLabel;
 
                 if (tile.HasValue)
                 {
-                    cssClass = "board-cell board-cell--tile";
+                    cssClass = "board-cell board-cell--tile" + (isWordSelected ? " board-cell--word-select" : "");
                     ariaLabel = L["Board.TileAria", GamePlayViewModel.ColLabel(c), r + 1, char.ToUpperInvariant(tile.Value)].Value;
                 }
                 else if (pending is not null)
@@ -57,12 +60,15 @@
                      aria-label="@ariaLabel"
                      @ondragover:preventDefault="@isDropTarget"
                      @ondrop="@(isDropTarget ? () => OnDrop.InvokeAsync((r, c)) : () => Task.CompletedTask)"
-                     @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : tile.HasValue ? () => OnTileClick.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : tile.HasValue && !_isWordSelecting ? () => OnTileClick.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ondblclick="@(isKeyboardTarget ? () => OnKeyboardActivate.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ontouchend="@(isKeyboardTarget ? (e) => HandleTouchEnd(e, r, c) : (Func<TouchEventArgs,Task>)(_ => Task.CompletedTask))"
+                     @onpointerdown="@(tile.HasValue ? () => HandleCellPointerDown(r, c) : () => Task.CompletedTask)"
+                     @onpointerenter="@(_isWordSelecting ? () => HandleCellPointerEnter(r, c) : () => Task.CompletedTask)"
                      draggable="@(pending is not null && CanDragPending ? "true" : "false")"
                      @ondragstart="@(pending is not null ? () => OnPendingDragStart.InvokeAsync((r, c)) : () => Task.CompletedTask)"
-                     @ondragstart:stopPropagation>
+                     @ondragstart:stopPropagation
+                     data-row="@r" data-col="@c">
                     @if (tile.HasValue)
                     {
                         var upper = char.ToUpperInvariant(tile.Value);
@@ -128,8 +134,118 @@
     [Parameter] public EventCallback<(int Row, int Col)> OnPendingDragStart { get; set; }
     /// <summary>Activé par double-clic (souris) ou double-tap (tactile) sur une case vide.</summary>
     [Parameter] public EventCallback<(int Row, int Col)> OnKeyboardActivate { get; set; }
+    /// <summary>Activé quand l'utilisateur sélectionne un mot par glisser sur les tuiles posées.</summary>
+    [Parameter] public EventCallback<string> OnWordSelected { get; set; }
 
     private bool _draggingFromBoard => DraggingFromBoard;
+
+    // ── Sélection de mot par glisser ───────────────────────────────────────────
+    private bool _isWordSelecting;
+    private int _wordSelectStartRow = -1;
+    private int _wordSelectStartCol = -1;
+    private int _wordSelectEndRow = -1;
+    private int _wordSelectEndCol = -1;
+
+    private bool IsInWordSelection(int row, int col)
+    {
+        if (!_isWordSelecting && _wordSelectStartRow < 0) return false;
+        var (r0, r1) = (_wordSelectStartRow, _wordSelectEndRow);
+        var (c0, c1) = (_wordSelectStartCol, _wordSelectEndCol);
+        if (r0 > r1) (r0, r1) = (r1, r0);
+        if (c0 > c1) (c0, c1) = (c1, c0);
+        return row >= r0 && row <= r1 && col >= c0 && col <= c1;
+    }
+
+    private Task HandleCellPointerDown(int row, int col)
+    {
+        _isWordSelecting = true;
+        _wordSelectStartRow = row;
+        _wordSelectStartCol = col;
+        _wordSelectEndRow = row;
+        _wordSelectEndCol = col;
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCellPointerEnter(int row, int col)
+    {
+        if (!_isWordSelecting) return Task.CompletedTask;
+
+        // Contraindre à la ligne ou colonne de départ
+        if (row == _wordSelectStartRow)
+        {
+            _wordSelectEndRow = row;
+            _wordSelectEndCol = col;
+        }
+        else if (col == _wordSelectStartCol)
+        {
+            _wordSelectEndRow = row;
+            _wordSelectEndCol = col;
+        }
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandlePointerUp(PointerEventArgs e)
+    {
+        if (!_isWordSelecting)
+            return Task.CompletedTask;
+
+        _isWordSelecting = false;
+
+        var word = ExtractSelectedWord();
+        var hadSelection = _wordSelectStartRow >= 0;
+        _wordSelectStartRow = -1;
+        _wordSelectStartCol = -1;
+        _wordSelectEndRow = -1;
+        _wordSelectEndCol = -1;
+        StateHasChanged();
+
+        if (hadSelection && word.Length >= 2 && OnWordSelected.HasDelegate)
+            return OnWordSelected.InvokeAsync(word);
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandlePointerLeave(PointerEventArgs e)
+    {
+        if (!_isWordSelecting) return Task.CompletedTask;
+        _isWordSelecting = false;
+        _wordSelectStartRow = -1;
+        _wordSelectStartCol = -1;
+        _wordSelectEndRow = -1;
+        _wordSelectEndCol = -1;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private string ExtractSelectedWord()
+    {
+        if (_wordSelectStartRow < 0) return string.Empty;
+
+        var board = Board;
+        char? At(int r, int c) => board.FirstOrDefault(t => t.Row == r && t.Column == c)?.Letter;
+
+        var (r0, r1) = (Math.Min(_wordSelectStartRow, _wordSelectEndRow), Math.Max(_wordSelectStartRow, _wordSelectEndRow));
+        var (c0, c1) = (Math.Min(_wordSelectStartCol, _wordSelectEndCol), Math.Max(_wordSelectStartCol, _wordSelectEndCol));
+
+        var word = "";
+        if (r0 == r1)
+        {
+            for (var c = c0; c <= c1; c++)
+            {
+                if (At(r0, c) is { } ch) word += char.ToUpperInvariant(ch);
+            }
+        }
+        else if (c0 == c1)
+        {
+            for (var r = r0; r <= r1; r++)
+            {
+                if (At(r, c0) is { } ch) word += char.ToUpperInvariant(ch);
+            }
+        }
+        return word;
+    }
 
     protected override void OnInitialized()
     {

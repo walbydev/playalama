@@ -1612,6 +1612,21 @@ html.highcontrast .board-cell--st { background: #000000; border: 4px solid #ffff
         inset 0 -2px 4px rgba(63, 36, 22, .25);
 }
 
+/* Tuiles posées — plus lumineuses avec thème clair */
+:is(html.light, html.blue, html.green, html.vermillion) .board-cell--tile {
+    background:
+        linear-gradient(145deg, #f2dcb8 0%, #e6c896 40%, #d4ae72 100%);
+    border-color: #b88a5a;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .6),
+        inset 0 -2px 4px rgba(120, 80, 50, .15),
+        0 2px 4px rgba(0, 0, 0, .08);
+}
+
+:is(html.light, html.blue, html.green, html.vermillion) .tile-letter {
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .5), 0 0 1px rgba(43, 24, 15, .3);
+}
+
 /* Tuile posée - thème haut contraste */
 html.highcontrast .board-cell--tile {
     background: #ffffff;
@@ -1654,6 +1669,16 @@ html.highcontrast .tile-val {
 }
 .board-cell--pending:hover { background: #fde68a; }
 .board-cell--pending:active { cursor: grabbing; }
+
+/* Tuile sélectionnée dans un mot (glisser pour définition) */
+.board-cell--word-select {
+    outline: 3px solid var(--accent, #6366f1);
+    outline-offset: -3px;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 255, 255, 0.5),
+        0 0 8px rgba(99, 102, 241, 0.4) !important;
+    z-index: 3;
+}
 
 /* Compteur sac (inline, ancien style — conservé pour compatibilité) */
 .bag-counter {
@@ -1956,6 +1981,23 @@ html.highcontrast .tile-val {
 }
 .rack-tile:hover { transform: translateY(-5px); }
 .rack-tile--joker { background: #f0fdf4; color: #166534; border-color: #86efac; }
+
+/* Tuiles rack — plus lumineuses avec thème clair */
+:is(html.light, html.blue, html.green, html.vermillion) .rack-tile {
+    background:
+        linear-gradient(145deg, #f0dab5 0%, #e2c498 42%, #d0aa78 100%);
+    border-color: #b88a5a;
+    box-shadow:
+        0 3px 6px rgba(0, 0, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        inset 0 -2px 4px rgba(120, 80, 50, 0.12);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .5), 0 0 1px rgba(43, 24, 15, .3);
+}
+
+:is(html.light, html.blue, html.green, html.vermillion) .rack-tile--joker {
+    background: #f5fff8;
+    border-color: #a8f5c0;
+}
 
 /* Tuiles rack - thème haut contraste */
 html.highcontrast .rack-tile {
@@ -2652,6 +2694,35 @@ html.highcontrast .rack-tile--used {
   background: var(--surface, #fff);
   box-shadow: 0 4px 14px rgba(0,0,0,.12);
   max-width: 100%;
+}
+
+/* ── Overlay modal définition (flottant au-dessus du plateau) ── */
+.word-info-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+.word-info-modal {
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--border, #ccc);
+    border-radius: 12px;
+    background: var(--surface, #fff);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    max-width: 420px;
+    max-height: 70vh;
+    overflow-y: auto;
+    animation: word-info-pop .15s ease-out;
+}
+
+@keyframes word-info-pop {
+    from { opacity: 0; transform: scale(.92); }
+    to   { opacity: 1; transform: scale(1); }
 }
 .word-info-header { display: flex; align-items: center; gap: .5rem; }
 .word-info-header strong { font-size: 1.1rem; text-transform: uppercase; }

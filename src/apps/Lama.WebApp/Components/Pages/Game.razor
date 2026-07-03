@@ -188,41 +188,8 @@ else
                                       OnRecall="HandleRecall"
                                       OnTileClick="HandleTileClick"
                                       OnKeyboardActivate="HandleKeyboardActivate"
-                                      OnPendingDragStart="HandlePendingDragStart" />
-
-                        @if (_wordInfo is not null)
-                        {
-                            <div class="word-info-popup" role="dialog" aria-label="@L["WordInfo.DialogLabel"]">
-                                <div class="word-info-header">
-                                    <strong>@_wordInfo.Word</strong>
-                                    @if (!string.IsNullOrWhiteSpace(_wordInfo.WiktionaryUrl))
-                                    {
-                                        <a href="@_wordInfo.WiktionaryUrl" target="_blank" rel="noopener" class="word-info-link">@L["WordInfo.Wiktionary"]</a>
-                                    }
-                                    <button class="btn btn-ghost btn-sm" @onclick="() => _wordInfo = null">✕</button>
-                                </div>
-                                @if (_wordInfo.Definitions.Count > 0)
-                                {
-                                    <ol class="word-info-defs">
-                                        @foreach (var d in _wordInfo.Definitions.Take(5))
-                                        {
-                                            <li>@(string.IsNullOrWhiteSpace(d.PartOfSpeech) ? "" : $"({d.PartOfSpeech}) ")@d.Text</li>
-                                        }
-                                    </ol>
-                                }
-                                @if (_wordInfo.Synonyms.Count > 0)
-                                {
-                                    <p class="word-info-syns"><em>@L["WordInfo.Synonyms"]</em> @string.Join(", ", _wordInfo.Synonyms.Take(10))</p>
-                                }
-                            </div>
-                        }
-                        else if (_wordInfoNotFound is not null)
-                        {
-                            <div class="word-info-popup" role="dialog">
-                                <span>@L["WordInfo.NotFoundSentence", _wordInfoNotFound]</span>
-                                <button class="btn btn-ghost btn-sm" @onclick="() => _wordInfoNotFound = null">✕</button>
-                            </div>
-                        }
+                                      OnPendingDragStart="HandlePendingDragStart"
+                                      OnWordSelected="HandleWordSelected" />
                     </div>
 
                     @* ── Zone rack (positionnée selon la variante) ── *@
@@ -596,9 +563,46 @@ else
                         }
 
                     </div>
-                </div>
 
-                @* Barre d'onglets escamotable — mono-colonne uniquement (CSS) *@
+                    @* ── Popup définition (overlay modal) ── *@
+                    @if (_wordInfo is not null)
+                    {
+                        <div class="word-info-overlay" role="dialog" aria-label="@L["WordInfo.DialogLabel"]" @onclick="() => _wordInfo = null">
+                            <div class="word-info-modal" @onclick:stopPropagation>
+                                <div class="word-info-header">
+                                    <strong>@_wordInfo.Word</strong>
+                                    @if (!string.IsNullOrWhiteSpace(_wordInfo.WiktionaryUrl))
+                                    {
+                                        <a href="@_wordInfo.WiktionaryUrl" target="_blank" rel="noopener" class="word-info-link">@L["WordInfo.Wiktionary"]</a>
+                                    }
+                                    <button class="btn btn-ghost btn-sm" @onclick="() => _wordInfo = null">✕</button>
+                                </div>
+                                @if (_wordInfo.Definitions.Count > 0)
+                                {
+                                    <ol class="word-info-defs">
+                                        @foreach (var d in _wordInfo.Definitions.Take(5))
+                                        {
+                                            <li>@(string.IsNullOrWhiteSpace(d.PartOfSpeech) ? "" : $"({d.PartOfSpeech}) ")@d.Text</li>
+                                        }
+                                    </ol>
+                                }
+                                @if (_wordInfo.Synonyms.Count > 0)
+                                {
+                                    <p class="word-info-syns"><em>@L["WordInfo.Synonyms"]</em> @string.Join(", ", _wordInfo.Synonyms.Take(10))</p>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (_wordInfoNotFound is not null)
+                    {
+                        <div class="word-info-overlay" role="dialog" @onclick="() => _wordInfoNotFound = null">
+                            <div class="word-info-modal" @onclick:stopPropagation>
+                                <span>@L["WordInfo.NotFoundSentence", _wordInfoNotFound]</span>
+                                <button class="btn btn-ghost btn-sm" @onclick="() => _wordInfoNotFound = null">✕</button>
+                            </div>
+                        </div>
+                    }
+                </div>
                 <GameTabBar />
             }
         </div>
@@ -878,6 +882,12 @@ else
         var word = ExtractWordAt(board, cell.Row, cell.Col);
         if (word.Length < 2) return;
 
+        await ShowWordInfoAsync(word);
+    }
+
+    private async Task HandleWordSelected(string word)
+    {
+        if (word.Length < 2) return;
         await ShowWordInfoAsync(word);
     }
 
