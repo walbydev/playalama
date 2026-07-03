@@ -342,6 +342,12 @@ else
                                     <button class="btn-icon-close" @onclick="() => _abandonError = null" aria-label="@L["Common.Close"]">✕</button>
                                 </div>
                             }
+                            @if (_vm.SuggestionsUsed)
+                            {
+                                <div class="abandon-notice" role="status" aria-live="polite">
+                                    ⚠️ @L["Game.SuggestionsUsedNotice"]
+                                </div>
+                            }
                             @if (!HasAnyUiMessages)
                             {
                                 <p class="text-dim" style="font-size:.85rem; margin:0">@L["Game.NoMessages"]</p>
@@ -801,7 +807,8 @@ else
         || _abandonNotice is not null
         || _vm.CheckScore.HasValue
         || !string.IsNullOrWhiteSpace(_vm.Error)
-        || !string.IsNullOrWhiteSpace(_abandonError);
+        || !string.IsNullOrWhiteSpace(_abandonError)
+        || _vm.SuggestionsUsed;
 
     private static string? GetPlayerName(IReadOnlyList<WebSnapshotPlayer> players, int index) =>
         index >= 0 && index < players.Count ? players[index].PlayerName : null;

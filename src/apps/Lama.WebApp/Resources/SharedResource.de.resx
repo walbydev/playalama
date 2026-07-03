@@ -233,6 +233,7 @@
   <data name="Game.Suggest.None"><value>Keine Vorschläge für dieses Gestell.</value></data>
   <data name="Game.Suggest.Refresh"><value>Neue Vorschläge</value></data>
   <data name="Game.Suggest.Searching"><value>Suche beste Züge…</value></data>
+  <data name="Game.SuggestionsUsedNotice"><value>Ein Vorschlag wurde verwendet: Dieses Spiel zählt nicht mehr für die Elo-Wertung (außer Turniermodus).</value></data>
   <data name="Game.Suggest.Use"><value>Verwenden</value></data>
   <data name="Game.Suggest.Use.Title"><value>Formular mit diesem Wort vorausfüllen</value></data>
   <data name="Game.SwapAll"><value>Alle tauschen</value></data>

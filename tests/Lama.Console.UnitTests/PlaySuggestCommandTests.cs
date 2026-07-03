@@ -84,7 +84,8 @@ public sealed class PlaySuggestCommandTests : IDisposable
 
         Assert.Equal(ExitCodes.Success, exitCode);
         Assert.NotEqual(string.Empty, stdout);
-        Assert.Equal(string.Empty, stderr);
+        // Un avertissement indiquant que la partie ne compte plus pour l'Elo est émis sur stderr
+        Assert.Contains("compte plus", stderr);
     }
 
     [Fact]

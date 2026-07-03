@@ -234,6 +234,7 @@
   <data name="Game.Suggest.None"><value>Aucune suggestion pour ce chevalet.</value></data>
   <data name="Game.Suggest.Refresh"><value>Nouvelles suggestions</value></data>
   <data name="Game.Suggest.Searching"><value>Recherche des meilleurs coups…</value></data>
+  <data name="Game.SuggestionsUsedNotice"><value>Une suggestion a été utilisée : cette partie ne compte plus pour le classement Elo (hors mode Tournoi).</value></data>
   <data name="Game.Suggest.Use"><value>Utiliser</value></data>
   <data name="Game.Suggest.Use.Title"><value>Pré-remplir le formulaire avec ce mot</value></data>
   <data name="Game.SwapAll"><value>Tout échanger</value></data>

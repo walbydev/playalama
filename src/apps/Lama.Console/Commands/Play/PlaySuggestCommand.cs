@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Lama.Console.Services;
+using Lama.Contracts;
 using Lama.Core.Models;
 using Lama.Core.UseCases;
 using Microsoft.Extensions.Logging;
@@ -99,12 +100,14 @@ public sealed class PlaySuggestCommand : ICommand
                         BalancedScore: s.BalancedScore))
                     .ToList() ?? [];
 
+                WriteSuggestionWarning(context.GameLevel);
                 return WriteOutput(context.OutputFormat, suggestions);
             }
 
             var localResponse = await _suggestMovesUseCase.ExecuteAsync(
                 new SuggestMovesRequest(context.GameId, context.PlayerId, top, sort));
 
+            WriteSuggestionWarning(context.GameLevel);
             return WriteOutput(context.OutputFormat, localResponse.Suggestions);
         }
         catch (HttpRequestException ex)
@@ -119,6 +122,15 @@ public sealed class PlaySuggestCommand : ICommand
             global::System.Console.Error.WriteLine($"[play suggest] {ex.Message}");
             return ExitCodes.GeneralError;
         }
+    }
+
+    private static void WriteSuggestionWarning(GameLevel? gameLevel)
+    {
+        if (gameLevel == GameLevel.Tournament)
+            return;
+
+        global::System.Console.Error.WriteLine(
+            "⚠️  Une suggestion a été utilisée : cette partie ne compte plus pour le classement Elo.");
     }
 
     private static int WriteOutput(string format, IReadOnlyList<SuggestedMoveCandidate> suggestions)

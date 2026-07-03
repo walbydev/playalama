@@ -234,6 +234,7 @@
   <data name="Game.Suggest.None"><value>No suggestions found for this rack.</value></data>
   <data name="Game.Suggest.Refresh"><value>New suggestions</value></data>
   <data name="Game.Suggest.Searching"><value>Searching best moves…</value></data>
+  <data name="Game.SuggestionsUsedNotice"><value>A suggestion was used: this game no longer counts towards Elo ranking (except Tournament mode).</value></data>
   <data name="Game.Suggest.Use"><value>Use</value></data>
   <data name="Game.Suggest.Use.Title"><value>Pre-fill the form with this word</value></data>
   <data name="Game.SwapAll"><value>Swap all</value></data>

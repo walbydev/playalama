@@ -68,6 +68,9 @@ public sealed class GamePlayViewModel
     public bool SuggestPanelOpen { get; private set; }
     public List<WebSuggestedMove> Suggestions { get; } = [];
     public string? SuggestError { get; private set; }
+    /// <summary>Indique qu'une suggestion a été utilisée : la partie ne compte
+    /// plus pour l'Elo (hors mode Tournament). Affiché à l'utilisateur.</summary>
+    public bool SuggestionsUsed { get; private set; }
 
     public void ToggleSuggestPanel() => SuggestPanelOpen = !SuggestPanelOpen;
     public void CloseSuggestPanel() { SuggestPanelOpen = false; }
@@ -536,6 +539,8 @@ public sealed class GamePlayViewModel
         {
             var results = await api.SuggestMovesAsync(GameId, _myPlayerId ?? string.Empty, topPerCategory: 2, token: token);
             Suggestions.AddRange(results);
+            // Marquer la partie comme non comptabilisée pour l'Elo (hors Tournament)
+            SuggestionsUsed = true;
         }
         catch (Exception ex)
         {

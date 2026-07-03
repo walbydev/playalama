@@ -362,11 +362,33 @@ public sealed class MoveSuggestionEngine
         var consumedPremium = 0;
         var exposureRisk = 0;
 
+        // Comptage des croisements consécutifs : une nouvelle tuile posée forme un
+        // croisement si elle a un voisin perpendiculaire déjà présent sur le plateau.
+        // On pénalise les mots créant plus d'un croisement consécutif (ouverture
+        // excessive pour l'adversaire).
+        var consecutiveCrossings = 0;
+        var maxConsecutiveCrossings = 0;
+
         foreach (var pos in placements.Keys)
         {
-            if (board.Grid[pos.Row, pos.Column] is null)
+            var isNewSquare = board.Grid[pos.Row, pos.Column] is null;
+
+            if (isNewSquare)
             {
                 consumedPremium += PremiumWeight(BonusMap.GetBonus(pos).Type);
+
+                // Détecte un croisement perpendiculaire : voisin orthogonal existant
+                // qui n'appartient pas au mot posé (= mot perpendiculaire formé).
+                var hasCrossing = HasPerpendicularNeighbor(pos, board, placements);
+                if (hasCrossing)
+                {
+                    consecutiveCrossings++;
+                    maxConsecutiveCrossings = Math.Max(maxConsecutiveCrossings, consecutiveCrossings);
+                }
+                else
+                {
+                    consecutiveCrossings = 0;
+                }
             }
 
             foreach (var neighbor in GetNeighbors(pos))
@@ -384,8 +406,43 @@ public sealed class MoveSuggestionEngine
             }
         }
 
-        // Heuristique simple: valorise la prise de premium et penalise l'ouverture de premiums adverses.
-        return immediateScore + consumedPremium * 0.35 - exposureRisk * 0.20;
+        // Pénalité : au-delà de 1 croisement consécutif, chaque croisement
+        // supplémentaire réduit le score heuristique.
+        var crossingPenalty = Math.Max(0, maxConsecutiveCrossings - 1) * 1.5;
+
+        // Heuristique : valorise la prise de premium, pénalise l'ouverture de
+        // premiums adverses et les croisements consécutifs excessifs.
+        return immediateScore + consumedPremium * 0.35 - exposureRisk * 0.20 - crossingPenalty;
+    }
+
+    /// <summary>
+    /// Indique si une nouvelle tuile à <paramref name="pos"/> forme un croisement
+    /// perpendiculaire avec une tuile existante du plateau (i.e. un mot perpendiculaire
+    /// est créé, hors prolongement du mot principal).
+    /// </summary>
+    private static bool HasPerpendicularNeighbor(
+        Position pos,
+        BoardState board,
+        IReadOnlyDictionary<Position, char> placements)
+    {
+        // Voisins orthogonaux n'appartenant pas aux placements = tuiles existantes
+        // qui forment un croisement perpendiculaire.
+        Span<Position> neighbors =
+        [
+            new Position(pos.Row - 1, pos.Column),
+            new Position(pos.Row + 1, pos.Column),
+            new Position(pos.Row,     pos.Column - 1),
+            new Position(pos.Row,     pos.Column + 1)
+        ];
+
+        foreach (var neighbor in neighbors)
+        {
+            if (!neighbor.IsValid) continue;
+            if (placements.ContainsKey(neighbor)) continue;
+            if (board.Grid[neighbor.Row, neighbor.Column] is not null)
+                return true;
+        }
+        return false;
     }
 
     private static IEnumerable<Position> GetNeighbors(Position pos)
