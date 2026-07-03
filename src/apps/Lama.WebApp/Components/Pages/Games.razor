@@ -251,7 +251,7 @@
     protected override async Task OnInitializedAsync()
     {
         await Auth.InitializeAsync();
-        await DetectAdminAsync();
+        _isAdmin = Auth.IsAdmin;
         OnModeChanged();
         await Task.WhenAll(LoadGamesAsync(), LoadBotsAsync());
         StartAutoRefresh();
@@ -288,19 +288,6 @@
     private void OnMaxPlayersChanged()
     {
         _createForm.MaxPlayers = Math.Clamp(_createForm.MaxPlayers, 2, 4);
-    }
-
-    private async Task DetectAdminAsync()
-    {
-        var token = await Auth.GetTokenAsync();
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            _isAdmin = false;
-            return;
-        }
-
-        var status = await Api.GetStatusAsync(token);
-        _isAdmin = status is not null;
     }
 
     private void OnAiBotSlotChanged(int slot, string? botId)

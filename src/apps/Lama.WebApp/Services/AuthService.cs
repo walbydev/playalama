@@ -11,11 +11,13 @@ public sealed record CurrentUser(string PlayerId, string Username, string? Email
 public sealed class AuthService(IJSRuntime js, LamaApiClient api)
 {
     private CurrentUser? _currentUser;
+    private bool _isAdmin;
     private bool _initialized;
 
     public CurrentUser? CurrentUser => _currentUser;
     public bool IsLoggedIn => _currentUser is not null;
     public bool IsInitialized => _initialized;
+    public bool IsAdmin => _isAdmin;
 
     /// <summary>Notifie les composants abonnés d'un changement d'état d'authentification.</summary>
     public event Action? OnAuthStateChanged;
@@ -29,13 +31,17 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
         {
             var stored = await js.InvokeAsync<StoredSession?>("playalamaAuth.loadSession");
             if (stored is not null && !string.IsNullOrWhiteSpace(stored.Token))
+            {
                 _currentUser = new CurrentUser(stored.PlayerId, stored.Username, stored.Email);
+                await DetectAdminAsync(stored.Token);
+            }
             _initialized = true; // seulement après succès JS (pas pendant le prerendering)
         }
         catch
         {
             // Prerendering : JS indisponible → on ne marque pas comme initialisé pour réessayer
             _currentUser = null;
+            _isAdmin = false;
         }
         OnAuthStateChanged?.Invoke();
     }
@@ -47,6 +53,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             var result = await api.AccountLoginAsync(username, password);
             await PersistSessionAsync(result);
             _currentUser = new CurrentUser(result.PlayerId, result.PlayerName, result.Email);
+            await DetectAdminAsync(result.Token);
             _initialized = true;
             OnAuthStateChanged?.Invoke();
             return (true, null);
@@ -64,6 +71,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             var result = await api.RegisterAsync(username, password, email, countryCode);
             await PersistSessionAsync(result);
             _currentUser = new CurrentUser(result.PlayerId, result.PlayerName, result.Email);
+            await DetectAdminAsync(result.Token);
             _initialized = true;
             OnAuthStateChanged?.Invoke();
             return (true, null);
@@ -77,6 +85,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
     public async Task LogoutAsync()
     {
         _currentUser = null;
+        _isAdmin = false;
         await js.InvokeVoidAsync("playalamaAuth.clearSession");
         OnAuthStateChanged?.Invoke();
     }
@@ -100,6 +109,19 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             username = result.PlayerName,
             email = result.Email
         });
+    }
+
+    private async Task DetectAdminAsync(string token)
+    {
+        try
+        {
+            var status = await api.GetStatusAsync(token);
+            _isAdmin = status is not null;
+        }
+        catch
+        {
+            _isAdmin = false;
+        }
     }
 
     private sealed record StoredSession(string Token, string PlayerId, string Username, string? Email);

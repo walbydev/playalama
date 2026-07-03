@@ -1,4 +1,5 @@
 @inject IStringLocalizer<SharedResource> L
+@inject AuthService Auth
 
 <footer role="contentinfo">
     <div class="footer-grid">
@@ -30,7 +31,10 @@
                 <li><a href="/documentation">@L["Footer.Documentation"]</a></li>
                 <li><a href="/contact">@L["Footer.Contact"]</a></li>
                 <li><a href="/license">@L["Footer.License"]</a></li>
-                <li><a href="/status" style="opacity:.7;font-size:.95rem">@L["Footer.Admin"]</a></li>
+                @if (Auth.IsAdmin)
+                {
+                    <li><a href="/status" style="opacity:.7;font-size:.95rem">@L["Footer.Admin"]</a></li>
+                }
             </ul>
         </div>
     </div>
