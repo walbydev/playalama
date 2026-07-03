@@ -411,7 +411,7 @@
   <data name="Modes.blitz.Badge"><value>Fast</value></data>
   <data name="Modes.blitz.FullDesc"><value>In Blitz mode, every second counts: maximize score under time pressure.</value></data>
   <data name="Modes.blitz.Name"><value>Blitz</value></data>
-  <data name="Modes.blitz.ShortDesc"><value>3-minute countdown. Score as much as possible before the buzzer.</value></data>
+  <data name="Modes.blitz.ShortDesc"><value>5-minute countdown. Score as much as possible before the buzzer.</value></data>
   <data name="Modes.chaos.Badge"><value>Experimental</value></data>
   <data name="Modes.chaos.FullDesc"><value>Chaos mode introduces unstable rules and dramatic score swings.</value></data>
   <data name="Modes.chaos.Name"><value>Chaos</value></data>

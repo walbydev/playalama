@@ -2165,7 +2165,7 @@ html.highcontrast .rack-tile--used {
 .scoreboard-name { font-weight: 600; font-size: .95rem; }
 .scoreboard-score { font-size: 1.05rem; font-weight: 700; color: var(--accent2); white-space: nowrap; }
 .scoreboard-rack-count { font-size: .72rem; color: var(--text-dim); }
-.scoreboard-timer { font-size: .75rem; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.scoreboard-timer { font-size: 1rem; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .scoreboard-timer--low { color: var(--danger, #ef4444); animation: timer-pulse 1s ease-in-out infinite; }
 @keyframes timer-pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
 

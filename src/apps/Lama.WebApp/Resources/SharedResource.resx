@@ -411,7 +411,7 @@
   <data name="Modes.blitz.Badge"><value>Rapide</value></data>
   <data name="Modes.blitz.FullDesc"><value>En Blitz, chaque seconde compte : score maximum en un temps limité.</value></data>
   <data name="Modes.blitz.Name"><value>Blitz</value></data>
-  <data name="Modes.blitz.ShortDesc"><value>3 minutes chrono. Pose le plus de points avant le buzzer.</value></data>
+  <data name="Modes.blitz.ShortDesc"><value>5 minutes chrono. Pose le plus de points avant le buzzer.</value></data>
   <data name="Modes.chaos.Badge"><value>Expérimental</value></data>
   <data name="Modes.chaos.FullDesc"><value>Le mode Chaos introduit des règles instables et des renversements de score.</value></data>
   <data name="Modes.chaos.Name"><value>Chaos</value></data>

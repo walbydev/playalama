@@ -40,7 +40,7 @@
                 var timeUsed = isActive && !isAbandoned && TurnStartAt.HasValue
                     ? player.TimeUsed + (int)(DateTimeOffset.UtcNow - TurnStartAt.Value).TotalSeconds
                     : player.TimeUsed;
-                <div class="scoreboard-timer text-dim" style="font-size:.7rem">⏱ @FormatTime(timeUsed)</div>
+                <div class="scoreboard-timer text-dim">⏱ @FormatTime(timeUsed)</div>
             }
             @if (isActive && !isAbandoned)
             {

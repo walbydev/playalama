@@ -1369,18 +1369,32 @@ public static class GamesCommandEndpoints
                 if (botProfile is null)
                     return;
 
-                // Délai avant que le bot ne joue. En mode Blitz, l'IA est trop rapide :
-                // on ajoute une probabilité d'attente plus longue pour qu'elle consomme
-                // du temps de réflexion, rendant la partie plus équilibrée.
+                // Délai avant que le bot ne joue. En mode Blitz, l'IA doit consommer
+                // du temps de réflexion pour équilibrer la partie :
+                //   - coups rapides   : 20–30s
+                //   - coups longs     : 21–60s
+                // Le niveau du bot réduit progressivement les temps (un bot expert réfléchit
+                // plus vite qu'un débutant), mais jamais en dessous de 8s.
                 var baseDelayMs = 600;
                 if (game.GameLevel == GameLevel.Blitz)
                 {
-                    // 60% du temps : délai court (1.5–3s, simule un coup rapide)
-                    // 40% du temps : délai long (4–9s, simule une réflexion)
+                    // Facteur de réduction par niveau : 1.0 (niv.1) → 0.4 (niv.5)
+                    var levelFactor = Math.Max(0.4, 1.0 - (botProfile.Level - 1) * 0.15);
+
                     if (Random.Shared.NextDouble() < 0.4)
-                        baseDelayMs = Random.Shared.Next(4000, 9000);
+                    {
+                        // Réflexion longue : 21–60s, réduite par le niveau
+                        var minLong = (int)Math.Round(21000 * levelFactor);
+                        var maxLong = (int)Math.Round(60000 * levelFactor);
+                        baseDelayMs = Random.Shared.Next(Math.Max(8000, minLong), Math.Max(8001, maxLong));
+                    }
                     else
-                        baseDelayMs = Random.Shared.Next(1500, 3000);
+                    {
+                        // Coup rapide : 20–30s, réduits par le niveau
+                        var minQuick = (int)Math.Round(20000 * levelFactor);
+                        var maxQuick = (int)Math.Round(30000 * levelFactor);
+                        baseDelayMs = Random.Shared.Next(Math.Max(8000, minQuick), Math.Max(8001, maxQuick));
+                    }
                 }
 
                 await Task.Delay(baseDelayMs, CancellationToken.None);

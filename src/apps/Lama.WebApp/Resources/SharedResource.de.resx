@@ -410,7 +410,7 @@
   <data name="Modes.blitz.Badge"><value>Schnell</value></data>
   <data name="Modes.blitz.FullDesc"><value>Im Blitz-Modus zählt jede Sekunde: maximale Punkte unter Zeitdruck.</value></data>
   <data name="Modes.blitz.Name"><value>Blitz</value></data>
-  <data name="Modes.blitz.ShortDesc"><value>3 Minuten Countdown. Sammle maximal Punkte bis zum Buzzer.</value></data>
+  <data name="Modes.blitz.ShortDesc"><value>5 Minuten Countdown. Sammle maximal Punkte bis zum Buzzer.</value></data>
   <data name="Modes.chaos.Badge"><value>Experimentell</value></data>
   <data name="Modes.chaos.FullDesc"><value>Im Chaos-Modus sorgen instabile Regeln für große Wendungen.</value></data>
   <data name="Modes.chaos.Name"><value>Chaos</value></data>
