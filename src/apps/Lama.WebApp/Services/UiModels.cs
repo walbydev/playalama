@@ -173,6 +173,31 @@ public sealed record LeaderboardEntry(
     int Wins,
     int Games);
 
+// ── Rating joueur ──────────────────────────────────────────────────────────────
+
+public sealed record WebPlayerRating(
+    string PlayerId,
+    string Username,
+    string LevelName,
+    int Level,
+    int EloOpen,
+    int EloTournament,
+    double GlobalPrestige,
+    int Wins,
+    int Losses,
+    int Abandoned,
+    double WinRate,
+    double AverageScore,
+    DateTimeOffset? LastGameAt)
+{
+    public int TotalGames => Wins + Losses + Abandoned;
+
+    /// <summary>Emoji du niveau (extrait du LevelName qui commence par l'emoji).</summary>
+    public string LevelEmoji => LevelName.Length > 0
+        ? string.Concat(LevelName.TakeWhile(c => !char.IsLetter(c))).Trim()
+        : "✨";
+}
+
 // ── Monitoring / Dashboard ─────────────────────────────────────────────────
 
 public sealed record ServerStatusDto(

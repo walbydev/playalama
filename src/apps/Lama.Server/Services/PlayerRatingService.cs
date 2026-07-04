@@ -121,11 +121,13 @@ public sealed class PlayerRatingService(LamaDbContext db) : IPlayerRatingService
                 gameResults.Count);
 
             // L'Elo n'est approvisionné que si la partie n'est pas un abandon et
-            // n'a pas utilisé de suggestion (hors mode Tournament).
+            // n'a pas utilisé de suggestion.
+            // Note : play.suggest est interdit en mode Tournament, donc SuggestionsUsed
+            // sera toujours false en Tournament — la condition est uniforme.
             var eloFeeds = result.IsRanked
                 && result.Queue != RankingQueue.CasualUnranked
                 && !result.IsAbandoned
-                && !(result.SuggestionsUsed && result.Queue != RankingQueue.Tournament);
+                && !result.SuggestionsUsed;
 
             if (eloFeeds)
                 row.EloRating = (decimal)EloCalc.ApplyRatingChange((double)row.EloRating, change);

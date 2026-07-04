@@ -55,6 +55,51 @@ else
                 </div>
             }
 
+            @if (_rating is not null)
+            {
+                <div class="card mb-4">
+                    <h2 class="mb-3">🏅 Classement &amp; Niveau</h2>
+                    <div style="display:flex; flex-direction:column; gap:.75rem">
+                        <div class="flex justify-between align-center">
+                            <span class="text-muted">Niveau</span>
+                            <strong style="font-size:1.05rem">@_rating.LevelName</strong>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted">ELO Open</span>
+                            <strong>@_rating.EloOpen</strong>
+                        </div>
+                        @if (_rating.EloTournament != 1200 || _rating.EloTournament != _rating.EloOpen)
+                        {
+                            <div class="flex justify-between">
+                                <span class="text-muted">ELO Tournoi</span>
+                                <strong>@_rating.EloTournament</strong>
+                            </div>
+                        }
+                        <div style="border-top:1px solid var(--border); padding-top:.75rem; display:flex; flex-direction:column; gap:.5rem">
+                            <div class="flex justify-between">
+                                <span class="text-muted">Victoires / Défaites</span>
+                                <strong>@_rating.Wins V · @_rating.Losses D</strong>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted">Taux de victoire</span>
+                                <strong>@_rating.WinRate.ToString("F1") %</strong>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted">Parties jouées</span>
+                                <strong>@_rating.TotalGames</strong>
+                            </div>
+                            @if (_rating.AverageScore > 0)
+                            {
+                                <div class="flex justify-between">
+                                    <span class="text-muted">Score moyen</span>
+                                    <strong>@_rating.AverageScore.ToString("F0") pts</strong>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
             <div class="card">
                 <h2 class="mb-3">@L["Profile.Edit"]</h2>
                 <EditForm Model="_updateForm" OnValidSubmit="SaveAsync">
@@ -107,6 +152,7 @@ else
 
 @code {
     private WebPlayerProfile? _profile;
+    private WebPlayerRating? _rating;
     private readonly ProfileUpdateForm _updateForm = new();
     private bool _busy;
     private string? _error;
@@ -171,6 +217,7 @@ else
             _profile = await Api.GetMyProfileAsync(token);
             _updateForm.Email = _profile?.Email;
             _updateForm.CountryCode = _profile?.CountryCode ?? string.Empty;
+            _rating = await Api.GetMyRatingAsync(token);
         }
         catch (Exception ex) { _error = ex.Message; }
     }

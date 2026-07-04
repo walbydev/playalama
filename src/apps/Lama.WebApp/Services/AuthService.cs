@@ -13,11 +13,15 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
     private CurrentUser? _currentUser;
     private bool _isAdmin;
     private bool _initialized;
+    private WebPlayerRating? _currentRating;
 
     public CurrentUser? CurrentUser => _currentUser;
     public bool IsLoggedIn => _currentUser is not null;
     public bool IsInitialized => _initialized;
     public bool IsAdmin => _isAdmin;
+
+    /// <summary>Rating et niveau du joueur connecté (null si non chargé ou non connecté).</summary>
+    public WebPlayerRating? CurrentRating => _currentRating;
 
     /// <summary>Notifie les composants abonnés d'un changement d'état d'authentification.</summary>
     public event Action? OnAuthStateChanged;
@@ -34,6 +38,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             {
                 _currentUser = new CurrentUser(stored.PlayerId, stored.Username, stored.Email);
                 await DetectAdminAsync(stored.Token);
+                await LoadRatingAsync(stored.Token);
             }
             _initialized = true; // seulement après succès JS (pas pendant le prerendering)
         }
@@ -54,6 +59,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             await PersistSessionAsync(result);
             _currentUser = new CurrentUser(result.PlayerId, result.PlayerName, result.Email);
             await DetectAdminAsync(result.Token);
+            await LoadRatingAsync(result.Token);
             _initialized = true;
             OnAuthStateChanged?.Invoke();
             return (true, null);
@@ -72,6 +78,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             await PersistSessionAsync(result);
             _currentUser = new CurrentUser(result.PlayerId, result.PlayerName, result.Email);
             await DetectAdminAsync(result.Token);
+            await LoadRatingAsync(result.Token);
             _initialized = true;
             OnAuthStateChanged?.Invoke();
             return (true, null);
@@ -85,6 +92,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
     public async Task LogoutAsync()
     {
         _currentUser = null;
+        _currentRating = null;
         _isAdmin = false;
         await js.InvokeVoidAsync("playalamaAuth.clearSession");
         OnAuthStateChanged?.Invoke();
@@ -121,6 +129,18 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
         catch
         {
             _isAdmin = false;
+        }
+    }
+
+    private async Task LoadRatingAsync(string token)
+    {
+        try
+        {
+            _currentRating = await api.GetMyRatingAsync(token);
+        }
+        catch
+        {
+            _currentRating = null;
         }
     }
 

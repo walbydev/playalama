@@ -169,6 +169,7 @@ app.MapAuthEndpoints(jwtService);
 
 // Player profile endpoints
 app.MapPlayerEndpoints();
+app.MapRatingEndpoints();
 
 var api = app.MapGroup("/api/v1");
 api.MapGamesReadEndpoints();

@@ -304,7 +304,8 @@ else
                                         MyPlayerId="@_myPlayerId"
                                         TimePerPlayerSeconds="_vm.Snapshot.TimePerPlayerSeconds"
                                         TurnStartAt="_vm.Snapshot.TurnStartAt"
-                                        AbandonedPlayerIds="_vm.Snapshot.AbandonedPlayerIds" />
+                                        AbandonedPlayerIds="_vm.Snapshot.AbandonedPlayerIds"
+                                        PlayerLevelLabels="_playerLevelLabels" />
                         </div>
 
                         <div class="card game-messages-panel sidebar-panel" data-tab="messages">
@@ -693,6 +694,7 @@ else
     private DateTimeOffset _turnNoticeUntilUtc;
     private string? _lastAnnouncedMoveId;
     private bool _exportCopied;
+    private IReadOnlyDictionary<string, string>? _playerLevelLabels;
 
     protected override async Task OnInitializedAsync()
     {
@@ -709,6 +711,9 @@ else
         await _vm.LoadAsync(Api);
         _dictLang = GetLexiconLanguage();
         SyncRackOrder();
+
+        // Charger les niveaux des joueurs (best-effort, ne bloque pas si le serveur ne répond pas)
+        _ = LoadPlayerLevelsAsync();
 
         // Redirection vers lobby si la partie n'a pas encore démarré
         if (_vm.Snapshot is { UsesLobby: true, HasStarted: false })
@@ -1255,6 +1260,34 @@ else
         await Task.Delay(2000);
         _exportCopied = false;
         StateHasChanged();
+    }
+
+    private async Task LoadPlayerLevelsAsync()
+    {
+        try
+        {
+            var players = _vm.Snapshot?.Players;
+            if (players is null || players.Count == 0) return;
+
+            var labels = new Dictionary<string, string>();
+            foreach (var p in players)
+            {
+                if (p.IsBot || string.IsNullOrWhiteSpace(p.PlayerId)) continue;
+                var rating = await Api.GetPlayerRatingAsync(p.PlayerId);
+                if (rating is not null)
+                    labels[p.PlayerId] = rating.LevelName;
+            }
+
+            if (labels.Count > 0)
+            {
+                _playerLevelLabels = labels;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch
+        {
+            // Best-effort : pas critique si la requête échoue
+        }
     }
 
     public async ValueTask DisposeAsync()

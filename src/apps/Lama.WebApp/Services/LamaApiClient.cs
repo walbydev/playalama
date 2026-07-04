@@ -118,6 +118,32 @@ public sealed class LamaApiClient(HttpClient httpClient)
                 payload.CreatedAt);
     }
 
+    // ── Rating joueur ─────────────────────────────────────────────────────────
+
+    /// <summary>Retourne le rating et le niveau du joueur authentifié.</summary>
+    public async Task<WebPlayerRating?> GetMyRatingAsync(string token, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBase}/players/me/rating");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<WebPlayerRating>(JsonOptions, cancellationToken);
+    }
+
+    /// <summary>Retourne le rating et le niveau d'un joueur par son identifiant (public).</summary>
+    public async Task<WebPlayerRating?> GetPlayerRatingAsync(string playerId, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.GetAsync($"{ApiBase}/players/{playerId}/rating", cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<WebPlayerRating>(JsonOptions, cancellationToken);
+    }
+
+
     public Task<WebPlayerProfile?> UpdateMyAccessibilityAsync(
         string token,
         WebAccessibilityPreferences accessibility,

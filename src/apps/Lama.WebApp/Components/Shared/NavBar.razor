@@ -32,7 +32,13 @@
         }
         else if (Auth.IsLoggedIn)
         {
-            <a href="/profile" class="btn btn-ghost btn-sm">@Auth.CurrentUser!.Username</a>
+            <a href="/profile" class="btn btn-ghost btn-sm" style="display:flex; align-items:center; gap:.4rem">
+                @Auth.CurrentUser!.Username
+                @if (Auth.CurrentRating is { } r)
+                {
+                    <span class="lb-level" title="@r.LevelName | ELO @r.EloOpen">@r.LevelEmoji</span>
+                }
+            </a>
             @if (!CompactMode)
             {
                 <button class="btn btn-outline btn-sm" type="button" @onclick="LogoutAsync">@L["Nav.Logout"]</button>
