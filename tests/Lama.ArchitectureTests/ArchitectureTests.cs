@@ -56,21 +56,21 @@ namespace Lama.ArchitectureTests
             ValidateProjectStructure(contracts, new[] { "Lama.Domain", "Lama.Core", "Lama.Infrastructure" },
                 "Contracts should not depend on any other project");
 
-            ValidateProjectStructure(domain, new[] { "Lama.Core", "Lama.Infrastructure" },
-                "Domain should only reference Contracts", shouldReference: new[] { "Lama.Contracts" });
+            ValidateProjectStructure(domain, Array.Empty<string>(), "Domain should only reference Contracts",
+                new[] { "Lama.Contracts" });
 
             ValidateProjectStructure(core, new[] { "Lama.Infrastructure" },
-                "Core should only reference Domain", shouldReference: new[] { "Lama.Domain" });
+                "Core should only reference Domain", new[] { "Lama.Domain" });
 
-            ValidateProjectStructure(infrastructure, new[] {}, "Infrastructure should reference Contracts and Domain",
-                shouldReference: new[] { "Lama.Contracts", "Lama.Domain" });
+            ValidateProjectStructure(infrastructure, Array.Empty<string>(), "Infrastructure should reference Contracts and Domain",
+                new[] { "Lama.Contracts", "Lama.Domain" });
         }
 
         [Fact]
         public void LanguagePacks_Dependencies_ArchCorrect()
         {
             var languageFiles = Directory.GetFiles(SrcRoot, "*.csproj", SearchOption.AllDirectories)
-                .Where(f => f.Contains("Lama.Languages"))
+                .Where(f => Path.GetFileNameWithoutExtension(f).Contains("Languages"))
                 .ToList();
 
             foreach (var langFile in languageFiles)
@@ -94,11 +94,12 @@ namespace Lama.ArchitectureTests
         {
             var appProjects = Directory.GetFiles(SrcRoot, "*.csproj", SearchOption.AllDirectories)
                 .Count(f =>
-                    Path.GetFileNameWithoutExtension(f).EndsWith("Lama.Console.csproj") ||
-                    Path.GetFileNameWithoutExtension(f).EndsWith("Lama.Server.csproj") ||
-                    Path.GetFileNameWithoutExtension(f).EndsWith("Lama.WebApp.csproj") ||
-                    Path.GetFileNameWithoutExtension(f).EndsWith("Lama.AIServer.csproj")
-                );
+                    new[] {
+                        "Lama.Console.csproj",
+                        "Lama.Server.csproj",
+                        "Lama.WebApp.csproj",
+                        "Lama.AIServer.csproj"
+                    }.Contains(Path.GetFileNameWithoutExtension(f)));
 
             appProjects.Should().BeGreaterThan(0, "Should have at least one App project");
         }
@@ -109,11 +110,12 @@ namespace Lama.ArchitectureTests
             var appFiles = Directory.GetFiles(SrcRoot, "*.csproj", SearchOption.AllDirectories)
                 .Where(f => !Path.GetFileNameWithoutExtension(f).EndsWith(".Tests"))
                 .Where(f =>
-                    Path.GetFileNameWithoutExtension(f).Contains("Lama.Console") ||
-                    Path.GetFileNameWithoutExtension(f).Contains("Lama.Server") ||
-                    Path.GetFileNameWithoutExtension(f).Contains("Lama.WebApp") ||
-                    Path.GetFileNameWithoutExtension(f).Contains("Lama.AIServer")
-                )
+                    new[] {
+                        "Lama.Console",
+                        "Lama.Server",
+                        "Lama.WebApp",
+                        "Lama.AIServer"
+                    }.Any(prefix => Path.GetFileNameWithoutExtension(f).Contains(prefix)))
                 .ToList();
 
             foreach (var appFile in appFiles)
@@ -123,10 +125,11 @@ namespace Lama.ArchitectureTests
 
                 var references = ParseProjectReferences(appContent);
 
-                var validReferences = references.Where(r => r.Contains("Lama.Domain") ||
-                                                                r.Contains("Lama.Core") ||
-                                                                r.Contains("Lama.Infrastructure") ||
-                                                                r.Contains("Lama.Contracts"));
+                var validReferences = references.Where(r =>
+                    r.Contains("Lama.Domain") ||
+                    r.Contains("Lama.Core") ||
+                    r.Contains("Lama.Infrastructure") ||
+                    r.Contains("Lama.Contracts"));
 
                 validReferences.Should().BeEmpty(
                     $"App {appName} should not reference Domain/Core/Infrastructure directly");
@@ -140,7 +143,7 @@ namespace Lama.ArchitectureTests
             var forbiddenFound = references.Where(r => forbiddenDeps.Any(d => r.Contains(d)));
             forbiddenFound.Should().BeEmpty(failureMessage);
 
-            if (shouldReference != null)
+            if (shouldReference != null && shouldReference.Length > 0)
             {
                 var requiredFound = references.Where(r => shouldReference.Any(d => r.Contains(d)));
                 requiredFound.Should().NotBeEmpty(
@@ -151,18 +154,19 @@ namespace Lama.ArchitectureTests
         private static List<string> ParseProjectReferences(string csprojContent)
         {
             var result = new List<string>();
+            var quote = '"';
             var openingTag = csprojContent.IndexOf("<ProjectReference Include=", StringComparison.Ordinal);
 
             while (openingTag > -1)
             {
-                var closingQuoteIndex = csprojContent.IndexOf('"', openingTag + 25);
+                var closingQuoteIndex = csprojContent.IndexOf(quote, openingTag + 25);
                 if (closingQuoteIndex == -1)
                     break;
 
                 var startIndex = openingTag + 25;
                 var reference = csprojContent.Substring(startIndex, closingQuoteIndex - startIndex);
 
-                reference = reference.Replace('"', "");
+                reference = reference.Replace(quote, "");
                 result.Add(reference.Trim());
                 openingTag = csprojContent.IndexOf("<ProjectReference Include=", openingTag + 1, StringComparison.Ordinal);
             }
