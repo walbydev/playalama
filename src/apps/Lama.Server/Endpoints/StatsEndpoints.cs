@@ -34,15 +34,15 @@ public static class StatsEndpoints
                 // Base indisponible → on retombe sur les compteurs mémoire uniquement.
             }
 
-            // Parties en cours (mémoire) ajoutées au total joué.
-            gamesPlayed += state.ListGames().Count;
-
             var languageCount = languages.SupportedLanguages.Count;
+            var activeGames = state.ListGames().Count(g => !g.IsClosed);
 
+            // gamesPlayed = parties terminées en DB uniquement (pas les parties en cours)
             return Results.Ok(new
             {
                 activePlayers,
                 gamesPlayed,
+                activeGames,
                 languages = languageCount
             });
         })

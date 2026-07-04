@@ -1,6 +1,8 @@
 using Lama.Server.Data;
 using Lama.Server.Data.Models.Rating;
+using Lama.Server.Runtime;
 using Lama.Server.Security;
+using Lama.Server.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lama.Server.Endpoints.Auth;
@@ -38,7 +40,7 @@ public static class AuthEndpoints
             .WithTags("Authentication");
 
         // Compte Web — inscription
-        group.MapPost("/register", async (RegisterRequest request, LamaDbContext db) =>
+        group.MapPost("/register", async (RegisterRequest request, LamaDbContext db, GameHubState state, IOutboundNotifier notifier, CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(request.Username) || request.Username.Trim().Length < 2)
                 return Results.BadRequest(new { error = "Le pseudo doit contenir au moins 2 caractères." });
@@ -67,6 +69,11 @@ public static class AuthEndpoints
 
                 db.Players.Add(player);
                 await db.SaveChangesAsync();
+
+                // Notifie HomeAssistant (fire-and-forget, ne bloque pas la réponse)
+                var totalPlayers = await db.Players.CountAsync(cancellationToken);
+                var activeGames = state.ListGames().Count(g => !g.IsClosed);
+                _ = notifier.NotifyPlayerRegisteredAsync(player.Username, totalPlayers, activeGames, CancellationToken.None);
 
                 var token = tokenService.GenerateToken(player.PlayerId.ToString("N"), player.Username);
                 return Results.Created($"/api/v1/players/{player.PlayerId}", new LoginResponse(

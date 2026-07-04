@@ -51,6 +51,27 @@ else
     builder.Services.AddSingleton<IAISuggestionClient, NullAISuggestionClient>();
 }
 
+// ── Notifier HomeAssistant (webhook sortant) ──────────────────────────────
+var haWebhookUrl = Environment.GetEnvironmentVariable("LAMA_HA_WEBHOOK_URL")
+               ?? builder.Configuration["LAMA_HA_WEBHOOK_URL"];
+
+if (!string.IsNullOrWhiteSpace(haWebhookUrl))
+{
+    builder.Services.AddHttpClient("ha-notifier", client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(5);
+    });
+    builder.Services.AddSingleton<IOutboundNotifier>(sp =>
+        new HomeAssistantNotifier(
+            sp.GetRequiredService<IHttpClientFactory>(),
+            haWebhookUrl,
+            sp.GetRequiredService<ILogger<HomeAssistantNotifier>>()));
+}
+else
+{
+    builder.Services.AddSingleton<IOutboundNotifier, NullOutboundNotifier>();
+}
+
 // ── Rating service (scoped — partage le DbContext) ────────────────────────
 builder.Services.AddScoped<IPlayerRatingService, PlayerRatingService>();
 
