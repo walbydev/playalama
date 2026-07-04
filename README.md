@@ -1,142 +1,142 @@
 # LAMA
 
-LAMA est un jeu de mots inspiré du Scrabble, développé en C# / .NET 10.
-Les joueurs posent des mots sur un plateau en grille, accumulent des points selon la valeur des lettres et les cases bonus, et s'affrontent jusqu'à épuisement du sac de lettres.
+LAMA is a word game inspired by Scrabble, developed in C# / .NET 10.
+Players place words on a grid, scoring points based on letter values and bonus squares, competing until the letter bag is empty.
 
-## Licence
+## License
 
-Ce projet est distribué sous **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)**.
+This project is distributed under the **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)**.
 
-- Le fichier de référence est `LICENSE` à la racine du dépôt.
-- L'AGPL garantit que les forks et versions modifiées exposées en réseau restent libres.
-- Les dons pour financer l'infrastructure sont compatibles avec cette licence.
+- The reference file is `LICENSE` at the root of the repository.
+- AGPL ensures that forks and modified versions exposed over the network remain free.
+- Donations to fund infrastructure are compatible with this license.
 
-Le jeu est disponible via plusieurs interfaces :
+The game is available through several interfaces:
 
-- une **console** (CLI) avec deux modes : **commande par commande** (actions ponctuelles, scripts, tests) et **interactif textuel** (menus, prompts, affichage enrichi) ;
-- une **WebApp Blazor Server** (`Lama.WebApp`) : portail public + interface de jeu en ligne ;
-- un **serveur API** (`Lama.Server`) : parties centralisées online, classement, streaming SSE.
+- A **console** (CLI) with two modes: **command line** (one-off actions, scripts, tests) and **textual interactive** (menus, prompts, enriched display);
+- A **Blazor Server WebApp** (`Lama.WebApp`): public portal + online game interface;
+- An **API server** (`Lama.Server`): centralized online play, rankings, SSE streaming.
 
 ---
 
-## Règles du jeu
+## Game Rules
 
-### Le plateau
+### The board
 
-- Grille carrée **15×15** par défaut (configurable de 15 à 26)
-- Coordonnées : lettre = colonne (A–O), chiffre = ligne (1–15) — ex. `H8` pour la case centrale
-- Cases bonus (style Scrabble classique) : multiplicateurs de lettre et de mot
+- Square board **15×15** by default (configurable from 15 to 26)
+- Coordinates: letter = column (A–O), number = row (1–15) — e.g., `H8` for center square
+- Bonus squares (classic Scrabble style): letter and word multipliers
 
-### Les tuiles
+### Tiles
 
-- Chaque lettre possède une valeur en points définie par le dictionnaire de langue
-- **2 jokers** par défaut — ils peuvent représenter n'importe quelle lettre (valeur 0 pt)
-- Le rack contient **7 lettres** par défaut
+- Each letter has a point value defined by the language dictionary
+- **2 jokers** by default — they can represent any letter (0 pt value)
+- The rack contains **7 letters** by default
 
-### Tour de jeu
+### Game turn
 
-À chaque tour, le joueur actif doit faire l'une de ces actions :
+At each turn, the active player must make one of these actions:
 
-| Action | Commande |
+| Action | Command |
 |--------|----------|
-| Poser un mot sur le plateau | `lama play move <case> <mot> <direction>` |
-| Passer son tour | `lama play pass` |
-| Échanger des lettres contre le sac | `lama play swap <lettres>` |
-| Contester le dernier mot joué | `lama play challenge` |
+| Place a word on the board | `lama play move <square> <word> <direction>` |
+| Pass turn | `lama play pass` |
+| Exchange letters for the bag | `lama play swap <letters>` |
+| Challenge the last played word | `lama play challenge` |
 
-### Placement d'un mot
+### Word placement
 
-- Le **premier mot** doit passer par la case de départ, par défaut le centre `H8`
-- Direction : `H` pour horizontal ou `V` pour vertical
-- Chaque mot posé doit être raccordé aux lettres déjà présentes, sauf le premier
-- Tous les mots formés, principal et croisements, doivent être dans le dictionnaire
-- Longueur minimale : **2 lettres** par défaut
+- The **first word** must pass through the starting square, by default the center `H8`
+- Direction: `H` for horizontal or `V` for vertical
+- Each placed word must connect to existing letters, except for the first word
+- All formed words, main and crossings, must be in the dictionary
+- Minimum length: **2 letters** by default
 
-### Croisements (partage de lettres)
+### Crossings (shared letters)
 
-Quand vous posez un mot qui croise un mot existant :
+When you place a word that crosses an existing word:
 
-1. **Spécifiez le mot complet**, incluant la lettre du croisement
-2. **La lettre doit correspondre** à celle qui existe déjà sur le plateau
-3. Le système valide automatiquement les croisements
+1. **Specify the complete word**, including the crossing letter
+2. **The letter must match** the one already on the board
+3. The system automatically validates crossings
 
-**Exemple** : Si `LAMA` est déjà horizontal en H8, vous pouvez poser `MAISON`verticalement en J8 :
+**Example**: If `LAMA` is already horizontal on H8, you can play `MAISON` vertically on J8:
 ```bash
 lama play move J8 MAISON V
 ```
-Dans ce cas, le `M` de `MAISON` (en J8) croise avec le `M` de `LAMA` — c'est valide.
+In this case, the `M` of `MAISON` (in J8) crosses with the `M` of `LAMA` — this is valid.
 
-Si vous tentez `MAISON` en J8 avec un `M` incompatible, le système rejette le placement avec un message clair.
+If you attempt `MAISON` on J8 with an incompatible `M`, the system rejects the placement with a clear message.
 
-### Fin de partie
+### End of game
 
-La partie se termine quand :
+The game ends when:
 
-- le sac est vide **et** un joueur épuise son rack ;
-- le nombre maximum de tours est atteint, via `--max-turns` ;
-- le score maximum est atteint ;
-- un joueur met fin manuellement à la partie avec `lama game end`.
+- the bag is empty **and** a player empties their rack;
+- the maximum number of turns is reached, via `--max-turns`;
+- the maximum score is reached;
+- a player manually ends the game with `lama game end`.
 
 ---
 
 ## Architecture
 
-Le projet suit une architecture inspirée de la **Clean Architecture / Ports & Adapters**.
+The project follows the **Clean Architecture / Ports & Adapters** pattern.
 
-Le principe central est que la logique du jeu ne dépend d'aucune interface utilisateur.
-La console, la WebApp et le serveur appellent tous les mêmes services applicatifs.
+The core principle is that game logic does not depend on any user interface.
+All interfaces (console, WebApp, server) call the same application services.
 
-### Composants
+### Components
 
 ```text
 Apps
-├── Lama.Console   — CLI (mode commande + mode interactif)
-├── Lama.Server    — API HTTP autoritaire (état en mémoire, persistance PostgreSQL)
-├── Lama.WebApp    — Blazor Server (portail + interface de jeu, MVVM léger)
-└── Lama.AIServer  — service HTTP de suggestions de coups (port 5203)
+├── Lama.Console   — CLI (command-line + interactive mode)
+├── Lama.Server    — Authoritative HTTP API (in-memory state, async PostgreSQL persistence post-game)
+├── Lama.WebApp    — Blazor Server (portal + game interface, lightweight MVVM)
+└── Lama.AIServer  — HTTP service for move suggestions (port 5203)
 
 Libs
-├── Lama.Contracts       — types et interfaces (0 dépendance)
-├── Lama.Domain           — règles du jeu (GameEngine, MoveValidator, ScoreCalculator)
+├── Lama.Contracts       — types and interfaces (0 dependencies)
+├── Lama.Domain           — game rules (GameEngine, MoveValidator, ScoreCalculator)
 ├── Lama.Core             — use cases (CreateGame, PlayMove, EndGame, ...)
-├── Lama.Infrastructure   — persistance JSON, lexique PostgreSQL, auth, rating
-└── Lama.Languages.fr|de|en — packs de langue (assets JSON embarqués)
+├── Lama.Infrastructure   — JSON persistence, PostgreSQL lexicon, auth, rating
+└── Lama.Languages.fr|de|en — language packs (embedded JSON assets)
 ```
 
-### Console — modes supportés
+### Console — supported modes
 
 ```text
 Lama.Console
-├── Mode commande par commande
+├── Command line mode
 │   ├── lama game create
 │   ├── lama play move H8 LAMA H
 │   └── lama show board
-└── Mode interactif textuel
+└── Textual interactive mode
     ├── menus
     ├── prompts
-    ├── boucle de jeu
-    └── rendu textuel du plateau, du rack et des scores
+    ├── game loop
+    └── textual rendering of board, rack and scores
 ```
 
-Le point d'entrée `Program.cs` ne contient pas la logique du jeu.
-Il configure l'application, enregistre les services, puis délègue l'exécution au mode approprié.
+The entry point `Program.cs` contains no game logic.
+It configures the application, registers services, then delegates to the appropriate mode.
 
 ```text
 Program.cs -> ApplicationModeResolver -> CommandLineMode | InteractiveMode
 ```
 
-### Serveur online
+### Online server
 
-- `Lama.Server` est **autoritaire en mémoire** (`GameHubState`) avec persistance async PostgreSQL (EF Core) après fin de partie.
-- Streaming temps réel via **SSE** (Server-Sent Events), pas de SignalR.
-- Authentification **JWT** (`JwtTokenService` + `JwtMiddleware`).
-- Bots IA auto-seedés au démarrage (`BotCatalog` + `BotAutoPlayService`).
+- `Lama.Server` is **authoritative in memory** (`GameHubState`) with async PostgreSQL persistence after the game ends.
+- Real-time streaming via **SSE** (Server-Sent Events), not SignalR.
+- **JWT** authentication (`JwtTokenService` + `JwtMiddleware`).
+- AI bots auto-seeded at server startup (`BotCatalog` + `BotAutoPlayService`).
 
-### Décision sur le parsing des commandes
+### Decision on command parsing
 
-Le projet ne s'appuie pas sur le paquet `CommandLine` comme dépendance structurante.
+The project does not rely on the `CommandLine` package as a structural dependency.
 
-Le parsing reste volontairement simple dans le mode commande par commande :
+Parsing remains intentionally simple in command line mode:
 
 ```text
 lama game create
@@ -145,73 +145,73 @@ lama play move
 lama show board
 ```
 
-Cette décision permet de :
+This decision allows us to:
 
-- garder une architecture simple ;
-- éviter de coupler le jeu à une librairie de parsing CLI ;
-- faciliter le mode interactif textuel ;
-- maintenir la logique métier en dehors du projet console.
+- keep the architecture simple;
+- avoid coupling the game to a CLI library;
+- facilitate the textual interactive mode;
+- keep game logic outside the console project.
 
-Si un besoin fort apparaît plus tard pour une CLI avancée, scriptable et très typée, un parser pourra être ajouté uniquement dans `Lama.Console`, sans impacter `Core`, `Domain` ou `Contracts`.
+If a strong need arises later for an advanced, scriptable, and highly typed CLI, a parser could be added only in `Lama.Console`, without impacting `Core`, `Domain`, or `Contracts`.
 
 ---
 
-## Prérequis
+## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- Lexicon PostgreSQL disponible (mots + définitions), via `LAMA_LEXICON_CONNECTION_STRING` ou `ConnectionStrings:LamaServerDb`
-- Fichiers de langue dans `assets/languages/{fr,de,en}/` :
-  - `scores.json` — valeurs des lettres au format `{ "scores": { "A": 1, "Z": 10, ... } }`
-  - `tile-distribution.json` — distribution et règles de scaling des tuiles
+- PostgreSQL lexicon available (words + definitions), via `LAMA_LEXICON_CONNECTION_STRING` or `ConnectionStrings:LamaServerDb`
+- Language files in `assets/languages/{fr,de,en}/`:
+  - `scores.json` — letter values in the format `{ "scores": { "A": 1, "Z": 10, ... } }`
+  - `tile-distribution.json` — tile distribution and scaling rules
 
 ---
 
-## Commandes de base
+## Basic Commands
 
-### Construire le projet
+### Build the project
 
 ```bash
 dotnet build
 ```
 
-### Lancer le mode interactif textuel
+### Launch the textual interactive mode
 
-Le mode interactif est l'expérience principale pour jouer dans un terminal.
+The interactive mode is the primary game experience in a terminal.
 
 ```bash
 lama
 ```
 
-ou explicitement :
+or explicitly:
 
 ```bash
 lama interactive
 ```
 
-Alias prévus :
+Proposed aliases:
 
 ```bash
 lama shell
 lama ui
 ```
 
-Dans ce mode, le joueur est guidé par des menus textuels, des prompts et des écrans de jeu.
+In this mode, the player is guided by textual menus, prompts and game screens.
 
-Exemples d'actions proposées :
+Proposed actions include:
 
-- créer une partie ;
-- rejoindre une partie ;
-- afficher le plateau ;
-- afficher son rack ;
-- jouer un mot ;
-- passer son tour ;
-- échanger des lettres ;
-- sauvegarder ;
-- quitter.
+- create a game;
+- join a game;
+- show the board;
+- show your rack;
+- play a word;
+- pass your turn;
+- exchange letters;
+- save;
+- quit.
 
-### Utiliser le mode commande par commande
+### Use the command line mode
 
-Le mode commande par commande permet d'exécuter une action unique puis de terminer le processus.
+The command line mode allows you to execute a single action and then terminate the process.
 
 ```bash
 lama game create
@@ -224,99 +224,98 @@ lama game save
 lama game end
 ```
 
+This mode is suitable for:
 
-Ce mode est adapté :
+- fast uses;
+- scripts;
+- end-to-end tests;
+- automations;
+- diagnostic commands.
 
-- aux usages rapides ;
-- aux scripts ;
-- aux tests end-to-end ;
-- aux automatisations ;
-- aux commandes de diagnostic.
-
-### Démarrer une partie en mode commande
+### Start a game in command line mode
 
 ```bash
-# Partie classique à 2 joueurs
+# Classic 2-player game
 lama game create Alice
 lama game join Philippe
 lama game join Sophie
-# Partie avec options
+# Game with options
 lama game create --level tournament
 ```
 
-### Jouer en mode commande
+### Play in command line mode
 
 ```bash
-# Poser un mot en H8 horizontalement
+# Place a word horizontally on H8
 lama play move H8 MAISON H
-# Poser un mot avec croisement
+# Place a word with crossing
 lama play move J8 MAISON V
-# Poser un mot avec joker force (notation minuscule)
+# Place a word with forced joker (lowercase letter)
 lama play move H8 mAISON H
-# Simuler un coup sans le jouer
+# Simulate a move without playing it
 lama play move A1 ZEN H --dry-run
-# Passer son tour
+# Pass your turn
 lama play pass
-# Échanger des lettres
+# Exchange letters
 lama play swap AEI
 lama play swap --all
 ```
 
-### Affichage
+### Display
 
 ```bash
-# Plateau avec mise en évidence du dernier coup
+# Board with highlight of the last move
 lama show board
 # Rack
 lama show rack
 # Scores
 lama show scores
-# Historique des 5 derniers coups
+# History of the last 5 moves
 lama show history --last 5
 ```
 
-### Profils joueurs
+### Player profiles
 
 ```bash
-# Créer un profil avec métadonnées optionnelles
-lama player create Carla --pseudo Krl --country FR --region Bretagne --birth-year 1995
+# Create a profile with optional metadata
+lama player create Carla --pseudo Krl --country FR --region Brittany --birth-year 1995
 
-# Lister les profils (filtrable)
+# List profiles (filterable)
 lama player list
 lama player list --country FR --output json
 
-# Consulter / mettre à jour un profil
+# View / update a profile
 lama player show
 lama player update --pseudo LamaQueen --region Occitanie
 ```
 
-### Classement et rating
+### Ranking and rating
 
 ```bash
-# Rating joueur (open/tournoi/global)
+# Player rating (open/tournament/global)
 lama rating show
 
-# Leaderboard par file de classement
+# Leaderboard by ranking queue
 lama rating leaderboard --queue global --top 20
 lama rating leaderboard --queue open --top 20
 lama rating leaderboard --queue tournament --top 20
 
-# Stats période
+# Period stats
 lama rating stats --30d
 ```
 
-### Dictionnaire
+### Dictionary
 
 ```bash
-# Vérifier un mot
+# Check a word
 lama dict check QUARTZ
-# Rechercher par motif
+# Search by pattern
 lama dict search "?OISETTE" --lang fr
-# Trouver des anagrammes
+# Find anagrams
 lama dict anagram NOISETTE --min-length 4
 ```
 
-### Administration système
+### System administration
 
 ```bash
 lama system setup
@@ -325,7 +324,7 @@ lama system restart
 lama system account list
 ```
 
-### Fin de partie
+### End game
 
 ```bash
 lama game end
@@ -333,116 +332,115 @@ lama game end
 
 ---
 
-## Options globales
+## Global options
 
 | Option | Alias | Description |
 |--------|-------|-------------|
-| `--help` | `-h` | Aide contextuelle |
-| `--version` | `-v` | Version du jeu |
-| `--verbose` | `-V` | Mode verbeux |
-| `--quiet` | `-q` | Mode silencieux |
-| `--no-color` | | Désactive les couleurs ANSI |
-| `--high-contrast` | | Mode contraste élevé |
-| `--lang <code>` | `-l` | Langue de l'interface (`fr`, `en`, `de`) |
-| `--output <format>` | `-o` | Format de sortie : `text`, `json`, `csv` |
+| `--help` | `-h` | Context help |
+| `--version` | `-v` | Game version |
+| `--verbose` | `-V` | Verbose mode |
+| `--quiet` | `-q` | Quiet mode |
+| `--no-color` | | Disable ANSI colors |
+| `--high-contrast` | | High contrast mode |
+| `--lang <code>` | `-l` | Interface language (`fr`, `en`, `de`) |
+| `--output <format>` | `-o` | Output format: `text`, `json`, `csv` |
 
 ---
 
-## Codes de retour
+## Exit codes
 
-| Code | Signification |
-|------|---------------|
-| `0` | Succès |
-| `1` | Erreur générale |
-| `2` | Argument invalide |
-| `3` | Partie introuvable |
-| `5` | Mot hors dictionnaire |
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | General error |
+| `2` | Invalid argument |
+| `3` | Game not found |
+| `5` | Word not in dictionary |
 | `6` | Placement impossible |
-| `8` | Pas votre tour |
-| `10` | Timeout dépassé |
-| `11` | Droits insuffisants (ACL refusée) |
+| `8` | Not your turn |
+| `10` | Timeout exceeded |
+| `11` | Insufficient permissions (ACL denied) |
 
-Source : `src/apps/Lama.Console/Services/ExitCodes.cs`.
-
----
-
-## Langues supportées
-
-| Code | Langue | Statut |
-|------|--------|--------|
-| `fr` | Français | Implémenté |
-| `en` | Anglais | Implémenté |
-| `de` | Allemand | Implémenté |
-
+Source: `src/apps/Lama.Console/Services/ExitCodes.cs`.
 
 ---
 
-## Multijoueur (serveur central + local offline)
+## Supported languages
 
-LAMA conserve deux modes de fonctionnement :
+| Code | Language | Status |
+|------|----------|--------|
+| `fr` | French | Implemented |
+| `en` | English | Implemented |
+| `de` | German | Implemented |
 
-- **Mode local (offline)** : jeu sur la machine locale, sans internet, idéal pour dev/test. Isolé des classements mondiaux.
-- **Mode online (serveur central)** : parties centralisées via `Lama.Server`, nécessaire pour le classement mondial. Streaming temps réel via SSE, authentification JWT.
+---
 
-### Démarrer le serveur central
+## Multiplayer (central server + local offline)
+
+LAMA maintains two modes of operation:
+
+- **Local (offline) mode**: game on local machine, without internet, ideal for dev/test. Isolated from world rankings.
+- **Online (central server) mode**: centralized play via `Lama.Server`, necessary for world rankings. Real-time streaming via SSE, JWT authentication.
+
+### Start central server
 
 ```bash
 dotnet run --project src/apps/Lama.Server --urls http://127.0.0.1:5201
 ```
 
-### Démarrer la WebApp
+### Start WebApp
 
 ```bash
 dotnet run --project src/apps/Lama.WebApp --urls http://127.0.0.1:5202
-# avec LAMA_SERVER_URL=http://127.0.0.1:5201
+# with LAMA_SERVER_URL=http://127.0.0.1:5201
 ```
 
-### Vérifier la santé du serveur
+### Check server health
 
 ```bash
 curl -s http://localhost:5201/health
 ```
 
-### Convention de ports online (compose)
+### Online ports convention (compose)
 
-- API Server : `5201`
-- WebApp : `5202`
-- AI Server (suggestions) : `5203`
+- API Server: `5201`
+- WebApp: `5202`
+- AI Server (suggestions): `5203`
 
-Cette convention est utilisée en local, staging et production dans les stacks Docker compose du projet.
+This convention is used in local, staging and production in the project's Docker compose stacks.
 
-### Dev complet
+### Full development
 
 ```bash
-make dev-debug   # Server 5201 + WebApp 5202 en parallèle
+make dev-debug   # Server 5201 + WebApp 5202 in parallel
 ```
 
 ---
 
-## Versioning et build info
+## Versioning and build info
 
-LAMA utilise un système de versioning centralisé via le fichier `.build-info` (JSON) qui est synchronisé vers `BuildInfoConstants.cs` à chaque build.
+LAMA uses a centralized versioning system via the `.build-info` (JSON) file which is synchronized to `BuildInfoConstants.cs` at each build.
 
-### Consulter les infos de build
+### View build info
 
-La WebApp affiche un bandeau en développement (🚧 En développement) avec :
+The WebApp displays a development banner (🚧 In development) with:
 - Version (v0.1.0)
 - Build number (#5)
-- Timestamp du build (27/06/2026 13:04)
+- Build timestamp (27/06/2026 13:04)
 
-Le composant `DevBanner.razor` utilise la classe statique `BuildInfoConstants` pour afficher les infos sans appels HTTP.
+The `DevBanner.razor` component uses the static `BuildInfoConstants` class to display build info without HTTP calls.
 
-### Make targets de versioning
+### Make versioning targets
 
 ```bash
-# Générer un nouveau build timestamp et synchroniser vers C#
+# Generate a new build timestamp and sync to C#
 make build-generate
 
-# Incrémenter le numéro de build et synchroniser vers C#
+# Increment the build number and sync to C#
 make build-increment
 
-# Fixer une version spécifique et synchroniser vers C#
+# Set a specific version and sync to C#
 make version-set VERSION=1.2.3
 ```
 
-Chaque make target met à jour `.build-info` ET `src/apps/Lama.WebApp/Services/BuildInfoConstants.cs`.
+Each make target updates `.build-info` AND `src/apps/Lama.WebApp/Services/BuildInfoConstants.cs`.
