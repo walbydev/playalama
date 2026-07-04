@@ -79,11 +79,11 @@ else
                         <button class="btn btn-ghost btn-sm" @onclick="RefreshAsync" disabled="@_vm.IsLoading">
                             @L["Game.Refresh"]
                         </button>
-                        @if (_vm.IsObserver)
+                        @if (_vm.IsObserver || _vm.Snapshot!.IsGameOver)
                         {
                             <a href="/games" class="btn btn-ghost btn-sm">← @L["Game.Leave"]</a>
                         }
-                        else if (!_vm.Snapshot!.IsGameOver && _vm.Snapshot.HasStarted)
+                        else if (_vm.Snapshot.HasStarted)
                         {
                             @if (_confirmAbandon)
                             {
@@ -134,11 +134,11 @@ else
                         }
                     </div>
 
-                    @if (_vm.IsObserver)
+                    @if (_vm.IsObserver || _vm.Snapshot!.IsGameOver)
                     {
                         <a href="/games" class="btn btn-ghost btn-sm">← @L["Game.Leave"]</a>
                     }
-                    else if (!_vm.Snapshot!.IsGameOver && _vm.Snapshot.HasStarted)
+                    else if (_vm.Snapshot.HasStarted)
                     {
                         @if (_confirmAbandon)
                         {
@@ -169,7 +169,7 @@ else
                 </div>
 
                 @* ── Bandeau spectateur ── *@
-                @if (_vm.IsObserver && !_vm.Snapshot!.IsGameOver)
+                @if (_vm.IsObserver)
                 {
                     <div class="spectator-banner" role="status" aria-live="polite">
                         🔍 @L["Game.SpectatorBanner"] <a href="/games">@L["Game.Leave"] →</a>
@@ -205,7 +205,7 @@ else
                     @* ── Zone rack (positionnée selon la variante) ── *@
                     <div class="game-rack-area">
                         @* Rack — ligne unique *@
-                        @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
+                        @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned && !_vm.Snapshot!.IsGameOver)
                         {
                             <div class="card rack-below-board">
                                 <div class="rack-below-header">
@@ -254,7 +254,7 @@ else
                     <div class="game-sidebar" data-active-tab="@Layout.ActiveTab">
 
                         @* Rack latéral (thème compact uniquement) — au-dessus des scores *@
-                        @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned)
+                        @if (_vm.MyRack.Count > 0 && !_vm.IsAbandoned && !_vm.Snapshot!.IsGameOver)
                         {
                             <div class="card game-sidebar-rack">
                                 <div class="rack-side-header">
@@ -469,61 +469,11 @@ else
                                         </div>
                                     }
 
-                                    <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync" style="width:100%; margin-top:.5rem; font-size:.8rem">
+                                     <button class="btn btn-ghost btn-sm" @onclick="SuggestMovesAsync" style="width:100%; margin-top:.5rem; font-size:.8rem">
                                         ↺ @L["Game.Suggest.Refresh"]
                                     </button>
                                 }
 
-                                <div class="suggest-section dictionary-search">
-                                    <p class="suggest-section-title">📚 @L["Game.Dictionary.Title"]</p>
-                                    @{
-                                        var dictLangs = GetGameLanguages();
-                                    }
-                                    @if (dictLangs.Count > 1)
-                                    {
-                                        <div class="dict-lang-selector">
-                                            @foreach (var l in dictLangs)
-                                            {
-                                                <button type="button"
-                                                        class="lang-choice-btn @(_dictLang == l ? "is-selected" : "")"
-                                                        @onclick="() => _dictLang = l">
-                                                    <span class="lang-choice-mark">@LanguageFlag(l)</span>
-                                                    @l.ToUpperInvariant()
-                                                </button>
-                                            }
-                                        </div>
-                                    }
-                                    <form class="dictionary-search-form" @onsubmit="SearchDictionaryAsync" @onsubmit:preventDefault="true">
-                                        <InputText @bind-Value="_dictionaryQuery"
-                                                   placeholder="@L["Game.Dictionary.Placeholder"]"
-                                                   class="dictionary-search-input" />
-                                        <button type="submit" class="btn btn-ghost btn-sm" disabled="@_dictionarySearchLoading">
-                                            @(_dictionarySearchLoading ? "…" : L["Game.Dictionary.Search"])
-                                        </button>
-                                    </form>
-
-                                    @if (!string.IsNullOrWhiteSpace(_dictionarySearchError))
-                                    {
-                                        <p class="form-error" role="alert">⚠️ @_dictionarySearchError</p>
-                                    }
-                                    else if (_dictionarySearchDone && _dictionaryResults.Count == 0)
-                                    {
-                                        <p class="text-dim" style="font-size:.8rem">@L["Game.Dictionary.None"]</p>
-                                    }
-                                    else if (_dictionaryResults.Count > 0)
-                                    {
-                                        <div class="dictionary-search-results">
-                                            @foreach (var word in _dictionaryResults)
-                                            {
-                                                <button type="button"
-                                                        class="btn btn-ghost btn-sm dictionary-word-btn"
-                                                        @onclick="() => ShowWordInfoAsync(word)">
-                                                    @word
-                                                </button>
-                                            }
-                                        </div>
-                                    }
-                                </div>
                             </div>
                         }
                         else if (!_vm.Snapshot.IsGameOver && !_vm.IsAbandoned)
@@ -589,6 +539,60 @@ else
                                 <a href="/games" class="btn btn-primary">@L["Game.NewGame"]</a>
                             </div>
                         }
+
+                        @* ── Dictionnaire (toujours disponible : observateur, partie terminée, en attente, mon tour) ── *@
+                        <div class="card suggest-panel sidebar-panel" data-tab="play">
+                            <div class="suggest-section dictionary-search">
+                                <p class="suggest-section-title">📚 @L["Game.Dictionary.Title"]</p>
+                                @{
+                                    var dictLangsAlways = GetGameLanguages();
+                                }
+                                @if (dictLangsAlways.Count > 1)
+                                {
+                                    <div class="dict-lang-selector">
+                                        @foreach (var l in dictLangsAlways)
+                                        {
+                                            <button type="button"
+                                                    class="lang-choice-btn @(_dictLang == l ? "is-selected" : "")"
+                                                    @onclick="() => _dictLang = l">
+                                                <span class="lang-choice-mark">@LanguageFlag(l)</span>
+                                                @l.ToUpperInvariant()
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                                <form class="dictionary-search-form" @onsubmit="SearchDictionaryAsync" @onsubmit:preventDefault="true">
+                                    <InputText @bind-Value="_dictionaryQuery"
+                                               placeholder="@L["Game.Dictionary.Placeholder"]"
+                                               class="dictionary-search-input" />
+                                    <button type="submit" class="btn btn-ghost btn-sm" disabled="@_dictionarySearchLoading">
+                                        @(_dictionarySearchLoading ? "…" : L["Game.Dictionary.Search"])
+                                    </button>
+                                </form>
+
+                                @if (!string.IsNullOrWhiteSpace(_dictionarySearchError))
+                                {
+                                    <p class="form-error" role="alert">⚠️ @_dictionarySearchError</p>
+                                }
+                                else if (_dictionarySearchDone && _dictionaryResults.Count == 0)
+                                {
+                                    <p class="text-dim" style="font-size:.8rem">@L["Game.Dictionary.None"]</p>
+                                }
+                                else if (_dictionaryResults.Count > 0)
+                                {
+                                    <div class="dictionary-search-results">
+                                        @foreach (var word in _dictionaryResults)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-ghost btn-sm dictionary-word-btn"
+                                                    @onclick="() => ShowWordInfoAsync(word)">
+                                                @word
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
 
                     </div>
 
