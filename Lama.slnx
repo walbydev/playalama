@@ -18,6 +18,7 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Lama.AIServer.UnitTests/Lama.AIServer.UnitTests.csproj" />
+    <Project Path="tests/Lama.ArchitectureTests/Lama.ArchitectureTests.csproj" />
     <Project Path="tests/Lama.Console.UnitTests/Lama.Console.UnitTests.csproj" />
     <Project Path="tests/Lama.Core.UnitTests/Lama.Core.UnitTests.csproj" />
     <Project Path="tests/Lama.Domain.UnitTests/Lama.Domain.UnitTests.csproj" />
