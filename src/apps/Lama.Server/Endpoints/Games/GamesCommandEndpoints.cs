@@ -118,6 +118,10 @@ public static class GamesCommandEndpoints
         var hostId = context.GetPlayerId() ?? Guid.NewGuid().ToString("N");
         var hostName = request.HostName.Trim();
         var level = request.GameLevel ?? GameLevel.Standard;
+
+        if (level == GameLevel.Tournament && aiBotCount > 0)
+            return Results.BadRequest(new { error = "tournament mode does not allow AI bots" });
+
         var participantsCount = (includeHost ? 1 : 0) + selectedBots.Count;
         var requestedMaxPlayers = request.MaxPlayers ?? 4;
         if (requestedMaxPlayers < 2 || requestedMaxPlayers > 4)
@@ -1226,7 +1230,7 @@ public static class GamesCommandEndpoints
             // Détecter si c'est le premier coup (aucune tuile sur le plateau)
             isFirstMove = !currentState.Board.Grid.Cast<object?>().Any(t => t is not null);
 
-            // Marquer la partie comme ayant utilisé une suggestion (désactive l'alimentation Elo hors Tournament)
+            // Marquer la partie comme ayant utilisé une suggestion (désactive l'alimentation Elo)
             game.SuggestionsUsed = true;
         }
 

@@ -17,7 +17,7 @@ namespace Lama.Console.Services;
 ///   game.pause / save           |    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✗
 ///   play.move / pass / swap     |    ✗       |  ✗    |  ✅   |      ✅       |           ✅            |    ✗
 ///   play.challenge              |    ✗       |  ✗    |  ✅   |      ✅       |           ✅            |    ✗
-///   play.suggest                |    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✗
+///   play.suggest                |    ✅      |  ✅   |  ✅   |      ✅       |  ✅(sauf Tournoi)       |    ✗
 ///   play.check / simulate       |    ✅      |  ✅   |  ✅   |      ✅       |           ✗             |    ✗
 ///   show.board / scores / hist  |    ✅      |  ✅   |  ✅   |      ✅       |           ✅            |    ✅
 ///   show.rack                   |    ✗       |  ✗    |  ✅   |      ✅       |           ✅            |    ✗
@@ -110,6 +110,15 @@ public sealed class AccessControlService : IAccessControlService
             "dict.check",
             "dict.search",
             "dict.anagram"
+        };
+
+    // ── Commandes bloquées en mode Tournoi (aucune aide active) ──────────────
+    // play.suggest fait partie de AllModesAidCommands mais est interdit
+    // en mode Tournoi où aucune assistance IA n'est tolérée.
+    private static readonly HashSet<string> TournamentBlockedCommands =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "play.suggest"
         };
 
     // ── Commandes accessibles en lecture seule (spectateurs inclus) ──────────
@@ -233,7 +242,16 @@ public sealed class AccessControlService : IAccessControlService
                 "Les aides sont réservées au mode Casual.");
         }
 
-        // Suggestions disponibles dans tous les modes de jeu (Host + Player)
+        // Suggestions disponibles dans tous les modes de jeu (Host + Player),
+        // sauf en mode Tournoi où play.suggest est interdit
+        if (TournamentBlockedCommands.Contains(cmd))
+        {
+            if (gameLevel == GameLevel.Tournament)
+                return AccessResult.Denied(
+                    $"La commande '{cmd}' est désactivée en mode Tournoi. " +
+                    "Aucune assistance IA n'est autorisée en Tournoi.");
+        }
+
         if (AllModesAidCommands.Contains(cmd))
             return AccessResult.Allowed;
 
@@ -289,6 +307,10 @@ public sealed class AccessControlService : IAccessControlService
         allowed.UnionWith(PlayerCommands);
         allowed.UnionWith(PlayCommands);
         allowed.UnionWith(AllModesAidCommands); // suggestions disponibles dans tous les modes
+
+        // En mode Tournoi, play.suggest est interdit
+        if (gameLevel == GameLevel.Tournament)
+            allowed.ExceptWith(TournamentBlockedCommands);
 
         if (role == Role.Host)
             allowed.UnionWith(HostManagementCommands);

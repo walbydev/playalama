@@ -58,11 +58,14 @@ public sealed class PlayerRatingService : IPlayerRatingService
 
             // L'Elo n'est approvisionné que si la partie est classée ET
             //   - n'est pas un abandon (0 point, Elo inchangé)
-            //   - n'a pas utilisé de suggestion (hors mode Tournament où la règle ne s'applique pas)
+            //   - n'a pas utilisé de suggestion
+            // Note : play.suggest est interdit en mode Tournament (AccessControlService),
+            //   donc SuggestionsUsed sera toujours false pour Tournament — la condition ci-dessous
+            //   traite les deux cas de façon uniforme.
             var eloFeeds = result.IsRanked
                 && result.Queue != RankingQueue.CasualUnranked
                 && !result.IsAbandoned
-                && !(result.SuggestionsUsed && result.Queue != RankingQueue.Tournament);
+                && !result.SuggestionsUsed;
 
             // Calculer le changement Elo
             var ratingChange = eloFeeds
