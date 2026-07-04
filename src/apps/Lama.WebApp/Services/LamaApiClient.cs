@@ -240,7 +240,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
         var payload = await response.Content.ReadFromJsonAsync<JoinGameEnvelope>(JsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("Réponse invalide sur game.join.");
 
-        return new WebJoinGameResponse(payload.GameId, payload.PlayerId);
+        return new WebJoinGameResponse(payload.GameId, payload.PlayerId, payload.Rack);
     }
 
     public async Task StartGameAsync(string gameId, string? token = null, CancellationToken cancellationToken = default)
@@ -640,7 +640,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
     private sealed record GameListEnvelope(List<GameListItemEnvelope> Games);
     private sealed record GameListItemEnvelope(string Id, string? GameName, string Status, int Players, int MaxPlayers, JsonElement Queue, bool IsJoinable);
     private sealed record CreateGameEnvelope(string GameId, string HostPlayerId);
-    private sealed record JoinGameEnvelope(string GameId, string PlayerId);
+    private sealed record JoinGameEnvelope(string GameId, string PlayerId, List<char>? Rack = null);
     private sealed record GameSnapshotEnvelope(
         string Id, string? GameName, bool IsGameOver, bool HasStarted, bool UsesLobby, bool IsClosed,
         int CurrentPlayerIndex, int TurnNumber, int BagCount, int MaxPlayers, int BoardSize, int RackSize, string? Language,

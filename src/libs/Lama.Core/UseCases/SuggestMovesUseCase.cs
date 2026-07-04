@@ -13,7 +13,7 @@ public sealed class SuggestMovesUseCase
     private readonly MoveSuggestionEngine _suggestionEngine;
 
     public SuggestMovesUseCase(CreateGameUseCase createUseCase)
-        : this(createUseCase, new MoveSuggestionEngine())
+        : this(createUseCase, new MoveSuggestionEngine(createUseCase.Dictionary, new Dictionary<char, int>()))
     {
     }
 

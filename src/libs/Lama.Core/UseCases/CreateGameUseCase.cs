@@ -57,6 +57,9 @@ public sealed class CreateGameUseCase
         _repository = repository;
     }
 
+    /// <summary>Dictionnaire de mots utilisé par cette instance.</summary>
+    public IReadOnlySet<string> Dictionary => _dictionary;
+
     /// <summary>Exécute le cas d'usage de création de partie.</summary>
     public Task<CreateGameResponse> ExecuteAsync(CreateGameRequest request)
     {

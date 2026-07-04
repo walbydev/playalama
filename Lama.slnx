@@ -24,6 +24,8 @@
     <Project Path="tests/Lama.Domain.UnitTests/Lama.Domain.UnitTests.csproj" />
     <Project Path="tests/Lama.Infrastructure.UnitTests/Lama.Infrastructure.UnitTests.csproj" />
     <Project Path="tests/Lama.Languages.fr.UnitTests/Lama.Languages.fr.UnitTests.csproj" />
+    <Project Path="tests/Lama.Languages.de.UnitTests/Lama.Languages.de.UnitTests.csproj" />
+    <Project Path="tests/Lama.Languages.en.UnitTests/Lama.Languages.en.UnitTests.csproj" />
     <Project Path="tests/Lama.WebApp.UnitTests/Lama.WebApp.UnitTests.csproj" />
     <Project Path="tests/Lama.Server.UnitTests/Lama.Server.UnitTests.csproj" />
   </Folder>

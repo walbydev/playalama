@@ -76,7 +76,7 @@ public sealed class ProfileUpdateForm
 
 public sealed record WebAuthResponse(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, DateTime ExpiresAt);
 public sealed record WebCreateGameResponse(string GameId, string HostPlayerId);
-public sealed record WebJoinGameResponse(string GameId, string PlayerId);
+public sealed record WebJoinGameResponse(string GameId, string PlayerId, List<char>? Rack = null);
 
 public sealed record WebGameListItem(
     string Id,
