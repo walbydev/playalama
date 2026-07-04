@@ -46,9 +46,10 @@ public sealed class JoinGameUseCase
 
         // Réinitialiser le moteur avec tous les joueurs
         // (approche simple : reconstruire la liste de joueurs)
+        // On préserve le joueur courant pour ne pas changer aléatoirement qui commence.
         var allPlayerNames = state.Players.Select(p => p.Name).ToList();
         allPlayerNames.Add(request.PlayerName);
-        engine.InitializeGame(allPlayerNames);
+        engine.InitializeGame(allPlayerNames, state.CurrentPlayerIndex);
 
         // Enregistrer l'index du nouveau joueur
         _createUseCase.AddPlayer(request.GameId, playerId);

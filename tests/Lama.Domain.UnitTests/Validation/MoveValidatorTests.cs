@@ -17,7 +17,7 @@ namespace Lama.Domain.UnitTests.Validation;
 public class MoveValidatorTests
 {
     private static readonly IReadOnlySet<string> Dictionary =
-        new HashSet<string> { "LA", "LAMA", "LAMAS", "ASLAMA", "AMI", "AMS", "MA", "MAS", "MOT", "MOTS", "ZEN", "AS", "AI" };
+        new HashSet<string> { "LA", "LAMA", "LAMAS", "ASLAMA", "AMI", "AMS", "MA", "MAS", "MOT", "MOTS", "ZEN", "AS", "AI", "WALIS" };
 
     private readonly MoveAnalyzer _sut = new(Dictionary, new Dictionary<char, int>());
 
