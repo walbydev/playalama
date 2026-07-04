@@ -80,6 +80,8 @@
     <File Path="docs/architecture/console-interface-architecture.md" />
     <File Path="docs/architecture/crossing-rules.md" />
     <File Path="docs/architecture/defines-CLI.md" />
+    <File Path="docs\architecture\DOCKER_ARCHITECTURE.md" />
+    <File Path="docs\architecture\HOMEASSISTANT_INTEGRATION.md" />
   </Folder>
   <Folder Name="/Docs/roadmap/">
     <File Path="docs/roadmap/CG-02_CERTIFICAT_CLOTURE.md" />
