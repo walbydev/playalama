@@ -426,9 +426,9 @@ LAMA utilise un système de versioning centralisé via le fichier `.build-info` 
 ### Consulter les infos de build
 
 La WebApp affiche un bandeau en développement (🚧 En développement) avec :
-- Version (v0.1.0)
-- Build number (#5)
-- Timestamp du build (27/06/2026 13:04)
+- Version (v0.1.7)
+- Build number (#36)
+- Timestamp du build (04/07/2026 08:15)
 
 Le composant `DevBanner.razor` utilise la classe statique `BuildInfoConstants` pour afficher les infos sans appels HTTP.
 

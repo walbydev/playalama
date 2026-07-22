@@ -424,9 +424,9 @@ LAMA uses a centralized versioning system via the `.build-info` (JSON) file whic
 ### View build info
 
 The WebApp displays a development banner (🚧 In development) with:
-- Version (v0.1.0)
-- Build number (#5)
-- Build timestamp (27/06/2026 13:04)
+- Version (v0.1.7)
+- Build number (#36)
+- Build timestamp (04/07/2026 08:15)
 
 The `DevBanner.razor` component uses the static `BuildInfoConstants` class to display build info without HTTP calls.
 

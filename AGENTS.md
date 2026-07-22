@@ -8,7 +8,7 @@
 - Dependencies directed towards the center: `Lama.Contracts` (0 dependencies) <- `Lama.Domain` <- `Lama.Core`; `Lama.Infrastructure` and `Lama.Languages.*` depend on `Contracts` + `Domain` (siblings of `Core`, not descendants). Apps (`Lama.Console`, `Lama.Server`, `Lama.WebApp`, `Lama.AIServer`) reference the libs as needed.
 - No business logic in the console; rules live in `Lama.Domain` and are then exposed by the use cases in `Lama.Core`.
 - `CreateGameUseCase` manages an in-memory cache + JSON restoration across processes.
-- `Lama.Server` is authoritative in memory (`GameHubState`) with async PostgreSQL persistence via EF Core after the game ends. Real-time streaming via **SSE** (Server-Sent Events), not SignalR. Endpoints are organized in subfolders (`Games/`, `Auth/`, `Players/`, `Lexicon/`, `Bots/`).
+- `Lama.Server` is authoritative in memory (`GameHubState`) with async PostgreSQL persistence via EF Core after the game ends. Real-time streaming via **SSE** (Server-Sent Events), not SignalR. Endpoints are organized in subfolders (`Games/`, `Auth/`, `Players/`, `Lexicon/`) plus flat files (e.g. `BotsEndpoints.cs`).
 - `Lama.WebApp` is the only Blazor Server app: a public portal + online game interface. No business logic — it calls `Lama.Server` via HTTP (`LamaApiClient`).
 - `Lama.AIServer` (port 5203) is a separate HTTP service for move suggestions (CPU-intensive), called by `Lama.Server` via `HttpAISuggestionClient`.
 - Language packs: `Lama.Languages.fr|de|en` (JSON assets embedded via `EmbeddedResource`). Loaded by `AssetLanguageProvider` through `LanguageProviderRegistry`.
@@ -44,7 +44,7 @@
 - `LAMA_RUNTIME_MODE=online|local` and `LAMA_SERVER_URL` control CLI routing.
 - `LAMA_SESSION_DIR` is key for test isolation.
 - `AssetLanguageProvider` loads assets from `assets/languages/{lang}` (fr, de, en); `LanguageProviderRegistry` orchestrates multi-language support.
-- `src/apps/Lama.Server/Program.cs` is intentionally focused: minimal changes, covered by tests. Server state lives in `Runtime/GameHubState.cs`; endpoints are distributed in `Endpoints/{Games,Auth,Players,Lexicon,Bots}/`.
+- `src/apps/Lama.Server/Program.cs` is intentionally focused: minimal changes, covered by tests. Server state lives in `Runtime/GameHubState.cs`; endpoints are distributed in `Endpoints/{Games,Auth,Players,Lexicon}/` plus flat files (e.g. `BotsEndpoints.cs`).
 - Online authentication: JWT via `JwtTokenService` + `JwtMiddleware`; secret signed by `LAMA_JWT_SECRET`.
 - Online/compose port convention: Server `5201`, WebApp `5202`, AIServer `5203` (dev/staging/prod).
 - **Versioning and build**: `.build-info` (JSON) sync via script to `BuildInfoConstants.cs`; make targets: `build-increment`, `version-set VERSION=x.y.z`, `build-generate`. `DevBanner.razor` uses the static class without HTTP.
