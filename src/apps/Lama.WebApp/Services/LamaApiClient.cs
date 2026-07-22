@@ -15,6 +15,24 @@ public sealed class LamaApiClient(HttpClient httpClient)
 
     // ── Lexique ──────────────────────────────────────────────────────────────
 
+    private Dictionary<string, int>? _wordCountCache;
+    private DateTime _wordCountCacheAt;
+    private static readonly TimeSpan WordCountTtl = TimeSpan.FromMinutes(10);
+
+    /// <summary>Récupère le nombre de mots par langue (cache 10 min).</summary>
+    public async Task<Dictionary<string, int>> GetWordCountsAsync(CancellationToken cancellationToken = default)
+    {
+        if (_wordCountCache is not null && DateTime.UtcNow - _wordCountCacheAt < WordCountTtl)
+            return _wordCountCache;
+        var response = await httpClient.GetAsync($"{ApiBase}/lexicon/stats", cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return _wordCountCache ?? new Dictionary<string, int>();
+        var payload = await response.Content.ReadFromJsonAsync<LexiconStatsPayload>(JsonOptions, cancellationToken);
+        _wordCountCache = payload?.WordCounts ?? new Dictionary<string, int>();
+        _wordCountCacheAt = DateTime.UtcNow;
+        return _wordCountCache;
+    }
+
     /// <summary>Récupère définitions/synonymes/URL d'un mot, ou null si introuvable.</summary>
     public async Task<WebWordInfo?> GetWordInfoAsync(string lang, string word, CancellationToken cancellationToken = default)
     {
@@ -690,6 +708,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
 
     private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, bool IsAdmin, DateTime ExpiresAt);
     private sealed record AuthStatusPayload(bool IsAuthenticated, bool IsAdmin, string? PlayerId, string? PlayerName);
+    private sealed record LexiconStatsPayload(Dictionary<string, int> WordCounts);
     private sealed record PlayerProfileEnvelope(
         string PlayerId,
         string Username,

@@ -116,8 +116,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_lexicon_import_runs_completed_fingerprint
 --   acronym, initialism              → sigles et acronymes
 --
 -- La MV n'est recréée que si la définition a changé (version 2).
--- Démarage rapide en prod après la première migration.
+-- Démarrage rapide en prod après la première migration.
 -- ============================================================================
+
+-- Index pour accélérer le filtrage par POS
+CREATE INDEX IF NOT EXISTS idx_lexicon_definitions_pos
+    ON lexicon.definitions (part_of_speech);
+
 DO $$
 DECLARE
     mv_def text;
@@ -127,7 +132,7 @@ BEGIN
     FROM pg_matviews
     WHERE schemaname = 'lexicon' AND matviewname = 'mv_valid_words';
 
-    -- Si la MV existe déjà avec le filtre v2 (proper_noun + acronym), on ne fait rien
+    -- Si la MV existe déjà avec le filtre v2 (proper_noun + acronym + initialism), on ne fait rien
     IF mv_def IS NOT NULL
        AND mv_def LIKE '%proper_noun%'
        AND mv_def LIKE '%acronym%'
@@ -136,26 +141,28 @@ BEGIN
     END IF;
 
     -- Sinon : recréer la MV avec le filtre à jour
+    -- Approche UNION (beaucoup plus rapide que des sous-requêtes corrélées) :
+    --   1. Mots sans aucune définition (inclus par défaut)
+    --   2. Mots ayant au moins une définition non blacklistée
     DROP MATERIALIZED VIEW IF EXISTS lexicon.mv_valid_words;
 
     EXECUTE $q$
         CREATE MATERIALIZED VIEW lexicon.mv_valid_words AS
+        -- Mots sans définitions
         SELECT w.word_id
         FROM lexicon.words w
         WHERE NOT EXISTS (
             SELECT 1 FROM lexicon.definitions d WHERE d.word_id = w.word_id
         )
-        OR EXISTS (
-            SELECT 1 FROM lexicon.definitions d
-            WHERE d.word_id = w.word_id
-            AND (
-                d.part_of_speech IS NULL
-                OR d.part_of_speech NOT IN (
-                    'abbrev', 'name', 'prop', 'proper', 'proper_noun',
-                    'acronym', 'initialism'
-                )
-            )
-        )
+        UNION
+        -- Mots ayant au moins une définition « normale »
+        SELECT DISTINCT d.word_id
+        FROM lexicon.definitions d
+        WHERE d.part_of_speech IS NULL
+           OR d.part_of_speech NOT IN (
+               'abbrev', 'name', 'prop', 'proper', 'proper_noun',
+               'acronym', 'initialism'
+           )
     $q$;
 
     EXECUTE $q$

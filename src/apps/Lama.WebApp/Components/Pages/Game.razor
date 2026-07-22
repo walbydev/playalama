@@ -571,7 +571,7 @@ else
                         @* ── Dictionnaire (toujours disponible : observateur, partie terminée, en attente, mon tour) ── *@
                         <div class="card suggest-panel sidebar-panel" data-tab="play">
                             <div class="suggest-section dictionary-search">
-                                <p class="suggest-section-title">📚 @L["Game.Dictionary.Title"]</p>
+                                <p class="suggest-section-title" title="@(_wordCounts.TryGetValue(GetLexiconLanguage(), out var wc) && wc > 0 ? $"{wc:N0} mots" : null)">📚 @L["Game.Dictionary.Title"]</p>
                                 @{
                                     var dictLangsAlways = GetGameLanguages();
                                 }
@@ -752,6 +752,7 @@ else
 
         // Charger les niveaux des joueurs (best-effort, ne bloque pas si le serveur ne répond pas)
         _ = LoadPlayerLevelsAsync();
+        _ = LoadWordCountsAsync();
 
         // Redirection vers lobby si la partie n'a pas encore démarré
         if (_vm.Snapshot is { UsesLobby: true, HasStarted: false })
@@ -994,6 +995,7 @@ else
     private bool _dictionarySearchDone;
     private string? _dictionarySearchError;
     private string _dictLang = string.Empty;
+    private Dictionary<string, int> _wordCounts = new();
 
     private async Task HandleTileClick((int Row, int Col) cell)
     {
@@ -1414,6 +1416,16 @@ else
         {
             // Best-effort : pas critique si la requête échoue
         }
+    }
+
+    private async Task LoadWordCountsAsync()
+    {
+        try
+        {
+            _wordCounts = await Api.GetWordCountsAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
     }
 
     public async ValueTask DisposeAsync()

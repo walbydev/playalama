@@ -20,8 +20,8 @@ html.dark {
     --silver:     #94a3b8;
     --bronze:     #b45309;
     --text:       #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-dim:   #64748b;
+    --text-muted: #cbd5e1;
+    --text-dim:   #a8b8d0;
     --success:    #22c55e;
     --error:      #ef4444;
     --board-grid-line: rgba(148,163,184,0.22);
@@ -47,8 +47,8 @@ html.light {
     --silver:     #475569;
     --bronze:     #92400e;
     --text:       #1e1b4b;
-    --text-muted: #475569;
-    --text-dim:   #94a3b8;
+    --text-muted: #2d2a5c;
+    --text-dim:   #45427a;
     --success:    #16a34a;
     --error:      #dc2626;
     --board-grid-line: rgba(71,85,105,0.22);
@@ -69,8 +69,8 @@ html.blue {
     --silver:     #3b4a66;
     --bronze:     #8a4a18;
     --text:       #0f1f3f;
-    --text-muted: #2f446c;
-    --text-dim:   #5a719a;
+    --text-muted: #1e3258;
+    --text-dim:   #384d72;
     --success:    #15803d;
     --error:      #b91c1c;
     --board-grid-line: rgba(47,68,108,0.20);
@@ -91,8 +91,8 @@ html.green {
     --silver:     #2f5143;
     --bronze:     #7c3f14;
     --text:       #0f2b1f;
-    --text-muted: #2c5646;
-    --text-dim:   #587b6d;
+    --text-muted: #1d4030;
+    --text-dim:   #385a48;
     --success:    #15803d;
     --error:      #b91c1c;
     --board-grid-line: rgba(44,86,70,0.20);
@@ -113,8 +113,8 @@ html.vermillion {
     --silver:     #5e3c33;
     --bronze:     #8c2f14;
     --text:       #3c1b12;
-    --text-muted: #714235;
-    --text-dim:   #9d6555;
+    --text-muted: #502518;
+    --text-dim:   #6a3828;
     --success:    #15803d;
     --error:      #b91c1c;
     --board-grid-line: rgba(113,66,53,0.20);
@@ -159,8 +159,8 @@ html.deuteranopia {
     --silver:     #c0c0c0;
     --bronze:     #cc9966;
     --text:       #e6f0ff;
-    --text-muted: #99b3e6;
-    --text-dim:   #6680b3;
+    --text-muted: #c2d4f0;
+    --text-dim:   #9db5da;
     --success:    #00ccff;
     --error:      #ff6666;
     --board-grid-line: rgba(100,130,200,0.30);
@@ -181,8 +181,8 @@ html.protanopia {
     --silver:     #c0c0c0;
     --bronze:     #cc9966;
     --text:       #e6f0ff;
-    --text-muted: #99b3e6;
-    --text-dim:   #6680b3;
+    --text-muted: #c2d4f0;
+    --text-dim:   #9db5da;
     --success:    #00ccff;
     --error:      #ff5555;
     --board-grid-line: rgba(110,140,210,0.30);
@@ -203,8 +203,8 @@ html.tritanopia {
     --silver:     #c0c0c0;
     --bronze:     #cc8866;
     --text:       #ffe6f0;
-    --text-muted: #e699c2;
-    --text-dim:   #b36699;
+    --text-muted: #e6c2d8;
+    --text-dim:   #cc9db8;
     --success:    #ff99cc;
     --error:      #ff5577;
     --board-grid-line: rgba(200,100,160,0.30);
@@ -525,11 +525,11 @@ html.highcontrast .navbar-logo {
     overflow: hidden;
     padding: .35rem 1rem;
 }
-.build-info-sticky .dev-banner-sep { opacity: .45; }
+.build-info-sticky .dev-banner-sep { opacity: .8; }
 
 /* Build-info dans le footer standard (pages hors jeu) */
 .footer-build-info {
-    opacity: .55;
+    opacity: .85;
     font-size: .72rem;
     font-weight: 500;
     letter-spacing: .03em;
@@ -1140,7 +1140,7 @@ input[type="range"] {
 .theme-buttons .btn small {
     display: block;
     font-size: 0.75rem;
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 /* Accessibilité : haut contraste */
@@ -1505,7 +1505,7 @@ footer {
 
 .ui-control:disabled,
 .form-field :is(input, select, textarea):disabled {
-    opacity: .72;
+    opacity: .8;
     cursor: not-allowed;
 }
 
@@ -1818,7 +1818,7 @@ html.highcontrast .tile-val {
     color: var(--text);
     letter-spacing: 0.03em;
     white-space: nowrap;
-    opacity: 0.75;
+    opacity: 0.9;
 }
 
 .game-name-label {
@@ -1832,7 +1832,7 @@ html.highcontrast .tile-val {
 }
 
 .debug-export-btn {
-    opacity: 0.5;
+    opacity: 0.85;
     font-size: 0.8rem;
     padding: .15rem .35rem !important;
     border: 1px dashed var(--accent) !important;
@@ -1939,7 +1939,7 @@ html.highcontrast .tile-val {
     border: none;
     cursor: pointer;
     color: inherit;
-    opacity: .7;
+    opacity: .85;
     font-size: 1rem;
     line-height: 1;
     padding: 0 .2rem;
@@ -2210,7 +2210,7 @@ html.highcontrast .rack-tile--selected {
     transition: border-color .15s;
 }
 .scoreboard-row--active { border-color: var(--accent2); background: rgba(124,92,252,0.1); }
-.scoreboard-row--abandoned { opacity: .55; }
+.scoreboard-row--abandoned { opacity: .75; }
 
 /* ── Abandon notice & spectator banner ── */
 .abandon-notice {

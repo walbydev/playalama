@@ -10,9 +10,18 @@ public static class LexiconEndpoints
 {
     public static IEndpointRouteBuilder MapLexiconEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapGet("/lexicon/stats", GetLexiconStats);
         app.MapGet("/lexicon/{lang}/search", SearchWordsAsync);
         app.MapGet("/lexicon/{lang}/{word}", GetWordInfoAsync);
         return app;
+    }
+
+    private static IResult GetLexiconStats(ILanguageProviderRegistry registry)
+    {
+        var counts = registry.SupportedLanguages.ToDictionary(
+            lang => lang,
+            lang => registry.GetProvider(lang).GetDictionary().Count);
+        return Results.Ok(new { wordCounts = counts });
     }
 
     private static async Task<IResult> SearchWordsAsync(

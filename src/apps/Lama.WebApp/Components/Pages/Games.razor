@@ -188,9 +188,13 @@
                             @foreach (var (code, label) in _gameLanguages)
                             {
                                 var selected = _createForm.Languages.Contains(code);
+                                var tip = _wordCounts.TryGetValue(code, out var cnt) && cnt > 0
+                                    ? $"{label} — {cnt:N0} mots"
+                                    : label;
                                 <button type="button"
                                         class="lang-choice-btn @(selected ? "is-selected" : string.Empty)"
                                         aria-pressed="@selected"
+                                        title="@tip"
                                         @onclick="() => SelectLanguage(code)">
                                     <span class="lang-choice-mark" aria-hidden="true">@((selected) ? "◉" : "○")</span>
                                     <span>@label</span>
@@ -295,6 +299,7 @@
     private readonly List<WebGameListItem> _games = [];
     private readonly List<WebBotDto> _bots = [];
     private readonly List<WebGameHistoryItem> _myActiveGames = [];
+    private Dictionary<string, int> _wordCounts = new();
     private bool _busy;
     private bool _listBusy;
     private bool _isSolo;
@@ -323,7 +328,14 @@
         OnModeChanged();
         await Task.WhenAll(LoadGamesAsync(), LoadBotsAsync());
         _ = LoadMyActiveGamesAsync();
+        _ = LoadWordCountsAsync();
         StartAutoRefresh();
+    }
+
+    private async Task LoadWordCountsAsync()
+    {
+        try { _wordCounts = await Api.GetWordCountsAsync(); }
+        catch { }
     }
 
     private async Task LoadMyActiveGamesAsync()
