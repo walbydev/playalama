@@ -16,6 +16,31 @@
 
 <div class="section">
     <div class="container">
+
+        @if (_myActiveGames.Count > 0)
+        {
+            <div class="card active-games-banner" style="margin-bottom:1.5rem">
+                <div class="active-games-banner-header">
+                    <span class="active-games-banner-icon" aria-hidden="true">🎮</span>
+                    <div>
+                        <strong>@L["Games.ActiveGamesBanner"]</strong>
+                        <p class="text-muted" style="font-size:.85rem; margin:.15rem 0 0">@L["Games.ContinueOrNew"]</p>
+                    </div>
+                </div>
+                <div class="active-games-banner-list">
+                    @foreach (var game in _myActiveGames)
+                    {
+                        var label = string.Equals(game.Status, "waiting", StringComparison.OrdinalIgnoreCase)
+                            ? "⏳ " + L["MyGames.Waiting"]
+                            : "▶ " + L["MyGames.Active"];
+                        <a href="/games/@game.GameId" class="btn btn-ghost btn-sm active-games-banner-item">
+                            @label · @game.GameId[..Math.Min(8, game.GameId.Length)]…
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
         <div style="display:grid; grid-template-columns:1.75fr 1fr; gap:2rem; align-items:start">
 
             <!-- Créer une partie -->
@@ -269,6 +294,7 @@
     private readonly CreateGameForm _createForm = new();
     private readonly List<WebGameListItem> _games = [];
     private readonly List<WebBotDto> _bots = [];
+    private readonly List<WebGameHistoryItem> _myActiveGames = [];
     private bool _busy;
     private bool _listBusy;
     private bool _isSolo;
@@ -296,7 +322,24 @@
         _isAdmin = Auth.IsAdmin;
         OnModeChanged();
         await Task.WhenAll(LoadGamesAsync(), LoadBotsAsync());
+        _ = LoadMyActiveGamesAsync();
         StartAutoRefresh();
+    }
+
+    private async Task LoadMyActiveGamesAsync()
+    {
+        if (!Auth.IsLoggedIn) return;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (string.IsNullOrWhiteSpace(token)) return;
+            var myGames = await Api.GetMyGamesAsync(token);
+            _myActiveGames.Clear();
+            _myActiveGames.AddRange(myGames.Where(g =>
+                string.Equals(g.Status, "active", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(g.Status, "waiting", StringComparison.OrdinalIgnoreCase)));
+        }
+        catch { }
     }
 
     private async Task LoadBotsAsync()

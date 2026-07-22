@@ -307,6 +307,9 @@
   <data name="Games.Subtitle"><value>Créez ou rejoignez une partie en ligne.</value></data>
   <data name="Games.TableAria"><value>Liste des parties disponibles</value></data>
   <data name="Games.Title"><value>Zone de jeu</value></data>
+  <data name="Games.ActiveGamesBanner"><value>Vous avez des parties en cours</value></data>
+  <data name="Games.Resume"><value>Reprendre</value></data>
+  <data name="Games.ContinueOrNew"><value>Reprendre une partie ou en créer une nouvelle ci-dessous.</value></data>
   <data name="Home.Cta.Badges"><value>✓ Gratuit · ✓ Sans pub · ✓ Open source · ✓ Multiplateforme</value></data>
   <data name="Home.Cta.Download"><value>Télécharger le client</value></data>
   <data name="Home.Cta.PlayNow"><value>Jouer maintenant — c'est gratuit</value></data>
@@ -355,7 +358,7 @@
   <data name="Home.Why.Title"><value>Pensé pour les vrais joueurs</value></data>
   <data name="Home.Why.WebCli.Text"><value>Joue depuis ton navigateur ou ton terminal sans rien installer.</value></data>
   <data name="Home.Why.WebCli.Title"><value>100 % Web &amp; CLI</value></data>
-  <data name="Language.Label"><value>Langue</value></data>
+  <data name="Language.Label"><value>Langue du site</value></data>
   <data name="Leaderboard.Country"><value>Pays</value></data>
   <data name="Leaderboard.Eyebrow"><value>Classements</value></data>
   <data name="Leaderboard.FilterCountry"><value>Filtrer par pays</value></data>
@@ -459,6 +462,8 @@
   <data name="MyGames.View"><value>Voir</value></data>
   <data name="MyGames.Waiting"><value>En attente</value></data>
   <data name="Nav.Accessibility"><value>Accessibilité</value></data>
+  <data name="Nav.Settings"><value>Réglages</value></data>
+  <data name="Nav.SettingsTooltip"><value>Régler les paramètres d'accessibilité</value></data>
   <data name="Nav.Aria"><value>Navigation principale</value></data>
   <data name="Nav.Downloads"><value>Téléchargements</value></data>
   <data name="Nav.Games"><value>Parties</value></data>

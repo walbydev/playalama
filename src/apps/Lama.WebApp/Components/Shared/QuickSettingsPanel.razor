@@ -6,13 +6,14 @@
             class="quick-settings-toggle"
             @onclick="TogglePanel"
             aria-expanded="@_isOpen"
-            aria-controls="quick-settings-panel">
-        <span aria-hidden="true">⚙</span> @L["Nav.Accessibility"]
+            aria-controls="quick-settings-panel"
+            title="@L["Nav.SettingsTooltip"]">
+        <span aria-hidden="true">⚙</span> @L["Nav.Settings"]
     </button>
 
     <aside id="quick-settings-panel" class="quick-settings-panel @(_isOpen ? "is-open" : "")">
         <div class="quick-settings-header">
-            <strong>@L["Nav.Accessibility"]</strong>
+            <strong>@L["Nav.Settings"]</strong>
             <button type="button"
                     class="btn btn-ghost btn-sm"
                     @onclick="ClosePanel"

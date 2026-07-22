@@ -306,6 +306,9 @@
   <data name="Games.Subtitle"><value>Erstelle ein Online-Spiel oder tritt einem bei.</value></data>
   <data name="Games.TableAria"><value>Liste verfügbarer Spiele</value></data>
   <data name="Games.Title"><value>Spielbereich</value></data>
+  <data name="Games.ActiveGamesBanner"><value>Sie haben laufende Spiele</value></data>
+  <data name="Games.Resume"><value>Fortsetzen</value></data>
+  <data name="Games.ContinueOrNew"><value>Setzen Sie ein Spiel fort oder erstellen Sie unten ein neues.</value></data>
   <data name="Home.Cta.Badges"><value>✓ Kostenlos · ✓ Ohne Werbung · ✓ Open Source · ✓ Plattformübergreifend</value></data>
   <data name="Home.Cta.Download"><value>Client herunterladen</value></data>
   <data name="Home.Cta.PlayNow"><value>Jetzt spielen — kostenlos</value></data>
@@ -354,7 +357,7 @@
   <data name="Home.Why.Title"><value>Für echte Spieler gemacht</value></data>
   <data name="Home.Why.WebCli.Text"><value>Spiele im Browser oder Terminal ohne Installation.</value></data>
   <data name="Home.Why.WebCli.Title"><value>100 % Web &amp; CLI</value></data>
-  <data name="Language.Label"><value>Sprache</value></data>
+  <data name="Language.Label"><value>Seitensprache</value></data>
   <data name="Leaderboard.Country"><value>Land</value></data>
   <data name="Leaderboard.Eyebrow"><value>Ranglisten</value></data>
   <data name="Leaderboard.FilterCountry"><value>Nach Land filtern</value></data>
@@ -458,6 +461,8 @@
   <data name="MyGames.View"><value>Ansehen</value></data>
   <data name="MyGames.Waiting"><value>Wartend</value></data>
   <data name="Nav.Aria"><value>Hauptnavigation</value></data>
+  <data name="Nav.Settings"><value>Einstellungen</value></data>
+  <data name="Nav.SettingsTooltip"><value>Einstellungen für Barrierefreiheit anpassen</value></data>
   <data name="Nav.Downloads"><value>Downloads</value></data>
   <data name="Nav.Games"><value>Spiele</value></data>
   <data name="Nav.Home"><value>Startseite</value></data>

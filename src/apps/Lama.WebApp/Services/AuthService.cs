@@ -36,9 +36,16 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             var stored = await js.InvokeAsync<StoredSession?>("playalamaAuth.loadSession");
             if (stored is not null && !string.IsNullOrWhiteSpace(stored.Token))
             {
-                _currentUser = new CurrentUser(stored.PlayerId, stored.Username, stored.Email);
-                await DetectAdminAsync(stored.Token);
-                await LoadRatingAsync(stored.Token);
+                if (stored.ExpiresAt.HasValue && stored.ExpiresAt.Value <= DateTime.UtcNow)
+                {
+                    await js.InvokeVoidAsync("playalamaAuth.clearSession");
+                }
+                else
+                {
+                    _currentUser = new CurrentUser(stored.PlayerId, stored.Username, stored.Email);
+                    await DetectAdminAsync(stored.Token);
+                    await LoadRatingAsync(stored.Token);
+                }
             }
             _initialized = true; // seulement après succès JS (pas pendant le prerendering)
         }
@@ -103,7 +110,11 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
         try
         {
             var stored = await js.InvokeAsync<StoredSession?>("playalamaAuth.loadSession");
-            return stored?.Token;
+            if (stored is null || string.IsNullOrWhiteSpace(stored.Token))
+                return null;
+            if (stored.ExpiresAt.HasValue && stored.ExpiresAt.Value <= DateTime.UtcNow)
+                return null;
+            return stored.Token;
         }
         catch { return null; }
     }
@@ -115,7 +126,8 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             token = result.Token,
             playerId = result.PlayerId,
             username = result.PlayerName,
-            email = result.Email
+            email = result.Email,
+            expiresAt = result.ExpiresAt
         });
     }
 
@@ -144,5 +156,5 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
         }
     }
 
-    private sealed record StoredSession(string Token, string PlayerId, string Username, string? Email);
+    private sealed record StoredSession(string Token, string PlayerId, string Username, string? Email, DateTime? ExpiresAt);
 }
