@@ -34,6 +34,7 @@
                 var isKeyboardCursor = KeyboardModeActive && r == KeyboardCursorRow && c == KeyboardCursorCol;
                 var isKeyboardTarget = CanActivateKeyboard && OnKeyboardActivate.HasDelegate && tile is null && pending is null;
                 var isWordSelected = IsInWordSelection(r, c);
+                var cellTitle = bonus == "st" ? L["Tooltip.CenterStar"].Value : null;
 
                 string cssClass;
                 string ariaLabel;
@@ -50,17 +51,20 @@
                 }
                 else
                 {
-                    var cursorClass = isKeyboardCursor ? " board-cell--kbd-cursor" : "";
-                    cssClass = $"board-cell{cursorClass}{(string.IsNullOrEmpty(bonus) ? "" : $" board-cell--{bonus}")}";
+                    var cursorDir = isKeyboardCursor
+                        ? " board-cell--kbd-cursor " + (KeyboardIsHorizontal ? "board-cell--kbd-dir-h" : "board-cell--kbd-dir-v")
+                        : "";
+                    cssClass = $"board-cell{cursorDir}{(string.IsNullOrEmpty(bonus) ? "" : $" board-cell--{bonus}")}";
                     ariaLabel = L["Board.CellAria", GamePlayViewModel.ColLabel(c), r + 1, GetBonusAriaLabel(bonus)].Value;
                 }
 
                 <div class="@cssClass"
                      role="gridcell"
                      aria-label="@ariaLabel"
+                     title="@cellTitle"
                      @ondragover:preventDefault="@isDropTarget"
                      @ondrop="@(isDropTarget ? () => OnDrop.InvokeAsync((r, c)) : () => Task.CompletedTask)"
-                     @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : tile.HasValue && !_isWordSelecting ? () => OnTileClick.InvokeAsync((r, c)) : () => Task.CompletedTask)"
+                     @onclick="@(pending is not null ? () => OnRecall.InvokeAsync((r, c)) : tile.HasValue && !_isWordSelecting ? () => OnTileClick.InvokeAsync((r, c)) : HasSelectedRackTile && tile is null ? () => OnDrop.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ondblclick="@(isKeyboardTarget ? () => OnKeyboardActivate.InvokeAsync((r, c)) : () => Task.CompletedTask)"
                      @ontouchend="@(isKeyboardTarget ? (e) => HandleTouchEnd(e, r, c) : (Func<TouchEventArgs,Task>)(_ => Task.CompletedTask))"
                      @onpointerdown="@(tile.HasValue ? () => HandleCellPointerDown(r, c) : () => Task.CompletedTask)"
@@ -124,6 +128,10 @@
     [Parameter] public bool KeyboardModeActive { get; set; }
     [Parameter] public int KeyboardCursorRow { get; set; } = -1;
     [Parameter] public int KeyboardCursorCol { get; set; } = -1;
+    /// <summary>Direction du curseur clavier : true = horizontal, false = vertical.</summary>
+    [Parameter] public bool KeyboardIsHorizontal { get; set; } = true;
+    /// <summary>Vrai si une tuile du rack est sélectionnée (clic) — le clic sur une case vide la dépose.</summary>
+    [Parameter] public bool HasSelectedRackTile { get; set; }
     /// <summary>Vrai si c'est le tour du joueur — tuiles provisoires déplaçables même sans drag actif.</summary>
     [Parameter] public bool CanDragPending { get; set; }
     /// <summary>Vrai si le double-clic/double-tap peut activer le clavier — indépendant de CanDrop.</summary>

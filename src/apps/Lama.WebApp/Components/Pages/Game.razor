@@ -206,13 +206,15 @@ else
                         <BoardDisplay Board="_vm.Snapshot.Board"
                                       GetBonus="_vm.GetCellBonus"
                                       Pending="_vm.PendingPlacements"
-                                      CanDrop="@(_vm.IsMyTurn && (_draggingRackIndex >= 0 || _draggingPendingPos.HasValue))"
+                                      CanDrop="@(_vm.IsMyTurn && (_draggingRackIndex >= 0 || _draggingPendingPos.HasValue || _selectedRackIndex >= 0))"
                                       CanDragPending="_vm.IsMyTurn"
                                       CanActivateKeyboard="@_vm.IsMyTurn"
                                       DraggingFromBoard="_draggingPendingPos.HasValue"
                                       KeyboardModeActive="_vm.KeyboardModeActive"
                                       KeyboardCursorRow="_vm.KeyboardCursorRow"
                                       KeyboardCursorCol="_vm.KeyboardCursorCol"
+                                      KeyboardIsHorizontal="_vm.KeyboardIsHorizontal"
+                                      HasSelectedRackTile="@(_selectedRackIndex >= 0)"
                                       OnDrop="HandleDrop"
                                       OnRecall="HandleRecall"
                                       OnTileClick="HandleTileClick"
@@ -229,7 +231,7 @@ else
                             <div class="card rack-below-board">
                                 <div class="rack-below-header">
                                     <div class="rack-title-row">
-                                        <h3>@L["Game.MyTiles"]</h3>
+                                        <h3>@L["Game.MyTiles"] <InfoTooltip Text="@L["Tooltip.RackTile"].Value" Icon="ℹ" Position="right" /></h3>
                                         @if (_vm.IsMyTurn && _vm.PendingPlacements.Count == 0 && ShowFirstMoveHint)
                                         {
                                             <span class="rack-hint-text">@L["Game.RackHint"]</span>
@@ -263,7 +265,9 @@ else
                                              DisplayOrder="@_rackOrder"
                                              IsMyTurn="_vm.IsMyTurn"
                                              UsedIndices="@(_vm.PendingPlacements.Count > 0 ? GetUsedIndices() : [])"
+                                             SelectedRackIndex="_selectedRackIndex"
                                              OnDragStart="HandleDragStart"
+                                             OnTileClick="HandleRackTileClick"
                                              OnRackReorder="HandleRackReorder" />
                                 @if (_vm.PendingPlacements.Any(p => p.IsJoker && p.Letter == '*'))
                                 {
@@ -281,7 +285,7 @@ else
                         {
                             <div class="card game-sidebar-rack">
                                 <div class="rack-side-header">
-                                    <h3>@L["Game.MyTiles"]</h3>
+                                    <h3>@L["Game.MyTiles"] <InfoTooltip Text="@L["Tooltip.RackTile"].Value" Icon="ℹ" Position="right" /></h3>
                                     @if (_vm.IsMyTurn && _vm.PendingPlacements.Count > 0)
                                     {
                                         <button class="btn btn-ghost btn-sm rack-recall-btn"
@@ -295,7 +299,9 @@ else
                                              DisplayOrder="@_rackOrder"
                                              IsMyTurn="_vm.IsMyTurn"
                                              UsedIndices="@(_vm.PendingPlacements.Count > 0 ? GetUsedIndices() : [])"
+                                             SelectedRackIndex="_selectedRackIndex"
                                              OnDragStart="HandleDragStart"
+                                             OnTileClick="HandleRackTileClick"
                                              OnRackReorder="HandleRackReorder" />
                                 @if (_vm.PendingPlacements.Count > 0)
                                 {
@@ -698,6 +704,10 @@ else
     private int _draggingRackIndex = -1;
     private char _draggingLetter = '\0';
 
+    // Click-to-place state (rack tile selected → click board cell)
+    private int _selectedRackIndex = -1;
+    private char _selectedLetter = '\0';
+
     // Drag state (board pending → board)
     private (int Row, int Col)? _draggingPendingPos;
 
@@ -918,6 +928,20 @@ else
         _draggingPendingPos = null;
     }
 
+    private void HandleRackTileClick((int Index, char Letter) args)
+    {
+        if (_selectedRackIndex == args.Index)
+        {
+            _selectedRackIndex = -1;
+            _selectedLetter = '\0';
+        }
+        else
+        {
+            _selectedRackIndex = args.Index;
+            _selectedLetter = args.Letter;
+        }
+    }
+
     private void HandlePendingDragStart((int Row, int Col) pos)
     {
         _draggingPendingPos = pos;
@@ -926,28 +950,33 @@ else
 
     private void HandleDrop((int Row, int Col) cell)
     {
+        var rackIndex = _draggingRackIndex >= 0 ? _draggingRackIndex : _selectedRackIndex;
+        var letter = _draggingRackIndex >= 0 ? _draggingLetter : _selectedLetter;
+        var fromClick = _selectedRackIndex >= 0 && _draggingRackIndex < 0;
+
         if (_draggingPendingPos.HasValue)
         {
-            // Déplacer une tuile provisoire vers une autre case
             var from = _draggingPendingPos.Value;
             if (from != cell)
                 _vm.MovePendingTile(from.Row, from.Col, cell.Row, cell.Col);
             _draggingPendingPos = null;
         }
-        else if (_draggingRackIndex >= 0)
+        else if (rackIndex >= 0)
         {
-            if (_draggingLetter == '*')
+            if (letter == '*')
             {
-                _vm.PlaceTile(_draggingRackIndex, '*', cell.Row, cell.Col);
+                _vm.PlaceTile(rackIndex, '*', cell.Row, cell.Col);
                 _jokerRow = cell.Row;
                 _jokerCol = cell.Col;
             }
             else
             {
-                _vm.PlaceTile(_draggingRackIndex, _draggingLetter, cell.Row, cell.Col);
+                _vm.PlaceTile(rackIndex, letter, cell.Row, cell.Col);
             }
             _draggingRackIndex = -1;
             _draggingLetter = '\0';
+            _selectedRackIndex = -1;
+            _selectedLetter = '\0';
         }
         StateHasChanged();
     }
@@ -1085,6 +1114,9 @@ else
             }
             catch { }
         }
+
+        if (firstRender && ShowFirstMoveHint)
+            Announcer.Announce(L["Game.FirstMoveHint"].Value);
     }
 
     private void OnBoardFocus()
@@ -1118,6 +1150,7 @@ else
             case "Delete":     _vm.HandleKeyboardDelete(); break;
             case "Insert":     _vm.HandleKeyboardInsert(); break;
             case "Backspace":  _vm.HandleKeyboardBackspace(); break;
+            case "Tab":       _vm.ToggleKeyboardDirection(); break;
             case "Escape":
                 _vm.RecallAll();
                 break;

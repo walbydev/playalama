@@ -23,14 +23,19 @@
             var val = GamePlayViewModel.GetTileValue(letter);
             var isJoker = letter == '*';
             var used = UsedIndices.Contains(rackIdx);
+            var isSelected = SelectedRackIndex == rackIdx;
+            var tileTitle = IsMyTurn && !used ? L["Tooltip.RackTile"].Value : null;
 
-            <div class="rack-tile @(isJoker ? "rack-tile--joker" : "") @(used ? "rack-tile--used" : "")"
+            <div class="rack-tile @(isJoker ? "rack-tile--joker" : "") @(used ? "rack-tile--used" : "") @(isSelected ? "rack-tile--selected" : "")"
                  role="listitem"
                  aria-label="@(isJoker ? L["Rack.Joker"].Value : L["Rack.TileAria", upper, val, (val > 1 ? "s" : "")].Value)"
                  aria-disabled="@(used ? "true" : null)"
+                 title="@tileTitle"
+                 tabindex="@(IsMyTurn && !used ? "0" : null)"
                  draggable="true"
                  @ondragstart="@(() => HandleDragStart(dp, rackIdx, letter, used))"
                  @ondragstart:stopPropagation
+                 @onclick="@(IsMyTurn && !used ? () => OnTileClick.InvokeAsync((rackIdx, letter)) : () => Task.CompletedTask)"
                  @ondragover:preventDefault
                  @ondrop="@(() => HandleRackDrop(dp))">
                 <span aria-hidden="true">@(isJoker ? "★" : upper.ToString())</span>
@@ -48,7 +53,9 @@
     [Parameter, EditorRequired] public List<int> DisplayOrder { get; set; } = [];
     [Parameter] public bool IsMyTurn { get; set; }
     [Parameter] public IReadOnlyCollection<int> UsedIndices { get; set; } = [];
+    [Parameter] public int SelectedRackIndex { get; set; } = -1;
     [Parameter] public EventCallback<(int Index, char Letter)> OnDragStart { get; set; }
+    [Parameter] public EventCallback<(int Index, char Letter)> OnTileClick { get; set; }
     [Parameter] public EventCallback<(int FromDisplayPos, int ToDisplayPos)> OnRackReorder { get; set; }
 
     private int _draggingDisplayPos = -1;

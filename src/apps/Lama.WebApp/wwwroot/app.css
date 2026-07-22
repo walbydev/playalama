@@ -1918,7 +1918,6 @@ html.highcontrast .board-cell:hover:not(.board-cell--kbd-cursor) {
     position: relative;
 }
 .board-cell--kbd-cursor::after {
-    content: '|';
     position: absolute;
     left: 50%; top: 50%;
     transform: translate(-50%, -50%);
@@ -1927,6 +1926,11 @@ html.highcontrast .board-cell:hover:not(.board-cell--kbd-cursor) {
     font-size: 1.35rem;
     animation: cursorBlink .7s step-end infinite;
     pointer-events: none;
+}
+.board-cell--kbd-dir-h::after { content: '→'; }
+.board-cell--kbd-dir-v::after { content: '↓'; }
+.board-cell--kbd-cursor:not(.board-cell--kbd-dir-h):not(.board-cell--kbd-dir-v)::after {
+    content: '|';
 }
 
 @keyframes cursorBlink {
@@ -2075,6 +2079,18 @@ html.highcontrast .rack-tile--used {
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none;
+}
+
+/* Tuile rack sélectionnée (click-to-place) */
+.rack-tile--selected {
+    outline: 3px solid var(--accent, #d97706);
+    outline-offset: 2px;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(217,119,6,.4);
+}
+
+html.highcontrast .rack-tile--selected {
+    outline: 4px solid #fff;
 }
 
 /* ════════════════════════════════════════════════════════

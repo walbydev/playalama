@@ -472,6 +472,12 @@ public sealed class GamePlayViewModel
         AdvanceCursor();
     }
 
+    /// <summary>Bascule manuellement la direction du curseur (H ↔ V).</summary>
+    public void ToggleKeyboardDirection()
+    {
+        KeyboardIsHorizontal = !KeyboardIsHorizontal;
+    }
+
     private void AdvanceCursor()
     {
         if (KeyboardIsHorizontal) KeyboardCursorCol++;

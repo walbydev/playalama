@@ -230,7 +230,7 @@ window.playalamaBoard = {
     boardEl.addEventListener('keydown', function (e) {
       var k = e.key;
       var isLetter = k.length === 1 && /^[a-zA-Z]$/.test(k);
-      var isNav = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Delete','Insert','Backspace'].indexOf(k) >= 0;
+      var isNav = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Delete','Insert','Backspace','Tab'].indexOf(k) >= 0;
       if (isLetter || isNav) {
         e.preventDefault();
       }
