@@ -62,12 +62,6 @@ else
                                 <span class="chip chip-accent">@L["Game.Status.YourTurn"]</span>
                             }
                         </div>
-                        <div class="game-langs">
-                            @foreach (var l in GetGameLanguages())
-                            {
-                                <span class="lang-tag">@LanguageFlag(l) @l.ToUpperInvariant()</span>
-                            }
-                        </div>
                     </div>
 
                     <div class="letter-bag-display" title="@L["Game.BagTitle"]">
@@ -139,12 +133,6 @@ else
                             }
                         </span>
                     </div>
-                    <div class="game-langs game-langs--compact">
-                        @foreach (var l in GetGameLanguages())
-                        {
-                            <span class="lang-tag">@LanguageFlag(l)</span>
-                        }
-                    </div>
 
                     @if (_vm.IsObserver || _vm.Snapshot!.IsGameOver)
                     {
@@ -178,11 +166,6 @@ else
                             @(_exportCopied ? "✓" : "📋")
                         </button>
                     </div>
-                    <button class="btn btn-ghost btn-sm sidebar-toggle-btn"
-                            @onclick="async () => await Layout.ToggleSidebarAsync()"
-                            title="@(Layout.IsSidebarHidden ? L["Game.ShowSidebar"] : L["Game.HideSidebar"])">
-                        @(Layout.IsSidebarHidden ? "📋 ▶" : "◀ 📋")
-                    </button>
                 </div>
 
                 @* ── Bandeau spectateur ── *@
@@ -196,7 +179,6 @@ else
                 <div class="game-layout"
                      style="--board-scale:@Layout.ScaleCss;"
                      data-variant="@Layout.Variant"
-                     data-sidebar="@(Layout.IsSidebarHidden ? "hidden" : "visible")"
                      data-help-open="@(_vm.SuggestPanelOpen ? "true" : "false")">
 
                     @* ── Zone plateau (+ rack selon variante D) ── *@

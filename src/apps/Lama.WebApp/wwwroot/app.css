@@ -244,9 +244,12 @@ html.highcontrast .scoreboard-row--active {
 html { scroll-behavior: smooth; font-size: 17px; }
 
 /* ── TAILLES DE POLICE GLOBALES (Accessibilité) ── */
+html[data-font-size="50"]  { font-size: 9px; }
+html[data-font-size="75"]  { font-size: 13px; }
 html[data-font-size="100"] { font-size: 17px; }
 html[data-font-size="125"] { font-size: 21px; }
 html[data-font-size="150"] { font-size: 26px; }
+html[data-font-size="175"] { font-size: 30px; }
 html[data-font-size="200"] { font-size: 34px; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2396,25 +2399,6 @@ html.highcontrast .rack-tile--selected {
 }
 .page-wrapper--fullscreen .game-layout {
     --board-inline-max: calc(var(--board-scale, 1) * min(900px, 96vmin));
-}
-
-/* Plein écran + sidebar cachée : plateau occupe tout l'écran */
-.game-layout[data-sidebar="hidden"] {
-    grid-template-columns: minmax(0, 1fr) !important;
-}
-.game-layout[data-sidebar="hidden"] .game-sidebar {
-    display: none;
-}
-.page-wrapper--fullscreen .game-layout[data-sidebar="hidden"] .board-container {
-    --board-max: calc(var(--board-scale) * min(100vh - 6rem, 100vw - 3rem));
-}
-.page-wrapper--fullscreen .game-layout[data-sidebar="hidden"] {
-    --board-inline-max: calc(var(--board-scale, 1) * min(100vh - 6rem, 100vw - 3rem));
-}
-
-.sidebar-toggle-btn {
-    font-size: .8rem;
-    white-space: nowrap;
 }
 
 .page-wrapper--game-focus .rack-below-board,

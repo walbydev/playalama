@@ -24,7 +24,6 @@ public sealed class GameLayoutService(IJSRuntime js)
 
     private string _density = Medium;
     private bool _fullscreen;
-    private bool _sidebarHidden;
     private string _activeTab = TabPlay;
     private string _variant = VariantD;
     private readonly HashSet<string> _collapsedPanels = new(StringComparer.Ordinal);
@@ -32,7 +31,6 @@ public sealed class GameLayoutService(IJSRuntime js)
 
     public string Density => _density;
     public bool IsFullscreen => _fullscreen;
-    public bool IsSidebarHidden => _sidebarHidden;
     public string ActiveTab => _activeTab;
     public string Variant => _variant;
 
@@ -60,7 +58,6 @@ public sealed class GameLayoutService(IJSRuntime js)
             {
                 _density = Normalize(state.Density);
                 _fullscreen = state.Fullscreen;
-                _sidebarHidden = state.SidebarHidden;
                 _activeTab = NormalizeTab(state.ActiveTab);
                 _variant = NormalizeVariant(state.Variant);
                 _collapsedPanels.Clear();
@@ -89,13 +86,6 @@ public sealed class GameLayoutService(IJSRuntime js)
         _fullscreen = !_fullscreen;
         try { await js.InvokeVoidAsync("playalamaGameLayout.setFullscreen", _fullscreen); }
         catch { /* prerender */ }
-        await PersistAsync();
-        Changed?.Invoke();
-    }
-
-    public async Task ToggleSidebarAsync()
-    {
-        _sidebarHidden = !_sidebarHidden;
         await PersistAsync();
         Changed?.Invoke();
     }
@@ -131,7 +121,7 @@ public sealed class GameLayoutService(IJSRuntime js)
         try
         {
             await js.InvokeVoidAsync("playalamaGameLayout.set",
-                new LayoutState(_density, _fullscreen, _sidebarHidden, _collapsedPanels.ToArray(), _activeTab, _variant));
+                new LayoutState(_density, _fullscreen, _collapsedPanels.ToArray(), _activeTab, _variant));
         }
         catch { /* prerender */ }
     }
@@ -160,5 +150,5 @@ public sealed class GameLayoutService(IJSRuntime js)
         _ => VariantD,
     };
 
-    public sealed record LayoutState(string Density, bool Fullscreen, bool SidebarHidden, string[]? Collapsed, string? ActiveTab, string? Variant);
+    public sealed record LayoutState(string Density, bool Fullscreen, string[]? Collapsed, string? ActiveTab, string? Variant);
 }

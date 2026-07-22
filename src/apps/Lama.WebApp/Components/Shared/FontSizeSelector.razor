@@ -76,7 +76,7 @@
         }
     }
 
-    private static int NormalizeFontSize(int size) => size is 100 or 125 or 150 or 200 ? size : 100;
+    private static int NormalizeFontSize(int size) => size is 50 or 75 or 100 or 125 or 150 or 175 or 200 ? size : 100;
     private static string NormalizeTheme(string theme) => theme switch
     {
         "dark" or "light" or "blue" or "green" or "vermillion" or "highcontrast" or "deuteranopia" or "protanopia" or "tritanopia" => theme,

@@ -37,7 +37,7 @@ window.playalamaDensity = {
 
 // ── Accessibilité : Taille de police globale ─────────────────────────────────
 window.playalamaAccessibility = {
-    fontSizes: ['100', '125', '150', '200'],
+    fontSizes: ['50', '75', '100', '125', '150', '175', '200'],
     getFontSize() {
         const stored = localStorage.getItem('playalama-font-size') || '100';
         return this.fontSizes.includes(stored) ? stored : '100';
@@ -74,17 +74,16 @@ window.playalamaGameLayout = {
     get() {
         try {
             const raw = localStorage.getItem('playalama-game-layout');
-            if (!raw) return { density: 'm', fullscreen: false, sidebarHidden: false, collapsed: [], activeTab: 'play', variant: 'd' };
+            if (!raw) return { density: 'm', fullscreen: false, collapsed: [], activeTab: 'play', variant: 'd' };
             const parsed = JSON.parse(raw);
             return {
                 density: ['s', 'm', 'l', 'xl', 'xxl'].includes(parsed.density) ? parsed.density : 'm',
                 fullscreen: !!parsed.fullscreen,
-                sidebarHidden: !!parsed.sidebarHidden,
                 collapsed: Array.isArray(parsed.collapsed) ? parsed.collapsed : [],
                 activeTab: ['scores', 'play', 'messages'].includes(parsed.activeTab) ? parsed.activeTab : 'play',
                 variant: ['a', 'b', 'c', 'd'].includes(parsed.variant) ? parsed.variant : 'd'
             };
-        } catch { return { density: 'm', fullscreen: false, sidebarHidden: false, collapsed: [], activeTab: 'play', variant: 'd' }; }
+        } catch { return { density: 'm', fullscreen: false, collapsed: [], activeTab: 'play', variant: 'd' }; }
     },
     set(state) {
         try { localStorage.setItem('playalama-game-layout', JSON.stringify(state)); } catch { }

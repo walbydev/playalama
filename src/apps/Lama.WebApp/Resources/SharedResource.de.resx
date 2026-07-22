@@ -221,8 +221,6 @@
   <data name="Game.Joker.Title"><value>Welcher Buchstabe für diesen Joker?</value></data>
   <data name="Game.JokerAssignHint"><value>Jedem Joker einen Buchstaben zuweisen (★ → Klick)</value></data>
   <data name="Game.Leave"><value>Verlassen</value></data>
-  <data name="Game.HideSidebar"><value>Panel ausblenden</value></data>
-  <data name="Game.ShowSidebar"><value>Panel einblenden</value></data>
   <data name="Game.Letters.Plural"><value>Buchstaben</value></data>
   <data name="Game.Letters.Singular"><value>Buchstabe</value></data>
   <data name="Game.Loading"><value>Spiel wird geladen…</value></data>

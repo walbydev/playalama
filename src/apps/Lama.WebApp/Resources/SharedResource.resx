@@ -222,8 +222,6 @@
   <data name="Game.Joker.Title"><value>Quelle lettre pour ce joker ?</value></data>
   <data name="Game.JokerAssignHint"><value>Attribuez une lettre à chaque joker (★ → clic)</value></data>
   <data name="Game.Leave"><value>Quitter</value></data>
-  <data name="Game.HideSidebar"><value>Masquer le panneau</value></data>
-  <data name="Game.ShowSidebar"><value>Afficher le panneau</value></data>
   <data name="Game.Letters.Plural"><value>lettres</value></data>
   <data name="Game.Letters.Singular"><value>lettre</value></data>
   <data name="Game.Loading"><value>Chargement de la partie…</value></data>
