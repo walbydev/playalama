@@ -63,17 +63,14 @@
     </div>
 </nav>
 
-<!-- Spacer pour compenser la navbar fixe + la bannière dev -->
+<!-- Spacer pour compenser la navbar fixe -->
 <div style="height: @SpacerHeight" aria-hidden="true"></div>
 
 @code {
     [Parameter] public bool CompactMode { get; set; }
-    [Parameter] public bool ShowDevBanner { get; set; } = true;
 
     private bool _menuOpen;
-    private string SpacerHeight => CompactMode
-        ? "calc(56px + var(--banner-h))"
-        : "calc(var(--nav-h) + var(--banner-h))";
+    private string SpacerHeight => CompactMode ? "56px" : "var(--nav-h)";
 
     protected override void OnInitialized()
     {

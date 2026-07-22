@@ -1,7 +1,7 @@
 @using Lama.WebApp.Services
 @inject IStringLocalizer<SharedResource> L
 
-<div class="dev-banner" role="alert" aria-label="@L["DevBanner.Aria"]">
+<div class="build-info-sticky" role="status" aria-label="@L["DevBanner.Aria"]">
     <span>🚧 @L["DevBanner.InDevelopment"]</span>
     <span class="dev-banner-sep">|</span>
     <span>v&nbsp;@BuildInfoConstants.Version</span>

@@ -30,7 +30,7 @@ html.dark {
     --radius-sm:  8px;
     --font:       'Segoe UI', system-ui, sans-serif;
     --nav-h:      64px;
-    --banner-h:   28px;
+    --banner-h:   0px;
     --shadow:     0 4px 24px rgba(0,0,0,0.4);
 }
 
@@ -503,12 +503,12 @@ html.highcontrast .navbar-logo {
     color: #ffff00;
 }
 
-/* ── Bannière pleine largeur "En développement" ── */
-.dev-banner {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 300;
-    height: var(--banner-h);
+/* ── Barre build-info sticky (page de jeu, en bas) ── */
+.build-info-sticky {
+    position: sticky;
+    bottom: 0;
+    left: 0; right: 0;
+    z-index: 200;
     background: #b45309;
     color: #fef3c7;
     font-size: .72rem;
@@ -517,18 +517,30 @@ html.highcontrast .navbar-logo {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1.5rem;
+    gap: 1rem;
     white-space: nowrap;
     overflow: hidden;
-    padding: 0 1rem;
+    padding: .35rem 1rem;
 }
-.dev-banner .dev-banner-sep { opacity: .45; }
+.build-info-sticky .dev-banner-sep { opacity: .45; }
 
-/* Bannière dev haut contraste */
-html.highcontrast .dev-banner {
+/* Build-info dans le footer standard (pages hors jeu) */
+.footer-build-info {
+    opacity: .55;
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .03em;
+}
+
+/* Build-info haut contraste */
+html.highcontrast .build-info-sticky {
     background: #000000;
     color: #ffff00;
-    border-bottom: 3px solid #ffff00;
+    border-top: 3px solid #ffff00;
+}
+html.highcontrast .footer-build-info {
+    opacity: 1;
+    color: #ffff00;
 }
 
 .navbar-links {
@@ -1884,6 +1896,20 @@ html.highcontrast .tile-val {
 /* Case survol pendant le drag */
 .board-cell[ondragover] { outline: 2px dashed var(--accent); }
 
+/* ── Curseur hover (suit la souris, Phase 3) — CSS pur, zéro re-render ── */
+.board-cell:hover:not(.board-cell--kbd-cursor) {
+    outline: 2px dashed var(--accent);
+    outline-offset: -2px;
+    cursor: pointer;
+}
+.board-cell--tile:hover:not(.board-cell--kbd-cursor),
+.board-cell--pending:hover:not(.board-cell--kbd-cursor) {
+    outline-color: var(--accent2);
+}
+html.highcontrast .board-cell:hover:not(.board-cell--kbd-cursor) {
+    outline: 3px dashed #ff0;
+}
+
 /* Curseur clavier — case cible clignotante */
 .board-cell--kbd-cursor {
     outline: 2px solid var(--accent) !important;
@@ -2299,7 +2325,7 @@ html.highcontrast .rack-tile--used {
 
 /* ── Mode focus (auto-fit) : exploiter l'espace de la fenêtre ── */
 .page-wrapper--game-focus .main-content--game-focus {
-    min-height: calc(100vh - 56px - var(--banner-h));
+    min-height: calc(100vh - 56px - 28px);
 }
 
 .page-wrapper--game-focus .game-page {
@@ -3046,4 +3072,179 @@ html[data-density="compact"] .sidebar-panel {
     html[data-density="compact"] .game-sidebar-rack {
         display: none;
     }
+}
+
+/* ── INFO TOOLTIP (composant réutilisable) ─────────────────────────────────── */
+.info-tooltip-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+.info-tooltip-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    background: var(--bg2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    font-size: .68rem;
+    font-weight: 700;
+    cursor: help;
+    user-select: none;
+    transition: background .15s, color .15s;
+}
+.info-tooltip-trigger:hover,
+.info-tooltip-trigger:focus-visible {
+    background: var(--accent);
+    color: #fff;
+    outline: none;
+}
+.info-tooltip {
+    position: absolute;
+    z-index: 500;
+    width: max-content;
+    max-width: 220px;
+    padding: .4rem .65rem;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    font-size: .76rem;
+    font-weight: 400;
+    line-height: 1.4;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .15s, visibility .15s;
+    pointer-events: none;
+}
+.info-tooltip.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+.info-tooltip--top    { bottom: calc(100% + .4rem); left: 50%; transform: translateX(-50%); }
+.info-tooltip--bottom { top: calc(100% + .4rem);    left: 50%; transform: translateX(-50%); }
+.info-tooltip--left   { right: calc(100% + .4rem);  top: 50%;  transform: translateY(-50%); }
+.info-tooltip--right  { left: calc(100% + .4rem);   top: 50%;  transform: translateY(-50%); }
+html.highcontrast .info-tooltip-trigger {
+    background: #000; color: #ff0; border-color: #ff0;
+}
+html.highcontrast .info-tooltip {
+    background: #000; color: #ff0; border-color: #ff0;
+}
+
+/* ── HOW-TO-PLAY STRIP (bandeau repliable) ─────────────────────────────────── */
+.how-to-strip {
+    margin-bottom: .5rem;
+}
+.how-to-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-dim);
+    padding: .25rem .7rem;
+    border-radius: var(--radius-sm);
+    font-size: .78rem;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+}
+.how-to-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.how-to-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: .4rem;
+    padding: .6rem .8rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    position: relative;
+}
+.how-to-step {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    font-size: .78rem;
+    color: var(--text);
+}
+.how-to-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: .72rem;
+    flex-shrink: 0;
+}
+.how-to-close {
+    position: absolute;
+    top: .35rem;
+    right: .4rem;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: .85rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: .15rem .3rem;
+}
+.how-to-close:hover { color: var(--text); }
+html.highcontrast .how-to-content { background: #000; border-color: #ff0; }
+html.highcontrast .how-to-step-num { background: #ff0; color: #000; }
+
+/* ── FIRST-MOVE HINT (indicateur centre ★) ─────────────────────────────────── */
+.first-move-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    padding: .35rem .6rem;
+    margin-bottom: .4rem;
+    background: rgba(99,102,241, .12);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-size: .8rem;
+    font-weight: 600;
+    text-align: center;
+}
+.first-move-arrow {
+    font-size: 1rem;
+    animation: firstMoveBounce 1s ease-in-out infinite;
+}
+@keyframes firstMoveBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(.25rem); }
+}
+html.highcontrast .first-move-hint { background: #000; color: #ff0; border-color: #ff0; }
+
+/* ── RACK HINT TEXT ────────────────────────────────────────────────────────── */
+.rack-hint-text {
+    font-size: .75rem;
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+/* ── BOARD KEYBOARD MODE (Phase 2) ─────────────────────────────────────────── */
+.game-board-area[tabindex] {
+    outline: none;
+}
+.game-board-area.kbd-active[tabindex]:focus-visible,
+.game-board-area.kbd-active[tabindex]:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+html.highcontrast .game-board-area.kbd-active:focus-visible {
+    outline: 3px solid #ff0;
 }

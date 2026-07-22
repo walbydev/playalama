@@ -9,6 +9,7 @@
 @inject IStringLocalizer<SharedResource> L
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 @inject IJSRuntime JS
+@inject ScreenReaderAnnouncer Announcer
 
 <PageTitle>@L["Game.PageTitle", GameId]</PageTitle>
 
@@ -182,16 +183,34 @@ else
                      data-help-open="@(_vm.SuggestPanelOpen ? "true" : "false")">
 
                     @* ── Zone plateau (+ rack selon variante D) ── *@
-                    <div class="game-board-area">
+                    <div class="game-board-area @(_vm.KeyboardModeActive ? "kbd-active" : "")"
+                         tabindex="@(_vm.IsMyTurn ? "0" : null)"
+                         role="application"
+                         aria-label="@L["Board.Aria"]"
+                         @ref="_boardAreaRef"
+                         @onkeydown="HandleBoardKeyDown"
+                         @onfocus="OnBoardFocus">
+
+                        @if (_vm.IsMyTurn && !_vm.IsAbandoned)
+                        {
+                            <HowToPlayStrip />
+                            @if (ShowFirstMoveHint)
+                            {
+                                <div class="first-move-hint" role="status">
+                                    <span class="first-move-arrow" aria-hidden="true">↓</span>
+                                    <span>@L["Game.FirstMoveHint"]</span>
+                                </div>
+                            }
+                        }
 
                         <BoardDisplay Board="_vm.Snapshot.Board"
                                       GetBonus="_vm.GetCellBonus"
                                       Pending="_vm.PendingPlacements"
                                       CanDrop="@(_vm.IsMyTurn && (_draggingRackIndex >= 0 || _draggingPendingPos.HasValue))"
                                       CanDragPending="_vm.IsMyTurn"
-                                      CanActivateKeyboard="false"
+                                      CanActivateKeyboard="@_vm.IsMyTurn"
                                       DraggingFromBoard="_draggingPendingPos.HasValue"
-                                      KeyboardModeActive="false"
+                                      KeyboardModeActive="_vm.KeyboardModeActive"
                                       KeyboardCursorRow="_vm.KeyboardCursorRow"
                                       KeyboardCursorCol="_vm.KeyboardCursorCol"
                                       OnDrop="HandleDrop"
@@ -211,6 +230,10 @@ else
                                 <div class="rack-below-header">
                                     <div class="rack-title-row">
                                         <h3>@L["Game.MyTiles"]</h3>
+                                        @if (_vm.IsMyTurn && _vm.PendingPlacements.Count == 0 && ShowFirstMoveHint)
+                                        {
+                                            <span class="rack-hint-text">@L["Game.RackHint"]</span>
+                                        }
                                         @if (_vm.IsMyTurn && _vm.PendingPlacements.Count > 0)
                                         {
                                             <button class="btn btn-ghost btn-sm rack-recall-btn"
@@ -668,6 +691,8 @@ else
     private PeriodicTimer? _uiTimer;
     private CancellationTokenSource? _pollingCts;
     private CancellationTokenSource? _uiCts;
+    private ElementReference _boardAreaRef;
+    private bool _boardKeyListenerAttached;
 
     // Drag state (rack → board)
     private int _draggingRackIndex = -1;
@@ -822,6 +847,11 @@ else
         || !string.IsNullOrWhiteSpace(_vm.Error)
         || !string.IsNullOrWhiteSpace(_abandonError)
         || _vm.SuggestionsUsed;
+
+    private bool ShowFirstMoveHint =>
+        _vm.IsMyTurn
+        && _vm.Snapshot is { Board.Count: 0 }
+        && _vm.PendingPlacements.Count == 0;
 
     private static string? GetPlayerName(IReadOnlyList<WebSnapshotPlayer> players, int index) =>
         index >= 0 && index < players.Count ? players[index].PlayerName : null;
@@ -1044,10 +1074,70 @@ else
     }
 
 
-    private async Task HandleKeyboardActivate((int Row, int Col) cell)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Mode clavier désactivé temporairement
-        await Task.CompletedTask;
+        if (_vm.IsMyTurn && !_boardKeyListenerAttached)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("playalamaBoard.attachKeyListener", _boardAreaRef);
+                _boardKeyListenerAttached = true;
+            }
+            catch { }
+        }
+    }
+
+    private void OnBoardFocus()
+    {
+        if (_vm.IsMyTurn && !_vm.Snapshot!.IsGameOver && !_vm.KeyboardModeActive)
+        {
+            var row = _vm.KeyboardCursorRow >= 0 && _vm.KeyboardCursorRow < 15 ? _vm.KeyboardCursorRow : 7;
+            var col = _vm.KeyboardCursorCol >= 0 && _vm.KeyboardCursorCol < 15 ? _vm.KeyboardCursorCol : 7;
+            _vm.StartKeyboardMode(row, col);
+            StateHasChanged();
+        }
+    }
+
+    private Task HandleBoardKeyDown(KeyboardEventArgs e)
+    {
+        if (!_vm.IsMyTurn || _vm.Snapshot?.IsGameOver == true) return Task.CompletedTask;
+
+        if (!_vm.KeyboardModeActive)
+        {
+            var row = _vm.KeyboardCursorRow is >= 0 and < 15 ? _vm.KeyboardCursorRow : 7;
+            var col = _vm.KeyboardCursorCol is >= 0 and < 15 ? _vm.KeyboardCursorCol : 7;
+            _vm.StartKeyboardMode(row, col);
+        }
+
+        switch (e.Key)
+        {
+            case "ArrowUp":    _vm.MoveCursor(-1, 0); break;
+            case "ArrowDown":  _vm.MoveCursor(1, 0); break;
+            case "ArrowLeft":  _vm.MoveCursor(0, -1); break;
+            case "ArrowRight": _vm.MoveCursor(0, 1); break;
+            case "Delete":     _vm.HandleKeyboardDelete(); break;
+            case "Insert":     _vm.HandleKeyboardInsert(); break;
+            case "Backspace":  _vm.HandleKeyboardBackspace(); break;
+            case "Escape":
+                _vm.RecallAll();
+                break;
+            default:
+                if (e.Key.Length == 1 && char.IsLetter(e.Key[0]))
+                    _vm.HandleKeyboardLetter(e.Key[0]);
+                else
+                    return Task.CompletedTask;
+                break;
+        }
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleKeyboardActivate((int Row, int Col) cell)
+    {
+        if (_vm.IsMyTurn && !_vm.Snapshot!.IsGameOver)
+            _vm.StartKeyboardMode(cell.Row, cell.Col);
+        return Task.CompletedTask;
     }
 
     private void HandleRackReorder((int FromDisplayPos, int ToDisplayPos) args)

@@ -10,8 +10,6 @@
 @implements IDisposable
 
 <div class="page-wrapper @(IsGameFocusMode ? "page-wrapper--game-focus" : "") @(IsGameFocusMode && Layout.IsFullscreen ? "page-wrapper--fullscreen" : "")">
-    <DevBanner />
-    
     @* ── SKIP LINKS (Accessibilité) ─────────────────────────────────────── *@
     <a href="#main-content" class="skip-link" @onclick="FocusMainContent">
         @L["Accessibility.SkipToMain"]
@@ -20,7 +18,7 @@
         @L["Accessibility.SkipToNav"]
     </a>
     
-    <NavBar CompactMode="@IsGameFocusMode" ShowDevBanner="true" />
+    <NavBar CompactMode="@IsGameFocusMode" />
 
     <main id="main-content" class="@(IsGameFocusMode ? "main-content--game-focus" : null)" tabindex="-1">
         @Body
@@ -29,6 +27,10 @@
     @if (!IsGameFocusMode)
     {
         <Footer />
+    }
+    else
+    {
+        <GameBuildBar />
     }
 
     <div class="llamo-watermark" aria-hidden="true"></div>

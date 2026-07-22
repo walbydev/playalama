@@ -439,6 +439,39 @@ public sealed class GamePlayViewModel
         _keyboardPlacedCount = 0;
     }
 
+    /// <summary>
+    /// Déplace le curseur clavier d'un delta (row, col) avec bornage 0–14.
+    /// La direction (H/V) est ajustée automatiquement selon l'axe du déplacement.
+    /// </summary>
+    public void MoveCursor(int dRow, int dCol)
+    {
+        KeyboardCursorRow = Math.Clamp(KeyboardCursorRow + dRow, 0, 14);
+        KeyboardCursorCol = Math.Clamp(KeyboardCursorCol + dCol, 0, 14);
+
+        if (dCol != 0) KeyboardIsHorizontal = true;
+        else if (dRow != 0) KeyboardIsHorizontal = false;
+    }
+
+    /// <summary>
+    /// Supprime la tuile provisoire (du tour courant) située à la position du curseur.
+    /// Ne touche jamais les tuiles confirmées des tours précédents.
+    /// </summary>
+    public bool HandleKeyboardDelete()
+    {
+        if (!KeyboardModeActive) return false;
+        return RecallTile(KeyboardCursorRow, KeyboardCursorCol);
+    }
+
+    /// <summary>
+    /// Avance le curseur d'une case sans poser de tuile : crée un gap intentionnel
+    /// entre les tuiles du tour courant (auto-correction avant validation).
+    /// </summary>
+    public void HandleKeyboardInsert()
+    {
+        if (!KeyboardModeActive) return;
+        AdvanceCursor();
+    }
+
     private void AdvanceCursor()
     {
         if (KeyboardIsHorizontal) KeyboardCursorCol++;

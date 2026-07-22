@@ -210,6 +210,37 @@ window.playalamaDebug = {
   }
 };
 
+// ── How-to-play strip persistence ────────────────────────────────────────────
+window.playalamaHowTo = {
+  isDismissed: function () {
+    try { return localStorage.getItem('playalama-howto-dismissed') === '1'; }
+    catch (e) { return false; }
+  },
+  setDismissed: function (dismissed) {
+    try { localStorage.setItem('playalama-howto-dismissed', dismissed ? '1' : '0'); }
+    catch (e) { }
+  }
+};
+
+// ── Board keyboard navigation : preventDefault ciblé ─────────────────────────
+window.playalamaBoard = {
+  attachKeyListener: function (boardEl) {
+    if (!boardEl || boardEl._lamaKeyHandler) return;
+    boardEl._lamaKeyHandler = true;
+    boardEl.addEventListener('keydown', function (e) {
+      var k = e.key;
+      var isLetter = k.length === 1 && /^[a-zA-Z]$/.test(k);
+      var isNav = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Delete','Insert','Backspace'].indexOf(k) >= 0;
+      if (isLetter || isNav) {
+        e.preventDefault();
+      }
+    });
+  },
+  focusBoard: function (boardEl) {
+    if (boardEl) { try { boardEl.focus({ preventScroll: true }); } catch (e) { } }
+  }
+};
+
 // ── Anti-flash : appliquer densité dès le chargement ─────────────────────────
 (function () {
   try {

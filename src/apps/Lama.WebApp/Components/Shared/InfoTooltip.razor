@@ -1,0 +1,36 @@
+@inject IStringLocalizer<SharedResource> L
+
+<span class="info-tooltip-wrap">
+    <span class="info-tooltip-trigger"
+          tabindex="0"
+          role="button"
+          aria-describedby="@_tooltipId"
+          aria-label="@L["Tooltip.AriaLabel"]"
+          @onmouseover="@(() => _show = true)"
+          @onmouseout="@(() => _show = false)"
+          @onfocus="@(() => _show = true)"
+          @onblur="@(() => _show = false)"
+          @onkeydown="@OnKeyDown">
+        @(string.IsNullOrEmpty(Icon) ? "?" : Icon)
+    </span>
+    <span id="@_tooltipId"
+          class="info-tooltip info-tooltip--@Position @(_show ? "is-visible" : "")"
+          role="tooltip">
+        @Text
+    </span>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Text { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = "?";
+    [Parameter] public string Position { get; set; } = "top";
+
+    private bool _show;
+    private string _tooltipId = $"tt-{Guid.NewGuid():N}";
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Escape")
+            _show = false;
+    }
+}

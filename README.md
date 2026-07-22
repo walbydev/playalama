@@ -423,12 +423,12 @@ LAMA uses a centralized versioning system via the `.build-info` (JSON) file whic
 
 ### View build info
 
-The WebApp displays a development banner (🚧 In development) with:
+The WebApp displays build info (🚧 In development) in the **footer** of standard pages and in a **sticky bottom bar** (`GameBuildBar.razor`) on the game page, with:
 - Version (v0.1.7)
 - Build number (#36)
 - Build timestamp (04/07/2026 08:15)
 
-The `DevBanner.razor` component uses the static `BuildInfoConstants` class to display build info without HTTP calls.
+Both use the static `BuildInfoConstants` class to display build info without HTTP calls.
 
 ### Make versioning targets
 

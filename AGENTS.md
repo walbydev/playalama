@@ -47,7 +47,7 @@
 - `src/apps/Lama.Server/Program.cs` is intentionally focused: minimal changes, covered by tests. Server state lives in `Runtime/GameHubState.cs`; endpoints are distributed in `Endpoints/{Games,Auth,Players,Lexicon}/` plus flat files (e.g. `BotsEndpoints.cs`).
 - Online authentication: JWT via `JwtTokenService` + `JwtMiddleware`; secret signed by `LAMA_JWT_SECRET`.
 - Online/compose port convention: Server `5201`, WebApp `5202`, AIServer `5203` (dev/staging/prod).
-- **Versioning and build**: `.build-info` (JSON) sync via script to `BuildInfoConstants.cs`; make targets: `build-increment`, `version-set VERSION=x.y.z`, `build-generate`. `DevBanner.razor` uses the static class without HTTP.
+- **Versioning and build**: `.build-info` (JSON) sync via script to `BuildInfoConstants.cs`; make targets: `build-increment`, `version-set VERSION=x.y.z`, `build-generate`. Build info is shown in the footer (`Footer.razor`) and a sticky bottom bar on the game page (`GameBuildBar.razor`), both using the static class without HTTP.
 
 ## Game Models and Ranking
 - Modes: `Casual` (aids enabled), `Standard`, `Competitive` (mandatory challenge), `Tournament` (frozen rules).

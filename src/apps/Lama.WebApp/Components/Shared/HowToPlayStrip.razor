@@ -1,0 +1,71 @@
+@inject IJSRuntime JS
+@inject IStringLocalizer<SharedResource> L
+
+<div class="how-to-strip @(_dismissed ? "is-dismissed" : "")">
+    <button class="how-to-toggle" type="button"
+            aria-expanded="@(!_dismissed)"
+            aria-controls="how-to-content"
+            @onclick="Toggle">
+        <span aria-hidden="true">@(string.IsNullOrEmpty(ToggleIcon) ? "?" : ToggleIcon)</span>
+        <span>@L["Game.HowTo.Title"]</span>
+    </button>
+
+    @if (!_dismissed)
+    {
+        <div id="how-to-content" class="how-to-content">
+            <div class="how-to-step">
+                <span class="how-to-step-num" aria-hidden="true">1</span>
+                <span class="how-to-step-text">@L["Game.HowTo.Step1"]</span>
+            </div>
+            <div class="how-to-step">
+                <span class="how-to-step-num" aria-hidden="true">2</span>
+                <span class="how-to-step-text">@L["Game.HowTo.Step2"]</span>
+            </div>
+            <div class="how-to-step">
+                <span class="how-to-step-num" aria-hidden="true">3</span>
+                <span class="how-to-step-text">@L["Game.HowTo.Step3"]</span>
+            </div>
+            <button class="how-to-close" type="button"
+                    aria-label="@L["Game.HowTo.Dismiss"]"
+                    @onclick="Dismiss">
+                ✕
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string ToggleIcon { get; set; } = "?";
+
+    private bool _dismissed = true;
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_initialized)
+        {
+            try { _dismissed = await JS.InvokeAsync<bool>("playalamaHowTo.isDismissed"); }
+            catch { _dismissed = false; }
+            _initialized = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Toggle()
+    {
+        _dismissed = !_dismissed;
+        await PersistAsync();
+    }
+
+    private async Task Dismiss()
+    {
+        _dismissed = true;
+        await PersistAsync();
+    }
+
+    private async Task PersistAsync()
+    {
+        try { await JS.InvokeVoidAsync("playalamaHowTo.setDismissed", _dismissed); }
+        catch { }
+    }
+}
