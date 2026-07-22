@@ -233,7 +233,13 @@ else
                                 @foreach (var u in _users)
                                 {
                                     <tr>
-                                        <td><strong>@u.Username</strong></td>
+                                        <td>
+                                            <strong>@u.Username</strong>
+                                            @if (u.IsAdmin)
+                                            {
+                                                <span class="chip chip-info" style="margin-left:.5rem;font-size:.75rem">👑 Admin</span>
+                                            }
+                                        </td>
                                         <td class="text-muted">@(u.Email ?? "—")</td>
                                         <td>@u.EloRating</td>
                                         <td>@u.GamesPlayed</td>
@@ -249,7 +255,23 @@ else
                                                 <span class="chip chip-muted">@L["Admin.Offline"]</span>
                                             }
                                         </td>
-                                        <td>
+                                        <td class="admin-actions">
+                                            @if (u.IsAdmin)
+                                            {
+                                                <button class="btn btn-ghost btn-sm"
+                                                        @onclick="@(() => ToggleAdminAsync(u, false))"
+                                                        disabled="@_usersLoading">
+                                                    Revoke
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-ghost btn-sm"
+                                                        @onclick="@(() => ToggleAdminAsync(u, true))"
+                                                        disabled="@_usersLoading">
+                                                    Promote
+                                                </button>
+                                            }
                                             <button class="btn btn-danger btn-sm"
                                                     @onclick="@(() => DeleteUserAsync(u))"
                                                     disabled="@_usersLoading">
@@ -463,6 +485,37 @@ else
             else
             {
                 _error = "Échec de la suppression.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        StateHasChanged();
+    }
+
+    private async Task ToggleAdminAsync(AdminUserDto user, bool promote)
+    {
+        _error = null;
+        _success = null;
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            var ok = promote
+                ? await Api.PromoteAdminAsync(token, user.PlayerId)
+                : await Api.RevokeAdminAsync(token, user.PlayerId);
+            if (ok)
+            {
+                var idx = _users.IndexOf(user);
+                if (idx >= 0)
+                    _users[idx] = user with { IsAdmin = promote };
+                _success = promote
+                    ? $"{user.Username} promu administrateur."
+                    : $"{user.Username} n'est plus administrateur.";
+            }
+            else
+            {
+                _error = promote ? "Échec de la promotion." : "Échec de la révocation.";
             }
         }
         catch (Exception ex)

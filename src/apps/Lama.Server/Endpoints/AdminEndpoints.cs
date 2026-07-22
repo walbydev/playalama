@@ -23,7 +23,7 @@ public static class AdminEndpoints
             string? filter,
             CancellationToken cancellationToken) =>
         {
-            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+            if (!await StatusEndpoints.IsAuthorizedAsync(httpContext, config, db, cancellationToken))
                 return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
 
             try
@@ -58,6 +58,7 @@ public static class AdminEndpoints
                         p.Username,
                         p.Email,
                         p.CountryCode,
+                        p.IsAdmin,
                         p.CreatedAt,
                         p.LastLoginAt,
                         p.Ratings.Where(r => r.Queue == "open").Select(r => (decimal?)r.EloRating).FirstOrDefault() ?? 0m,
@@ -87,7 +88,7 @@ public static class AdminEndpoints
             IConfiguration config,
             CancellationToken cancellationToken) =>
         {
-            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+            if (!await StatusEndpoints.IsAuthorizedAsync(httpContext, config, db, cancellationToken))
                 return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
 
             try
@@ -136,7 +137,7 @@ public static class AdminEndpoints
             IConfiguration config,
             CancellationToken cancellationToken) =>
         {
-            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+            if (!await StatusEndpoints.IsAuthorizedAsync(httpContext, config, db, cancellationToken))
                 return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
 
             try
@@ -223,13 +224,15 @@ public static class AdminEndpoints
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized);
 
-        admin.MapPost("/games/{gameId}/close", (
+        admin.MapPost("/games/{gameId}/close", async (
             HttpContext httpContext,
             string gameId,
             GameHubState state,
-            IConfiguration config) =>
+            LamaDbContext db,
+            IConfiguration config,
+            CancellationToken cancellationToken) =>
         {
-            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+            if (!await StatusEndpoints.IsAuthorizedAsync(httpContext, config, db, cancellationToken))
                 return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
 
             try
@@ -283,7 +286,7 @@ public static class AdminEndpoints
             IConfiguration config,
             CancellationToken cancellationToken) =>
         {
-            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+            if (!await StatusEndpoints.IsAuthorizedAsync(httpContext, config, db, cancellationToken))
                 return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
 
             try
@@ -354,14 +357,68 @@ public static class AdminEndpoints
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized);
 
+        // ── Admin promotion / revocation ─────────────────────────────────
+
+        admin.MapPost("/users/{playerId:guid}/promote", async (
+            HttpContext httpContext,
+            Guid playerId,
+            LamaDbContext db,
+            IConfiguration config,
+            CancellationToken cancellationToken) =>
+        {
+            if (!await StatusEndpoints.IsAuthorizedAsync(httpContext, config, db, cancellationToken))
+                return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
+
+            var player = await db.Players.FirstOrDefaultAsync(p => p.PlayerId == playerId, cancellationToken);
+            if (player is null)
+                return Results.NotFound(new { error = "Joueur introuvable." });
+
+            player.IsAdmin = true;
+            await db.SaveChangesAsync(cancellationToken);
+
+            return Results.Ok(new { playerId, isAdmin = true });
+        })
+        .WithName("AdminPromoteUser")
+        .WithDescription("Promeut un joueur au statut administrateur.")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status404NotFound);
+
+        admin.MapPost("/users/{playerId:guid}/revoke", async (
+            HttpContext httpContext,
+            Guid playerId,
+            LamaDbContext db,
+            IConfiguration config,
+            CancellationToken cancellationToken) =>
+        {
+            if (!await StatusEndpoints.IsAuthorizedAsync(httpContext, config, db, cancellationToken))
+                return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
+
+            var player = await db.Players.FirstOrDefaultAsync(p => p.PlayerId == playerId, cancellationToken);
+            if (player is null)
+                return Results.NotFound(new { error = "Joueur introuvable." });
+
+            player.IsAdmin = false;
+            await db.SaveChangesAsync(cancellationToken);
+
+            return Results.Ok(new { playerId, isAdmin = false });
+        })
+        .WithName("AdminRevokeUser")
+        .WithDescription("Révoque le statut administrateur d'un joueur.")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status404NotFound);
+
         // ── Drain mode (maintenance) ──────────────────────────────────────
 
-        admin.MapGet("/drain", (
+        admin.MapGet("/drain", async (
             HttpContext httpContext,
             GameHubState state,
-            IConfiguration config) =>
+            LamaDbContext db,
+            IConfiguration config,
+            CancellationToken cancellationToken) =>
         {
-            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+            if (!await StatusEndpoints.IsAuthorizedAsync(httpContext, config, db, cancellationToken))
                 return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
 
             var activeCount = state.ListGames()
@@ -374,12 +431,14 @@ public static class AdminEndpoints
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized);
 
-        admin.MapPost("/drain/start", (
+        admin.MapPost("/drain/start", async (
             HttpContext httpContext,
             GameHubState state,
-            IConfiguration config) =>
+            LamaDbContext db,
+            IConfiguration config,
+            CancellationToken cancellationToken) =>
         {
-            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+            if (!await StatusEndpoints.IsAuthorizedAsync(httpContext, config, db, cancellationToken))
                 return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
 
             state.IsDraining = true;
@@ -393,12 +452,14 @@ public static class AdminEndpoints
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized);
 
-        admin.MapPost("/drain/stop", (
+        admin.MapPost("/drain/stop", async (
             HttpContext httpContext,
             GameHubState state,
-            IConfiguration config) =>
+            LamaDbContext db,
+            IConfiguration config,
+            CancellationToken cancellationToken) =>
         {
-            if (!StatusEndpoints.IsAuthorized(httpContext, config))
+            if (!await StatusEndpoints.IsAuthorizedAsync(httpContext, config, db, cancellationToken))
                 return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
 
             state.IsDraining = false;
@@ -419,6 +480,7 @@ public sealed record AdminUserDto(
     string Username,
     string? Email,
     string? CountryCode,
+    bool IsAdmin,
     DateTimeOffset CreatedAt,
     DateTimeOffset? LastLoginAt,
     decimal EloRating,

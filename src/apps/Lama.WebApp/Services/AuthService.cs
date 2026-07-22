@@ -58,7 +58,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             var result = await api.AccountLoginAsync(username, password);
             await PersistSessionAsync(result);
             _currentUser = new CurrentUser(result.PlayerId, result.PlayerName, result.Email);
-            await DetectAdminAsync(result.Token);
+            _isAdmin = result.IsAdmin;
             await LoadRatingAsync(result.Token);
             _initialized = true;
             OnAuthStateChanged?.Invoke();
@@ -77,7 +77,7 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
             var result = await api.RegisterAsync(username, password, email, countryCode);
             await PersistSessionAsync(result);
             _currentUser = new CurrentUser(result.PlayerId, result.PlayerName, result.Email);
-            await DetectAdminAsync(result.Token);
+            _isAdmin = result.IsAdmin;
             await LoadRatingAsync(result.Token);
             _initialized = true;
             OnAuthStateChanged?.Invoke();
@@ -123,8 +123,8 @@ public sealed class AuthService(IJSRuntime js, LamaApiClient api)
     {
         try
         {
-            var status = await api.GetStatusAsync(token);
-            _isAdmin = status is not null;
+            var (_, isAdmin) = await api.GetAuthStatusAsync(token);
+            _isAdmin = isAdmin;
         }
         catch
         {

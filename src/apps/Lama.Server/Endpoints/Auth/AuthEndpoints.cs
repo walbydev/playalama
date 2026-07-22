@@ -20,10 +20,12 @@ public sealed record LoginResponse(
     string PlayerId,
     string PlayerName,
     string? Email,
+    bool IsAdmin,
     DateTime ExpiresAt);
 
 public sealed record AuthStatusResponse(
     bool IsAuthenticated,
+    bool IsAdmin,
     string? PlayerId,
     string? PlayerName);
 
@@ -81,6 +83,7 @@ public static class AuthEndpoints
                     PlayerId: player.PlayerId.ToString("N"),
                     PlayerName: player.Username,
                     Email: player.Email,
+                    IsAdmin: player.IsAdmin,
                     ExpiresAt: DateTime.UtcNow.AddHours(24)));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -118,6 +121,7 @@ public static class AuthEndpoints
                     PlayerId: player.PlayerId.ToString("N"),
                     PlayerName: player.Username,
                     Email: player.Email,
+                    IsAdmin: player.IsAdmin,
                     ExpiresAt: DateTime.UtcNow.AddHours(24)));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -133,12 +137,19 @@ public static class AuthEndpoints
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
 
-        group.MapGet("/status", (HttpContext context) =>
+        group.MapGet("/status", async (HttpContext context, LamaDbContext db, CancellationToken cancellationToken) =>
         {
             var playerId = context.User?.FindFirst("playerId")?.Value;
             var playerName = context.User?.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+            var isAuthenticated = !string.IsNullOrEmpty(playerId);
+
+            var isAdmin = false;
+            if (isAuthenticated && Guid.TryParse(playerId, out var pid))
+                isAdmin = await db.Players.AnyAsync(p => p.PlayerId == pid && p.IsAdmin, cancellationToken);
+
             return Results.Ok(new AuthStatusResponse(
-                IsAuthenticated: !string.IsNullOrEmpty(playerId),
+                IsAuthenticated: isAuthenticated,
+                IsAdmin: isAdmin,
                 PlayerId: playerId,
                 PlayerName: playerName));
         })

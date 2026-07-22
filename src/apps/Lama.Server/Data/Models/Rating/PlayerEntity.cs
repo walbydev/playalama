@@ -8,6 +8,7 @@ public sealed class PlayerEntity
     public string? PasswordHash { get; set; }
     public string? CountryCode { get; set; }
     public string? AccessibilityPreferencesJson { get; set; }
+    public bool IsAdmin { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastLoginAt { get; set; }
 

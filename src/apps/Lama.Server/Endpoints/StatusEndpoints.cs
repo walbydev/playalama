@@ -1,5 +1,6 @@
 using Lama.Server.Contracts.Api;
 using Lama.Server.Data;
+using Lama.Server.Data.Models.Rating;
 using Lama.Server.Runtime;
 using Lama.Server.Services;
 using Microsoft.EntityFrameworkCore;
@@ -16,9 +17,10 @@ public static class StatusEndpoints
             HttpContext httpContext,
             IStatusCollector collector,
             IConfiguration config,
+            LamaDbContext db,
             CancellationToken cancellationToken) =>
         {
-            if (!IsAuthorized(httpContext, config))
+            if (!await IsAuthorizedAsync(httpContext, config, db, cancellationToken))
                 return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
 
             var snapshot = await collector.CollectAsync(cancellationToken);
@@ -29,12 +31,14 @@ public static class StatusEndpoints
         .Produces<ServerStatusSnapshot>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized);
 
-        app.MapPost("/api/v1/admin/games/terminate-all", (
+        app.MapPost("/api/v1/admin/games/terminate-all", async (
             HttpContext httpContext,
             GameHubState state,
-            IConfiguration config) =>
+            IConfiguration config,
+            LamaDbContext db,
+            CancellationToken cancellationToken) =>
         {
-            if (!IsAuthorized(httpContext, config))
+            if (!await IsAuthorizedAsync(httpContext, config, db, cancellationToken))
                 return Results.Json(new { error = "Unauthorized" }, statusCode: StatusCodes.Status401Unauthorized);
 
             var games = state.ListGames();
@@ -110,9 +114,26 @@ public static class StatusEndpoints
                 return false;
             }
 
-            // Aucune restriction configurée → tout joueur authentifié peut accéder
-            // (comportement par défaut dev/petites installations)
+            // Pas de restriction configurée → le statut admin dépend de la DB (IsAuthorizedAsync)
+            return false;
+        }
+
+        return false;
+    }
+
+    internal static async Task<bool> IsAuthorizedAsync(
+        HttpContext ctx, IConfiguration config, LamaDbContext db, CancellationToken ct)
+    {
+        // Fast path: config-based checks (header, root, LAMA_ADMIN_PLAYERS)
+        if (IsAuthorized(ctx, config))
             return true;
+
+        // DB-based check: PlayerEntity.IsAdmin
+        if (ctx.IsAuthenticated())
+        {
+            var playerId = ctx.GetPlayerId();
+            if (playerId is not null && Guid.TryParse(playerId, out var id))
+                return await db.Players.AnyAsync(p => p.PlayerId == id && p.IsAdmin, ct);
         }
 
         return false;

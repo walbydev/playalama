@@ -47,7 +47,7 @@ public sealed class LamaApiClient(HttpClient httpClient)
         var payload = await response.Content.ReadFromJsonAsync<AuthEnvelope>(JsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("Réponse invalide sur auth/register.");
 
-        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.CountryCode, payload.ExpiresAt);
+        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.CountryCode, payload.IsAdmin, payload.ExpiresAt);
     }
 
     public async Task<WebAuthResponse> AccountLoginAsync(string username, string password, CancellationToken cancellationToken = default)
@@ -58,7 +58,22 @@ public sealed class LamaApiClient(HttpClient httpClient)
         var payload = await response.Content.ReadFromJsonAsync<AuthEnvelope>(JsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("Réponse invalide sur auth/login/account.");
 
-        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.CountryCode, payload.ExpiresAt);
+        return new WebAuthResponse(payload.Token, payload.PlayerId, payload.PlayerName, payload.Email, payload.CountryCode, payload.IsAdmin, payload.ExpiresAt);
+    }
+
+    /// <summary>Appelle /api/v1/auth/status — retourne l'état d'auth + isAdmin (toujours 200).</summary>
+    public async Task<(bool IsAuthenticated, bool IsAdmin)> GetAuthStatusAsync(string? jwtToken, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBase}/auth/status");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return (false, false);
+
+        var payload = await response.Content.ReadFromJsonAsync<AuthStatusPayload>(JsonOptions, cancellationToken);
+        return (payload?.IsAuthenticated ?? false, payload?.IsAdmin ?? false);
     }
 
     // ── Profil joueur ────────────────────────────────────────────────────────
@@ -536,6 +551,26 @@ public sealed class LamaApiClient(HttpClient httpClient)
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> PromoteAdminAsync(string? jwtToken, Guid playerId, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{ApiBase}/admin/users/{playerId}/promote");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> RevokeAdminAsync(string? jwtToken, Guid playerId, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{ApiBase}/admin/users/{playerId}/revoke");
+        if (!string.IsNullOrWhiteSpace(jwtToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken);
+
+        var response = await httpClient.SendAsync(request, cancellationToken);
+        return response.IsSuccessStatusCode;
+    }
+
     // ── Admin: Games management ───────────────────────────────────────────────
 
     public async Task<AdminGameListResponse?> GetAdminGamesAsync(string? jwtToken, CancellationToken cancellationToken = default)
@@ -653,7 +688,8 @@ public sealed class LamaApiClient(HttpClient httpClient)
 
     // ── Enveloppes API (privées) ──────────────────────────────────────────────
 
-    private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, DateTime ExpiresAt);
+    private sealed record AuthEnvelope(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, bool IsAdmin, DateTime ExpiresAt);
+    private sealed record AuthStatusPayload(bool IsAuthenticated, bool IsAdmin, string? PlayerId, string? PlayerName);
     private sealed record PlayerProfileEnvelope(
         string PlayerId,
         string Username,

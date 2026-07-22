@@ -129,12 +129,14 @@ try
             PlayerId = Guid.NewGuid(),
             Username = "root",
             PasswordHash = PasswordHasher.Hash("root"),
+            IsAdmin = true,
             CreatedAt = DateTimeOffset.UtcNow
         });
     }
-    else if (rootPlayer.PasswordHash is null || !PasswordHasher.Verify("root", rootPlayer.PasswordHash))
+    else
     {
         rootPlayer.PasswordHash = PasswordHasher.Hash("root");
+        rootPlayer.IsAdmin = true;
     }
 
     foreach (var bot in BotCatalog.All)

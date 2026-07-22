@@ -74,7 +74,7 @@ public sealed class ProfileUpdateForm
 
 // ── Réponses API ──────────────────────────────────────────────────────────────
 
-public sealed record WebAuthResponse(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, DateTime ExpiresAt);
+public sealed record WebAuthResponse(string Token, string PlayerId, string PlayerName, string? Email, string? CountryCode, bool IsAdmin, DateTime ExpiresAt);
 public sealed record WebCreateGameResponse(string GameId, string HostPlayerId);
 public sealed record WebJoinGameResponse(string GameId, string PlayerId, List<char>? Rack = null);
 
@@ -259,6 +259,7 @@ public sealed record AdminUserDto(
     string Username,
     string? Email,
     string? CountryCode,
+    bool IsAdmin,
     DateTimeOffset CreatedAt,
     DateTimeOffset? LastLoginAt,
     decimal EloRating,
