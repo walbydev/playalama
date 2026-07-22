@@ -212,6 +212,65 @@ html.tritanopia {
     --shadow:     0 4px 24px rgba(0,0,0,0.5);
 }
 
+/* ── TOUCH / TABLET SUPPORT ────────────────────────────────────────────────── */
+
+/* Bouton de direction (→/↓) — visible sur tactile et desktop */
+.dir-toggle-btn {
+    font-size: 1.2rem !important;
+    font-weight: 800;
+    min-width: 2.5rem;
+    line-height: 1;
+    padding: .2rem .5rem !important;
+}
+
+.rack-side-actions-row {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+/* Évite le flash gris à chaque tap (Android/Chrome) */
+html {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Empêche scroll/zoom involontaire pendant l'interaction plateau + rack */
+.board-grid,
+.board-cell,
+.rack-tile,
+.rack-container,
+.game-board-area {
+    touch-action: manipulation;
+}
+
+/* Les :hover ne s'appliquent que sur périphériques avec vraie souris */
+@media (hover: none) {
+    .rack-tile:hover,
+    .board-cell:hover:not(.board-cell--kbd-cursor),
+    .btn:hover,
+    .mode-card:hover,
+    .quick-settings-toggle:hover,
+    .layout-btn:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+/* Cibles tactiles minimales (44px) sur périphériques tactiles */
+@media (pointer: coarse) {
+    .btn-sm {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    .lang-choice-btn {
+        min-height: 44px;
+    }
+    .game-tabbar-btn {
+        min-height: 48px;
+        min-width: 48px;
+    }
+}
+
 /* ── ACCESSIBILITÉ renforcée pour haut contraste ── */
 html.highcontrast {
     font-size: 18px; /* Plus grand que la taille par défaut (17px) */

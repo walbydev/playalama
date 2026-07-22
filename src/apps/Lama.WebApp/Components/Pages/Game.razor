@@ -243,6 +243,14 @@ else
                                                 ↩ @L["Game.RecallAll"]
                                             </button>
                                         }
+                                        @if (_vm.IsMyTurn && (_vm.KeyboardModeActive || _selectedRackIndex >= 0))
+                                        {
+                                            <button class="btn btn-ghost btn-sm dir-toggle-btn"
+                                                    @onclick="() => { _vm.ToggleKeyboardDirection(); StateHasChanged(); }"
+                                                    title="@(_vm.KeyboardIsHorizontal ? L["Game.Direction.Vertical"] : L["Game.Direction.Horizontal"])">
+                                                @(_vm.KeyboardIsHorizontal ? "→" : "↓")
+                                            </button>
+                                        }
                                     </div>
                                     @if (_vm.PendingPlacements.Count > 0)
                                     {
@@ -285,14 +293,24 @@ else
                             <div class="card game-sidebar-rack">
                                 <div class="rack-side-header">
                                     <h3>@L["Game.MyTiles"] <InfoTooltip Text="@L["Tooltip.RackTile"].Value" Icon="ℹ" Position="right" /></h3>
-                                    @if (_vm.IsMyTurn && _vm.PendingPlacements.Count > 0)
-                                    {
-                                        <button class="btn btn-ghost btn-sm rack-recall-btn"
-                                                @onclick="() => { _vm.RecallAll(); StateHasChanged(); }"
-                                                title="@L["Game.RecallAll.Title"]">
-                                            ↩
-                                        </button>
-                                    }
+                                    <div class="rack-side-actions-row">
+                                        @if (_vm.IsMyTurn && (_vm.KeyboardModeActive || _selectedRackIndex >= 0))
+                                        {
+                                            <button class="btn btn-ghost btn-sm dir-toggle-btn"
+                                                    @onclick="() => { _vm.ToggleKeyboardDirection(); StateHasChanged(); }"
+                                                    title="@(_vm.KeyboardIsHorizontal ? L["Game.Direction.Vertical"] : L["Game.Direction.Horizontal"])">
+                                                @(_vm.KeyboardIsHorizontal ? "→" : "↓")
+                                            </button>
+                                        }
+                                        @if (_vm.IsMyTurn && _vm.PendingPlacements.Count > 0)
+                                        {
+                                            <button class="btn btn-ghost btn-sm rack-recall-btn"
+                                                    @onclick="() => { _vm.RecallAll(); StateHasChanged(); }"
+                                                    title="@L["Game.RecallAll.Title"]">
+                                                ↩
+                                            </button>
+                                        }
+                                    </div>
                                 </div>
                                 <RackDisplay Rack="_vm.MyRack"
                                              DisplayOrder="@_rackOrder"
@@ -932,6 +950,13 @@ else
     {
         if (_selectedRackIndex == args.Index)
         {
+            _selectedRackIndex = -1;
+            _selectedLetter = '\0';
+        }
+        else if (_selectedRackIndex >= 0)
+        {
+            // Une tuile est déjà sélectionnée → échange les positions (alternative tactile au drag)
+            HandleRackReorder((_selectedRackIndex, args.Index));
             _selectedRackIndex = -1;
             _selectedLetter = '\0';
         }
