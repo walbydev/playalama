@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Lama.Contracts;
 using Lama.Server.Contracts.Api;
 using Lama.Server.Services;
@@ -12,6 +13,8 @@ namespace Lama.Server.Bots;
 public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
 {
     private static readonly Random Rng = Random.Shared;
+
+    private static readonly ConcurrentDictionary<(string GameId, string BotId), int> _consecutivePasses = new();
 
     /// <summary>
     /// Joue un coup pour le bot et retourne le <see cref="OnlineMove"/> créé,
@@ -75,18 +78,25 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
             var bagCount = game.Engine.GetBagCount();
             var rackNow = state.Players[botIndex].Rack.ToList();
 
+            var passKey = (game.Id, bot.BotId);
+            var prevPasses = _consecutivePasses.GetValueOrDefault(passKey, 0);
+            var maxReached = prevPasses >= bot.MaxConsecutivePasses;
+
             // Aucune suggestion jouable : le bot peut privilégier un échange.
             if (chosen is null)
             {
-                if (ShouldAttemptSwapWhenNoSuggestion(bot) &&
+                // Limite de passes atteinte : forcer l'échange même avec une faible probabilité.
+                if ((maxReached || ShouldAttemptSwapWhenNoSuggestion(bot)) &&
                     TrySwap(game, bot, botIndex, turnNumber, rackNow, bagCount, out var swapMove, out var swapRack))
                 {
+                    _consecutivePasses[passKey] = 0;
                     return (swapMove, swapRack);
                 }
 
                 game.Engine.PassTurn();
                 var passedState = game.Engine.GetGameState();
                 var passRack    = passedState.Players[botIndex].Rack.ToList();
+                _consecutivePasses[passKey] = prevPasses + 1;
                 return (BuildMove(game, bot, "play.pass", [], 0, turnNumber), passRack);
             }
 
@@ -94,15 +104,17 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
             if (ShouldAttemptSwapForWeakMove(chosen, bot) &&
                 TrySwap(game, bot, botIndex, turnNumber, rackNow, bagCount, out var weakSwapMove, out var weakSwapRack))
             {
+                _consecutivePasses[passKey] = 0;
                 return (weakSwapMove, weakSwapRack);
             }
 
-            // Passe intentionnelle (difficulté)
-            if (Rng.NextDouble() < bot.PassRate)
+            // Passe intentionnelle (difficulté) — bloquée si limite de passes consécutives atteinte.
+            if (!maxReached && Rng.NextDouble() < bot.PassRate)
             {
                 game.Engine.PassTurn();
                 var passedState = game.Engine.GetGameState();
                 var passRack    = passedState.Players[botIndex].Rack.ToList();
+                _consecutivePasses[passKey] = prevPasses + 1;
                 return (BuildMove(game, bot, "play.pass", [], 0, turnNumber), passRack);
             }
 
@@ -112,15 +124,17 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
             if (placements.Count == 0)
             {
                 // Coup vide après exclusion des lettres déjà posées : échange possible sinon passe.
-                if (ShouldAttemptSwapWhenNoSuggestion(bot) &&
+                if ((maxReached || ShouldAttemptSwapWhenNoSuggestion(bot)) &&
                     TrySwap(game, bot, botIndex, turnNumber, rackNow, bagCount, out var emptySwapMove, out var emptySwapRack))
                 {
+                    _consecutivePasses[passKey] = 0;
                     return (emptySwapMove, emptySwapRack);
                 }
 
                 game.Engine.PassTurn();
                 var passedState = game.Engine.GetGameState();
                 var passRack    = passedState.Players[botIndex].Rack.ToList();
+                _consecutivePasses[passKey] = prevPasses + 1;
                 return (BuildMove(game, bot, "play.pass", [], 0, turnNumber), passRack);
             }
 
@@ -130,15 +144,17 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
                 logger.LogWarning("Bot {BotId} suggestion invalide ({Word}) : {Error}",
                     bot.BotId, chosen.Word, validation.ErrorMessage);
 
-                if (ShouldAttemptSwapWhenNoSuggestion(bot) &&
+                if ((maxReached || ShouldAttemptSwapWhenNoSuggestion(bot)) &&
                     TrySwap(game, bot, botIndex, turnNumber, rackNow, bagCount, out var invalidSwapMove, out var invalidSwapRack))
                 {
+                    _consecutivePasses[passKey] = 0;
                     return (invalidSwapMove, invalidSwapRack);
                 }
 
                 game.Engine.PassTurn();
                 var passedState = game.Engine.GetGameState();
                 var passRack    = passedState.Players[botIndex].Rack.ToList();
+                _consecutivePasses[passKey] = prevPasses + 1;
                 return (BuildMove(game, bot, "play.pass", [], 0, turnNumber), passRack);
             }
 
@@ -150,6 +166,7 @@ public sealed class BotAutoPlayService(ILogger<BotAutoPlayService> logger)
                 .Select(kv => new OnlineMovePlacement(kv.Key.Row, kv.Key.Column, char.ToUpperInvariant(kv.Value)))
                 .ToList();
 
+            _consecutivePasses[passKey] = 0;
             return (BuildMove(game, bot, "play.move", movePlacements,
                 entry?.Score ?? 0, entry?.TurnNumber ?? turnNumber), movedRack);
         }

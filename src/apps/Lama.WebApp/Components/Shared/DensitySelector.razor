@@ -5,8 +5,9 @@
 <button class="btn btn-ghost btn-sm board-fullscreen-btn @(Layout.IsFullscreen ? "is-active" : "")"
         @onclick="ToggleFullscreenAsync"
         title="@L["BoardDensity.Fullscreen"]"
-        aria-pressed="@Layout.IsFullscreen"
-        aria-label="@L["BoardDensity.Fullscreen"]">⛶</button>
+        aria-pressed="@Layout.IsFullscreen">
+    <span aria-hidden="true">⛶</span> @L["BoardDensity.Fullscreen"]
+</button>
 
 @code {
     protected override void OnInitialized() => Layout.Changed += HandleChanged;

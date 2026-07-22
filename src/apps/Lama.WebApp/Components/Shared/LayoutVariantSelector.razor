@@ -2,26 +2,34 @@
 @inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
-@* Sélecteur position du plateau (◀ gauche / ▶ droite) *@
+@* Sélecteur position du plateau *@
 <button type="button"
         class="btn btn-ghost btn-sm layout-btn @(IsBoardLeft ? "is-active" : "")"
         @onclick="() => SetBoardSideAsync(true)"
-        title="@L["Layout.BoardLeft"]" aria-label="@L["Layout.BoardLeft"]">◀</button>
+        title="@L["Layout.BoardLeft"]">
+    <span aria-hidden="true">◀</span> @L["Layout.BoardLeft"]
+</button>
 <button type="button"
         class="btn btn-ghost btn-sm layout-btn @(!IsBoardLeft ? "is-active" : "")"
         @onclick="() => SetBoardSideAsync(false)"
-        title="@L["Layout.BoardRight"]" aria-label="@L["Layout.BoardRight"]">▶</button>
+        title="@L["Layout.BoardRight"]">
+    <span aria-hidden="true">▶</span> @L["Layout.BoardRight"]
+</button>
 
-@* Sélecteur position du rack (⬇ bas / ⬆ haut) — caché en thème compact *@
+@* Sélecteur position du rack — caché en thème compact *@
 <span class="layout-rack-controls">
 <button type="button"
         class="btn btn-ghost btn-sm layout-btn @(IsRackBelow ? "is-active" : "")"
         @onclick="() => SetRackPositionAsync(true)"
-        title="@L["Layout.RackBottom"]" aria-label="@L["Layout.RackBottom"]">⬇</button>
+        title="@L["Layout.RackBottom"]">
+    <span aria-hidden="true">⬇</span> @L["Layout.RackBottom"]
+</button>
 <button type="button"
         class="btn btn-ghost btn-sm layout-btn @(!IsRackBelow ? "is-active" : "")"
         @onclick="() => SetRackPositionAsync(false)"
-        title="@L["Layout.RackTop"]" aria-label="@L["Layout.RackTop"]">⬆</button>
+        title="@L["Layout.RackTop"]">
+    <span aria-hidden="true">⬆</span> @L["Layout.RackTop"]
+</button>
 </span>
 
 @code {

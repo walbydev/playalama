@@ -46,16 +46,19 @@
                     {
                         <div class="dl-item">
                             <span class="dl-label">@item.Label</span>
-                            <div class="dl-cmd-wrap">
-                                <code class="dl-cmd" title="@item.InstallCmd">@item.InstallCmd</code>
-                                <button class="dl-copy"
-                                        type="button"
-                                        @onclick="() => CopyAsync(item.Label, item.InstallCmd)"
-                                        aria-label="@L["Downloads.CopyCommandAria", item.Label]"
-                                        title="@L["Downloads.Copy"]">
-                                    @(VM.IsCopied(item.Label) ? "✓" : "📋")
-                                </button>
-                            </div>
+                            @if (!string.IsNullOrEmpty(item.InstallCmd))
+                            {
+                                <div class="dl-cmd-wrap">
+                                    <code class="dl-cmd" title="@item.InstallCmd">@item.InstallCmd</code>
+                                    <button class="dl-copy"
+                                            type="button"
+                                            @onclick="() => CopyAsync(item.Label, item.InstallCmd)"
+                                            aria-label="@L["Downloads.CopyCommandAria", item.Label]"
+                                            title="@L["Downloads.Copy"]">
+                                        @(VM.IsCopied(item.Label) ? "✓" : "📋")
+                                    </button>
+                                </div>
+                            }
                             <a href="@item.ZipUrl" class="btn btn-ghost btn-sm" download aria-label="@L["Downloads.ZipAria", item.Label]">ZIP</a>
                         </div>
                     }
@@ -63,26 +66,30 @@
             }
         </div>
 
-        <!-- Commandes principales -->
+        <!-- Commandes CLI complètes -->
         <div class="cli-commands mt-4">
             <h2>@L["Downloads.MainCommands"]</h2>
             <p class="text-muted mt-1 mb-3">@L["Downloads.MainCommandsSubtitle"]</p>
-            <div class="cli-cmd-list" role="list">
-                @foreach (var cmd in VM.MainCommands)
-                {
-                    <div class="cli-cmd-row" role="listitem">
-                        <span class="cli-cmd-desc">@cmd.Description</span>
-                        <code class="cli-cmd-code">@cmd.Command</code>
-                        <button class="dl-copy"
-                                type="button"
-                                @onclick="() => CopyAsync(cmd.Command, cmd.Command)"
-                                aria-label="@L["Downloads.CopyAria", cmd.Command]"
-                                title="@L["Downloads.Copy"]">
-                            @(VM.IsCopied(cmd.Command) ? "✓" : "📋")
-                        </button>
-                    </div>
-                }
-            </div>
+            @foreach (var group in VM.CommandGroups)
+            {
+                <h3 class="cli-group-title" style="margin-top:1.5rem;margin-bottom:.5rem">@group.Name <span class="text-muted" style="font-size:.85rem;font-weight:400">— @group.Description</span></h3>
+                <div class="cli-cmd-list" role="list">
+                    @foreach (var cmd in group.Commands)
+                    {
+                        <div class="cli-cmd-row" role="listitem">
+                            <span class="cli-cmd-desc">@cmd.Description</span>
+                            <code class="cli-cmd-code">@cmd.Command</code>
+                            <button class="dl-copy"
+                                    type="button"
+                                    @onclick="() => CopyAsync(cmd.Command, cmd.Command)"
+                                    aria-label="@L["Downloads.CopyAria", cmd.Command]"
+                                    title="@L["Downloads.Copy"]">
+                                @(VM.IsCopied(cmd.Command) ? "✓" : "📋")
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
         </div>
     </div>
 </div>

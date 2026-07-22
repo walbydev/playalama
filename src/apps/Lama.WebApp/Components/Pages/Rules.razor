@@ -2,6 +2,7 @@
 @layout MainLayout
 @inject RulesViewModel VM
 @inject IStringLocalizer<SharedResource> L
+@inject AuthService Auth
 
 <PageTitle>@L["Rules.PageTitle"]</PageTitle>
 
@@ -17,7 +18,7 @@
 
             <!-- Navigation sticky -->
             <nav class="rules-nav" aria-label="@L["Rules.NavAria"]">
-                @foreach (var ruleSection in VM.Sections)
+                @foreach (var ruleSection in VM.Sections.Where(s => s.Id != "solo-ia" || Auth.IsAdmin))
                 {
                     <a href="#@ruleSection.Id"
                        class="@(VM.ActiveSectionId == ruleSection.Id ? "active" : "")"
@@ -29,7 +30,7 @@
 
             <!-- Contenu -->
             <div>
-                @foreach (var ruleSection in VM.Sections)
+                @foreach (var ruleSection in VM.Sections.Where(s => s.Id != "solo-ia" || Auth.IsAdmin))
                 {
                     <div class="rules-section"
                          id="@ruleSection.Id"

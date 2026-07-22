@@ -74,6 +74,12 @@ else
                         <span class="letter-bag-icon">🎒</span>
                         <span class="letter-bag-count">@_vm.Snapshot.BagCount</span>
                         <span class="letter-bag-label">@(_vm.Snapshot.BagCount > 1 ? L["Game.Letters.Plural"] : L["Game.Letters.Singular"])</span>
+                        <span class="letter-bag-langs">
+                            @foreach (var l in GetGameLanguages())
+                            {
+                                <span class="lang-tag">@LanguageFlag(l)</span>
+                            }
+                        </span>
                     </div>
 
                     <div class="game-header-right">
@@ -126,7 +132,12 @@ else
                     <div class="letter-bag-display letter-bag-display--compact" title="@L["Game.BagTitle"]">
                         <span class="letter-bag-icon">🎒</span>
                         <span class="letter-bag-count">@_vm.Snapshot.BagCount</span>
-                        <span class="letter-bag-label">@(_vm.Snapshot.BagCount > 1 ? L["Game.Letters.Plural"] : L["Game.Letters.Singular"])</span>
+                        <span class="letter-bag-langs">
+                            @foreach (var l in GetGameLanguages())
+                            {
+                                <span class="lang-tag">@LanguageFlag(l)</span>
+                            }
+                        </span>
                     </div>
                     <div class="game-langs game-langs--compact">
                         @foreach (var l in GetGameLanguages())
@@ -167,6 +178,11 @@ else
                             @(_exportCopied ? "✓" : "📋")
                         </button>
                     </div>
+                    <button class="btn btn-ghost btn-sm sidebar-toggle-btn"
+                            @onclick="async () => await Layout.ToggleSidebarAsync()"
+                            title="@(Layout.IsSidebarHidden ? L["Game.ShowSidebar"] : L["Game.HideSidebar"])">
+                        @(Layout.IsSidebarHidden ? "📋 ▶" : "◀ 📋")
+                    </button>
                 </div>
 
                 @* ── Bandeau spectateur ── *@
@@ -180,6 +196,7 @@ else
                 <div class="game-layout"
                      style="--board-scale:@Layout.ScaleCss;"
                      data-variant="@Layout.Variant"
+                     data-sidebar="@(Layout.IsSidebarHidden ? "hidden" : "visible")"
                      data-help-open="@(_vm.SuggestPanelOpen ? "true" : "false")">
 
                     @* ── Zone plateau (+ rack selon variante D) ── *@

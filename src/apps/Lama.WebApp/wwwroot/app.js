@@ -7,11 +7,11 @@
 window.playalamaTheme = {
     availableThemes: ['dark', 'light', 'blue', 'green', 'vermillion', 'highcontrast', 'deuteranopia', 'protanopia', 'tritanopia'],
     getTheme() {
-        const stored = localStorage.getItem('playalama-theme') || 'dark';
-        return this.availableThemes.includes(stored) ? stored : 'dark';
+        const stored = localStorage.getItem('playalama-theme') || 'light';
+        return this.availableThemes.includes(stored) ? stored : 'light';
     },
     setTheme(theme) {
-        const normalized = this.availableThemes.includes(theme) ? theme : 'dark';
+        const normalized = this.availableThemes.includes(theme) ? theme : 'light';
         localStorage.setItem('playalama-theme', normalized);
         document.documentElement.classList.remove(...this.availableThemes);
         document.documentElement.classList.add(normalized);
@@ -26,7 +26,7 @@ window.playalamaTheme = {
 // ── Densité (normal/compact) ─────────────────────────────────────────────────
 window.playalamaDensity = {
     getDensity() {
-        return localStorage.getItem('playalama-density') || 'normal';
+        return localStorage.getItem('playalama-density') || 'compact';
     },
     setDensity(density) {
         const normalized = density === 'compact' ? 'compact' : 'normal';
@@ -74,16 +74,17 @@ window.playalamaGameLayout = {
     get() {
         try {
             const raw = localStorage.getItem('playalama-game-layout');
-            if (!raw) return { density: 'm', fullscreen: false, collapsed: [], activeTab: 'play', variant: 'a' };
+            if (!raw) return { density: 'm', fullscreen: false, sidebarHidden: false, collapsed: [], activeTab: 'play', variant: 'd' };
             const parsed = JSON.parse(raw);
             return {
                 density: ['s', 'm', 'l', 'xl', 'xxl'].includes(parsed.density) ? parsed.density : 'm',
                 fullscreen: !!parsed.fullscreen,
+                sidebarHidden: !!parsed.sidebarHidden,
                 collapsed: Array.isArray(parsed.collapsed) ? parsed.collapsed : [],
                 activeTab: ['scores', 'play', 'messages'].includes(parsed.activeTab) ? parsed.activeTab : 'play',
-                variant: ['a', 'b', 'c', 'd'].includes(parsed.variant) ? parsed.variant : 'a'
+                variant: ['a', 'b', 'c', 'd'].includes(parsed.variant) ? parsed.variant : 'd'
             };
-        } catch { return { density: 'm', fullscreen: false, collapsed: [], activeTab: 'play', variant: 'a' }; }
+        } catch { return { density: 'm', fullscreen: false, sidebarHidden: false, collapsed: [], activeTab: 'play', variant: 'd' }; }
     },
     set(state) {
         try { localStorage.setItem('playalama-game-layout', JSON.stringify(state)); } catch { }
@@ -244,7 +245,7 @@ window.playalamaBoard = {
 // ── Anti-flash : appliquer densité dès le chargement ─────────────────────────
 (function () {
   try {
-    var d = localStorage.getItem('playalama-density') || 'normal';
+    var d = localStorage.getItem('playalama-density') || 'compact';
     document.documentElement.setAttribute('data-density', d === 'compact' ? 'compact' : 'normal');
   } catch (e) { }
 })();

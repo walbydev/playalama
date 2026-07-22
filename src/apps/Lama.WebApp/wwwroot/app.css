@@ -648,10 +648,13 @@ html.highcontrast .navbar-links a.active {
     border: 2px solid var(--border);
     background: var(--surface);
     color: var(--text);
-    font-size: 1rem;
-    font-weight: 800;
+    font-size: .85rem;
+    font-weight: 700;
     cursor: pointer;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
     transition: border-color .15s, background .15s, transform .15s;
 }
 
@@ -880,7 +883,7 @@ html.highcontrast .board-density-btn.is-active {
     border-color: #ffff00;
 }
 
-.board-fullscreen-btn { font-size: 1rem; }
+.board-fullscreen-btn { font-size: .85rem; display: inline-flex; align-items: center; gap: .35rem; }
 .board-fullscreen-btn.is-active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 .layout-btn {
@@ -1840,6 +1843,17 @@ html.highcontrast .tile-val {
     text-transform: uppercase;
 }
 
+.letter-bag-langs {
+    display: flex;
+    gap: .2rem;
+    margin-top: .2rem;
+}
+
+.letter-bag-langs .lang-tag {
+    font-size: .85rem;
+    line-height: 1;
+}
+
 /* Erreur de coup inline (près du rack) */
 .move-error-inline {
     display: flex;
@@ -2384,6 +2398,25 @@ html.highcontrast .rack-tile--selected {
     --board-inline-max: calc(var(--board-scale, 1) * min(900px, 96vmin));
 }
 
+/* Plein écran + sidebar cachée : plateau occupe tout l'écran */
+.game-layout[data-sidebar="hidden"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+}
+.game-layout[data-sidebar="hidden"] .game-sidebar {
+    display: none;
+}
+.page-wrapper--fullscreen .game-layout[data-sidebar="hidden"] .board-container {
+    --board-max: calc(var(--board-scale) * min(100vh - 6rem, 100vw - 3rem));
+}
+.page-wrapper--fullscreen .game-layout[data-sidebar="hidden"] {
+    --board-inline-max: calc(var(--board-scale, 1) * min(100vh - 6rem, 100vw - 3rem));
+}
+
+.sidebar-toggle-btn {
+    font-size: .8rem;
+    white-space: nowrap;
+}
+
 .page-wrapper--game-focus .rack-below-board,
 .page-wrapper--game-focus .game-layout > div:last-child .card {
     padding: .8rem .9rem !important;
@@ -2881,7 +2914,7 @@ html.highcontrast .rack-tile--selected {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: bottom left;
-    opacity: 0.175;
+    opacity: 0.25;
     pointer-events: none;
     z-index: 0;
     mix-blend-mode: multiply;
@@ -2890,7 +2923,7 @@ html.highcontrast .rack-tile--selected {
 /* Dark theme: use lighten to make llamo visible on dark background */
 html.dark .llamo-watermark {
     mix-blend-mode: lighten;
-    opacity: 0.22;
+    opacity: 0.30;
 }
 
 /* Light theme: keep multiply */
@@ -2900,22 +2933,22 @@ html.light .llamo-watermark {
 
 /* Reduce Llamo intensity on game page */
 .page-wrapper--game-focus .llamo-watermark {
-    opacity: 0.08;
+    opacity: 0.15;
 }
 
 html.dark .page-wrapper--game-focus .llamo-watermark {
-    opacity: 0.1;
+    opacity: 0.18;
 }
 
 @media (max-width: 768px) {
     .llamo-watermark {
         width: 200px;
         height: 200px;
-        opacity: 0.12;
+        opacity: 0.18;
     }
     
     html.dark .llamo-watermark {
-        opacity: 0.18;
+        opacity: 0.22;
     }
 }
 

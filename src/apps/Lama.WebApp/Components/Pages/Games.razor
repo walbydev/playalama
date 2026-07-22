@@ -34,14 +34,14 @@
                                 <span class="create-mode-card-label">@L["CreateGame.Multiplayer"]</span>
                                 <span class="create-mode-card-desc">@L["CreateGame.MultiplayerDesc"]</span>
                             </button>
-                            <button type="button" class='create-mode-card @(_createForm.Mode == "solo" ? "is-selected" : "")'
-                                    @onclick='() => SelectMode("solo")'>
-                                <span class="create-mode-card-icon">🤖</span>
-                                <span class="create-mode-card-label">@L["CreateGame.Solo"]</span>
-                                <span class="create-mode-card-desc">@L["CreateGame.SoloDesc"]</span>
-                            </button>
                             @if (_isAdmin)
                             {
+                                <button type="button" class='create-mode-card @(_createForm.Mode == "solo" ? "is-selected" : "")'
+                                        @onclick='() => SelectMode("solo")'>
+                                    <span class="create-mode-card-icon">🤖</span>
+                                    <span class="create-mode-card-label">@L["CreateGame.Solo"]</span>
+                                    <span class="create-mode-card-desc">@L["CreateGame.SoloDesc"]</span>
+                                </button>
                                 <button type="button" class='create-mode-card @(_createForm.Mode == "ai-only" ? "is-selected" : "")'
                                         @onclick='() => SelectMode("ai-only")'>
                                     <span class="create-mode-card-icon">🏭</span>
@@ -163,13 +163,11 @@
                             @foreach (var (code, label) in _gameLanguages)
                             {
                                 var selected = _createForm.Languages.Contains(code);
-                                var lockLast = _createForm.Languages.Count == 1 && selected;
                                 <button type="button"
                                         class="lang-choice-btn @(selected ? "is-selected" : string.Empty)"
                                         aria-pressed="@selected"
-                                        disabled="@lockLast"
-                                        @onclick="() => ToggleLanguage(code)">
-                                    <span class="lang-choice-mark" aria-hidden="true">@((selected) ? "☑" : "☐")</span>
+                                        @onclick="() => SelectLanguage(code)">
+                                    <span class="lang-choice-mark" aria-hidden="true">@((selected) ? "◉" : "○")</span>
                                     <span>@label</span>
                                 </button>
                             }
@@ -284,17 +282,9 @@
         ("fr", "Français"), ("en", "English"), ("de", "Deutsch")
     };
 
-    private void ToggleLanguage(string code)
+    private void SelectLanguage(string code)
     {
-        if (_createForm.Languages.Contains(code))
-        {
-            if (_createForm.Languages.Count > 1)
-                _createForm.Languages.Remove(code);
-        }
-        else
-        {
-            _createForm.Languages.Add(code);
-        }
+        _createForm.Languages = [code];
     }
 
     private PeriodicTimer? _refreshTimer;
@@ -328,8 +318,9 @@
     {
         _isSolo = string.Equals(_createForm.Mode, "solo", StringComparison.OrdinalIgnoreCase);
         _isAiOnly = string.Equals(_createForm.Mode, "ai-only", StringComparison.OrdinalIgnoreCase);
-        if (!_isAdmin && _isAiOnly)
+        if (!_isAdmin && (_isAiOnly || _isSolo))
         {
+            _isSolo = false;
             _isAiOnly = false;
             _createForm.Mode = "multi";
         }

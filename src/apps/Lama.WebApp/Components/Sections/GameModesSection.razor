@@ -1,5 +1,6 @@
 @inject HomeViewModel VM
 @inject IStringLocalizer<SharedResource> L
+@inject AuthService Auth
 
 <section id="modes" class="section bg2" aria-labelledby="modes-title">
     <div class="container">
@@ -10,7 +11,7 @@
         </div>
 
         <div class="modes-grid" role="list" aria-label="@L["Home.Modes.Aria"]">
-            @foreach (var mode in VM.Modes)
+            @foreach (var mode in VM.Modes.Where(m => !m.IsAdminOnly || Auth.IsAdmin))
             {
                 <div role="listitem">
                     <GameModeCard Mode="mode" />

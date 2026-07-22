@@ -14,7 +14,7 @@ public sealed class ThemeService(IJSRuntime js)
         "deuteranopia", "protanopia", "tritanopia"
     };
 
-    private string _theme = "dark";
+    private string _theme = "light";
     private bool _initialized;
 
     public string Theme => _theme;

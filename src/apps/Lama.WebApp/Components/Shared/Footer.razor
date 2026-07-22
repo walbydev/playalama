@@ -22,7 +22,10 @@
             <ul>
                 <li><a href="/rules">@L["Footer.CommonRules"]</a></li>
                 <li><a href="/rules#classique">@L["Footer.ModeClassic"]</a></li>
-                <li><a href="/rules#solo-ia">@L["Footer.ModeSoloAI"]</a></li>
+                @if (Auth.IsAdmin)
+                {
+                    <li><a href="/rules#solo-ia">@L["Footer.ModeSoloAI"]</a></li>
+                }
             </ul>
         </div>
         <div class="footer-col">
@@ -34,7 +37,7 @@
                 <li><a href="/license">@L["Footer.License"]</a></li>
                 @if (Auth.IsAdmin)
                 {
-                    <li><a href="/admin" style="opacity:.7;font-size:.95rem">@L["Footer.Admin"]</a></li>
+                    <li><a href="/admin">🔧 @L["Footer.Admin"]</a></li>
                 }
             </ul>
         </div>

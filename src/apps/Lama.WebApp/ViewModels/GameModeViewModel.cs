@@ -12,7 +12,8 @@ public sealed record GameModeViewModel(
     string FullDesc,
     string[] Rules,
     string[] Options,
-    bool IsImplemented = true);
+    bool IsImplemented = true,
+    bool IsAdminOnly = false);
 
 public static class GameModes
 {
@@ -52,7 +53,8 @@ public static class GameModes
             FullDesc:  "L'IA de Playalama analyse le plateau et joue en temps réel avec jusqu'à 5 niveaux de difficulté. Parfait pour progresser, apprendre de nouveaux mots et tester des stratégies sans pression.",
             Rules:     ["1 joueur contre l'IA", "5 niveaux : Débutant → Légendaire", "L'IA adapte son niveau à tes performances", "Statistiques détaillées en fin de partie"],
             Options:   ["Niveau IA (1–5)", "Langue du dictionnaire", "Durée du tour"],
-            IsImplemented: true),
+            IsImplemented: true,
+            IsAdminOnly: true),
 
         new(
             Slug:      "2v2",

@@ -8,7 +8,7 @@ namespace Lama.WebApp.Services;
 /// </summary>
 public sealed class DensityService(IJSRuntime js)
 {
-    private string _density = "normal";
+    private string _density = "compact";
     private bool _initialized;
 
     public const string Normal = "normal";

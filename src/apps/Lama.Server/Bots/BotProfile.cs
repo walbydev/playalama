@@ -31,7 +31,9 @@ public sealed record BotProfile(
     /// <summary>Score au-delà duquel un coup est jugé "gros points". 0 = désactivé.</summary>
     int BigMoveScoreThreshold = 0,
     /// <summary>Probabilité d'écarter les coups "gros points" au profit d'une alternative plus modeste (0 = jamais, 1 = toujours).</summary>
-    double BigMoveSkipRate = 0.0)
+    double BigMoveSkipRate = 0.0,
+    /// <summary>Nombre maximum de passes consécutives avant de forcer un placement ou un échange. Défaut: 1.</summary>
+    int MaxConsecutivePasses = 1)
 {
     /// <summary>Identifiant persistant au format N (sans tirets) pour le mapping joueur↔moteur.</summary>
     public string PersistentPlayerId => BotGuid.ToString("N");

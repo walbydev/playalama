@@ -6,9 +6,8 @@
             class="quick-settings-toggle"
             @onclick="TogglePanel"
             aria-expanded="@_isOpen"
-            aria-controls="quick-settings-panel"
-            aria-label="@L["Nav.Accessibility"]">
-        ⚙
+            aria-controls="quick-settings-panel">
+        <span aria-hidden="true">⚙</span> @L["Nav.Accessibility"]
     </button>
 
     <aside id="quick-settings-panel" class="quick-settings-panel @(_isOpen ? "is-open" : "")">

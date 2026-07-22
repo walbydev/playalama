@@ -102,8 +102,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_lexicon_import_runs_completed_fingerprint
     WHERE status = 'completed';
 
 -- ============================================================================
--- Vue matérialisée : mots valides (sans abréviations)
--- Exclut tout mot dont au moins une définition a part_of_speech = 'abbrev'.
+-- Vue matérialisée : mots valides (sans abréviations ni noms propres)
+-- Exclut tout mot dont au moins une définition a part_of_speech dans la liste noire :
+--   abbrev (abréviations), name/prop/proper (noms propres, lieux-dits, communes).
 -- À rafraîchir après un import : voir docs/utils/LEXICON_MV_REFRESH.md
 -- ============================================================================
 CREATE MATERIALIZED VIEW IF NOT EXISTS lexicon.mv_valid_words AS
@@ -113,7 +114,7 @@ WHERE NOT EXISTS (
     SELECT 1
     FROM lexicon.definitions d
     WHERE d.word_id = w.word_id
-    AND d.part_of_speech = 'abbrev'
+    AND d.part_of_speech IN ('abbrev', 'name', 'prop', 'proper')
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_valid_words_id

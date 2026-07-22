@@ -20,6 +20,10 @@
                 <li><a href="/games" class="@ActiveClass("/games")" @onclick="CloseMenu">@L["Nav.Games"]</a></li>
                 <li><a href="/my-games" class="@ActiveClass("/my-games")" @onclick="CloseMenu">@L["Nav.MyGames"]</a></li>
             }
+            @if (Auth.IsAdmin)
+            {
+                <li><a href="/admin" class="@ActiveClass("/admin")" @onclick="CloseMenu">🔧 Admin</a></li>
+            }
         </ul>
     }
 
