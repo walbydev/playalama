@@ -718,12 +718,24 @@ html.highcontrast .navbar-links a.active {
 
 .quick-settings-layout {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: 1fr 1fr;
     gap: .35rem;
 }
 
 .quick-settings-layout .layout-btn {
     min-height: 2.3rem;
+    white-space: normal;
+    text-align: center;
+    font-size: .78rem;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.quick-settings-layout .layout-rack-controls {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .35rem;
 }
 
 .quick-settings-density {

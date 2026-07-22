@@ -103,19 +103,63 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_lexicon_import_runs_completed_fingerprint
 
 -- ============================================================================
 -- Vue matérialisée : mots valides (sans abréviations ni noms propres)
--- Exclut tout mot dont au moins une définition a part_of_speech dans la liste noire :
---   abbrev (abréviations), name/prop/proper (noms propres, lieux-dits, communes).
--- À rafraîchir après un import : voir docs/utils/LEXICON_MV_REFRESH.md
+-- Règle Scrabble officiel (ODS) : pas de noms propres, abréviations, sigles,
+-- acronymes, ni initiales.
+--
+-- Logique : un mot est EXCLU si TOUTES ses définitions ont un POS en liste noire.
+-- Un mot qui a au moins une définition « normale » (nom, verbe, adj…) est gardé.
+-- Ex : « angers » (verbe) est valide même si « Angers » (ville) est aussi présent.
+--
+-- Liste noire POS (valeurs kaiki/wiktextract) :
+--   name, proper_noun, prop, proper  → noms propres (lieux, personnes)
+--   abbrev                           → abréviations
+--   acronym, initialism              → sigles et acronymes
+--
+-- La MV n'est recréée que si la définition a changé (version 2).
+-- Démarage rapide en prod après la première migration.
 -- ============================================================================
-CREATE MATERIALIZED VIEW IF NOT EXISTS lexicon.mv_valid_words AS
-SELECT w.word_id
-FROM lexicon.words w
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM lexicon.definitions d
-    WHERE d.word_id = w.word_id
-    AND d.part_of_speech IN ('abbrev', 'name', 'prop', 'proper')
-);
+DO $$
+DECLARE
+    mv_def text;
+BEGIN
+    -- Récupère la définition actuelle de la MV (si elle existe)
+    SELECT definition INTO mv_def
+    FROM pg_matviews
+    WHERE schemaname = 'lexicon' AND matviewname = 'mv_valid_words';
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_valid_words_id
-    ON lexicon.mv_valid_words (word_id);
+    -- Si la MV existe déjà avec le filtre v2 (proper_noun + acronym), on ne fait rien
+    IF mv_def IS NOT NULL
+       AND mv_def LIKE '%proper_noun%'
+       AND mv_def LIKE '%acronym%'
+       AND mv_def LIKE '%initialism%' THEN
+        RETURN;
+    END IF;
+
+    -- Sinon : recréer la MV avec le filtre à jour
+    DROP MATERIALIZED VIEW IF EXISTS lexicon.mv_valid_words;
+
+    EXECUTE $q$
+        CREATE MATERIALIZED VIEW lexicon.mv_valid_words AS
+        SELECT w.word_id
+        FROM lexicon.words w
+        WHERE NOT EXISTS (
+            SELECT 1 FROM lexicon.definitions d WHERE d.word_id = w.word_id
+        )
+        OR EXISTS (
+            SELECT 1 FROM lexicon.definitions d
+            WHERE d.word_id = w.word_id
+            AND (
+                d.part_of_speech IS NULL
+                OR d.part_of_speech NOT IN (
+                    'abbrev', 'name', 'prop', 'proper', 'proper_noun',
+                    'acronym', 'initialism'
+                )
+            )
+        )
+    $q$;
+
+    EXECUTE $q$
+        CREATE UNIQUE INDEX ux_mv_valid_words_id
+        ON lexicon.mv_valid_words (word_id)
+    $q$;
+END $$;
