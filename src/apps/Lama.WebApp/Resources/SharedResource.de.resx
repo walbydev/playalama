@@ -143,6 +143,8 @@
   <data name="Contact.Discord.Title"><value>Discord</value></data>
   <data name="Contact.Discord.Desc"><value>Treten Sie unserer Discord-Gemeinschaft bei, um Strategien zu besprechen, Bugs zu melden oder einfach mit anderen Spielern zu chatten!</value></data>
   <data name="Contact.Discord.Button"><value>Discord beitreten</value></data>
+  <data name="Contact.Email.Title"><value>E-Mail</value></data>
+  <data name="Contact.Email.Desc"><value>Bei privaten Fragen, Partnerschaften oder anderen Anliegen schreiben Sie uns direkt. Wir antworten schnell.</value></data>
   <data name="Contact.GitHub.Title"><value>GitHub Issues</value></data>
   <data name="Contact.GitHub.Desc"><value>Sie haben einen Bug gefunden oder haben eine Funktionsidee? Öffnen Sie ein Issue in unserem GitHub-Repository.</value></data>
   <data name="Contact.GitHub.Button"><value>Siehe Issues</value></data>
@@ -169,6 +171,7 @@
   <data name="Footer.Project"><value>Projekt</value></data>
   <data name="Footer.Social"><value>Soziale Netzwerke</value></data>
   <data name="Footer.JoinDiscord"><value>Treten Sie dem Discord bei</value></data>
+  <data name="Footer.SendEmail"><value>E-Mail senden</value></data>
   <data name="Footer.Tagline"><value>Das freie, plattformübergreifende taktische Wortspiel. Spiele im Web oder per Kommandozeile.</value></data>
   <data name="Game.Abandon"><value>Aufgeben</value></data>
   <data name="Game.AbandonConfirmYes"><value>Ja, aufgeben</value></data>

@@ -144,6 +144,8 @@
   <data name="Contact.Discord.Title"><value>Discord</value></data>
   <data name="Contact.Discord.Desc"><value>Join our Discord community to discuss strategy, report bugs, or just chat with other players!</value></data>
   <data name="Contact.Discord.Button"><value>Join Discord</value></data>
+  <data name="Contact.Email.Title"><value>Email</value></data>
+  <data name="Contact.Email.Desc"><value>For private questions, partnerships, or any request, write to us directly. We reply quickly.</value></data>
   <data name="Contact.GitHub.Title"><value>GitHub Issues</value></data>
   <data name="Contact.GitHub.Desc"><value>Found a bug or have a feature idea? Open an issue on our GitHub repository.</value></data>
   <data name="Contact.GitHub.Button"><value>View issues</value></data>
@@ -170,6 +172,7 @@
   <data name="Footer.Project"><value>Project</value></data>
   <data name="Footer.Social"><value>Social</value></data>
   <data name="Footer.JoinDiscord"><value>Join Discord</value></data>
+  <data name="Footer.SendEmail"><value>Send email</value></data>
   <data name="Footer.Tagline"><value>The free, cross-platform tactical word game. Play on the Web or via command line.</value></data>
   <data name="Game.Abandon"><value>Abandon</value></data>
   <data name="Game.AbandonConfirmYes"><value>Yes, abandon</value></data>
