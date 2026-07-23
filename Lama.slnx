@@ -16,6 +16,22 @@
     <Project Path="src/libs/Lama.Languages.en/Lama.Languages.en.csproj" />
     <Project Path="src/libs/Lama.Languages.de/Lama.Languages.de.csproj" />
   </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="AGENTS.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="docker-compose.postgresdev.yml" />
+    <File Path="docker-compose.yml" />
+    <File Path="Dockerfile" />
+    <File Path="Dockerfile.aiserver" />
+    <File Path="Dockerfile.webapp" />
+    <File Path="dotnet-tools.json" />
+    <File Path="Lama.sln.DotSettings.user" />
+    <File Path="LICENSE" />
+    <File Path="Makefile" />
+    <File Path="README.fr.md" />
+    <File Path="README.md" />
+  </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Lama.AIServer.UnitTests/Lama.AIServer.UnitTests.csproj" />
     <Project Path="tests/Lama.ArchitectureTests/Lama.ArchitectureTests.csproj" />
@@ -34,22 +50,6 @@
     <Project Path="tools/importers/Lama.DictionaryImporter/Lama.DictionaryImporter.csproj" />
     <Project Path="tools/benchmarks/Lama.MoveSuggestion.Benchmarks/Lama.MoveSuggestion.Benchmarks.csproj" />
   </Folder>
-  <Folder Name="/Root/">
-    <File Path="AGENTS.md" />
-    <File Path="Directory.Build.props" />
-    <File Path="Directory.Packages.props" />
-    <File Path="docker-compose.postgresdev.yml" />
-    <File Path="docker-compose.yml" />
-    <File Path="Dockerfile" />
-    <File Path="Dockerfile.aiserver" />
-    <File Path="Dockerfile.webapp" />
-    <File Path="dotnet-tools.json" />
-    <File Path="Lama.sln.DotSettings.user" />
-    <File Path="LICENSE" />
-    <File Path="Makefile" />
-    <File Path="README.fr.md" />
-    <File Path="README.md" />
-  </Folder>
   <Folder Name="/Site/">
     <File Path="site/static/index.html" />
     <File Path="site/static/README.md" />
@@ -62,75 +62,5 @@
     <File Path="site/static/assets/js/theme.js" />
     <File Path="site/static/download/index.html" />
     <File Path="site/static/new_home_page_design.html" />
-  </Folder>
-  <Folder Name="/Docs/">
-    <File Path="AGENTS.md" />
-    <File Path="README.md" />
-  </Folder>
-  <Folder Name="/Docs/architecture/">
-    <File Path="docs/architecture/DOCKER_DEPLOYMENT.md" />
-    <File Path="docs/architecture/HTTPS_DEPLOYMENT.md" />
-    <File Path="docs/architecture/HTTPS_MIGRATION_PLAN.md" />
-    <File Path="docs/architecture/POSTGRESQL_ARCHITECTURE.md" />
-    <File Path="docs/architecture/POSTGRESQL_EFCORE_PLAN.md" />
-    <File Path="docs/architecture/RATING_INTEGRATION.md" />
-    <File Path="docs/architecture/RATING_SYSTEM.md" />
-    <File Path="docs/architecture/RESTRUCTURATION_INFRA_2026-06-19.md" />
-    <File Path="docs/architecture/SECURITE_JWT_IMPLEMENTEE.md" />
-    <File Path="docs/architecture/console-interface-architecture.md" />
-    <File Path="docs/architecture/crossing-rules.md" />
-    <File Path="docs/architecture/defines-CLI.md" />
-    <File Path="docs\architecture\BOTS_FONCTIONNEMENT.md" />
-    <File Path="docs\architecture\DOCKER_ARCHITECTURE.md" />
-    <File Path="docs\architecture\HOMEASSISTANT_INTEGRATION.md" />
-  </Folder>
-  <Folder Name="/Docs/roadmap/">
-    <File Path="docs/roadmap/CG-02_CERTIFICAT_CLOTURE.md" />
-    <File Path="docs/roadmap/CG-02_RAPPORT_VALIDATION.md" />
-    <File Path="docs/roadmap/LISTE_COURTE_JEU_CLASSIQUE.md" />
-    <File Path="docs/roadmap/RESUME_LIVRABLE_HTTPS.md" />
-    <File Path="docs/roadmap/JALON_JEU_FONCTIONNEL_VALIDE.md" />
-    <File Path="docs/roadmap/PHASE_SECURITE_JWT_TERMINEE.md" />
-    <File Path="docs/roadmap/PLAN_FONCTIONNALITE_PLAY_SUGGEST.md" />
-    <File Path="docs/roadmap/RECAPITULATIF_POSTGRESQL.md" />
-    <File Path="docs/roadmap/PROGRESSION.md" />
-    <File Path="docs/roadmap/LIRE_D_ABORD_RESTRUCTURATION.md" />
-    <File Path="docs/roadmap/RECETTE_CG02_MODE_INTERACTIF.md" />
-    <File Path="docs/roadmap/RESUME_RESTRUCTURATION_INFRA.md" />
-    <File Path="docs/roadmap/PERIMETRE.md" />
-    <File Path="docs/roadmap/WEBAPP_1_1_0_LOT1.md" />
-    <File Path="docs/roadmap/RESUME_SOLUTION_HTTPS.md" />
-    <File Path="docs/roadmap/COMMENCEZ_ICI.md" />
-    <File Path="docs/roadmap/PLAN_MIGRATION_MULTIJOUEUR.md" />
-    <File Path="docs/roadmap/ACTION_HTTP_404_FIX.md" />
-    <File Path="docs/roadmap/FIX_HTTP_404_REGISTER.md" />
-    <File Path="docs/roadmap/OPTION_A_DELIVERY.md" />
-    <File Path="docs/roadmap/OPTION_A_SETUP.md" />
-    <File Path="docs/roadmap/STATUS_OPTION_A.md" />
-  </Folder>
-  <Folder Name="/Docs/bugs/">
-    <File Path="docs\bugs\260703_CheckAdministrationScreen.md" />
-    <File Path="docs\bugs\260703_HideAllNonPermittedItems.md" />
-  </Folder>
-  <Folder Name="/Docs/evolutions/">
-    <File Path="docs/evolutions/INDEX.md" />
-    <File Path="docs/evolutions/MULTILANGUE_JEU_BILINGUE.md" />
-    <File Path="docs\evolutions\CONDENSED_THEME_DEFINITION.md" />
-    <File Path="docs\evolutions\MODES_DE_JEU.md" />
-    <File Path="docs\evolutions\MODES_ET_OPTIONS_GRILLE_DECISION.md" />
-    <File Path="docs\evolutions\USERS_MANAGEMENT_PAGE.md" />
-  </Folder>
-  <Folder Name="/Docs/utils/">
-    <File Path="docs/utils/GUIDE_DEMARRAGE_DEV.md" />
-    <File Path="docs/utils/ALIAS_LAMA_CONFIG.md" />
-    <File Path="docs/utils/ALIAS_QUICK_SETUP.md" />
-    <File Path="docs/utils/DEPLOYMENT_CHECKLIST.md" />
-    <File Path="docs/utils/FILES_INDEX.md" />
-    <File Path="docs/utils/HTTPS_QUICK_START.md" />
-    <File Path="docs/utils/INFRA_QUICK_REF.md" />
-    <File Path="docs/utils/POSTGRESQL_QUICKSTART.md" />
-    <File Path="docs/utils/START_INFRA_README.md" />
-    <File Path="docs/utils/tools.md" />
-    <File Path="docs/utils/GIT_WORKFLOW.md" />
   </Folder>
 </Solution>
