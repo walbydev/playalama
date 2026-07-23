@@ -58,13 +58,13 @@
                             ◐ @L["Theme.HighContrast"]
                         </button>
                         <button type="button" class="btn btn-ghost @(_currentTheme == "deuteranopia" ? "active" : "")" @onclick="@(() => SetThemeAsync("deuteranopia"))" aria-label="@L["Theme.Deuteranopia"]">
-                            👁️ Deutéra
+                            👁️ @L["Theme.DeuteranopiaShort"]
                         </button>
                         <button type="button" class="btn btn-ghost @(_currentTheme == "protanopia" ? "active" : "")" @onclick="@(() => SetThemeAsync("protanopia"))" aria-label="@L["Theme.Protanopia"]">
-                            👁️ Protana
+                            👁️ @L["Theme.ProtanopiaShort"]
                         </button>
                         <button type="button" class="btn btn-ghost @(_currentTheme == "tritanopia" ? "active" : "")" @onclick="@(() => SetThemeAsync("tritanopia"))" aria-label="@L["Theme.Tritanopia"]">
-                            👁️ Tritana
+                            👁️ @L["Theme.TritanopiaShort"]
                         </button>
                     </div>
                 </div>

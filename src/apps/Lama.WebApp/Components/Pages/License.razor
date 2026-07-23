@@ -17,43 +17,39 @@
         <div class="card mb-4">
             <h2 class="mb-2">@L["License.ProjectLicense"]</h2>
             <p>
-                Le code source de <strong>Playalama</strong> est sous
+                @L["License.SourceCodePrefix"] <strong>Playalama</strong> @L["License.SourceCodeInfix"]
                 <strong>GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)</strong>.
             </p>
             <p class="text-muted mt-2">
-                Fichier de référence : <code>LICENSE</code> à la racine du dépôt.
+                @L["License.ReferenceFilePrefix"] <code>LICENSE</code> @L["License.ReferenceFileSuffix"]
             </p>
             <p class="text-muted mt-2">
-                Résumé : si vous modifiez le logiciel et le redistribuez — ou l’exécutez en service réseau —
-                vous devez rendre le code source correspondant disponible sous la même licence.
+                @L["License.Summary"]
             </p>
         </div>
 
         <div class="card mb-4">
             <h2 class="mb-2">@L["License.Donations"]</h2>
             <p>
-                Les dons pour financer l’infrastructure sont compatibles avec l’AGPLv3.
-                La licence ne bloque pas la monétisation, mais impose que les versions modifiées
-                restent libres sous AGPL.
+                @L["License.DonationsDesc"]
             </p>
         </div>
 
         <div class="card mb-4">
             <h2 class="mb-2">@L["License.DevTools"]</h2>
             <p>
-                L’utilisation de <strong>JetBrains Rider Community</strong> (ou de tout autre IDE)
-                n’affecte pas la licence AGPL du code produit. La licence de l’IDE est indépendante.
+                @L["License.DevToolsDescPrefix"] <strong>JetBrains Rider Community</strong> @L["License.DevToolsDescSuffix"]
             </p>
         </div>
 
         <div class="card mb-4">
-            <h2 class="mb-2">Crédits lexicaux</h2>
+            <h2 class="mb-2">@L["License.LexicalCredits"]</h2>
             <p>
-                Les données lexicales (lemmes, définitions, synonymes) sont importées depuis le projet
-                <strong>Kaikki.org</strong> (extraction Wiktionnaire).
+                @L["License.LexicalCreditsDescPrefix"]
+                <strong>Kaikki.org</strong> @L["License.LexicalCreditsDescSuffix"]
             </p>
             <p class="text-muted mt-2">
-                Projet source :
+                @L["License.SourceProject"]
                 <a href="https://kaikki.org/" target="_blank" rel="noopener">https://kaikki.org/</a>
             </p>
         </div>
@@ -61,8 +57,7 @@
         <div class="card">
             <h2 class="mb-3">@L["License.Dependencies"]</h2>
             <p class="text-muted mb-3">
-                Inventaire basé sur les dépendances NuGet du dépôt. Vérifier les notices officielles
-                de chaque projet en cas d’audit juridique.
+                @L["License.InventoryNote"]
             </p>
 
             <div style="overflow-x:auto">
@@ -75,17 +70,17 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td>.NET / ASP.NET Core / Extensions (Microsoft.*)</td><td>MIT</td><td>Framework applicatif</td></tr>
-                        <tr><td>Entity Framework Core</td><td>MIT</td><td>ORM & migrations</td></tr>
-                        <tr><td>Npgsql.EntityFrameworkCore.PostgreSQL</td><td>PostgreSQL License</td><td>Accès PostgreSQL</td></tr>
-                        <tr><td>System.IdentityModel.Tokens.Jwt / Microsoft.IdentityModel.Tokens</td><td>MIT</td><td>JWT / sécurité</td></tr>
-                        <tr><td>Serilog.*</td><td>Apache-2.0</td><td>Journalisation CLI</td></tr>
-                        <tr><td>Spectre.Console</td><td>MIT</td><td>UI terminal</td></tr>
-                        <tr><td>xUnit</td><td>Apache-2.0</td><td>Tests unitaires</td></tr>
-                        <tr><td>xunit.runner.visualstudio</td><td>MIT</td><td>Exécution tests</td></tr>
-                        <tr><td>FluentAssertions</td><td>Apache-2.0</td><td>Assertions de tests</td></tr>
-                        <tr><td>Moq</td><td>BSD-3-Clause</td><td>Mocks de tests</td></tr>
-                        <tr><td>coverlet.collector</td><td>MIT</td><td>Couverture de tests</td></tr>
+                        <tr><td>.NET / ASP.NET Core / Extensions (Microsoft.*)</td><td>MIT</td><td>@L["License.Usage.DotNet"]</td></tr>
+                        <tr><td>Entity Framework Core</td><td>MIT</td><td>@L["License.Usage.EFCore"]</td></tr>
+                        <tr><td>Npgsql.EntityFrameworkCore.PostgreSQL</td><td>PostgreSQL License</td><td>@L["License.Usage.Npgsql"]</td></tr>
+                        <tr><td>System.IdentityModel.Tokens.Jwt / Microsoft.IdentityModel.Tokens</td><td>MIT</td><td>@L["License.Usage.Jwt"]</td></tr>
+                        <tr><td>Serilog.*</td><td>Apache-2.0</td><td>@L["License.Usage.Serilog"]</td></tr>
+                        <tr><td>Spectre.Console</td><td>MIT</td><td>@L["License.Usage.Spectre"]</td></tr>
+                        <tr><td>xUnit</td><td>Apache-2.0</td><td>@L["License.Usage.Xunit"]</td></tr>
+                        <tr><td>xunit.runner.visualstudio</td><td>MIT</td><td>@L["License.Usage.XunitRunner"]</td></tr>
+                        <tr><td>FluentAssertions</td><td>Apache-2.0</td><td>@L["License.Usage.FluentAssertions"]</td></tr>
+                        <tr><td>Moq</td><td>BSD-3-Clause</td><td>@L["License.Usage.Moq"]</td></tr>
+                        <tr><td>coverlet.collector</td><td>MIT</td><td>@L["License.Usage.Coverlet"]</td></tr>
                     </tbody>
                 </table>
             </div>

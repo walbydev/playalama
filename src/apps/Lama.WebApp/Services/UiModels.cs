@@ -294,3 +294,21 @@ public sealed record AdminGamePlayerDto(string PlayerName, bool IsBot);
 // ── Admin: Drain (maintenance) ───────────────────────────────────────────────
 
 public sealed record DrainStatusDto(bool IsDraining, int ActiveGames);
+
+public static class CountryList
+{
+    public static readonly IReadOnlyList<(string Code, string Flag)> All = new[]
+    {
+        ("FR", "🇫🇷"), ("BE", "🇧🇪"), ("CH", "🇨🇭"), ("CA", "🇨🇦"),
+        ("LU", "🇱🇺"), ("MC", "🇲🇨"), ("SN", "🇸🇳"), ("MA", "🇲🇦"),
+        ("TN", "🇹🇳"), ("DZ", "🇩🇿"), ("CI", "🇨🇮"), ("CM", "🇨🇲"),
+        ("US", "🇺🇸"), ("GB", "🇬🇧"), ("DE", "🇩🇪"), ("ES", "🇪🇸"),
+        ("IT", "🇮🇹"), ("PT", "🇵🇹"), ("NL", "🇳🇱"), ("BR", "🇧🇷"),
+        ("MX", "🇲🇽"), ("AR", "🇦🇷"), ("JP", "🇯🇵"), ("KR", "🇰🇷"),
+        ("CN", "🇨🇳"), ("IN", "🇮🇳"), ("AU", "🇦🇺"), ("PL", "🇵🇱"),
+        ("RU", "🇷🇺"), ("UA", "🇺🇦"),
+    };
+
+    public static string FlagFor(string? code) =>
+        All.FirstOrDefault(c => c.Code == code).Flag ?? string.Empty;
+}

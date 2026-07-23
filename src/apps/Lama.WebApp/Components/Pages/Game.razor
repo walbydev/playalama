@@ -110,7 +110,7 @@ else
                                 @(_vm.Snapshot.GameName ?? GameId[..Math.Min(8, GameId.Length)] + "…")
                             </span>
                             <button class="btn btn-ghost btn-sm debug-export-btn"
-                                    title="@(_exportCopied ? "✓ Copié !" : "Copier le plateau (JSONL)")"
+                                    title="@(_exportCopied ? L["Game.ExportCopied"].Value : L["Game.ExportCopyTooltip"].Value)"
                                     @onclick="ExportBoardAsync">
                                 @(_exportCopied ? "✓" : "📋")
                             </button>
@@ -589,7 +589,7 @@ else
                         @* ── Dictionnaire (toujours disponible : observateur, partie terminée, en attente, mon tour) ── *@
                         <div class="card suggest-panel sidebar-panel" data-tab="play">
                             <div class="suggest-section dictionary-search">
-                                <p class="suggest-section-title" title="@(_wordCounts.TryGetValue(GetLexiconLanguage(), out var wc) && wc > 0 ? $"{wc:N0} mots" : null)">📚 @L["Game.Dictionary.Title"]</p>
+                                <p class="suggest-section-title" title="@(_wordCounts.TryGetValue(GetLexiconLanguage(), out var wc) && wc > 0 ? $"{wc:N0} {L["Game.WordCount"].Value}" : null)">📚 @L["Game.Dictionary.Title"]</p>
                                 @{
                                     var dictLangsAlways = GetGameLanguages();
                                 }

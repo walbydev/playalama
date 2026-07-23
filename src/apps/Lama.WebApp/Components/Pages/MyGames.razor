@@ -181,7 +181,7 @@ else
             if (ok)
                 _games.Remove(game);
             else
-                _error = "Échec de la suppression.";
+                _error = L["Admin.DeleteFailed"].Value;
         }
         catch (Exception ex) { _error = ex.Message; }
         finally { _busy = false; StateHasChanged(); }

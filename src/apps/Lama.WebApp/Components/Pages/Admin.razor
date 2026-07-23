@@ -220,7 +220,7 @@ else
                             <thead>
                                 <tr>
                                     <th>@L["Admin.Username"]</th>
-                                    <th>Email</th>
+                                    <th>@L["Admin.Email"]</th>
                                     <th>@L["Admin.Elo"]</th>
                                     <th>@L["Admin.GamesPlayed"]</th>
                                     <th>@L["Admin.Created"]</th>
@@ -237,7 +237,7 @@ else
                                             <strong>@u.Username</strong>
                                             @if (u.IsAdmin)
                                             {
-                                                <span class="chip chip-info" style="margin-left:.5rem;font-size:.75rem">👑 Admin</span>
+                                                <span class="chip chip-info" style="margin-left:.5rem;font-size:.75rem">👑 @L["Admin.AdminBadge"]</span>
                                             }
                                         </td>
                                         <td class="text-muted">@(u.Email ?? "—")</td>
@@ -261,7 +261,7 @@ else
                                                 <button class="btn btn-ghost btn-sm"
                                                         @onclick="@(() => ToggleAdminAsync(u, false))"
                                                         disabled="@_usersLoading">
-                                                    Revoke
+                                                    @L["Admin.Revoke"]
                                                 </button>
                                             }
                                             else
@@ -269,7 +269,7 @@ else
                                                 <button class="btn btn-ghost btn-sm"
                                                         @onclick="@(() => ToggleAdminAsync(u, true))"
                                                         disabled="@_usersLoading">
-                                                    Promote
+                                                    @L["Admin.Promote"]
                                                 </button>
                                             }
                                             <button class="btn btn-danger btn-sm"
@@ -480,11 +480,11 @@ else
             if (ok)
             {
                 _users.Remove(user);
-                _success = $"{user.Username} supprimé.";
+                _success = L["Admin.UserDeleted", user.Username].Value;
             }
             else
             {
-                _error = "Échec de la suppression.";
+                _error = L["Admin.DeleteFailed"].Value;
             }
         }
         catch (Exception ex)
@@ -510,12 +510,12 @@ else
                 if (idx >= 0)
                     _users[idx] = user with { IsAdmin = promote };
                 _success = promote
-                    ? $"{user.Username} promu administrateur."
-                    : $"{user.Username} n'est plus administrateur.";
+                    ? L["Admin.UserPromoted", user.Username].Value
+                    : L["Admin.UserDemoted", user.Username].Value;
             }
             else
             {
-                _error = promote ? "Échec de la promotion." : "Échec de la révocation.";
+                _error = promote ? L["Admin.PromoteFailed"].Value : L["Admin.RevokeFailed"].Value;
             }
         }
         catch (Exception ex)
@@ -561,11 +561,11 @@ else
             if (ok)
             {
                 game = game with { Status = "closed" };
-                _success = "Partie fermée.";
+                _success = L["Admin.GameClosed"].Value;
             }
             else
             {
-                _error = "Échec de la fermeture.";
+                _error = L["Admin.CloseFailed"].Value;
             }
         }
         catch (Exception ex)
@@ -586,11 +586,11 @@ else
             if (ok)
             {
                 _games.Remove(game);
-                _success = "Partie supprimée.";
+                _success = L["Admin.GameDeleted"].Value;
             }
             else
             {
-                _error = "Échec de la suppression.";
+                _error = L["Admin.DeleteFailed"].Value;
             }
         }
         catch (Exception ex)
@@ -609,7 +609,7 @@ else
         {
             var token = await Auth.GetTokenAsync();
             var count = await Api.TerminateAllGamesAsync(token);
-            _success = $"{count} partie(s) terminée(s).";
+            _success = L["Admin.GamesTerminated", count].Value;
             await LoadDashboardAsync();
         }
         catch (Exception ex)

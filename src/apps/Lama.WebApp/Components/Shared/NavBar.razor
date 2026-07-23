@@ -22,7 +22,7 @@
             }
             @if (Auth.IsAdmin)
             {
-                <li><a href="/admin" class="@ActiveClass("/admin")" @onclick="CloseMenu">🔧 Admin</a></li>
+                <li><a href="/admin" class="@ActiveClass("/admin")" @onclick="CloseMenu">🔧 @L["Nav.Admin"]</a></li>
             }
         </ul>
     }

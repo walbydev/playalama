@@ -189,7 +189,7 @@
                             {
                                 var selected = _createForm.Languages.Contains(code);
                                 var tip = _wordCounts.TryGetValue(code, out var cnt) && cnt > 0
-                                    ? $"{label} — {cnt:N0} mots"
+                                    ? $"{label} — {cnt:N0} {L["Game.WordCount"].Value}"
                                     : label;
                                 <button type="button"
                                         class="lang-choice-btn @(selected ? "is-selected" : string.Empty)"
@@ -325,6 +325,11 @@
     {
         await Auth.InitializeAsync();
         _isAdmin = Auth.IsAdmin;
+
+        var uiLang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        if (uiLang is "fr" or "en" or "de")
+            _createForm.Languages = [uiLang];
+
         OnModeChanged();
         await Task.WhenAll(LoadGamesAsync(), LoadBotsAsync());
         _ = LoadMyActiveGamesAsync();

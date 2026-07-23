@@ -303,10 +303,10 @@
     private PendingPlacement? GetPendingTile(int row, int col) =>
         Pending.FirstOrDefault(p => p.Row == row && p.Col == col);
 
-    private static string GetBonusLabel(string bonus) => bonus switch
+    private string GetBonusLabel(string bonus) => bonus switch
     {
-        "tw" => "TM",
-        "dw" => "DM",
+        "tw" => L["Board.TripleWord.Short"].Value,
+        "dw" => L["Board.DoubleWord.Short"].Value,
         "tl" => "TL",
         "dl" => "DL",
         "st" => "★",

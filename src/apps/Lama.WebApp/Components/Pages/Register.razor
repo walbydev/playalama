@@ -34,9 +34,9 @@
                 <label for="reg-country">@L["Auth.Country"] <small class="text-dim">@L["Common.Optional"]</small></label>
                 <InputSelect id="reg-country" @bind-Value="form.CountryCode" class="ui-control form-select">
                     <option value="">@L["Auth.Country.Unspecified"]</option>
-                    @foreach (var (code, name) in _countries)
+                    @foreach (var (code, flag) in CountryList.All)
                     {
-                        <option value="@(code)">@(name)</option>
+                        <option value="@(code)">@(flag) @L[$"Country.{code}"]</option>
                     }
                 </InputSelect>
             </div>
@@ -75,40 +75,6 @@
     private readonly RegisterForm form = new();
     private bool _busy;
     private string? _error;
-
-    private static readonly (string Code, string Name)[] _countries =
-    [
-        ("FR", "🇫🇷 France"),
-        ("BE", "🇧🇪 Belgique"),
-        ("CH", "🇨🇭 Suisse"),
-        ("CA", "🇨🇦 Canada"),
-        ("LU", "🇱🇺 Luxembourg"),
-        ("MC", "🇲🇨 Monaco"),
-        ("SN", "🇸🇳 Sénégal"),
-        ("MA", "🇲🇦 Maroc"),
-        ("TN", "🇹🇳 Tunisie"),
-        ("DZ", "🇩🇿 Algérie"),
-        ("CI", "🇨🇮 Côte d'Ivoire"),
-        ("CM", "🇨🇲 Cameroun"),
-        ("US", "🇺🇸 États-Unis"),
-        ("GB", "🇬🇧 Royaume-Uni"),
-        ("DE", "🇩🇪 Allemagne"),
-        ("ES", "🇪🇸 Espagne"),
-        ("IT", "🇮🇹 Italie"),
-        ("PT", "🇵🇹 Portugal"),
-        ("NL", "🇳🇱 Pays-Bas"),
-        ("BR", "🇧🇷 Brésil"),
-        ("MX", "🇲🇽 Mexique"),
-        ("AR", "🇦🇷 Argentine"),
-        ("JP", "🇯🇵 Japon"),
-        ("KR", "🇰🇷 Corée du Sud"),
-        ("CN", "🇨🇳 Chine"),
-        ("IN", "🇮🇳 Inde"),
-        ("AU", "🇦🇺 Australie"),
-        ("PL", "🇵🇱 Pologne"),
-        ("RU", "🇷🇺 Russie"),
-        ("UA", "🇺🇦 Ukraine"),
-    ];
 
     protected override void OnInitialized()
     {

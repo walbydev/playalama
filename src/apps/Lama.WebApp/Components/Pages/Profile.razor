@@ -58,41 +58,41 @@ else
             @if (_rating is not null)
             {
                 <div class="card mb-4">
-                    <h2 class="mb-3">🏅 Classement &amp; Niveau</h2>
+                    <h2 class="mb-3">🏅 @L["Profile.RankingLevel"]</h2>
                     <div style="display:flex; flex-direction:column; gap:.75rem">
                         <div class="flex justify-between align-center">
-                            <span class="text-muted">Niveau</span>
+                            <span class="text-muted">@L["Profile.LevelLabel"]</span>
                             <strong style="font-size:1.05rem">@_rating.LevelName</strong>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-muted">ELO Open</span>
+                            <span class="text-muted">@L["Profile.EloOpen"]</span>
                             <strong>@_rating.EloOpen</strong>
                         </div>
                         @if (_rating.EloTournament != 1200 || _rating.EloTournament != _rating.EloOpen)
                         {
                             <div class="flex justify-between">
-                                <span class="text-muted">ELO Tournoi</span>
+                                <span class="text-muted">@L["Profile.EloTournament"]</span>
                                 <strong>@_rating.EloTournament</strong>
                             </div>
                         }
                         <div style="border-top:1px solid var(--border); padding-top:.75rem; display:flex; flex-direction:column; gap:.5rem">
                             <div class="flex justify-between">
-                                <span class="text-muted">Victoires / Défaites</span>
-                                <strong>@_rating.Wins V · @_rating.Losses D</strong>
+                                <span class="text-muted">@L["Profile.WinLoss"]</span>
+                                <strong>@_rating.Wins @L["Profile.WinShort"] · @_rating.Losses @L["Profile.LossShort"]</strong>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-muted">Taux de victoire</span>
+                                <span class="text-muted">@L["Profile.WinRate"]</span>
                                 <strong>@_rating.WinRate.ToString("F1") %</strong>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-muted">Parties jouées</span>
+                                <span class="text-muted">@L["Profile.GamesPlayedLabel"]</span>
                                 <strong>@_rating.TotalGames</strong>
                             </div>
                             @if (_rating.AverageScore > 0)
                             {
                                 <div class="flex justify-between">
-                                    <span class="text-muted">Score moyen</span>
-                                    <strong>@_rating.AverageScore.ToString("F0") pts</strong>
+                                    <span class="text-muted">@L["Profile.AverageScore"]</span>
+                                    <strong>@_rating.AverageScore.ToString("F0") @L["Profile.PointsShort"]</strong>
                                 </div>
                             }
                         </div>
@@ -114,9 +114,9 @@ else
                         <label for="upd-country">@L["Auth.Country"] <small class="text-dim">@L["Common.Optional"]</small></label>
                         <InputSelect id="upd-country" @bind-Value="_updateForm.CountryCode" class="ui-control form-select">
                             <option value="">@L["Auth.Country.Unspecified"]</option>
-                            @foreach (var (code, name) in _countries)
+                            @foreach (var (code, flag) in CountryList.All)
                             {
-                                <option value="@(code)">@(name)</option>
+                                <option value="@(code)">@(flag) @L[$"Country.{code}"]</option>
                             }
                         </InputSelect>
                     </div>
@@ -158,45 +158,12 @@ else
     private string? _error;
     private string? _success;
 
-    private static readonly (string Code, string Name)[] _countries =
-    [
-        ("FR", "🇫🇷 France"),
-        ("BE", "🇧🇪 Belgique"),
-        ("CH", "🇨🇭 Suisse"),
-        ("CA", "🇨🇦 Canada"),
-        ("LU", "🇱🇺 Luxembourg"),
-        ("MC", "🇲🇨 Monaco"),
-        ("SN", "🇸🇳 Sénégal"),
-        ("MA", "🇲🇦 Maroc"),
-        ("TN", "🇹🇳 Tunisie"),
-        ("DZ", "🇩🇿 Algérie"),
-        ("CI", "🇨🇮 Côte d'Ivoire"),
-        ("CM", "🇨🇲 Cameroun"),
-        ("US", "🇺🇸 États-Unis"),
-        ("GB", "🇬🇧 Royaume-Uni"),
-        ("DE", "🇩🇪 Allemagne"),
-        ("ES", "🇪🇸 Espagne"),
-        ("IT", "🇮🇹 Italie"),
-        ("PT", "🇵🇹 Portugal"),
-        ("NL", "🇳🇱 Pays-Bas"),
-        ("BR", "🇧🇷 Brésil"),
-        ("MX", "🇲🇽 Mexique"),
-        ("AR", "🇦🇷 Argentine"),
-        ("JP", "🇯🇵 Japon"),
-        ("KR", "🇰🇷 Corée du Sud"),
-        ("CN", "🇨🇳 Chine"),
-        ("IN", "🇮🇳 Inde"),
-        ("AU", "🇦🇺 Australie"),
-        ("PL", "🇵🇱 Pologne"),
-        ("RU", "🇷🇺 Russie"),
-        ("UA", "🇺🇦 Ukraine"),
-    ];
-
-    private static string GetCountryDisplay(string? code)
+    private string GetCountryDisplay(string? code)
     {
         if (code is null) return string.Empty;
-        var match = _countries.FirstOrDefault(c => c.Code == code);
-        return match == default ? code : match.Name;
+        var flag = CountryList.FlagFor(code);
+        var name = L[$"Country.{code}"];
+        return $"{flag} {name}";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

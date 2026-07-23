@@ -82,7 +82,13 @@ window.playalamaGameLayout = {
                 collapsed: Array.isArray(parsed.collapsed) ? parsed.collapsed : [],
                 activeTab: ['scores', 'play', 'messages'].includes(parsed.activeTab) ? parsed.activeTab : 'play',
                 variant: ['a', 'b', 'c', 'd'].includes(parsed.variant) ? parsed.variant : 'd'
-            };
+};
+
+// Sync <html lang> with culture cookie
+(function() {
+  var lang = window.playalamaLang.get();
+  if (lang) document.documentElement.lang = lang;
+})();
         } catch { return { density: 'm', fullscreen: false, collapsed: [], activeTab: 'play', variant: 'd' }; }
     },
     set(state) {
