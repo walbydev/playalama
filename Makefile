@@ -118,8 +118,10 @@ run: ## Exécuter le CLI (usage : make run ARGS="game create Alice")
 # =============================================================================
 
 .PHONY: build
-build: ## Compiler toute la solution (Release)
+build: ## Compiler toute la solution (Release, incrémente le build #)
 	$(check-dotnet)
+	@bash tools/scripts/version/update-build-info.sh .build-info increment
+	@bash tools/scripts/version/sync-to-csharp.sh .build-info
 	$(DOTNET) build -c Release
 
 .PHONY: test
@@ -266,14 +268,9 @@ infra-destroy: ## ⚠ DESTRUCTIF — Remise à zéro complète du VPS [FORCE=1] 
 # =============================================================================
 
 .PHONY: release
-release: ## Gérer la version (VERSION=x.y.z | BUILD=increment)
-ifeq ($(BUILD),increment)
-	@bash tools/scripts/version/update-build-info.sh .build-info increment
-else ifneq ($(VERSION),)
+release: ## Définir la version (usage : make release VERSION=1.2.3)
+	@if [ -z "$(VERSION)" ]; then echo "❌ Usage : make release VERSION=1.2.3"; exit 1; fi
 	@bash tools/scripts/version/update-build-info.sh .build-info set-version "$(VERSION)"
-else
-	@echo "❌ Usage : make release VERSION=1.2.3  ou  make release BUILD=increment"; exit 1
-endif
 	@bash tools/scripts/version/sync-to-csharp.sh .build-info
 
 .PHONY: build-generate

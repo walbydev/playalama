@@ -438,8 +438,8 @@ Les deux utilisent la classe statique `BuildInfoConstants` pour afficher les inf
 # Générer un nouveau build timestamp et synchroniser vers C#
 make build-generate
 
-# Incrémenter le numéro de build et synchroniser vers C#
-make release BUILD=increment
+# Le build incrémente automatiquement le numéro de build
+make build
 
 # Fixer une version spécifique et synchroniser vers C#
 make release VERSION=1.2.3

@@ -436,8 +436,8 @@ Both use the static `BuildInfoConstants` class to display build info without HTT
 # Generate a new build timestamp and sync to C#
 make build-generate
 
-# Increment the build number and sync to C#
-make release BUILD=increment
+# Build increments the build number automatically
+make build
 
 # Set a specific version and sync to C#
 make release VERSION=1.2.3
