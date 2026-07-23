@@ -5,7 +5,7 @@
 - `Lama` is a word game inspired by Scrabble in `.NET 10`, with a local CLI and online server mode.
 
 ## Architecture to Remember
-- Dependencies directed towards the center: `Lama.Contracts` (0 dependencies) <- `Lama.Domain` <- `Lama.Core`; `Lama.Infrastructure` and `Lama.Languages.*` depend on `Contracts` + `Domain` (siblings of `Core`, not descendants). Apps (`Lama.Console`, `Lama.Server`, `Lama.WebApp`, `Lama.AIServer`) reference the libs as needed.
+- Dependencies directed towards the center: `Lama.Contracts` (0 dependencies) <- `Lama.Domain` <- `Lama.Core`; `Lama.Infrastructure` depends on `Contracts` + `Domain`; `Lama.Languages.*` depend on `Contracts` only (siblings of `Core`, not descendants). Apps (`Lama.Console`, `Lama.Server`, `Lama.WebApp`, `Lama.AIServer`) reference the libs as needed.
 - No business logic in the console; rules live in `Lama.Domain` and are then exposed by the use cases in `Lama.Core`.
 - `CreateGameUseCase` manages an in-memory cache + JSON restoration across processes.
 - `Lama.Server` is authoritative in memory (`GameHubState`) with async PostgreSQL persistence via EF Core after the game ends. Real-time streaming via **SSE** (Server-Sent Events), not SignalR. Endpoints are organized in subfolders (`Games/`, `Auth/`, `Players/`, `Lexicon/`) plus flat files (e.g. `BotsEndpoints.cs`).
@@ -18,6 +18,7 @@
 - `docs/roadmap/` : milestones, progress, recaps, validations, plans.
 - `docs/evolutions/` : future evolution proposals; `INDEX.md` lists all documents.
 - `docs/utils/` : quick-start, checklists, index, operational aids.
+- `docs/bugs/` : bug investigation notes and findings.
 - Project Root: ideally only `README.md` and `AGENTS.md` should remain in `.md` (though `README.fr.md` was added in v0.1.6 for French user accessibility).
 
 ## Critical Flows
@@ -37,7 +38,7 @@
 - Local CLI: `dotnet run --project src/apps/Lama.Console -- game create Alice`
 - Server: `dotnet run --project src/apps/Lama.Server --urls http://127.0.0.1:5201`
 - WebApp: `dotnet run --project src/apps/Lama.WebApp --urls http://127.0.0.1:5202` (with `LAMA_SERVER_URL=http://127.0.0.1:5201`)
-- Full development: `make dev-debug` (Server 5201 + WebApp 5202 in parallel)
+- Full development: `make dev-debug` (Server 5201 + WebApp 5202 + AIServer 5203 in parallel, with PostgreSQL Docker)
 - Online smoke test: `tools/scripts/e2e/e2e-online-smoke.sh`
 
 ## Points of Attention
@@ -50,8 +51,8 @@
 - **Versioning and build**: `.build-info` (JSON) sync via script to `BuildInfoConstants.cs`; make targets: `build-increment`, `version-set VERSION=x.y.z`, `build-generate`. Build info is shown in the footer (`Footer.razor`) and a sticky bottom bar on the game page (`GameBuildBar.razor`), both using the static class without HTTP.
 
 ## Game Models and Ranking
-- Modes: `Casual` (aids enabled), `Standard`, `Competitive` (mandatory challenge), `Tournament` (frozen rules).
-- Elo rating (`EloCalculator`, K=40 / K=20 above 2400) with ranking queues `OpenRanked`, `Tournament`, `CasualUnranked`.
+- Modes: `Casual` (aids enabled), `Standard`, `Competitive` (mandatory challenge), `Tournament` (frozen rules), `Blitz` (per-player countdown 5/10/25 min; suggestions allowed but disable Elo).
+- Elo rating (`EloCalculator`, K=40 / K=20 above 2400) with ranking queues `OpenRanked`, `Tournament`, `CasualUnranked`, `GlobalPrestige` (combo: 70% tournament + 30% open).
 - Player levels (`LevelDeterminer`): 7 tiers, from `NotRanked` (<1100) to `LamaEternel` (2100+).
 - AI bots: `BotCatalog` (AI catalog) + `BotAutoPlayService` (auto-play loop); auto-seeded at server startup.
 
