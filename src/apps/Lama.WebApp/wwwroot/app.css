@@ -33,6 +33,7 @@ html.dark {
     --nav-h:      64px;
     --banner-h:   0px;
     --shadow:     0 4px 24px rgba(0,0,0,0.4);
+    --navbar-action-bg: var(--surface);
 }
 
 /* ── TOKENS light ── */
@@ -56,6 +57,7 @@ html.light {
     --board-grid-line: rgba(71,85,105,0.22);
     --board-grid-outline: rgba(71,85,105,0.32);
     --shadow:     0 4px 24px rgba(0,0,0,0.08);
+    --navbar-action-bg: rgba(0,0,0,0.03);
 }
 
 /* ── TOKENS bleuté ── */
@@ -79,6 +81,7 @@ html.blue {
     --board-grid-line: rgba(47,68,108,0.20);
     --board-grid-outline: rgba(47,68,108,0.30);
     --shadow:     0 4px 24px rgba(15,31,63,0.10);
+    --navbar-action-bg: rgba(0,0,0,0.03);
 }
 
 /* ── TOKENS verdâtre ── */
@@ -102,6 +105,7 @@ html.green {
     --board-grid-line: rgba(44,86,70,0.20);
     --board-grid-outline: rgba(44,86,70,0.30);
     --shadow:     0 4px 24px rgba(15,43,31,0.09);
+    --navbar-action-bg: rgba(0,0,0,0.03);
 }
 
 /* ── TOKENS vermillon ── */
@@ -125,6 +129,7 @@ html.vermillion {
     --board-grid-line: rgba(113,66,53,0.20);
     --board-grid-outline: rgba(113,66,53,0.30);
     --shadow:     0 4px 24px rgba(60,27,18,0.09);
+    --navbar-action-bg: rgba(0,0,0,0.03);
 }
 
 /* ── TOKENS highcontrast (WCAG AAA) ── */
@@ -676,7 +681,7 @@ html.highcontrast .navbar-links a.active {
     padding: .45rem .8rem;
     border-radius: var(--radius-sm);
     border: 2px solid var(--border);
-    background: var(--surface);
+    background: var(--navbar-action-bg);
     color: var(--text);
     font-size: .85rem;
     font-weight: 700;
@@ -687,21 +692,23 @@ html.highcontrast .navbar-links a.active {
     cursor: pointer;
     text-decoration: none;
     white-space: nowrap;
-    transition: border-color .15s, background .15s, transform .15s;
-}
-:is(html.light, html.blue, html.green, html.vermillion) .navbar-action {
-    background: rgba(0,0,0,0.03);
+    transition: border-color .15s, background .15s, transform .15s, box-shadow .15s;
 }
 .navbar-action:hover {
     border-color: var(--accent);
     background: var(--bg2);
     transform: translateY(-1px);
     color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.navbar-action:active {
+    transform: translateY(0);
 }
 .navbar-action.is-active {
     border-color: var(--accent);
     background: var(--accent);
     color: #fff;
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 40%, transparent);
 }
 .navbar-action--primary {
     background: var(--accent);
@@ -722,11 +729,13 @@ html.highcontrast .navbar-action {
 html.highcontrast .navbar-action:hover {
     border-color: #ffff00;
     color: #ffff00;
+    box-shadow: none;
 }
 html.highcontrast .navbar-action.is-active {
     background: #ffff00;
     color: #000;
     border-color: #ffff00;
+    box-shadow: none;
 }
 
 /* Compact mode: icon-only, smaller */
@@ -750,12 +759,6 @@ html.highcontrast .navbar-action.is-active {
     position: relative;
     display: inline-flex;
     align-items: center;
-}
-
-.navbar-user-caret {
-    font-size: .65rem;
-    opacity: .6;
-    margin-left: -.15rem;
 }
 
 .navbar-user-dropdown {

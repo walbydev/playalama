@@ -18,10 +18,6 @@
             {
                 <li><a href="/games" class="@ActiveClass("/games")" @onclick="CloseMenu">@L["Nav.Games"]</a></li>
             }
-            @if (Auth.IsAdmin)
-            {
-                <li><a href="/admin" class="@ActiveClass("/admin")" @onclick="CloseMenu">🔧 @L["Nav.Admin"]</a></li>
-            }
             <li class="navbar-mobile-auth">
                 @if (!Auth.IsInitialized)
                 {
@@ -37,6 +33,10 @@
                         }
                     </a>
                     <a href="/my-games" @onclick="CloseMenu" class="btn btn-ghost">@L["Nav.MyGames"]</a>
+                    @if (Auth.IsAdmin)
+                    {
+                        <a href="/admin" @onclick="CloseMenu" class="btn btn-ghost">🔧 @L["Nav.Admin"]</a>
+                    }
                     <button class="btn btn-outline" type="button" @onclick="LogoutAsync">@L["Nav.Logout"]</button>
                 }
                 else
@@ -70,7 +70,6 @@
                         {
                             <span class="lb-level" title="@r.LevelName | ELO @r.EloOpen">@r.LevelEmoji</span>
                         }
-                        <span class="navbar-user-caret" aria-hidden="true">▾</span>
                     </button>
                     @if (_userMenuOpen)
                     {
@@ -81,6 +80,12 @@
                             <a href="/my-games" @onclick="CloseUserMenu" class="navbar-user-dropdown-item">
                                 <span aria-hidden="true">📋</span> @L["Nav.MyGames"]
                             </a>
+                            @if (Auth.IsAdmin)
+                            {
+                                <a href="/admin" @onclick="CloseUserMenu" class="navbar-user-dropdown-item">
+                                    <span aria-hidden="true">🔧</span> @L["Nav.Admin"]
+                                </a>
+                            }
                             <button type="button" @onclick="LogoutAsync" class="navbar-user-dropdown-item navbar-user-dropdown-danger">
                                 <span aria-hidden="true">🚪</span> @L["Nav.Logout"]
                             </button>
@@ -93,13 +98,6 @@
                 <a href="/login" class="navbar-action">
                     <span class="navbar-action-label">@L["Nav.Login"]</span>
                 </a>
-                @if (!CompactMode)
-                {
-                    <a href="/register" class="navbar-action navbar-action--primary">
-                        <span class="navbar-action-label">@L["Nav.PlayNow"]</span>
-                        <span aria-hidden="true">→</span>
-                    </a>
-                }
             }
         </div>
         @if (!CompactMode)
