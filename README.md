@@ -412,7 +412,7 @@ This convention is used in local, staging and production in the project's Docker
 ### Full development
 
 ```bash
-make dev-debug   # Server 5201 + WebApp 5202 in parallel
+make dev         # Server 5201 + WebApp 5202 + AIServer 5203 + PostgreSQL Docker
 ```
 
 ---
@@ -437,10 +437,10 @@ Both use the static `BuildInfoConstants` class to display build info without HTT
 make build-generate
 
 # Increment the build number and sync to C#
-make build-increment
+make release BUILD=increment
 
 # Set a specific version and sync to C#
-make version-set VERSION=1.2.3
+make release VERSION=1.2.3
 ```
 
 Each make target updates `.build-info` AND `src/apps/Lama.WebApp/Services/BuildInfoConstants.cs`.

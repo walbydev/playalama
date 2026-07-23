@@ -38,7 +38,7 @@
 - Local CLI: `dotnet run --project src/apps/Lama.Console -- game create Alice`
 - Server: `dotnet run --project src/apps/Lama.Server --urls http://127.0.0.1:5201`
 - WebApp: `dotnet run --project src/apps/Lama.WebApp --urls http://127.0.0.1:5202` (with `LAMA_SERVER_URL=http://127.0.0.1:5201`)
-- Full development: `make dev-debug` (Server 5201 + WebApp 5202 + AIServer 5203 in parallel, with PostgreSQL Docker)
+- Full development: `make dev` (Server 5201 + WebApp 5202 + AIServer 5203 in parallel, with PostgreSQL Docker)
 - Online smoke test: `tools/scripts/e2e/e2e-online-smoke.sh`
 
 ## Points of Attention
@@ -48,7 +48,7 @@
 - `src/apps/Lama.Server/Program.cs` is intentionally focused: minimal changes, covered by tests. Server state lives in `Runtime/GameHubState.cs`; endpoints are distributed in `Endpoints/{Games,Auth,Players,Lexicon}/` plus flat files (e.g. `BotsEndpoints.cs`).
 - Online authentication: JWT via `JwtTokenService` + `JwtMiddleware`; secret signed by `LAMA_JWT_SECRET`.
 - Online/compose port convention: Server `5201`, WebApp `5202`, AIServer `5203` (dev/staging/prod).
-- **Versioning and build**: `.build-info` (JSON) sync via script to `BuildInfoConstants.cs`; make targets: `build-increment`, `version-set VERSION=x.y.z`, `build-generate`. Build info is shown in the footer (`Footer.razor`) and a sticky bottom bar on the game page (`GameBuildBar.razor`), both using the static class without HTTP.
+- **Versioning and build**: `.build-info` (JSON) sync via script to `BuildInfoConstants.cs`; make targets: `release BUILD=increment`, `release VERSION=x.y.z`, `build-generate`. Build info is shown in the footer (`Footer.razor`) and a sticky bottom bar on the game page (`GameBuildBar.razor`), both using the static class without HTTP.
 
 ## Game Models and Ranking
 - Modes: `Casual` (aids enabled), `Standard`, `Competitive` (mandatory challenge), `Tournament` (frozen rules), `Blitz` (per-player countdown 5/10/25 min; suggestions allowed but disable Elo).

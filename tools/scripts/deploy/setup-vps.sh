@@ -26,8 +26,8 @@
 #
 # Après setup-vps, lancer dans l'ordre :
 #   1. Copier les .env sur le VPS (voir instructions à la fin)
-#   2. make deploy-prod SSH_KEY=...
-#   3. make deploy-staging SSH_KEY=...
+#   2. make deploy ENV=prod SSH_KEY=...
+#   3. make deploy ENV=staging SSH_KEY=...
 # =============================================================================
 set -euo pipefail
 
@@ -198,8 +198,8 @@ printf '     scp tools/docker/.env.staging.example %s:/opt/playalama/staging/.en
 printf '     ssh %s "nano /opt/playalama/staging/.env"\n' "$REMOTE_TARGET"
 echo ""
 echo "  3. Premier déploiement :"
-printf '     make deploy-prod    SSH_KEY=%s\n' "${SSH_KEY_FILE:-~/.ssh/playalama.key}"
-printf '     make deploy-staging SSH_KEY=%s\n' "${SSH_KEY_FILE:-~/.ssh/playalama.key}"
+printf '     make deploy ENV=prod    SSH_KEY=%s\n' "${SSH_KEY_FILE:-~/.ssh/playalama.key}"
+printf '     make deploy ENV=staging SSH_KEY=%s\n' "${SSH_KEY_FILE:-~/.ssh/playalama.key}"
 echo ""
 echo "  4. Dashboard Traefik (tunnel SSH local) :"
 printf '     ssh %s -L 8080:localhost:8080\n' "$REMOTE_TARGET"

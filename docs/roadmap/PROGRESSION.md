@@ -66,7 +66,7 @@ Journal unique de progression du projet LAMA.
 
 - **Script de synchronisation**
   - Créé `tools/scripts/version/sync-to-csharp.sh` qui parse `.build-info` et génère `BuildInfoConstants.cs`.
-  - Script appelé par chaque make target (build-generate, build-increment, version-set).
+  - Script appelé par chaque make target (build-generate, release BUILD=increment, release VERSION=x.y.z).
 
 - **Simplification DevBanner.razor**
   - Plus d'HttpClient, plus d'OnInitializedAsync().
@@ -79,7 +79,7 @@ Journal unique de progression du projet LAMA.
 
 - **Make targets mis à jour**
   - Chaque target appelle à la fois `.build-info` update ET `sync-to-csharp.sh`.
-  - Workflow fluide: `make build-increment` → fichiers `.build-info` et `BuildInfoConstants.cs` synchronisés.
+  - Workflow fluide: `make release BUILD=increment` → fichiers `.build-info` et `BuildInfoConstants.cs` synchronisés.
 
 - **Tests**
   - Build Release: succès.
@@ -91,7 +91,7 @@ Journal unique de progression du projet LAMA.
 - Approche robuste, sans dépendance HTTP, binding Razor direct.
 
 ### En cours / A faire
-- Tester en mode `dev-debug` pour vérifier le rendu réel en local.
+- Tester en mode `make dev` pour vérifier le rendu réel en local.
 
 ### References
 - `src/apps/Lama.WebApp/Services/BuildInfoConstants.cs` (nouvelle classe statique)
@@ -121,7 +121,7 @@ Journal unique de progression du projet LAMA.
 - Bandeau affiche maintenant: **🚧 En développement | v0.1.0 | #3 | Build: 27/06/2026 12:52**
 
 ### En cours / A faire
-- Tester en mode `dev-debug` (lancement en local) pour vérifier le rendu réel.
+- Tester en mode `make dev` (lancement en local) pour vérifier le rendu réel.
 
 ### References
 - `src/apps/Lama.WebApp/Components/Shared/DevBanner.razor` (refactorisé)
@@ -152,8 +152,8 @@ Journal unique de progression du projet LAMA.
   - [Ultérieurement remplacé par une approche plus simple]
 
 - **Make targets ajoutés (Makefile)**
-  - `make build-increment` — Incrémenter `buildNumber`.
-  - `make version-set VERSION=x.y.z` — Fixer la version.
+  - `make release BUILD=increment` — Incrémenter `buildNumber`.
+  - `make release VERSION=x.y.z` — Fixer la version.
   - `make build-generate` — Générer un nouveau timestamp (appelé à chaque build).
 
 - **Documentation mise à jour**
@@ -170,7 +170,7 @@ Journal unique de progression du projet LAMA.
 
 ### Prochaines etapes
 1. [Réalisé] Corriger la problématique de chargement du DevBanner.
-2. Tester en mode `dev-debug` pour vérifier l'affichage du bandeau en local.
+2. Tester en mode `make dev` pour vérifier l'affichage du bandeau en local.
 3. Valider le comportement en production: le fichier build-info.json doit être accessible.
 
 ### References
@@ -191,7 +191,7 @@ Journal unique de progression du projet LAMA.
 - **Cohérence des ports**
   - Convention opérationnelle retenue et appliquée pour l'online/container: `5201` (Server), `5202` (WebApp), `5203` (AIServer), y compris en staging/prod via compose.
   - Correction des références incohérentes dans:
-    - `Makefile` (`health-debug`)
+    - `Makefile` (`health`)
     - `tests/Lama.Server.UnitTests/HttpAISuggestionClientTests.cs`
     - `tests/Lama.WebApp.UnitTests/LamaApiBaseUrlResolverTests.cs`
 - **Annonce de tour fiabilisée**

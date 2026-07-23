@@ -44,9 +44,9 @@ Modifier les `PROGRAM_PARAMETERS` selon la commande à tester (ex : `game show`,
 
 ### Via terminal
 ```bash
-make dev-local ARGS="game create Alice"
-make dev-local ARGS="play move H8 LAMA H"
-make dev-local ARGS="game show"
+make run ARGS="game create Alice"
+make run ARGS="play move H8 LAMA H"
+make run ARGS="game show"
 ```
 
 **Variables d'environnement utilisées** :
@@ -85,7 +85,7 @@ Rider (debug)              Rider (debug)
 make dev-server
 
 # Terminal 2 — Console (une fois le server démarré)
-make dev-local ARGS="game create Alice --level casual"
+make run ARGS="game create Alice --level casual"
 # Puis adapter LAMA_RUNTIME_MODE=online manuellement, ou :
 LAMA_RUNTIME_MODE=online LAMA_SERVER_URL=http://127.0.0.1:5201 \
   LAMA_SESSION_DIR=/tmp/lama-debug-host \
@@ -110,9 +110,9 @@ tools/scripts/docker-local.sh nginx-only
 
 ```bash
 # Partie locale complète
-make run-local ARGS="game create Alice"
-make run-local ARGS="play move H8 LAMA H"
-make run-local ARGS="game show"
+make run ARGS="game create Alice"
+make run ARGS="play move H8 LAMA H"
+make run ARGS="game show"
 
 # Raccourci alias (si configuré, voir docs/utils/ALIAS_LAMA_CONFIG.md)
 lama game create Alice
@@ -145,22 +145,22 @@ Fichier de composition utilisé : `tools/docker/docker-compose.local.yml` (servi
 
 ```bash
 # Démarrer (build inclus)
-make docker-local
+make docker-up
 
 # Vérifier
-make docker-local-ps
-make health-local
+make docker-ps
+make health
 # → http://localhost/         site
 # → http://localhost:5201/health   serveur
 
 # Rebuild après modification
-make docker-local-rebuild
+make docker-rebuild
 
 # Logs
-make docker-local-logs
+make docker-logs
 
 # Arrêter
-make docker-local-stop
+make docker-down
 ```
 
 ### Via Rider
@@ -245,20 +245,20 @@ Les configurations suivantes sont **partagées dans le dépôt** (`.idea/.idea.L
 ## Récapitulatif rapide
 
 ```
-Cas 1 — Debug CLI local         →  make dev-local ARGS="..."
+Cas 1 — Debug CLI local         →  make run ARGS="..."
                                    ou Rider : 🎮 Console - local debug
 
 Cas 2 — Debug Server+Console    →  Rider : 🔗 COMPOUND - Server + Console online
                                    ou make dev-server + run manual CLI
 
-Cas 3 — Run CLI local           →  make run-local ARGS="..."
+Cas 3 — Run CLI local           →  make run ARGS="..."
 
 Cas 4 — Site Docker local       →  make docker-site-local
 
-Cas 5 — Stack Docker local      →  make docker-local
-                                   ou Rider : 🐳 Docker local - stack complète
+Cas 5 — Stack Docker local      →  make docker-up
+                                    ou Rider : 🐳 Docker local - stack complète
 
-Cas 6 — Deploy site VPS         →  make deploy-site-prod SSH_KEY=~/.ssh/...
+Cas 6 — Deploy site VPS         →  make deploy ENV=prod SSH_KEY=~/.ssh/...
 
 Cas 7 — Deploy serveur VPS      →  make deploy-server-prod SSH_KEY=~/.ssh/...
 ```

@@ -2,7 +2,7 @@
 # Stack Traefik — reverse proxy central pour PROD + STAGING
 #
 # Déploiement VPS (une seule fois) :
-#   make deploy-traefik SSH_KEY=~/.ssh/playalama.key
+#   make infra-proxy SSH_KEY=~/.ssh/playalama.key
 #
 # Répertoire de déploiement sur le VPS : /opt/playalama/traefik/
 # Le réseau traefik-net est créé ici puis utilisé par les stacks prod et staging.

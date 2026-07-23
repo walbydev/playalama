@@ -414,7 +414,7 @@ Cette convention est utilisée en local, staging et production dans les stacks D
 ### Dev complet
 
 ```bash
-make dev-debug   # Server 5201 + WebApp 5202 en parallèle
+make dev         # Server 5201 + WebApp 5202 + AIServer 5203 + PostgreSQL Docker
 ```
 
 ---
@@ -439,10 +439,10 @@ Les deux utilisent la classe statique `BuildInfoConstants` pour afficher les inf
 make build-generate
 
 # Incrémenter le numéro de build et synchroniser vers C#
-make build-increment
+make release BUILD=increment
 
 # Fixer une version spécifique et synchroniser vers C#
-make version-set VERSION=1.2.3
+make release VERSION=1.2.3
 ```
 
 Chaque make target met à jour `.build-info` ET `src/apps/Lama.WebApp/Services/BuildInfoConstants.cs`.

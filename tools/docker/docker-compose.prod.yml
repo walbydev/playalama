@@ -2,10 +2,10 @@
 # Environnement PRODUCTION — playalama.online
 #
 # Déploiement image-only (aucun build sur le VPS) :
-#   make deploy-prod SSH_KEY=~/.ssh/playalama.key
+#   make deploy ENV=prod SSH_KEY=~/.ssh/playalama.key
 #
 # Prérequis VPS :
-#   - Réseau Docker "traefik-net" existant (créé par make deploy-traefik)
+#   - Réseau Docker "traefik-net" existant (créé par make infra-proxy)
 #   - Fichier .env présent dans /opt/playalama/prod/ (voir tools/environments/.env.prod.example)
 #   - Images chargées localement via deploy-env.sh (docker load)
 #

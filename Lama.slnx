@@ -80,6 +80,7 @@
     <File Path="docs/architecture/console-interface-architecture.md" />
     <File Path="docs/architecture/crossing-rules.md" />
     <File Path="docs/architecture/defines-CLI.md" />
+    <File Path="docs\architecture\BOTS_FONCTIONNEMENT.md" />
     <File Path="docs\architecture\DOCKER_ARCHITECTURE.md" />
     <File Path="docs\architecture\HOMEASSISTANT_INTEGRATION.md" />
   </Folder>
