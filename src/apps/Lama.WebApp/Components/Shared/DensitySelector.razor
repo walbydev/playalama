@@ -2,11 +2,12 @@
 @inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
-<button class="btn btn-ghost btn-sm board-fullscreen-btn @(Layout.IsFullscreen ? "is-active" : "")"
+<button class="navbar-action @(Layout.IsFullscreen ? "is-active" : "")"
         @onclick="ToggleFullscreenAsync"
         title="@L["BoardDensity.Fullscreen"]"
         aria-pressed="@Layout.IsFullscreen">
-    <span aria-hidden="true">⛶</span> @L["BoardDensity.Fullscreen"]
+    <span aria-hidden="true">⛶</span>
+    <span class="navbar-action-label">@L["BoardDensity.Fullscreen"]</span>
 </button>
 
 @code {

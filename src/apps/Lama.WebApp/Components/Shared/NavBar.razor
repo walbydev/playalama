@@ -24,41 +24,73 @@
             {
                 <li><a href="/admin" class="@ActiveClass("/admin")" @onclick="CloseMenu">🔧 @L["Nav.Admin"]</a></li>
             }
+            <li class="navbar-mobile-auth">
+                @if (!Auth.IsInitialized)
+                {
+                    <span class="text-muted" aria-live="polite">@L["Common.Loading"]</span>
+                }
+                else if (Auth.IsLoggedIn)
+                {
+                    <a href="/profile" @onclick="CloseMenu" class="navbar-mobile-user">
+                        @Auth.CurrentUser!.Username
+                        @if (Auth.CurrentRating is { } r)
+                        {
+                            <span class="lb-level" title="@r.LevelName | ELO @r.EloOpen">@r.LevelEmoji</span>
+                        }
+                    </a>
+                    <button class="btn btn-outline" type="button" @onclick="LogoutAsync">@L["Nav.Logout"]</button>
+                }
+                else
+                {
+                    <a href="/login" @onclick="CloseMenu" class="btn btn-ghost">@L["Nav.Login"]</a>
+                    <a href="/register" @onclick="CloseMenu" class="btn btn-primary">@L["Nav.PlayNow"] →</a>
+                }
+            </li>
         </ul>
     }
 
     <div class="navbar-actions">
         <DensitySelector />
         <QuickSettingsPanel />
-        @if (!Auth.IsInitialized)
-        {
-            <span class="text-muted" style="font-size:.9rem" aria-live="polite">@L["Common.Loading"]</span>
-        }
-        else if (Auth.IsLoggedIn)
-        {
-            <a href="/profile" class="btn btn-ghost btn-sm" style="display:flex; align-items:center; gap:.4rem">
-                @Auth.CurrentUser!.Username
-                @if (Auth.CurrentRating is { } r)
+        <div class="navbar-auth-desktop">
+            @if (!Auth.IsInitialized)
+            {
+                <span class="text-muted" style="font-size:.85rem;display:inline-flex;align-items:center;min-height:2.5rem" aria-live="polite">@L["Common.Loading"]</span>
+            }
+            else if (Auth.IsLoggedIn)
+            {
+                <a href="/profile" class="navbar-action">
+                    <span aria-hidden="true">👤</span>
+                    <span class="navbar-action-label">@Auth.CurrentUser!.Username</span>
+                    @if (Auth.CurrentRating is { } r)
+                    {
+                        <span class="lb-level" title="@r.LevelName | ELO @r.EloOpen">@r.LevelEmoji</span>
+                    }
+                </a>
+                @if (!CompactMode)
                 {
-                    <span class="lb-level" title="@r.LevelName | ELO @r.EloOpen">@r.LevelEmoji</span>
+                    <button class="navbar-action" type="button" @onclick="LogoutAsync">
+                        <span class="navbar-action-label">@L["Nav.Logout"]</span>
+                    </button>
                 }
-            </a>
-            @if (!CompactMode)
-            {
-                <button class="btn btn-outline btn-sm" type="button" @onclick="LogoutAsync">@L["Nav.Logout"]</button>
             }
-        }
-        else
-        {
-            <a href="/login"    class="btn btn-ghost btn-sm">@L["Nav.Login"]</a>
-            @if (!CompactMode)
+            else
             {
-                <a href="/register" class="btn btn-primary btn-sm">@L["Nav.PlayNow"] →</a>
+                <a href="/login" class="navbar-action">
+                    <span class="navbar-action-label">@L["Nav.Login"]</span>
+                </a>
+                @if (!CompactMode)
+                {
+                    <a href="/register" class="navbar-action navbar-action--primary">
+                        <span class="navbar-action-label">@L["Nav.PlayNow"]</span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+                }
             }
-        }
+        </div>
         @if (!CompactMode)
         {
-            <button class="navbar-burger" type="button" @onclick="ToggleMenu"
+            <button class="navbar-action navbar-burger" type="button" @onclick="ToggleMenu"
                     aria-expanded="@_menuOpen" aria-controls="nav-links"
                     aria-label="@L["Nav.Menu"]">
                 @(_menuOpen ? "✕" : "☰")
@@ -66,6 +98,11 @@
         }
     </div>
 </nav>
+
+@if (!CompactMode && _menuOpen)
+{
+    <div class="navbar-backdrop" @onclick="CloseMenu" aria-hidden="true"></div>
+}
 
 <!-- Spacer pour compenser la navbar fixe -->
 <div style="height: @SpacerHeight" aria-hidden="true"></div>

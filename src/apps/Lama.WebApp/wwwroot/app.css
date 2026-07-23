@@ -249,7 +249,7 @@ html {
     .board-cell:hover:not(.board-cell--kbd-cursor),
     .btn:hover,
     .mode-card:hover,
-    .quick-settings-toggle:hover,
+    .navbar-action:hover,
     .layout-btn:hover {
         transform: none;
         box-shadow: none;
@@ -660,39 +660,163 @@ html.highcontrast .navbar-links a.active {
     gap: .45rem;
 }
 
-.navbar--compact .btn.btn-sm {
-    padding: .35rem .7rem;
-    font-size: .8rem;
+/* ── UNIFIED NAVBAR ACTION BUTTONS ── */
+/* Shared base for fullscreen, settings, auth, burger — ensures identical heights */
+.navbar-action {
+    min-height: 2.5rem;
+    padding: .45rem .8rem;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: .85rem;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color .15s, background .15s, transform .15s;
+}
+:is(html.light, html.blue, html.green, html.vermillion) .navbar-action {
+    background: rgba(0,0,0,0.03);
+}
+.navbar-action:hover {
+    border-color: var(--accent);
+    background: var(--bg2);
+    transform: translateY(-1px);
+    color: var(--text);
+}
+.navbar-action.is-active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+}
+.navbar-action--primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.navbar-action--primary:hover {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: #fff;
+    box-shadow: 0 0 16px rgba(124,92,252,0.35);
+}
+html.highcontrast .navbar-action {
+    background: #000;
+    border: 3px solid #fff;
+    color: #fff;
+}
+html.highcontrast .navbar-action:hover {
+    border-color: #ffff00;
+    color: #ffff00;
+}
+html.highcontrast .navbar-action.is-active {
+    background: #ffff00;
+    color: #000;
+    border-color: #ffff00;
 }
 
+/* Compact mode: icon-only, smaller */
+.navbar--compact .navbar-action {
+    padding: .35rem;
+    min-width: 2rem;
+    min-height: 2rem;
+    font-size: .85rem;
+}
+.navbar--compact .navbar-action-label {
+    display: none;
+}
+
+/* Burger: visibility control only (visuals from .navbar-action) */
 .navbar-burger {
     display: none;
-    background: none;
-    border: none;
-    color: var(--text);
-    font-size: 1.4rem;
-    cursor: pointer;
-    padding: .35rem;
-    border-radius: var(--radius-sm);
 }
 
-@media (max-width: 768px) {
+/* Desktop: mobile-only elements hidden */
+.navbar-mobile-auth { display: none; }
+.navbar-backdrop   { display: none; }
+
+@media (max-width: 960px) {
     .navbar-links {
         display: none;
         position: fixed;
-        top: var(--nav-h);
+        top: calc(var(--banner-h) + var(--nav-h));
         left: 0; right: 0;
         background: var(--bg2);
         flex-direction: column;
         gap: 0;
         padding: 1rem 0;
         border-bottom: 2px solid var(--border);
+        max-height: calc(100vh - var(--nav-h) - var(--banner-h));
+        overflow-y: auto;
+        z-index: 199;
+        box-shadow: 0 8px 24px rgba(0,0,0,.2);
     }
     .navbar-links.open { display: flex; }
-    .navbar-links a { padding: .75rem 2rem; display: block; }
-    .navbar-burger { display: block; }
+    .navbar-links a { padding: .85rem 2rem; display: block; }
+    .navbar-burger { display: inline-flex; }
+
+    /* Mobile: icon-only action buttons, tighter gap */
+    .navbar-actions { gap: .35rem; }
+    .navbar-action {
+        min-width: 2.5rem;
+        padding: .45rem;
+        justify-content: center;
+    }
+    .navbar-action .navbar-action-label { display: none; }
+
+    /* Desktop auth hidden, mobile auth shown in dropdown */
+    .navbar-auth-desktop { display: none; }
+    .navbar--compact .navbar-auth-desktop { display: flex; }
+
+    .navbar-mobile-auth {
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        padding: .75rem 2rem 1rem;
+        margin-top: .5rem;
+        border-top: 1px solid var(--border);
+    }
+    .navbar-mobile-auth .btn {
+        width: 100%;
+        justify-content: center;
+        padding: .65rem 1rem;
+    }
+    .navbar-mobile-user {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .5rem 0;
+        font-weight: 700;
+        color: var(--text);
+        text-decoration: none;
+    }
+
+    /* Backdrop overlay to close menu on outside click */
+    .navbar-backdrop {
+        display: block;
+        position: fixed;
+        top: calc(var(--banner-h) + var(--nav-h));
+        left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,.4);
+        z-index: 198;
+    }
+
     .navbar--compact { padding: 0 .6rem; }
     .navbar--compact .navbar-burger { display: none; }
+
+    /* High-contrast adjustments */
+    html.highcontrast .navbar-backdrop { background: rgba(0,0,0,.7); }
+    html.highcontrast .navbar-mobile-auth { border-top-color: #ffffff; }
+    html.highcontrast .navbar-links { box-shadow: none; border-bottom-width: 3px; }
+}
+
+@media (max-width: 480px) {
+    .navbar-actions .board-density-control { display: none; }
 }
 
 /* ── QUICK SETTINGS PANEL ── */
@@ -702,29 +826,7 @@ html.highcontrast .navbar-links a.active {
     align-items: center;
 }
 
-.quick-settings-toggle {
-    min-width: 2.5rem;
-    min-height: 2.5rem;
-    padding: .45rem .7rem;
-    border-radius: var(--radius-sm);
-    border: 2px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    font-size: .85rem;
-    font-weight: 700;
-    cursor: pointer;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    transition: border-color .15s, background .15s, transform .15s;
-}
-
-.quick-settings-toggle:hover {
-    border-color: var(--accent);
-    background: var(--bg2);
-    transform: translateY(-1px);
-}
+/* quick-settings-toggle styling now handled by .navbar-action */
 
 .quick-settings-panel {
     position: fixed;
@@ -957,8 +1059,7 @@ html.highcontrast .board-density-btn.is-active {
     border-color: #ffff00;
 }
 
-.board-fullscreen-btn { font-size: .85rem; display: inline-flex; align-items: center; gap: .35rem; }
-.board-fullscreen-btn.is-active { background: var(--accent); color: #fff; border-color: var(--accent); }
+/* board-fullscreen-btn styling now handled by .navbar-action */
 
 .layout-btn {
     border: 2px solid var(--border);

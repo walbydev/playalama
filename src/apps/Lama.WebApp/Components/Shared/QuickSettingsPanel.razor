@@ -3,12 +3,13 @@
 
 <div class="quick-settings-nav">
     <button type="button"
-            class="quick-settings-toggle"
+            class="navbar-action @(_isOpen ? "is-active" : "")"
             @onclick="TogglePanel"
             aria-expanded="@_isOpen"
             aria-controls="quick-settings-panel"
             title="@L["Nav.SettingsTooltip"]">
-        <span aria-hidden="true">⚙</span> @L["Nav.Settings"]
+        <span aria-hidden="true">⚙</span>
+        <span class="navbar-action-label">@L["Nav.Settings"]</span>
     </button>
 
     <aside id="quick-settings-panel" class="quick-settings-panel @(_isOpen ? "is-open" : "")">
