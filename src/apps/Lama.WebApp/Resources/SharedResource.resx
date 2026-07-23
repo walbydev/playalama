@@ -719,6 +719,7 @@
   <data name="License.Usage.Moq"><value>Mocks de tests</value></data>
   <data name="License.Usage.Coverlet"><value>Couverture de tests</value></data>
   <data name="Nav.Admin"><value>Admin</value></data>
+  <data name="Nav.Profile"><value>Mon profil</value></data>
   <data name="Profile.RankingLevel"><value>Classement &amp; Niveau</value></data>
   <data name="Profile.LevelLabel"><value>Niveau</value></data>
   <data name="Profile.EloOpen"><value>ELO Open</value></data>

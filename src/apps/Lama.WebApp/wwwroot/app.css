@@ -9,6 +9,7 @@
 /* ── TOKENS dark (défaut) ── */
 :root,
 html.dark {
+    color-scheme: dark;
     --bg:         #0d0f1a;
     --bg2:        #13162a;
     --bg3:        #1a1e35;
@@ -36,6 +37,7 @@ html.dark {
 
 /* ── TOKENS light ── */
 html.light {
+    color-scheme: light;
     --bg:         #f8f9fc;
     --bg2:        #eef0f8;
     --bg3:        #e4e7f2;
@@ -58,6 +60,7 @@ html.light {
 
 /* ── TOKENS bleuté ── */
 html.blue {
+    color-scheme: light;
     --bg:         #eef5ff;
     --bg2:        #e4eefc;
     --bg3:        #d8e5fa;
@@ -80,6 +83,7 @@ html.blue {
 
 /* ── TOKENS verdâtre ── */
 html.green {
+    color-scheme: light;
     --bg:         #eef9f2;
     --bg2:        #e4f4ea;
     --bg3:        #d4eadc;
@@ -102,6 +106,7 @@ html.green {
 
 /* ── TOKENS vermillon ── */
 html.vermillion {
+    color-scheme: light;
     --bg:         #fff3ee;
     --bg2:        #ffe8df;
     --bg3:        #ffdacc;
@@ -124,6 +129,7 @@ html.vermillion {
 
 /* ── TOKENS highcontrast (WCAG AAA) ── */
 html.highcontrast {
+    color-scheme: dark;
     --bg:         #000000;
     --bg2:        #1a1a1a;
     --bg3:        #2d2d2d;
@@ -148,6 +154,7 @@ html.highcontrast {
 
 /* ── TOKENS deuteranopia (rouge-vert) ── */
 html.deuteranopia {
+    color-scheme: dark;
     --bg:         #0a0e1a;
     --bg2:        #151b2e;
     --bg3:        #1f2842;
@@ -170,6 +177,7 @@ html.deuteranopia {
 
 /* ── TOKENS protanopia (rouge-vert) ── */
 html.protanopia {
+    color-scheme: dark;
     --bg:         #0a0e1a;
     --bg2:        #151b2e;
     --bg3:        #1f2842;
@@ -192,6 +200,7 @@ html.protanopia {
 
 /* ── TOKENS tritanopia (bleu-jaune) ── */
 html.tritanopia {
+    color-scheme: dark;
     --bg:         #0f0a1a;
     --bg2:        #1b152e;
     --bg3:        #281f42;
@@ -459,11 +468,11 @@ h4 { font-size: 1.05rem; font-weight: 600; }
 
 .btn-danger {
     background: rgba(220,50,50,0.15);
-    color: #e55;
+    color: var(--error);
     border: 2px solid rgba(220,50,50,0.4);
 }
 :is(html.light, html.blue, html.green, html.vermillion) .btn-danger { background: rgba(220,50,50,0.08); }
-.btn-danger:hover { background: rgba(220,50,50,0.25); transform: translateY(-1px); color: #c33; }
+.btn-danger:hover { background: rgba(220,50,50,0.25); transform: translateY(-1px); color: var(--error); }
 
 /* Boutons haut contraste */
 html.highcontrast .btn-primary {
@@ -736,11 +745,80 @@ html.highcontrast .navbar-action.is-active {
     display: none;
 }
 
+/* ── USER DROPDOWN MENU ── */
+.navbar-user-menu {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.navbar-user-caret {
+    font-size: .65rem;
+    opacity: .6;
+    margin-left: -.15rem;
+}
+
+.navbar-user-dropdown {
+    position: absolute;
+    top: calc(100% + .5rem);
+    right: 0;
+    min-width: 11rem;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    padding: .35rem;
+    z-index: 210;
+}
+
+.navbar-user-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    width: 100%;
+    padding: .65rem .75rem;
+    border: none;
+    background: none;
+    color: var(--text);
+    font-size: .9rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background .12s;
+}
+.navbar-user-dropdown-item:hover {
+    background: var(--bg2);
+    color: var(--text);
+}
+.navbar-user-dropdown-danger {
+    color: var(--error);
+}
+.navbar-user-dropdown-danger:hover {
+    background: rgba(239,68,68,0.12);
+}
+
+html.highcontrast .navbar-user-dropdown {
+    background: #000;
+    border: 3px solid #fff;
+}
+html.highcontrast .navbar-user-dropdown-item:hover {
+    background: #1a1a1a;
+    color: #ffff00;
+}
+html.highcontrast .navbar-user-dropdown-danger {
+    color: #ff6666;
+}
+html.highcontrast .navbar-user-dropdown-danger:hover {
+    background: #2a0000;
+    color: #ff0000;
+}
+
 /* Desktop: mobile-only elements hidden */
 .navbar-mobile-auth { display: none; }
 .navbar-backdrop   { display: none; }
 
-@media (max-width: 960px) {
+@media (max-width: 1080px) {
     .navbar-links {
         display: none;
         position: fixed;
@@ -944,6 +1022,22 @@ html.highcontrast .navbar-action.is-active {
         right: .6rem;
         width: min(20rem, calc(100vw - 4.25rem));
     }
+}
+
+.quick-settings-full-page {
+    display: block;
+    text-align: center;
+    margin-top: .25rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--border);
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color .15s;
+}
+.quick-settings-full-page:hover {
+    color: var(--accent);
 }
 
 /* ── THEME SELECTOR ── */
@@ -1709,11 +1803,12 @@ footer {
 /* ── CHIPS / BADGES ── */
 .chip { display: inline-block; font-size: .75rem; font-weight: 600; padding: .2rem .6rem; border-radius: 20px; }
 .chip-success { background: rgba(34,197,94,.15); color: var(--success); }
-.chip-warning { background: rgba(245,158,11,.15); color: #d97706; }
-.chip-danger  { background: rgba(239,68,68,.15); color: var(--danger); }
+.chip-warning { background: rgba(245,158,11,.15); color: var(--gold); }
+.chip-danger  { background: rgba(239,68,68,.15); color: var(--error); }
 .chip-muted   { background: var(--bg3); color: var(--text-dim); }
 .chip-accent  { background: rgba(124,92,252,.15); color: var(--accent2); animation: chip-pulse 1.5s ease-in-out infinite; }
 .chip-info    { background: rgba(59,130,246,.15); color: #3b82f6; }
+:is(html.dark, html.deuteranopia, html.protanopia, html.tritanopia) .chip-info { color: #60a5fa; }
 
 .admin-actions { display: flex; gap: .5rem; align-items: center; }
 
@@ -2065,7 +2160,7 @@ html.highcontrast .tile-val {
     background: rgba(220, 60, 60, .12);
     border: 2px solid rgba(220, 60, 60, .4);
     border-radius: var(--radius-sm);
-    color: var(--danger, #e44);
+    color: var(--error, #e44);
     font-size: .88rem;
     font-weight: 600;
     line-height: 1.3;
@@ -2422,7 +2517,7 @@ html.highcontrast .rack-tile--selected {
 .scoreboard-score { font-size: 1.05rem; font-weight: 700; color: var(--accent2); white-space: nowrap; }
 .scoreboard-rack-count { font-size: .72rem; color: var(--text-dim); }
 .scoreboard-timer { font-size: 1rem; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.scoreboard-timer--low { color: var(--danger, #ef4444); animation: timer-pulse 1s ease-in-out infinite; }
+.scoreboard-timer--low { color: var(--error, #ef4444); animation: timer-pulse 1s ease-in-out infinite; }
 @keyframes timer-pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
 
 /* ════════════════════════════════════════════════════════
